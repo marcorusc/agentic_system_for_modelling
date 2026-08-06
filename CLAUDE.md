@@ -82,6 +82,39 @@ to the relevant specialist is required, not just preferred.
   Scientific rules above, regardless of whether the review that informed it was
   user-directed or autonomous.
 
+## Model refinement discipline
+
+Adjusting Boolean rules so a model reproduces target dynamics (oscillation, arrest
+under a perturbation, etc.) is a legitimate modelling method — the same kind of
+search a domain expert does by hand or an ML fitting procedure does formally. It is
+not treated as more suspect than literature-derived rules. It does need the same
+discipline those methods have by construction: an explicit objective, a bounded
+search space, and a record of what was tried. This is a distinct,
+explicitly-authorized workflow, separate from `boolean-dynamics-modeler`'s default
+(never change rules on its own initiative):
+
+- **Gate:** rule-refinement mode may not be invoked until `VALIDATION_PLAN.md` has
+  actual content — no target, no fitting. The plan may come from discussion with the
+  orchestrator (qualitative goals) or be written a priori from experimental data;
+  either is valid, but something concrete must exist to fit against.
+- **Explicit scope:** the orchestrator invokes refinement by naming the specific
+  node(s) to refine and pointing at the relevant part of `VALIDATION_PLAN.md` as the
+  objective. `boolean-dynamics-modeler` may only adjust the Boolean function among a
+  node's *existing* incoming regulators — no new edges, no new nodes. If reaching
+  the target dynamic seems to require a structural change beyond that, that is a
+  topology question and routes back to `network-curator`/`literature-reviewer` — it
+  is not something rule-fitting silently absorbs.
+- **Search record:** variants tried and rejected during refinement are reported, not
+  just the final rule chosen — this is the record an ML fit would give for free, and
+  a rule-refinement report without it is incomplete.
+- **Provenance tagging in `DECISIONS.md`:** every node's final rule is tagged as
+  either `literature-derived` (specific rule form has citation support from
+  `literature-reviewer`) or `fitted-for-dynamics` (chosen to reproduce target
+  behavior in `VALIDATION_PLAN.md`; no independent literature claim about this
+  specific Boolean form). A fitted rule is not second-class — it is labelled
+  honestly, the same way a hypothesized parameter already must be per the Scientific
+  rules above.
+
 ## Session registry
 
 `CURRENT_STATE.md` must maintain a table of every specialist session created so far,
@@ -117,6 +150,8 @@ Rules:
 - If the table shows no `active` session for a specialist a task requires, that is
   itself a signal to create a fresh session (stage 4 of the workflow), not to guess
   an ID.
+
+## Required stage workflow
 
 1. Read the relevant MCP agent manual.
 2. State the scientific objective.
