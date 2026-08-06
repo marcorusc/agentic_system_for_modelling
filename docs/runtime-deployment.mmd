@@ -1,0 +1,28 @@
+flowchart LR
+    subgraph CC["Claude Code on Windows/macOS"]
+        MAIN[Main context]
+        A1[NeKo subagent context]
+        A2[MaBoSS subagent context]
+        A3[PhysiCell subagent context]
+        A4[Literature subagent context]
+        A5[Reviewer context]
+        QUEUE[Claude Code task scheduling]
+
+        MAIN --> QUEUE
+        A1 --> QUEUE
+        A2 --> QUEUE
+        A3 --> QUEUE
+        A4 --> QUEUE
+        A5 --> QUEUE
+    end
+
+    QUEUE -->|requests through SSH| OLLAMA[Ollama request queue]
+
+    subgraph GPU["Remote GPU"]
+        WEIGHTS[One Qwen3.6 27B weight set]
+        SLOT[One active inference/context slot]
+        VRAM[Approximately 34 GB observed at 262K]
+        OLLAMA --> WEIGHTS --> SLOT --> VRAM
+    end
+
+    OLLAMA -. OLLAMA_NUM_PARALLEL=1 .-> WAIT[Other requests wait]

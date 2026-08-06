@@ -1,0 +1,66 @@
+flowchart TB
+    U[Researcher] --> O[Main scientific orchestrator]
+
+    subgraph LOCAL["Windows or macOS: Claude Code project"]
+        O
+        N[NeKo network curator]
+        M[MaBoSS Boolean dynamics modeler]
+        P[PhysiCell multicellular configurator]
+        L[PubMed literature reviewer]
+        S[Independent scientific reviewer]
+        R[Reproducibility auditor]
+
+        STATE[(Version-controlled project state)]
+        ART[(Session artifacts and typed handoffs)]
+        EVID[(Evidence queue and evidence matrix)]
+
+        O -->|delegate network task| N
+        O -->|delegate simulation task| M
+        O -->|delegate spatial configuration| P
+        O -->|delegate publication review| L
+        O -->|request adversarial review| S
+        O -->|request provenance audit| R
+
+        N -->|NeKo MCP only| NEKO[NeKo MCP server]
+        M -->|MaBoSS MCP only| MABOSS[MaBoSS MCP server]
+        P -->|PhysiCell MCP only| PHYSI[PhysiCell MCP server]
+        L -->|PubMed MCP, API, or approved search tool| PUBMED[PubMed / NCBI]
+
+        N -->|network checkpoint and evidence queue| STATE
+        N -->|NeKo-to-MaBoSS manifest| ART
+        M -->|MaBoSS-to-PhysiCell manifest| ART
+        P -->|XML, rules and PhysiBoSS configuration| ART
+        L -->|edge-level evidence matrix| EVID
+
+        STATE --> O
+        ART --> O
+        EVID --> O
+        STATE --> S
+        ART --> S
+        EVID --> S
+        S -->|blocking issues and limitations| O
+        STATE --> R
+        ART --> R
+        EVID --> R
+        R -->|provenance and reproducibility report| O
+    end
+
+    subgraph REMOTE["Remote Linux GPU workstation"]
+        API[Ollama API<br/>127.0.0.1:11434]
+        Q[One loaded qwen3.6:27b weight set]
+        GPU[NVIDIA RTX 6000 Ada<br/>48 GB VRAM]
+        API --> Q --> GPU
+    end
+
+    O -. SSH tunnel localhost:11435 .-> API
+    N -. model requests through Claude Code .-> API
+    M -. model requests through Claude Code .-> API
+    P -. model requests through Claude Code .-> API
+    L -. model requests through Claude Code .-> API
+    S -. model requests through Claude Code .-> API
+    R -. model requests through Claude Code .-> API
+
+    N -->|summary| O
+    M -->|summary| O
+    P -->|summary| O
+    L -->|evidence conclusions| O
