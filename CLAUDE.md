@@ -43,9 +43,16 @@ stage transitions, update durable state, and invoke independent review.
 
 Subagents cannot spawn other subagents. Do not ask them to coordinate directly.
 
-The orchestrator does not call NeKo, MaBoSS, or PhysiCell MCP tools directly — those
-tools are denied at the permission level (see `.claude/settings.json`) so delegation
-to the relevant specialist is required, not just preferred.
+The orchestrator does not call NeKo, MaBoSS, or PhysiCell MCP tools directly.
+Delegate modelling operations to the relevant specialist; knowing that a server
+exists is not authorization to invoke it.
+
+NeKo and MaBoSS are defined inline in their specialist agent frontmatter rather than
+registered in the parent session. This keeps their tools and tool descriptions out
+of the orchestrator context. Their tracked definitions resolve executables through
+the local `MCP_MODELLING_ENV` environment variable, which must point to the modelling
+environment (for example, in the ignored `.claude/settings.local.json`). Do not add
+either server to user-, local-, or project-scoped parent MCP configuration.
 
 ## Specialist allocation
 
@@ -169,3 +176,44 @@ Rules:
 - Use subagents for large searches, tool output, and specialist exploration.
 - Do not paste full datasets, complete logs, or large result tables into chat.
 - Before `/compact` or `/clear`, invoke the checkpoint skill.
+
+## Local Git checkpoints
+
+Git provides a local, recoverable history of the project files; it does not replace
+the scientific sources of truth, MCP history, or immutable run artifacts listed
+above. Invoke the `checkpoint-model` skill at stage transitions and before
+`/compact`, `/clear`, or session exit.
+
+- Inspect `git status` and the relevant diffs before staging anything.
+- Update and validate the durable scientific state before creating the checkpoint.
+- Stage explicit task-relevant paths only. Never sweep unrelated pre-existing user
+  changes, secrets, caches, or generated files into a checkpoint.
+- Use a concise message of the form `checkpoint(<stage>): <scientific state>`, then
+  record that content-checkpoint commit ID in `CURRENT_STATE.md` with one follow-up
+  metadata commit. Do not try to embed the metadata commit's own ID in itself.
+- Local checkpoint commits are authorized by this workflow. Pushing, fetching,
+  pulling, switching branches, rebasing, amending, force operations, tags, remotes,
+  and destructive cleanup remain outside scope unless the user explicitly requests
+  them.
+- If provenance is incomplete, validation fails, or relevant changes cannot be
+  separated safely from unrelated work, do not commit. Report the blocker and leave
+  the worktree intact.
+
+## Model lifecycle
+
+This repository contains one biological model at a time. Model lifecycle is exposed
+only through the user-invoked `/model-list`, `/model-archive`, `/model-restart`, and
+`/model-restore` skills. The orchestrator must never invoke the three mutating skills
+autonomously.
+
+- `.model/config.json` is the authoritative allowlist of scientific-state paths.
+- `inputs/`, `.claude/`, `.model/`, templates, documentation, and this file are
+  infrastructure or source material and are never reset or restored from an archive.
+- Named archives use annotated `model/archive/*` Git tags. Restart and restore create
+  automatic `model/recovery/*` tags before replacing any state.
+- Restores are path-scoped and must not switch branches, reset Git history, or roll
+  back agent definitions.
+- MCP session IDs in an archive are provenance, not resumable process state. Rebuild
+  specialist runtime state from typed handoffs and artifacts.
+- After restart or restore, instruct the user to run `/clear` so assumptions
+  from the previous Claude conversation do not contaminate the loaded model state.

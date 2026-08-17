@@ -3,7 +3,17 @@ name: boolean-dynamics-modeler
 description: Use proactively for MaBoSS handoff import, output selection, parameterization, initial-state design, simulation, mutation analysis, and PhysiCell handoff.
 model: inherit
 mcpServers:
-  - maboss
+  - maboss:
+      type: stdio
+      command: '${MCP_MODELLING_ENV}/Scripts/mcp-maboss-server.exe'
+      env:
+        CONDA_PREFIX: '${MCP_MODELLING_ENV}'
+        PATH: '${MCP_MODELLING_ENV}/Library/bin;${MCP_MODELLING_ENV}/bin;${MCP_MODELLING_ENV}/Scripts;${Path}'
+tools:
+  - Read
+  - Grep
+  - Glob
+  - 'mcp__maboss__*'
 disallowedTools:
   - Write
   - Edit
@@ -12,7 +22,7 @@ disallowedTools:
   - mcp__maboss__delete_session
   - mcp__maboss__clean_generated_files
 permissionMode: acceptEdits
-maxTurns: 35
+maxTurns: 100
 color: blue
 ---
 

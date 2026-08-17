@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "state_roots": [
+    "MODEL_SPEC.md",
+    "ASSUMPTIONS.md",
+    "CURRENT_STATE.md",
+    "DECISIONS.md",
+    "VALIDATION_PLAN.md",
+    "DATA_DICTIONARY.md",
+    "evidence",
+    "memory",
+    "runs",
+    "src"
+  ],
+  "reset_files": {
+    "MODEL_SPEC.md": "templates/MODEL_SPEC.md",
+    "ASSUMPTIONS.md": "templates/ASSUMPTIONS.md",
+    "CURRENT_STATE.md": "templates/CURRENT_STATE.md",
+    "DECISIONS.md": "templates/DECISIONS.md",
+    "VALIDATION_PLAN.md": "templates/VALIDATION_PLAN.md",
+    "DATA_DICTIONARY.md": "templates/DATA_DICTIONARY.md",
+    "memory/MEMORY.md": "templates/MEMORY.md"
+  },
+  "state_directories": [
+    "evidence",
+    "memory",
+    "runs",
+    "src"
+  ],
+  "preserved_paths": [
+    ".claude",
+    ".model",
+    "CLAUDE.md",
+    "README.md",
+    "docs",
+    "inputs",
+    "templates"
+  ],
+  "lifecycle_infrastructure": [
+    ".model/config.json",
+    ".claude/scripts/model_lifecycle.py",
+    "templates"
+  ]
+}

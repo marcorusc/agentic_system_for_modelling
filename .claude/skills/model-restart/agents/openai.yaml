@@ -1,0 +1,4 @@
+interface:
+  display_name: "Restart Model State"
+  short_description: "Safely reset model state to templates"
+  default_prompt: "Use $model-restart to preview and safely restart the current model from pristine templates."

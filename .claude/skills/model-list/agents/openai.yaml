@@ -1,0 +1,4 @@
+interface:
+  display_name: "Model Archive List"
+  short_description: "List current and archived model states"
+  default_prompt: "Use $model-list to show the current model attempt and available archives."

@@ -1,6 +1,3 @@
 .claude/settings.local.json
-ASSUMTIONS.md
-CURRENT_STATE.md
-DATA_DICTIONARY.md
-MODEL_SPEC.md
-DECISIONS.md
+__pycache__/
+*.pyc

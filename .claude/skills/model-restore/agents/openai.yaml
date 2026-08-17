@@ -1,0 +1,4 @@
+interface:
+  display_name: "Restore Model Archive"
+  short_description: "Restore an archived model state safely"
+  default_prompt: "Use $model-restore to recover a named model archive while preserving current project infrastructure."

@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "current": {
+    "attempt_id": "initial",
+    "started_at": null,
+    "source": "clone",
+    "restored_from": null
+  },
+  "last_archive": null,
+  "last_recovery": null
+}
