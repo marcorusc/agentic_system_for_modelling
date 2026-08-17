@@ -2,12 +2,15 @@
 
 ## Scientific objective
 
-_(not yet set — orchestrator fills this in at stage 2 of the workflow)_
+_(not yet defined)_
 
-## Workflow checkpoint
+## Active stage
 
-_(which stage of the required stage workflow the project is currently at, and what
-is pending human input, if anything)_
+`specification`
+
+## Completed work
+
+_(none)_
 
 ## Session registry
 
@@ -15,7 +18,23 @@ is pending human input, if anything)_
 |---|---|---|---|---|---|---|
 | _(none yet)_ | | | | | | |
 
-## Open questions for the user
+## Current artifacts and handoffs
 
-_(anything currently blocking progress that needs human judgment per the
-Scientific rules in CLAUDE.md)_
+_(none)_
+
+## Accepted conclusions
+
+_(none)_
+
+## Warnings and failed approaches
+
+_(none)_
+
+## Unresolved questions
+
+_(none)_
+
+## Next action
+
+Define the scientific objective, system boundary, and validation criteria with the
+orchestrator.
