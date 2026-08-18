@@ -18,7 +18,10 @@ hooks:
       hooks:
         - type: command
           command: |
-            case "$CLAUDE_TOOL_INPUT_FILE_PATH" in
+            INPUT=$(cat)
+            FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
+
+            case "$FILE_PATH" in
               evidence/reports/*) exit 0 ;;
               *) echo "literature-reviewer may only write under evidence/reports/" >&2; exit 2 ;;
             esac

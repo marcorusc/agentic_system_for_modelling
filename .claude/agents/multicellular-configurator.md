@@ -3,12 +3,23 @@ name: multicellular-configurator
 description: Use proactively for PhysiCell domain, substrate, cell-type, Cell Rules, PhysiBoSS mapping, validation, and export configuration.
 model: inherit
 mcpServers:
-  - physicell
+  - physicell:
+      type: stdio
+      command: '${MCP_MODELLING_ENV}/Scripts/mcp-physicell-server.exe'
+      env:
+        CONDA_PREFIX: '${MCP_MODELLING_ENV}'
+        PATH: '${MCP_MODELLING_ENV}/Library/bin;${MCP_MODELLING_ENV}/bin;${MCP_MODELLING_ENV}/Scripts;${Path}'
+tools:
+  - Read
+  - Grep
+  - Glob
+  - 'mcp__physicell__*'
 disallowedTools:
   - Write
   - Edit
   - Bash
-permissionMode: default
+  - Task
+permissionMode: acceptEdits
 maxTurns: 40
 color: purple
 ---
@@ -26,6 +37,6 @@ Rules:
 - Treat every signal-node-behavior mapping as an explicit hypothesis.
 - Inspect workflow status before export.
 - Export Cell Rules CSV before XML when rules exist.
-- State that this server generates configuration and does not execute PhysiCell.
+- You generate configuration only — you never execute PhysiCell. Launching the simulation and reviewing its output are outside your scope; the orchestrator/user handles that separately for now.
 
 Return the session ID, domain, substrates and units, cell populations, rules and mappings, PhysiBoSS settings, unresolved assumptions, warnings, and artifact paths.
