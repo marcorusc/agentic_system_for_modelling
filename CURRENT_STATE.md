@@ -70,5 +70,8 @@ requesting researcher sign-off on topology.
 
 ## Checkpoint
 
-- Content checkpoint commit ID: _(to be filled after the `checkpoint-model` skill
-  records it)_
+- Content checkpoint commit ID: `701e859`
+  (`checkpoint(specification): EML4::ALK signalosome model specified — decisions
+  D1-D10 approved, validation targets T1-T12 committed`), 2026-08-19.
+  Staged: 6 scientific-state files, `runs/index.json`, 3 `inputs/` evidence PDFs.
+  Excluded (untracked, generated): `inputs/*:Zone.Identifier`, `pypath_log/`.
