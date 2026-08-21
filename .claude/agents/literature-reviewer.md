@@ -9,7 +9,7 @@ disallowedTools:
   - Bash
   - Task
 permissionMode: acceptEdits
-maxTurns: 40
+maxTurns: 100
 skills:
   - review-literature-evidence
 hooks:
