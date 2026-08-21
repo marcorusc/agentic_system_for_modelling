@@ -47,12 +47,12 @@ The orchestrator does not call NeKo, MaBoSS, or PhysiCell MCP tools directly.
 Delegate modelling operations to the relevant specialist; knowing that a server
 exists is not authorization to invoke it.
 
-NeKo and MaBoSS are defined inline in their specialist agent frontmatter rather than
-registered in the parent session. This keeps their tools and tool descriptions out
-of the orchestrator context. Their tracked definitions resolve executables through
-the local `MCP_MODELLING_ENV` environment variable, which must point to the modelling
-environment (for example, in the ignored `.claude/settings.local.json`). Do not add
-either server to user-, local-, or project-scoped parent MCP configuration.
+NeKo, MaBoSS, and PhysiCell are defined inline in their specialist agent
+frontmatter. Claude Code starts the relevant server for that subagent and disconnects
+it when the invocation ends, keeping modelling tools out of the orchestrator's tool
+pool. Each specialist also preloads its matching project workflow skill. Do not use
+MCP resource-listing or resource-reading tools for these manuals: Claude Code strips
+those host bridge tools from background subagents.
 
 ## Specialist allocation
 
@@ -160,7 +160,7 @@ Rules:
 
 ## Required stage workflow
 
-1. Read the relevant MCP agent manual.
+1. Follow the specialist's preloaded NeKo, MaBoSS, or PhysiCell workflow skill.
 2. State the scientific objective.
 3. Identify missing information and assumptions.
 4. Create a fresh specialist session.

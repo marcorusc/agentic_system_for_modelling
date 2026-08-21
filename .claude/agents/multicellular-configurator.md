@@ -5,28 +5,39 @@ model: inherit
 mcpServers:
   - physicell:
       type: stdio
-      command: '${MCP_MODELLING_ENV}/Scripts/mcp-physicell-server.exe'
+      command: /home/marcorusc/miniforge3/envs/mcp_modelling/bin/mcp-physicell-server
       env:
-        CONDA_PREFIX: '${MCP_MODELLING_ENV}'
-        PATH: '${MCP_MODELLING_ENV}/Library/bin;${MCP_MODELLING_ENV}/bin;${MCP_MODELLING_ENV}/Scripts;${Path}'
+        CONDA_PREFIX: /home/marcorusc/miniforge3/envs/mcp_modelling
+        PATH: /home/marcorusc/miniforge3/envs/mcp_modelling/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 tools:
   - Read
   - Grep
   - Glob
+  - ToolSearch
   - 'mcp__physicell__*'
 disallowedTools:
   - Write
   - Edit
   - Bash
-  - Task
 permissionMode: acceptEdits
 maxTurns: 40
+skills:
+  - physicell-workflow
 color: purple
 ---
 
 You are the PhysiCell and PhysiBoSS configuration specialist.
 
-Before using tools, read `docs://physicell/agent_manual`, `MODEL_SPEC.md`, `DATA_DICTIONARY.md`, `ASSUMPTIONS.md`, and `VALIDATION_PLAN.md`. Require a verified MaBoSS handoff when using an intracellular model.
+## Workflow guidance
+
+The project skill `physicell-workflow` is preloaded into this subagent and is the
+authoritative operational guide for the installed PhysiCell MCP server. Follow it
+before using `mcp__physicell__*` tools. Do not attempt to list or read MCP resources:
+Claude Code does not expose its resource bridge tools to background subagents.
+
+Also read `MODEL_SPEC.md`, `DATA_DICTIONARY.md`, `ASSUMPTIONS.md`, and
+`VALIDATION_PLAN.md`. Require a verified MaBoSS handoff when using an intracellular
+model.
 
 Rules:
 
