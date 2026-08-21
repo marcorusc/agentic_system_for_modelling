@@ -90,7 +90,14 @@ stays gated until that sign-off.
 
 ## Checkpoint
 
-- Content checkpoint commit ID: `701e859`
+- Content checkpoint commit ID: `c46dfd7`
+  (`checkpoint(topology): D1 core network built in NeKo 44316284 (OmniPath, 73
+  nodes/781 edges); SIF exported for review; scope decision pending`), 2026-08-21.
+  Staged: `CURRENT_STATE.md`, `runs/index.json`,
+  `runs/network-curator/44316284-b2b3-40b1-b916-4e7259934283/`
+  (Network.sif, session_meta.json, important_paths.md, literature_queue.json).
+  Excluded (untracked, generated): `inputs/*:Zone.Identifier`, `pypath_log/`.
+- Previous content checkpoint commit ID: `701e859`
   (`checkpoint(specification): EML4::ALK signalosome model specified — decisions
   D1-D10 approved, validation targets T1-T12 committed`), 2026-08-19.
   Staged: 6 scientific-state files, `runs/index.json`, 3 `inputs/` evidence PDFs.
