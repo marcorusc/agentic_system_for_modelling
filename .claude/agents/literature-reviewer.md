@@ -4,6 +4,12 @@ description: Use proactively to review PubMed evidence for network edges, mechan
 model: inherit
 mcpServers:
   - pubmed  # must match your configured PubMed MCP server name
+tools: 
+  - Read
+  - Grep
+  - Glob
+  - ToolSearch
+  - 'mcp__pubmed__*'
 disallowedTools:
   - Edit
   - Bash
