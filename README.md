@@ -37,30 +37,31 @@ Four specialist agents are currently included:
 | `network-curator` | Construct, inspect, curate, compare, and export NeKo networks | Inline NeKo server only |
 | `literature-reviewer` | Review evidence for edges and assumptions and write edge reports | Configured `pubmed` server |
 | `boolean-dynamics-modeler` | Import NeKo handoffs, run MaBoSS analyses, mutations, and bounded rule refinement | Inline MaBoSS server only |
-| `multicellular-configurator` | Configure PhysiCell/PhysiBoSS domains, cells, substrates, rules, and mappings | Configured `physicell` server |
+| `multicellular-configurator` | Configure PhysiCell/PhysiBoSS domains, cells, substrates, rules, and mappings | Inline PhysiCell server only |
 
 The architecture also describes an independent scientific reviewer and a
 reproducibility auditor. Their agent definitions are not yet included. Consequently,
 the `/validate-stage` skill describes the intended validation workflow but cannot
 complete it until those two agents are implemented.
 
-The literature and PhysiCell agents also require locally configured MCP servers.
-Their availability depends on your installation.
+The three modelling specialists start isolated inline MCP servers. The literature
+specialist still requires a configured literature server. Availability depends on
+your local installation.
 
 ## Prerequisites
 
 - Git
 - Python 3
 - Claude Code with custom agents and skills enabled
-- A modelling environment containing the NeKo and MaBoSS MCP executables
-- Optional PubMed and PhysiCell MCP servers for their respective stages
+- A modelling environment containing the NeKo, MaBoSS, and PhysiCell MCP executables
+- An optional PubMed MCP server for literature review
 
-The tracked NeKo and MaBoSS agent definitions currently expect a Windows modelling
-environment containing:
+The inline NeKo, MaBoSS, and PhysiCell commands must point to executables installed
+in the modelling environment. Typical locations are:
 
 ```text
-<MCP_MODELLING_ENV>/Scripts/mcp-neko-server.exe
-<MCP_MODELLING_ENV>/Scripts/mcp-maboss-server.exe
+<MODELLING_ENV>/bin/mcp-neko-server              # Linux/macOS
+<MODELLING_ENV>/Scripts/mcp-neko-server.exe      # Windows
 ```
 
 The agents inherit whichever model is running the main Claude Code session. The
@@ -76,24 +77,26 @@ not required by the repository structure.
    cd my-biological-model
    ```
 
-2. Create the ignored file `.claude/settings.local.json` and point
-   `MCP_MODELLING_ENV` at your local modelling environment:
+2. Edit the inline `command`, `CONDA_PREFIX`, and `PATH` values in these files so
+   they point to your modelling environment:
 
-   ```json
-   {
-     "env": {
-       "MCP_MODELLING_ENV": "C:\\path\\to\\modelling-environment"
-     }
-   }
-   ```
+   - `.claude/agents/network-curator.md`
+   - `.claude/agents/boolean-dynamics-modeler.md`
+   - `.claude/agents/multicellular-configurator.md`
 
-3. Configure external MCP servers named `pubmed` and `physicell` if those stages
-   will be used. The names must match the agent definitions.
+   The tracked values are the paths for the current Linux/WSL workstation. On
+   another machine, use `<env>/bin/mcp-…-server` on Linux/macOS or
+   `<env>/Scripts/mcp-…-server.exe` on Windows. Do not put `${...}` placeholders in
+   `command`; inline command values are executed directly rather than by a shell.
+
+3. Configure an external MCP server named `pubmed` if literature review will be
+   used. The name must match the agent definition.
 
 4. Start Claude Code from the repository root.
 
 5. Run `/agents` and confirm the four tracked agents are visible. Run `/mcp` to
-   check the external PubMed and PhysiCell connections.
+   check the optional PubMed connection. The three modelling servers are scoped to
+   their subagents and start only when those agents run.
 
 6. Ask the orchestrator to help populate the scientific-state files. If you have
    experimental data, place the original inputs under `inputs/` and describe their
@@ -102,11 +105,10 @@ not required by the repository structure.
 7. Commit the initial project and lifecycle infrastructure before using archive,
    restart, or restore commands.
 
-NeKo and MaBoSS are intentionally defined inside their specialist agents. Do not
-register them as parent-session MCP servers: the orchestrator knows those services
-exist but delegates their operations instead of calling them directly. Permission
-entries in `.claude/settings.json` suppress repeated prompts; they do not grant an
-agent access to a server that is absent from that agent's `mcpServers` definition.
+The modelling specialists define their servers inline, restrict their callable
+toolsets, and preload versioned workflow skills from `.claude/skills/`. This avoids
+Claude Code's unavailable MCP-resource bridge in background subagents and prevents
+the orchestrator from receiving the modelling MCP tools.
 
 ## Repository state files
 
@@ -372,18 +374,18 @@ produced every downstream handoff.
 Run `/agents`. Ensure its Markdown file exists under `.claude/agents/` and restart
 Claude Code if the repository configuration was changed after launch.
 
-### NeKo or MaBoSS does not start
+### NeKo, MaBoSS, or PhysiCell does not start
 
-Check `MCP_MODELLING_ENV` in `.claude/settings.local.json` and confirm the expected
-executables exist under its `Scripts/` directory. These servers are scoped to their
-specialist agents and therefore may not appear as callable tools in the main
-orchestrator context.
+Inspect the inline `command`, `CONDA_PREFIX`, and `PATH` values in the corresponding
+file under `.claude/agents/`. Confirm that the executable exists and that the
+installed `mcp-biomodelling-servers` version matches the workflow-skill snapshot.
+Restart Claude Code after changing an inline server command or upgrading the
+environment.
 
-### PubMed or PhysiCell is unavailable
+### PubMed is unavailable
 
-Run `/mcp` and confirm servers with the exact names `pubmed` and `physicell` are
-configured. Their source repositories and release processes are external to this
-template.
+Run `/mcp` and confirm a server with the exact name `pubmed` is configured. Its
+source repository and release process are external to this template.
 
 ### A lifecycle command refuses to run
 
