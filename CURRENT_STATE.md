@@ -24,17 +24,31 @@ testable predictions.
   `DECISIONS.md`, assumptions A1–A8 in `ASSUMPTIONS.md`, committed targets T1–T12 in
   `VALIDATION_PLAN.md`, and provenance/aliases/quantitative anchors in
   `DATA_DICTIONARY.md`.
+- 2026-08-21: Topology stage — `network-curator` built the D1 core network in
+  fresh NeKo session `44316284-b2b3-40b1-b916-4e7259934283` on **OmniPath** (D8)
+  with policy `max_len=2`, `path_policy='one_shortest'`,
+  `reuse_policy='discovered_paths'`, `only_signed=True`, `consensus=True`:
+  **73 nodes, 781 edges** (735 signed stim/inhib, 46 `bimodal`, 0 `undefined`).
+  H1/H2a/H2b (JAK-STAT) and ERBB/EGFR bypass scaffolds are DB-supported
+  (`important_paths.md`); H1–H8 rule wiring, drugs, variant gates, and fate are
+  not representable as NeKo edges (Boolean-layer work). NeKo history: state 0
+  (initial) → state 1 (`complete_connection`), state_count=2. SIF exported for
+  review; BNET/MaBoSS handoff NOT exported (gated on researcher sign-off).
 
 ## Session registry
 
 | Specialist | Session ID | Stage | Status | Derived from | Handoff | Artifacts |
 |---|---|---|---|---|---|---|
-| _(none yet — NeKo session to be created)_ | | | | | | |
+| network-curator | `44316284-b2b3-40b1-b916-4e7259934283` | topology | active | — | pending | `runs/network-curator/44316284-b2b3-40b1-b916-4e7259934283/` |
 
 ## Current artifacts and handoffs
 
 - `inputs/`: 3 evidence papers + their `:Zone.Identifier` metadata.
-- `runs/`: none yet (no NeKo session).
+- `runs/network-curator/44316284-b2b3-40b1-b916-4e7259934283/`: `Network.sif`
+  (73 nodes / 781 edges, per-edge PMID provenance), `session_meta.json`,
+  `important_paths.md`, `literature_queue.json` (P1: 325 unannotated edges;
+  P2: 46 `bimodal` + 7 hypothesis-specific; P3: 3 Boolean-layer wirings);
+  sha256 hashes recorded in `runs/index.json`.
 - `evidence/`: no reports yet (literature-reviewer pass pending after topology build).
 
 ## Accepted conclusions
@@ -50,6 +64,11 @@ _(none yet — no model has been run.)_
 - Hexanediol (ref 2) vs SHP2i (user paper) give opposite results for V3
   condensate→signalling coupling; resolved in favour of the user's own paper (D2/A2),
   re-test at dynamics stage via T4/T5.
+- **Topology gaps (2026-08-21, session `44316284-…`):** `IFIT1` (T6/T7) and
+  `NAMPT` (H7) are isolated in the substrate (`STAT1→IFIT1`, `ALK→NAMPT` absent
+  from OmniPath) — wire at the Boolean layer. 46 `bimodal` edges have ambiguous
+  direction; 325 of 781 edges lack PMID provenance (queue: `literature_queue.json`).
+  ERK1 is stored as `MAPK3`, ERK2 as `MAPK1` (alias quirk — nodes present).
 
 ## Unresolved questions
 
@@ -62,11 +81,12 @@ _(none yet — no model has been run.)_
 
 ## Next action
 
-Create a fresh `network-curator` NeKo session (**OmniPath** per D8), build the
-approved D1 core network (~29 nodes) with the H1–H8 wiring, export a SIF for review
-(BNET/MaBoSS handoff stays gated), then run the `literature-reviewer` over the
-contested edges (variant-conditional wiring, TKI→bypass, decoupling) before
-requesting researcher sign-off on topology.
+Researcher decision on the built 73-node substrate: (a) keep as-is, (b) prune to
+the D1 core, or (c) rebuild with `max_len=1`; plus approve/defer removal of the
+46 `bimodal` edges and acknowledge IFIT1/NAMPT/H1–H8 as Boolean-layer wiring.
+Then `literature-reviewer` over the P1/P2 queue (unannotated provenance,
+contested edges) before requesting sign-off on the SIF. BNET/MaBoSS handoff
+stays gated until that sign-off.
 
 ## Checkpoint
 
