@@ -22,7 +22,7 @@ disallowedTools:
   - mcp__neko__delete_session
   - mcp__neko__clean_generated_files
 permissionMode: acceptEdits
-maxTurns: 35
+maxTurns: 105
 skills:
   - neko-workflow
 color: green

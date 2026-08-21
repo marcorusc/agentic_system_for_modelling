@@ -20,7 +20,7 @@ disallowedTools:
   - Edit
   - Bash
 permissionMode: acceptEdits
-maxTurns: 40
+maxTurns: 100
 skills:
   - physicell-workflow
 color: purple
