@@ -335,7 +335,7 @@ flowchart LR
 ### NeKo network curator
 
 - MCP access: NeKo only
-- reads `docs://neko/agent_manual`
+- preloads the project `neko-workflow` skill
 - creates one session per hypothesis
 - builds and curates signalling networks
 - inspects evidence and topology
@@ -347,7 +347,7 @@ flowchart LR
 ### MaBoSS Boolean-dynamics modeler
 
 - MCP access: MaBoSS only
-- reads `docs://maboss/agent_manual`
+- preloads the project `maboss-workflow` skill
 - imports the verified NeKo handoff
 - inspects exact Boolean node names
 - selects biologically meaningful output nodes
@@ -359,7 +359,7 @@ flowchart LR
 ### PhysiCell multicellular configurator
 
 - MCP access: PhysiCell only
-- reads `docs://physicell/agent_manual`
+- preloads the project `physicell-workflow` skill
 - imports the verified MaBoSS handoff
 - defines domains, substrates, cell types, and rules
 - makes every signal-node-behavior mapping explicit
@@ -444,9 +444,9 @@ Before `/compact` or `/clear`, invoke the checkpoint skill.
 
 | Agent | Recommended mode |
 |---|---|
-| NeKo | foreground |
-| MaBoSS | foreground |
-| PhysiCell | foreground |
+| NeKo | background-compatible; keep topology mutations sequential |
+| MaBoSS | background-compatible; parallel only with separate hypotheses |
+| PhysiCell | background-compatible; parallel only with separate configurations |
 | Literature reviewer | background when independent |
 | Scientific reviewer | background after artifacts exist |
 | Reproducibility auditor | background after checkpoint |
@@ -457,9 +457,18 @@ Do not enable `OLLAMA_NUM_PARALLEL=2` without realistic long-context testing and
 
 ## 11. MCP allocation
 
-Simplest arrangement: keep MCP servers configured for the project and restrict each subagent with `mcpServers`.
+The implemented arrangement defines NeKo, MaBoSS, and PhysiCell inline in their
+specialist agent frontmatter, then narrows callable operations with `tools` and
+`disallowedTools`. Claude Code connects an inline server when the subagent starts and
+disconnects it when that invocation finishes; the main orchestrator does not receive
+its modelling tools.
 
-Stronger isolation: define the relevant MCP server inline in each project subagent so the main orchestrator cannot invoke it. Adopt this only after the simple configuration is stable on Windows and macOS.
+Each modelling specialist preloads a versioned workflow skill from `.claude/skills/`.
+This replaces MCP-resource manuals because Claude Code background subagents retain
+MCP tools and `ToolSearch` but not the host resource-listing/resource-reading bridge.
+Command values are not a shell and must not rely on `${...}` expansion. Use a tested,
+platform-appropriate executable path or launcher, and refresh the matching workflow
+skill when the MCP server package changes.
 
 ## 12. Failure rules
 
@@ -470,7 +479,7 @@ Stronger isolation: define the relevant MCP server inline in each project subage
 - never equate successful execution with scientific validity
 - never delete artifacts without approval
 - checkpoint partial results when an agent reaches its turn limit
-- retry background tasks in the foreground if permissions are needed
+- surface and resolve any background-agent permission prompt in the main session
 - reduce background work if the Ollama queue overloads
 
 ## 13. Implementation order
@@ -492,7 +501,7 @@ Stronger isolation: define the relevant MCP server inline in each project subage
 
 - Claude Code subagents: https://code.claude.com/docs/en/sub-agents
 - Claude Code project memory and CLAUDE.md: https://code.claude.com/docs/en/memory
-- Claude Code skills: https://code.claude.com/docs/en/slash-commands
+- Claude Code skills: https://code.claude.com/docs/en/skills
 - Claude Code hooks: https://code.claude.com/docs/en/hooks
 - Claude Code sessions: https://code.claude.com/docs/en/sessions
 - Ollama concurrency: https://docs.ollama.com/faq
