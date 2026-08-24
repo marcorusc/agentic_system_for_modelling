@@ -1,5 +1,8 @@
 {
   "schema_version": 1,
+  "model_branch_prefixes": [
+    "model/"
+  ],
   "state_roots": [
     "MODEL_SPEC.md",
     "ASSUMPTIONS.md",

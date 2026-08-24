@@ -217,7 +217,9 @@ At each stage transition, update the state files and invoke:
 
 This skill checks provenance, stages only relevant paths, creates a local commit,
 and records the content-checkpoint commit in `CURRENT_STATE.md`. Use it before
-`/compact`, `/clear`, or ending an important working session.
+`/compact`, `/clear`, or ending an important working session. Checkpoints are
+allowed only on a dedicated local branch named `model/<name>`; the skill reports
+the current branch and refuses to commit on `main` or a detached HEAD.
 
 ## Available skills and commands
 
@@ -336,7 +338,9 @@ There are two complementary forms of history:
 
 Lifecycle operations use linear commits and annotated tags. They do not create or
 switch branches, rewrite history, delete artifacts, or push to a remote. Everything
-remains local unless you explicitly use Git to publish it.
+remains local unless you explicitly use Git to publish it. Mutating lifecycle
+commands require a dedicated branch named `model/<name>` and fail before staging
+anything when run on a development branch or detached HEAD.
 
 If remote backup is appropriate, first review the repository for sensitive or large
 biological data, then explicitly push commits and tags according to your project's

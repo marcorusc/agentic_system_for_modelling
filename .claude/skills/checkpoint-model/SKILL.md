@@ -15,15 +15,18 @@ Coordinate the main session to:
 6. Update `CURRENT_STATE.md`.
 7. Append accepted and rejected choices to `DECISIONS.md`.
 8. Update `runs/index.json`.
-9. Inspect `git status` and the relevant diffs. Exclude unrelated pre-existing
+9. Run `git branch --show-current` before staging. Report the result. If it is
+   empty or does not start with `model/`, do not commit; ask the user to create or
+   switch to a dedicated local model branch. Never switch branches in this skill.
+10. Inspect `git status` and the relevant diffs. Exclude unrelated pre-existing
    changes, secrets, caches, and generated files.
-10. If durable state is complete and validation has passed, stage explicit
+11. If durable state is complete and validation has passed, stage explicit
     task-relevant paths and create one local commit named
     `checkpoint(<stage>): <scientific state>`.
-11. Record the content-checkpoint commit ID in `CURRENT_STATE.md` with one follow-up
+12. Record the content-checkpoint commit ID in `CURRENT_STATE.md` with one follow-up
     commit named `checkpoint(<stage>): record checkpoint`. Do not try to record that
     metadata commit's own ID inside itself.
-12. Report missing provenance, unresolved biological decisions, the files committed,
+13. Report missing provenance, unresolved biological decisions, the files committed,
     and the resulting commit ID or the reason no commit was created.
 
 Do not push, pull, fetch, switch branches, rebase, amend, create tags or remotes,

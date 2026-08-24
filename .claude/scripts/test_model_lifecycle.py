@@ -36,6 +36,17 @@ class ModelLifecycleTest(unittest.TestCase):
         )
         return result.stdout
 
+    def lifecycle_result(
+        self, root: Path, *arguments: str
+    ) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            [sys.executable, ".claude/scripts/model_lifecycle.py", *arguments],
+            cwd=root,
+            check=False,
+            text=True,
+            capture_output=True,
+        )
+
     def make_repository(self, root: Path) -> None:
         (root / ".claude" / "scripts").mkdir(parents=True)
         (root / ".model" / "manifests").mkdir(parents=True)
@@ -64,6 +75,27 @@ class ModelLifecycleTest(unittest.TestCase):
         self.git(root, "config", "core.autocrlf", "false")
         self.git(root, "add", "-A")
         self.git(root, "commit", "-m", "test: initialize model repository")
+        self.git(root, "branch", "-M", "main")
+        self.git(root, "switch", "-c", "model/lifecycle-test")
+
+    def test_mutating_commands_require_a_named_model_branch(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="model-lifecycle-branch-test-") as temporary:
+            root = Path(temporary)
+            self.make_repository(root)
+            initial_commit = self.git(root, "rev-parse", "HEAD")
+
+            self.git(root, "switch", "main")
+            result = self.lifecycle_result(root, "archive", "wrong branch")
+            self.assertEqual(result.returncode, 2)
+            self.assertIn("Current branch: main", result.stderr)
+            self.assertEqual(self.git(root, "rev-parse", "HEAD"), initial_commit)
+            self.assertEqual(self.git(root, "tag", "--list", "model/*"), "")
+
+            self.git(root, "switch", "--detach")
+            result = self.lifecycle_result(root, "archive", "detached head")
+            self.assertEqual(result.returncode, 2)
+            self.assertIn("HEAD is detached", result.stderr)
+            self.assertEqual(self.git(root, "rev-parse", "HEAD"), initial_commit)
 
     def test_archive_restart_restore_round_trip(self) -> None:
         with tempfile.TemporaryDirectory(prefix="model-lifecycle-test-") as temporary:

@@ -185,6 +185,11 @@ above. Invoke the `checkpoint-model` skill at stage transitions and before
 `/compact`, `/clear`, or session exit.
 
 - Inspect `git status` and the relevant diffs before staging anything.
+- Before staging, run `git branch --show-current` and report it. Model checkpoints
+  must be created on a dedicated local branch whose name starts with `model/`. If
+  the result is empty or names any other branch, do not commit and ask the user to
+  create or switch branches; the checkpoint workflow must never switch branches
+  itself.
 - Update and validate the durable scientific state before creating the checkpoint.
 - Stage explicit task-relevant paths only. Never sweep unrelated pre-existing user
   changes, secrets, caches, or generated files into a checkpoint.

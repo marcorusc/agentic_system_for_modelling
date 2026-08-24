@@ -100,6 +100,16 @@ def load_config(root: Path) -> dict[str, Any]:
     config = load_json(root / ".model" / "config.json")
     if config.get("schema_version") != 1:
         raise LifecycleError("Unsupported .model/config.json schema version.")
+    branch_prefixes = config.get("model_branch_prefixes")
+    if (
+        not isinstance(branch_prefixes, list)
+        or not branch_prefixes
+        or not all(isinstance(prefix, str) and prefix for prefix in branch_prefixes)
+    ):
+        raise LifecycleError(
+            ".model/config.json field 'model_branch_prefixes' must be a non-empty "
+            "string list."
+        )
     for key in (
         "state_roots",
         "state_directories",
@@ -164,6 +174,31 @@ def ensure_git_identity(root: Path) -> None:
         )
 
 
+def ensure_model_branch(root: Path, config: dict[str, Any]) -> str:
+    result = run_git(
+        root,
+        "symbolic-ref",
+        "--quiet",
+        "--short",
+        "HEAD",
+        check=False,
+    )
+    if result.returncode != 0:
+        raise LifecycleError(
+            "Model commits require a named model branch; HEAD is detached. Switch to "
+            "a dedicated model branch before running a mutating lifecycle command."
+        )
+    branch = result.stdout.strip()
+    prefixes = config["model_branch_prefixes"]
+    if not any(branch.startswith(prefix) for prefix in prefixes):
+        expected = ", ".join(f"{prefix}<name>" for prefix in prefixes)
+        raise LifecycleError(
+            f"Model commits are not allowed on branch {branch!r}. Current branch: {branch}. "
+            f"Switch to a dedicated model branch ({expected}) first."
+        )
+    return branch
+
+
 def ensure_infrastructure_committed(root: Path, config: dict[str, Any]) -> None:
     paths = config["lifecycle_infrastructure"]
     for relative in paths:
@@ -221,6 +256,7 @@ def ensure_no_state_symlinks(root: Path, roots: list[str]) -> None:
 def preflight(root: Path, config: dict[str, Any]) -> None:
     ensure_no_git_operation(root)
     ensure_index_clean(root)
+    ensure_model_branch(root, config)
     ensure_git_identity(root)
     ensure_infrastructure_committed(root, config)
     roots = state_roots(config)
