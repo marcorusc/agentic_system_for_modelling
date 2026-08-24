@@ -88,6 +88,15 @@ those host bridge tools from background subagents.
   databases — is a consequential decision and requires human approval per the
   Scientific rules above, regardless of whether the review that informed it was
   user-directed or autonomous.
+  - When invoking `literature-reviewer`, extract the exact edge subset to review
+  from `literature_queue.json` yourself and inline it as literal
+  `[source, effect, target]` triples in the Task prompt. Never instruct
+  `literature-reviewer` to open `literature_queue.json` itself — the sub-agent
+  only ever needs the specific slice already selected for that invocation.
+- Point `literature-reviewer` at the relevant SIF file for PMID/provenance
+  lookups by Grep only (source/target scoped to each edge), never a full
+  `Read` — codify this explicitly rather than relying on the prompt happening
+  to get it right each time.
 
 ## Model refinement discipline
 
@@ -176,6 +185,9 @@ Rules:
 - Use subagents for large searches, tool output, and specialist exploration.
 - Do not paste full datasets, complete logs, or large result tables into chat.
 - Before `/compact` or `/clear`, invoke the checkpoint skill.
+- This applies to subagent delegation prompts as well as main chat: extract and
+  inline only the relevant subset of a large source-of-truth file, rather than
+  telling a specialist to read the full file itself.
 
 ## Local Git checkpoints
 
