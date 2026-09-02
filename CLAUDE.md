@@ -88,7 +88,7 @@ those host bridge tools from background subagents.
   databases — is a consequential decision and requires human approval per the
   Scientific rules above, regardless of whether the review that informed it was
   user-directed or autonomous.
-  - When invoking `literature-reviewer`, extract the exact edge subset to review
+- When invoking `literature-reviewer`, extract the exact edge subset to review
   from `literature_queue.json` yourself and inline it as literal
   `[source, effect, target]` triples in the Task prompt. Never instruct
   `literature-reviewer` to open `literature_queue.json` itself — the sub-agent
@@ -97,6 +97,17 @@ those host bridge tools from background subagents.
   lookups by Grep only (source/target scoped to each edge), never a full
   `Read` — codify this explicitly rather than relying on the prompt happening
   to get it right each time.
+- Dispatch in bounded slices: one `literature-reviewer` invocation reviews at
+  most one coherent edge cluster (≤ ~13 edges) — never the whole queue in a
+  single agent. Split a large queue into per-cluster dispatches; include the
+  cluster's SIF-provided reference PMIDs inline in the prompt.
+- Concurrency: run at most 2 `literature-reviewer` agents at a time (PubMed
+  rate limits + backend stability); launch the next slice only after a running
+  one reports back.
+- Recovery: after any failed/stopped reviewer run, check
+  `evidence/reports/{neko_session_id}/` for already-written edge reports and
+  re-dispatch only the missing edges — never re-review edges that already have
+  a report file (unless explicitly re-requested).
 
 ## Model refinement discipline
 

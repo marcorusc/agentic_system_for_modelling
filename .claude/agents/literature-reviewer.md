@@ -17,6 +17,7 @@ tools:
   - 'mcp__pubmed__find_related_articles'
 disallowedTools:
   - Edit
+  - Bash
   - Task
 permissionMode: acceptEdits
 maxTurns: 100
@@ -24,31 +25,12 @@ skills:
   - review-literature-evidence
 hooks:
   PreToolUse:
-    - matcher: "Write"
+    - matcher: "Read|Write"
       hooks:
         - type: command
-          command: |
-            INPUT=$(cat)
-            FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
-
-            case "$FILE_PATH" in
-              */evidence/reports/*) exit 0 ;;
-              *) echo "literature-reviewer may only write under evidence/reports/" >&2; exit 2 ;;
-            esac
-    - matcher: "Read"
-      hooks:
-        - type: command
-          command: |
-            INPUT=$(cat)
-            FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
-
-            case "$FILE_PATH" in
-              */literature_queue.json|*.sif)
-                echo "literature-reviewer must not Read literature_queue.json or .sif files in full — use Grep to pull specific edge lines instead" >&2
-                exit 2
-                ;;
-              *) exit 0 ;;
-            esac
+          command: python
+          args:
+            - "${CLAUDE_PROJECT_DIR}/.claude/scripts/literature_file_guard.py"
 color: yellow
 ---
 
@@ -126,6 +108,9 @@ this edge was reviewed under an earlier session (e.g. topology was later revised
 this write is a new, separate file under the current `neko_session_id`, not a
 replacement.
 
+The preloaded JSON-compatible evidence matrix is an analysis checklist. It does not
+replace this Markdown report, and you must not persist it as a separate artifact.
+
 ## Edge: {A} -> {B}
 
 **Verdict:** supported | contradicted | context-dependent | insufficient evidence
@@ -147,8 +132,14 @@ replacement.
 ### Open questions for researcher judgment
 - [anything you cannot resolve from available text]
 
-After writing each report, do not repeat its full content in your final chat response.
-Instead, return one short line per edge:
+After every Write, Read the exact report path back and confirm that it exists and
+contains the required headings, verdict, confidence, and cited PMIDs/DOIs. Do not
+claim that a report was completed unless this read-back succeeds. If writing or
+verification fails, return `Edge {A}->{B}: incomplete — {actual tool error}` and do
+not emit a `Full report` pointer for that edge.
+
+After writing and verifying each report, do not repeat its full content in your final
+chat response. Instead, return one short line per completed edge:
 
 Edge {A}->{B}: verdict=..., confidence=...
 Full report: evidence/reports/{neko_session_id}/{A}__{B}.md

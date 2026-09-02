@@ -181,6 +181,12 @@ written to:
 evidence/reports/<neko_session_id>/<source>__<target>.md
 ```
 
+The reviewer has deliberately constrained write access: it can create report files
+under `evidence/reports/`, but it cannot write elsewhere in the project or edit
+model state, decisions, topology artifacts, or shared manifests. A path guard
+validates every Read and Write call, creates the report's parent directory when
+needed, and rejects traversal or symlink escapes from the report directory.
+
 The reviewer separates evidence for interaction existence, direction, sign,
 directness, and biological context. Gathering evidence may happen autonomously;
 changing the topology based on that evidence still requires researcher approval.
@@ -385,6 +391,35 @@ file under `.claude/agents/`. Confirm that the executable exists and that the
 installed `mcp-biomodelling-servers` version matches the workflow-skill snapshot.
 Restart Claude Code after changing an inline server command or upgrading the
 environment.
+
+### A literature reviewer report write is rejected
+
+The reviewer is allowed to write Markdown evidence reports below
+`evidence/reports/`; it is not a globally read-only agent. It uses
+`.claude/scripts/literature_file_guard.py` to enforce that boundary and does not
+require `jq`. The guard also creates a validated report's parent directory before
+the Write runs.
+
+Read the guard's error message first:
+
+- `Write is allowed only below .../evidence/reports` means the agent generated an
+  incorrect or unsafe output path. Confirm that the task includes the correct
+  `neko_session_id` and that the requested path follows the report layout.
+- `do not Read literature_queue.json or .sif files in full` means the reviewer must
+  use Grep for the relevant edge lines, as required by its definition.
+- `invalid hook JSON input`, a missing field, or a directory-creation error indicates
+  a hook/runtime problem rather than a PubMed failure.
+
+Confirm that `python` is available in the environment used to launch Claude Code,
+then run the focused regression tests:
+
+```powershell
+python .claude/scripts/test_literature_file_guard.py -v
+```
+
+For full hook diagnostics, launch Claude Code with
+`claude --debug-file claude-debug.log`, reproduce the failed reviewer call, and
+inspect the matching `PreToolUse:Read` or `PreToolUse:Write` entry.
 
 ### PubMed is unavailable
 
