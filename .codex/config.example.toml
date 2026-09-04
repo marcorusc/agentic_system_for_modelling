@@ -1,0 +1,16 @@
+# Project orchestrator configuration. The checked-in `.codex/config.toml` uses
+# these fail-closed values. Do not put local MCP commands, credentials, or WSL
+# paths here; use the ignored user-local specialist profiles described in
+# `.codex/profiles/README.md`.
+
+[mcp_servers.neko]
+command = "__orchestrator_disabled_neko__"
+enabled = false
+
+[mcp_servers.maboss]
+command = "__orchestrator_disabled_maboss__"
+enabled = false
+
+[mcp_servers.physicell]
+command = "__orchestrator_disabled_physicell__"
+enabled = false

@@ -1,0 +1,24 @@
+sandbox_mode = "read-only"
+approval_policy = "on-request"
+developer_instructions = """
+Act only as network_curator. Follow the repository AGENTS.md. Do not spawn other agents, advance the global stage, or write shared source-of-truth files. Before any MCP call, verify that NeKo is visible and MaBoSS and PhysiCell are absent; otherwise return a typed blocked handoff. Never delete sessions or clean artifacts. Return the complete typed handoff to the orchestrator.
+"""
+
+[mcp_servers.neko]
+command = "__replace_with_local_neko_command__"
+enabled = true
+required = true
+default_tools_approval_mode = "writes"
+disabled_tools = ["delete_session", "clean_generated_files"]
+
+[mcp_servers.maboss]
+command = "__disabled_maboss__"
+enabled = false
+
+[mcp_servers.physicell]
+command = "__disabled_physicell__"
+enabled = false
+
+[mcp_servers.pubmed]
+command = "__disabled_pubmed__"
+enabled = false
