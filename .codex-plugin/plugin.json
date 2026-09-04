@@ -1,0 +1,24 @@
+{
+  "name": "agentic-system-for-modelling",
+  "version": "0.1.0+codex.20260904022755",
+  "description": "Governed local biological-modelling workflows with isolated specialist processes.",
+  "author": {
+    "name": "agentic_system_for_modelling contributors"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Agentic Biological Modelling",
+    "shortDescription": "Governed NeKo, MaBoSS, and PhysiCell workflows.",
+    "longDescription": "Coordinates evidence, approvals, typed handoffs, and separately launched local modelling specialists without bundling MCP transports.",
+    "developerName": "agentic_system_for_modelling contributors",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Inspect the durable model state and recommend the next permitted stage.",
+      "Validate the current modelling stage without advancing it."
+    ]
+  }
+}

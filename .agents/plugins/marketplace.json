@@ -1,0 +1,20 @@
+{
+  "name": "agentic-modelling-local",
+  "interface": {
+    "displayName": "Agentic Modelling (Local)"
+  },
+  "plugins": [
+    {
+      "name": "agentic-system-for-modelling",
+      "source": {
+        "source": "local",
+        "path": "./"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}
