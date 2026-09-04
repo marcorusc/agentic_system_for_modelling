@@ -1,3 +1,6 @@
 .claude/settings.local.json
+.codex/agents/*.toml
+.codex/launcher.local.json
+.codex/tasks/
 __pycache__/
 *.pyc
