@@ -36,6 +36,7 @@ REQUIRED_FILES = (
     ".codex-plugin/plugin.json",
     ".claude/scripts/model_lifecycle.py",
     "scripts/codex/run_specialist.py",
+    "scripts/codex/cleanup_tasks.py",
     "scripts/codex/validate_handoff.py",
     "scripts/codex/write_literature_report.py",
 )

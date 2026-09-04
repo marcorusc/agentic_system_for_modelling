@@ -70,6 +70,8 @@ class StaticConfigurationTests(unittest.TestCase):
         ignore = (ROOT / ".gitignore").read_text(encoding="utf-8")
         self.assertIn(".codex/launcher.local.json", ignore)
         self.assertIn(".codex/agents/*.toml", ignore)
+        self.assertIn(".codex-tasks/", ignore)
+        self.assertIn(".codex-task-*.txt", ignore)
         example = json.loads(
             (ROOT / ".codex/launcher.example.json").read_text(encoding="utf-8")
         )
@@ -110,6 +112,11 @@ class GovernanceConfigurationTests(unittest.TestCase):
         self.assertIn("Create a fresh specialist session", policy)
         self.assertIn("resolve the relevant active session from its registry rather than chat context", policy)
         self.assertIn("reconstruct runtime state from approved handoffs", policy)
+
+    def test_checkpoint_cleans_only_verified_task_prompts(self) -> None:
+        skill = (ROOT / "skills/checkpoint-model/SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("scripts/codex/cleanup_tasks.py", skill)
+        self.assertIn("Preserve and report every `unmatched` prompt", skill)
 
 
 if __name__ == "__main__":

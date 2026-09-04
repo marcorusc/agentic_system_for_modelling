@@ -30,12 +30,13 @@ Act as the sole scientific coordinator. Read `AGENTS.md` and reconstruct state f
 2. Verify upstream handoff status and every required researcher approval.
 3. Select exactly one matching specialist. Parallelize only independent read-only
    literature slices, at most two.
-4. Write the bounded task to an ignored `.codex/tasks/<invocation>.txt` file. Include
+4. Write the bounded task to an ignored `.codex-tasks/<invocation>.txt` file. The
+   `.codex/` configuration directory may be read-only in Codex sandboxes. Include
    literal identifiers, exact lineage, authorized mutations, required policies,
    artifact expectations, and unresolved decisions. Do not interpolate task text
    into a shell command.
 5. From WSL/VS Code, invoke `python scripts/codex/run_specialist.py <specialist>
-   --prompt-file .codex/tasks/<invocation>.txt`, adding `--record-session-id` for an
+   --prompt-file .codex-tasks/<invocation>.txt`, adding `--record-session-id` for an
    existing or upstream session. For Windows, use the same entry point with
    `--transport wsl`; it reads ignored `.codex/launcher.local.json`.
 6. Wait for the process and propagate failure. Treat nonzero exit, unsafe MCP
@@ -50,6 +51,11 @@ Act as the sole scientific coordinator. Read `AGENTS.md` and reconstruct state f
    incomplete and must not be cited as an artifact.
 9. Request researcher approval at every gate. Only then update shared sources of
    truth and advance a stage.
+
+The launcher deletes a recognized task source only after its prompt hash and stored
+invocation `task.txt` match. If it reports that a source was retained, preserve the
+file and include it in the next `scripts/codex/cleanup_tasks.py` preview; never
+delete an unmatched prompt manually during orchestration.
 
 Follow the detailed domain skill when formulating a NeKo, literature, MaBoSS, or
 PhysiCell task. Use `$validate-stage` before a transition and `$checkpoint-model`

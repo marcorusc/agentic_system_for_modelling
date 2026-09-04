@@ -20,11 +20,13 @@ from pathlib import Path, PurePosixPath
 from typing import Any, Callable, NamedTuple, TextIO
 
 try:
+    from scripts.codex.cleanup_tasks import consume_recorded_task
     from scripts.codex.validate_handoff import (
         HandoffValidationError,
         validate_handoff,
     )
 except ModuleNotFoundError:  # Direct execution adds scripts/codex, not repo root.
+    from cleanup_tasks import consume_recorded_task
     from validate_handoff import HandoffValidationError, validate_handoff
 
 
@@ -470,12 +472,7 @@ def validate_session_id(session_id: str) -> str:
     return session_id
 
 
-def load_prompt(prompt: str | None, prompt_file: str | None) -> str:
-    if prompt is not None:
-        return prompt
-    if prompt_file is None:
-        raise ValueError("provide --prompt or --prompt-file")
-
+def resolve_prompt_file(prompt_file: str) -> Path:
     path = Path(prompt_file)
     if not path.is_absolute():
         path = PROJECT_ROOT / path
@@ -484,7 +481,36 @@ def load_prompt(prompt: str | None, prompt_file: str | None) -> str:
         path.relative_to(PROJECT_ROOT)
     except ValueError as exc:
         raise ValueError("prompt files must be inside the project") from exc
-    return path.read_text(encoding="utf-8")
+    return path
+
+
+def load_prompt(prompt: str | None, prompt_file: str | None) -> str:
+    if prompt is not None:
+        return prompt
+    if prompt_file is None:
+        raise ValueError("provide --prompt or --prompt-file")
+    return resolve_prompt_file(prompt_file).read_text(encoding="utf-8")
+
+
+def cleanup_recorded_prompt(
+    prompt_source: Path | None,
+    artifact_dir: Path,
+) -> None:
+    result = consume_recorded_task(
+        project_root=PROJECT_ROOT,
+        source=prompt_source,
+        invocation_dir=artifact_dir,
+    )
+    if result is None:
+        return
+    status = result.get("status")
+    path = result.get("path")
+    if status == "deleted":
+        emit_status(f"Removed verified task source: {path}")
+    elif status == "retained":
+        emit_status(
+            f"Retained task source {path}: {result.get('reason', 'verification failed')}"
+        )
 
 
 def resolve_codex_executable(candidate: str | None) -> str:
@@ -1048,6 +1074,9 @@ def run_native(args: argparse.Namespace) -> int:
     invocation_id = f"{started_at[:19].replace(':', '')}-{uuid.uuid4()}"
     launcher_started = time.monotonic()
     try:
+        prompt_source = (
+            resolve_prompt_file(args.prompt_file) if args.prompt_file is not None else None
+        )
         prompt = load_prompt(args.prompt, args.prompt_file)
         codex = resolve_codex_executable(args.codex_executable)
         approved_tools = validate_approved_tools(
@@ -1202,6 +1231,7 @@ def run_native(args: argparse.Namespace) -> int:
         emit_status(
             f"Recorded specialist invocation: {artifact_dir.relative_to(PROJECT_ROOT)}"
         )
+        cleanup_recorded_prompt(prompt_source, artifact_dir)
         emit_status(
             f"launcher_run={invocation_id} final exit status=0 "
             f"elapsed={time.monotonic() - launcher_started:.1f}s"
@@ -1319,6 +1349,7 @@ def run_native(args: argparse.Namespace) -> int:
         emit_status(
             f"Recorded specialist invocation: {artifact_dir.relative_to(PROJECT_ROOT)}"
         )
+        cleanup_recorded_prompt(prompt_source, artifact_dir)
     except (OSError, ValueError) as exc:
         emit_status(f"failed to record specialist invocation: {exc}")
         if result.returncode == 0:

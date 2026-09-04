@@ -499,7 +499,7 @@ for _ in range(12):
             config,
             "literature_reviewer",
             prompt=None,
-            prompt_file=".codex/tasks/review.txt",
+            prompt_file=".codex-tasks/review.txt",
             allow_web_search=True,
             record_session_id="session-1",
         )

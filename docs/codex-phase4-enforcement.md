@@ -27,7 +27,7 @@ python scripts/codex/write_literature_report.py \
   --session-id SESSION_ID \
   --source SOURCE \
   --target TARGET \
-  --draft-file .codex/tasks/REPORT_DRAFT.md
+  --draft-file .codex-tasks/REPORT_DRAFT.md
 ```
 
 The draft path is an input only. Report text must not be interpolated into the

@@ -30,11 +30,11 @@ security boundary.
 
 ## Native WSL and VS Code
 
-Write each bounded task to an ignored project file, for example
-`.codex/tasks/network-inspection.txt`, then pass the filename as its own argument:
+Write each bounded task to the ignored, writable project spool, for example
+`.codex-tasks/network-inspection.txt`, then pass the filename as its own argument:
 
 ```text
-python scripts/codex/run_specialist.py network_curator --prompt-file .codex/tasks/network-inspection.txt
+python scripts/codex/run_specialist.py network_curator --prompt-file .codex-tasks/network-inspection.txt
 ```
 
 Use `--record-session-id` when an existing or upstream full session ID is known.
@@ -52,7 +52,7 @@ or newer.
 From Windows, invoke the same entry point with `--transport wsl`:
 
 ```text
-python scripts/codex/run_specialist.py literature_reviewer --transport wsl --prompt-file .codex/tasks/review.txt --allow-web-search --record-session-id <neko-session-id>
+python scripts/codex/run_specialist.py literature_reviewer --transport wsl --prompt-file .codex-tasks/review.txt --allow-web-search --record-session-id <neko-session-id>
 ```
 
 The bridge constructs a `wsl.exe` argument vector and invokes the native launcher

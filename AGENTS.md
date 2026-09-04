@@ -106,15 +106,23 @@ calling any modelling tool. The orchestrator may run independent literature revi
 in parallel, but never more than two at once. Wait for all required reports before
 synthesis or mutation.
 
-Pass bounded tasks through project-contained prompt files, normally under the
-ignored `.codex/tasks/` directory, rather than interpolating task text into shell
-commands. The launcher must use the same resolved Codex executable, complete
+Pass bounded tasks through project-contained prompt files under the ignored,
+writable `.codex-tasks/` directory, rather than the sandbox-protected `.codex/`
+configuration directory or interpolated shell text. The launcher must use the same
+resolved Codex executable, complete
 user-local profile transport, fixed configuration overrides, working directory, and
 environment for MCP preflight and execution. It records task text, final specialist
 output, parsed handoff, and non-secret execution provenance under the matching
 session's `specialist-invocations/` directory. Treat a nonzero exit code, missing or
 malformed handoff, identity mismatch, unsafe inventory, or recording failure as a
 blocked/failed specialist result.
+
+Task prompts are disposable only after the launcher has recorded an identical
+`task.txt` and matching prompt hash. The launcher removes recognized verified task
+sources automatically. Before a checkpoint, run
+`python scripts/codex/cleanup_tasks.py`, inspect the preview, and use `--apply` to
+remove only verified leftovers, including legacy root `.codex-task-*.txt` files.
+Preserve and report every unmatched prompt.
 
 ## Scientific integrity and approval gates
 

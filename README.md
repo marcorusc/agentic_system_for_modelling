@@ -158,15 +158,28 @@ stage” to invoke the orchestrator. Do not select the same-process files under
 `.codex/agents/`; they are inactive compatibility examples because Codex 0.153.0
 cannot enforce per-child MCP isolation there.
 
-For a bounded specialist task, place its text under the ignored `.codex/tasks/`
-directory and use the sole supported entry point:
+For a bounded specialist task, place its text under the ignored, writable
+`.codex-tasks/` directory. Do not use `.codex/tasks/`: Codex clients may protect the
+`.codex/` configuration directory as read-only. Use the sole supported entry point:
 
 ```text
-python scripts/codex/run_specialist.py network_curator --prompt-file .codex/tasks/network.txt
-python scripts/codex/run_specialist.py literature_reviewer --prompt-file .codex/tasks/literature.txt --record-session-id <neko-session-id> --allow-web-search
-python scripts/codex/run_specialist.py boolean_dynamics_modeler --prompt-file .codex/tasks/maboss.txt
-python scripts/codex/run_specialist.py multicellular_configurator --prompt-file .codex/tasks/physicell.txt
+python scripts/codex/run_specialist.py network_curator --prompt-file .codex-tasks/network.txt
+python scripts/codex/run_specialist.py literature_reviewer --prompt-file .codex-tasks/literature.txt --record-session-id <neko-session-id> --allow-web-search
+python scripts/codex/run_specialist.py boolean_dynamics_modeler --prompt-file .codex-tasks/maboss.txt
+python scripts/codex/run_specialist.py multicellular_configurator --prompt-file .codex-tasks/physicell.txt
 ```
+
+After an invocation is recorded, the launcher verifies the prompt digest and its
+stored `task.txt`, then removes the recognized source task. Interrupted or
+unrecorded prompts are retained. Preview and clean verified leftovers—including
+legacy root `.codex-task-*.txt` files—during checkpointing:
+
+```text
+python scripts/codex/cleanup_tasks.py
+python scripts/codex/cleanup_tasks.py --apply
+```
+
+The cleanup command never deletes an unmatched prompt.
 
 Use repeated `--approve-tool <tool-name>` arguments only for exact modelling writes
 already authorized for that invocation. Destructive cleanup tools cannot be
@@ -212,6 +225,9 @@ headings, verdict, confidence, and PMID/DOI fields and refuses overwrites. See
 - If a recorded session ID no longer exists in a restarted MCP process, treat it as
   provenance only and reconstruct runtime state from the validated handoff and
   artifacts. Do not silently reuse a different live session.
+- If task prompts remain after checkpointing, run `cleanup_tasks.py` without
+  `--apply` and inspect the `unmatched` reasons. A missing recorded invocation is a
+  provenance problem, not permission to delete the prompt.
 - The ChatGPT Windows parent is unsupported unless an external policy can
   mechanically prove it has no modelling MCP tools. The WSL bridge isolates the
   child process but cannot remove tools already granted to the parent app.
