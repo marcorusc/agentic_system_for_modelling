@@ -1,0 +1,13 @@
+schema_version = 1
+supported_systems = ["Linux"]
+python_minimum = "3.11"
+python_environment = "3.11"
+index_url = "https://pypi.org/simple"
+# Matches the operational snapshots in .claude/skills/*/SKILL.md.
+# Source: https://github.com/marcorusc/mcp-biomodelling-servers
+package = "mcp-biomodelling-servers"
+version = "2.3.0"
+executables = ["mcp-neko-server", "mcp-maboss-server", "mcp-physicell-server"]
+imports = ["mcp", "neko", "maboss", "physicell_config"]
+# Installed through conda-forge, or required on PATH for virtualenv installs.
+system_executables = ["dot"]

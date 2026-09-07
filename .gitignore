@@ -6,3 +6,6 @@
 .codex-task-*.txt
 __pycache__/
 *.pyc
+
+# Machine-local installer environment, state, backups, and reports
+.setup/
