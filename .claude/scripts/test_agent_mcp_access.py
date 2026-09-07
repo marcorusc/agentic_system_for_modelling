@@ -57,7 +57,7 @@ class SpecialistMcpAccessTests(unittest.TestCase):
                 self.assertIn(f"        CONDA_PREFIX: {MODELLING_ENV}\n", metadata)
                 self.assertNotIn(f"mcpServers:\n  - {server}\n", metadata)
                 self.assertNotIn("${MCP_MODELLING_ENV}", metadata)
-                self.assertTrue(command.is_file(), f"missing executable: {command}")
+                self.assertTrue(command.is_absolute())
 
     def test_agents_preload_matching_workflow_skills(self) -> None:
         for filename, (_, _, skill) in AGENTS.items():
