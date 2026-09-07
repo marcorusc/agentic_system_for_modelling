@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import sys
@@ -115,6 +116,102 @@ def _validate_artifact(
         raise HandoffValidationError(
             f"artifact does not belong to session {session_id}: {path}"
         )
+    # A lexical session prefix must not alias a different session or state file.
+    lexical = project / path
+    for component in (lexical, *lexical.parents):
+        if component == project:
+            break
+        if component.is_symlink():
+            raise HandoffValidationError(f"artifact path contains a symlink: {path}")
+
+
+def _completed_artifacts(handoff: dict[str, Any], project: Path) -> None:
+    """Verify completion using actual files, not specialist self-attestation.
+
+    Draft handoffs use needs_approval until the orchestrator has persisted reports
+    and manifests. This check does not grant scientific approval or export rights.
+    """
+    entries = handoff["artifacts"]
+    if not entries:
+        raise HandoffValidationError("completed handoff requires stage artifacts")
+    files: dict[str, Path] = {}
+    for index, entry in enumerate(entries):
+        path = _artifact_path(entry, index)
+        if path in files:
+            raise HandoffValidationError(f"duplicate artifact: {path}")
+        file = project / path
+        if not file.is_file():
+            raise HandoffValidationError(f"artifact is not an existing regular file: {path}")
+        expected = entry.get("sha256") if isinstance(entry, dict) else None
+        if not isinstance(expected, str) or re.fullmatch(r"[0-9a-fA-F]{64}", expected) is None:
+            raise HandoffValidationError(f"completed artifact requires sha256: {path}")
+        try:
+            with file.open("rb") as handle:
+                actual = hashlib.file_digest(handle, "sha256").hexdigest()
+        except OSError as error:
+            raise HandoffValidationError(f"cannot read artifact: {path}") from error
+        if actual != expected.lower():
+            raise HandoffValidationError(f"artifact sha256 mismatch: {path}")
+        if file.stat().st_size == 0:
+            raise HandoffValidationError(f"completed artifact is empty: {path}")
+        files[path] = file
+
+    specialist = handoff["specialist"]
+    if specialist == "literature_reviewer":
+        try:
+            from scripts.codex.write_literature_report import validate_report
+        except ModuleNotFoundError:
+            from write_literature_report import validate_report
+        for path, file in files.items():
+            parts = file.stem.split("__")
+            if file.suffix != ".md" or len(parts) != 2:
+                raise HandoffValidationError(f"invalid edge report filename: {path}")
+            try:
+                validate_report(file.read_text(encoding="utf-8"), *parts)
+            except (OSError, UnicodeError, ValueError) as error:
+                raise HandoffValidationError(f"invalid evidence report {path}: {error}") from error
+        return
+
+    names = {file.name for file in files.values()}
+    suffixes = {file.suffix.lower() for file in files.values()}
+    manifests = [file for file in files.values() if file.name == "manifest.json"]
+    if len(manifests) != 1:
+        raise HandoffValidationError("completed modelling stage requires one manifest.json")
+    try:
+        manifest = json.loads(manifests[0].read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, ValueError) as error:
+        raise HandoffValidationError("stage manifest must be valid UTF-8 JSON") from error
+    if not isinstance(manifest, dict):
+        raise HandoffValidationError("stage manifest must be a typed JSON object")
+    for field in ("schema_version", "specialist", "stage", "session_id", "derived_from_session_id"):
+        if field not in manifest or manifest[field] != handoff[field]:
+            raise HandoffValidationError(f"stage manifest identity mismatch: {field}")
+    if not any(file.suffix == ".md" and file.name != "important_paths.md" for file in files.values()):
+        raise HandoffValidationError("completed modelling stage requires a Markdown report")
+    if specialist == "network_curator":
+        if not {"important_paths.md", "literature_queue.json"} <= names or ".sif" not in suffixes:
+            raise HandoffValidationError("NeKo stage requires SIF, important_paths.md, and literature_queue.json")
+        for file in files.values():
+            if file.name == "literature_queue.json":
+                try:
+                    queue = json.loads(file.read_text(encoding="utf-8"))
+                except (OSError, UnicodeError, ValueError) as error:
+                    raise HandoffValidationError("literature queue must be valid JSON") from error
+                if not isinstance(queue, (dict, list)):
+                    raise HandoffValidationError("literature queue must be an object or array")
+    elif specialist == "boolean_dynamics_modeler":
+        if not {".bnd", ".cfg"} <= suffixes:
+            raise HandoffValidationError("MaBoSS stage requires BND and CFG exports")
+    elif ".xml" not in suffixes:
+        raise HandoffValidationError("PhysiCell stage requires an XML configuration export")
+    if specialist == "multicellular_configurator":
+        import xml.etree.ElementTree as ET
+        for file in files.values():
+            if file.suffix.lower() == ".xml":
+                try:
+                    ET.parse(file)
+                except (OSError, ET.ParseError) as error:
+                    raise HandoffValidationError(f"invalid configuration XML: {file.name}") from error
 
 
 def validate_handoff(
@@ -131,11 +228,11 @@ def validate_handoff(
     missing = sorted(REQUIRED_FIELDS - handoff.keys())
     if missing:
         raise HandoffValidationError(f"handoff is missing required fields: {', '.join(missing)}")
-    if handoff["schema_version"] != SCHEMA_VERSION:
+    if type(handoff["schema_version"]) is not int or handoff["schema_version"] != SCHEMA_VERSION:
         raise HandoffValidationError(f"schema_version must be {SCHEMA_VERSION}")
 
     specialist = handoff["specialist"]
-    if specialist not in SPECIALIST_STAGES:
+    if not isinstance(specialist, str) or specialist not in SPECIALIST_STAGES:
         raise HandoffValidationError(f"unknown specialist: {specialist!r}")
     if expected_specialist is not None and specialist != expected_specialist:
         raise HandoffValidationError(
@@ -148,7 +245,7 @@ def validate_handoff(
         )
 
     status = handoff["status"]
-    if status not in STATUSES:
+    if not isinstance(status, str) or status not in STATUSES:
         raise HandoffValidationError(f"unknown status: {status!r}")
     session_id = _session(handoff["session_id"], "session_id")
     derived = _session(handoff["derived_from_session_id"], "derived_from_session_id")
@@ -185,11 +282,11 @@ def validate_handoff(
         raise HandoffValidationError("completed handoff cannot have failing validation")
 
     next_stage = handoff["recommended_next_stage"]
-    if next_stage not in SAFE_NEXT_STAGES[expected_stage]:
+    if (next_stage is not None and not isinstance(next_stage, str)) or next_stage not in SAFE_NEXT_STAGES[expected_stage]:
         raise HandoffValidationError(
             f"recommended_next_stage {next_stage!r} skips or mismatches a required approval gate"
         )
-    if status in {"blocked", "failed"} and next_stage is not None:
+    if status in {"blocked", "failed", "needs_approval"} and next_stage is not None:
         raise HandoffValidationError(f"{status} handoff must recommend null next stage")
     if status == "needs_approval" and not handoff["decisions_required"]:
         raise HandoffValidationError("needs_approval handoff requires decisions_required")
@@ -202,6 +299,10 @@ def validate_handoff(
             session_id=session_id,
             path=_artifact_path(entry, index),
         )
+    if status == "completed":
+        if not validation["checks"]:
+            raise HandoffValidationError("completed handoff requires nonempty validation checks")
+        _completed_artifacts(handoff, project)
     return handoff
 
 

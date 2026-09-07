@@ -160,6 +160,18 @@ class LiteratureReportWriterTests(unittest.TestCase):
             )
         self.assertFalse((outside / "GAB1__AKT1.md").exists())
 
+    def test_dangling_file_symlink_cannot_redirect_to_another_session(self) -> None:
+        session = self.root / "evidence/reports/session-1"
+        other = self.root / "evidence/reports/session-2"
+        session.mkdir(parents=True)
+        other.mkdir()
+        target = other / "GAB1__AKT1.md"
+        (session / target.name).symlink_to(target)
+        with self.assertRaisesRegex(ReportValidationError, "symlink"):
+            write_report(project_root=self.root, session_id="session-1",
+                         source="GAB1", target="AKT1", draft_path=self.draft)
+        self.assertFalse(target.exists())
+
 
 if __name__ == "__main__":
     unittest.main()

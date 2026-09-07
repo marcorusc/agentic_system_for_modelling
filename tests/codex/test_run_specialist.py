@@ -9,6 +9,7 @@ import tempfile
 import time
 import unittest
 from argparse import Namespace
+from contextlib import ExitStack, redirect_stdout
 from pathlib import Path
 from unittest import mock
 
@@ -252,6 +253,10 @@ for _ in range(12):
         command = MODULE.build_command("codex", "literature_reviewer", "inspect")
         for server in MODULE.MODELLING_SERVERS:
             self.assertIn(f"mcp_servers.{server}.enabled=false", command)
+        self.assertIn(
+            'mcp_servers.pubmed={"command"="__disabled_pubmed__","enabled"=false}',
+            command,
+        )
 
     def test_modelling_roles_always_disable_pubmed(self) -> None:
         for specialist in (
@@ -442,6 +447,22 @@ for _ in range(12):
         with self.assertRaisesRegex(ValueError, "permitted.*maboss"):
             MODULE.validate_mcp_inventory(inventory, "boolean_dynamics_modeler")
 
+    def test_inventory_rejects_unexpected_enabled_servers_for_every_role(self) -> None:
+        for role, (_, permitted) in MODULE.SPECIALISTS.items():
+            for extra in ("maboss_alias", "unrelated_connector"):
+                inventory = [{"name": extra, "enabled": True}]
+                if permitted:
+                    inventory.append({"name": permitted, "enabled": True})
+                with self.subTest(role=role, extra=extra):
+                    with self.assertRaisesRegex(ValueError, "prohibited"):
+                        MODULE.validate_mcp_inventory(inventory, role)
+
+    def test_inventory_allows_disabled_unrelated_servers(self) -> None:
+        MODULE.validate_mcp_inventory([
+            {"name": "neko", "enabled": True},
+            {"name": "maboss_alias", "enabled": False},
+        ], "network_curator")
+
     def test_literature_inventory_accepts_no_modelling_servers(self) -> None:
         inventory = [
             {"name": "neko", "enabled": False},
@@ -631,6 +652,49 @@ for _ in range(12):
                     provenance={},
                     invocation_id="invocation-1",
                 )
+
+    def test_native_launcher_records_and_rejects_unbacked_completion(self) -> None:
+        from test_validate_handoff import handoff_for
+
+        for status, expected_exit in (("completed", 3), ("needs_approval", 0)):
+            with self.subTest(status=status), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                executable = root / "codex-fixture"
+                executable.write_text("fixture executable")
+                profile = root / "profile.toml"
+                profile.write_text("fixture profile")
+                payload = handoff_for("network_curator", "neko_network", "session-1", None)
+                payload["status"] = status
+                payload["artifacts"] = []
+                if status == "needs_approval":
+                    payload.update(decisions_required=["Persist draft stage artifacts"],
+                                   recommended_next_stage=None)
+
+                def stream(command, **kwargs):
+                    output = Path(command[command.index("--output-last-message") + 1])
+                    output.write_text(json.dumps(payload), encoding="utf-8")
+                    kwargs["event_path"].write_text('{"type":"turn.completed"}\n')
+                    return MODULE.StreamResult(0, 0.1, 1, 0, "turn.completed", False)
+
+                args = MODULE.parser().parse_args(["network_curator", "--prompt", "inspect"])
+                with ExitStack() as stack:
+                    stack.enter_context(mock.patch.object(MODULE, "PROJECT_ROOT", root))
+                    stack.enter_context(mock.patch.object(MODULE, "resolve_codex_executable", return_value=str(executable)))
+                    stack.enter_context(mock.patch.object(MODULE, "profile_path", return_value=profile))
+                    stack.enter_context(mock.patch.object(MODULE, "load_permitted_transport", return_value=[]))
+                    stack.enter_context(mock.patch.object(MODULE.subprocess, "run", side_effect=[
+                        mock.Mock(stdout="codex-cli 0.153.0", stderr=""),
+                        mock.Mock(stdout='[{"name":"neko","enabled":true}]'),
+                    ]))
+                    stack.enter_context(mock.patch.object(MODULE, "stream_jsonl_process", side_effect=stream))
+                    stack.enter_context(mock.patch.object(MODULE, "emit_status"))
+                    stack.enter_context(redirect_stdout(io.StringIO()))
+                    self.assertEqual(MODULE.run_native(args), expected_exit)
+                records = list(root.glob("runs/network-curator/session-1/specialist-invocations/*"))
+                self.assertEqual(len(records), 1)
+                provenance = json.loads((records[0] / "provenance.json").read_text())
+                self.assertEqual(provenance["handoff_parse_error"] is not None, status == "completed")
+                self.assertEqual(json.loads((records[0] / "handoff.json").read_text()), payload)
 
 
 if __name__ == "__main__":

@@ -103,9 +103,13 @@ def expected_destination(
                 f"output must be exactly {relative.as_posix()}"
             )
 
-    destination = (project / relative).resolve(strict=False)
-    if not _strictly_below(destination, reports_root):
-        raise ReportValidationError("report destination resolves outside evidence/reports")
+    destination = project / relative
+    # Keep the lexical filename for O_EXCL/O_NOFOLLOW. Resolving it here would
+    # follow a dangling symlink and create its target in a different session.
+    if destination.is_symlink():
+        raise ReportValidationError("report destination must not be a symlink")
+    if destination.parent.resolve(strict=False) != reports_root / session_id:
+        raise ReportValidationError("report destination is outside its exact session directory")
     return destination
 
 

@@ -210,7 +210,7 @@ def literature_inventory(codex: str, project_root: Path) -> dict[str, Any]:
         run_specialist.validate_mcp_inventory(
             inventory,
             "literature_reviewer",
-            pubmed_expected=True if pubmed_transport else None,
+            pubmed_expected=pubmed_transport,
         )
     except ValueError as problem:
         return {
@@ -313,6 +313,9 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    if sys.version_info < (3, 11):
+        print(json.dumps({"passed": False, "error": "Python 3.11 or newer is required"}))
+        return 2
     arguments = parse_args(argv)
     try:
         codex = run_specialist.resolve_codex_executable(arguments.codex_executable)
