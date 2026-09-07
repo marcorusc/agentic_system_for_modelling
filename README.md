@@ -40,9 +40,12 @@ Four specialist agents are currently included:
 | `multicellular-configurator` | Configure PhysiCell/PhysiBoSS domains, cells, substrates, rules, and mappings | Inline PhysiCell server only |
 
 The architecture also describes an independent scientific reviewer and a
-reproducibility auditor. Their agent definitions are not yet included. Consequently,
-the `/validate-stage` skill describes the intended validation workflow but cannot
-complete it until those two agents are implemented.
+reproducibility auditor. Their agent definitions are not yet included. Claude's
+`/validate-stage` requires both and remains blocked until they are implemented.
+The Codex `skills/validate-stage` workflow instead assigns the checks to the main
+orchestrator, followed by researcher approval. It does not provide independent
+review or audit. These are different existing workflows; see
+[validation responsibilities](docs/handoff-validation.md#validation-responsibilities).
 
 The three modelling specialists start isolated inline MCP servers. The literature
 specialist still requires a configured literature server. Availability depends on
@@ -51,7 +54,7 @@ your local installation.
 ## Prerequisites
 
 - Git
-- Python 3
+- Python 3.11 or newer (the Codex launcher uses the standard-library `tomllib`)
 - Claude Code with custom agents and skills enabled
 - A modelling environment containing the NeKo, MaBoSS, and PhysiCell MCP executables
 - An optional PubMed MCP server for literature review
@@ -68,7 +71,21 @@ The agents inherit whichever model is running the main Claude Code session. The
 remote Ollama/Qwen setup described in the architecture document is supported but is
 not required by the repository structure.
 
-## Initial setup
+## Automatic setup (Linux / WSL)
+
+With Python 3.11+ and Git installed, run:
+
+```text
+python scripts/setup.py
+```
+
+The guided installer detects Codex/Claude, creates a dedicated modelling environment,
+updates managed paths, and runs diagnostics. Use `--client codex`, `--client claude`,
+or `--client both` to select clients; `--dry-run` previews and `--check` diagnoses
+an existing setup. See [automatic setup](docs/automatic-setup.md) for environment
+options, prerequisites, saved settings, and verification limits.
+
+## Manual setup
 
 1. Clone the repository and enter it:
 
@@ -355,7 +372,7 @@ the current branch and refuses to commit on `main` or a detached HEAD.
 |---|---|---|
 | `/checkpoint-model` | Save a validated stage checkpoint in local Git history | Yes |
 | `/review-literature-evidence` | Apply the structured evidence-review procedure | Only through the assigned reviewer output |
-| `/validate-stage` | Coordinate scientific and reproducibility review | Intended feature; currently awaits two agent definitions |
+| `/validate-stage` | Validate stage artifacts and scientific claims | Claude awaits two independent agents; Codex uses orchestrator checks and researcher approval |
 | `/model-list` | Show the current model attempt and named archives | No |
 | `/model-list --all` | Also show automatic recovery points | No |
 | `/model-archive <name>` | Commit and tag the current model state | Yes |
@@ -566,6 +583,29 @@ python .claude/scripts/test_model_lifecycle.py -v
 The test creates a disposable Git repository and exercises archive, restart,
 recovery, manifest verification, input preservation, and restore without modifying
 the active model.
+
+## Development and tests
+
+Run all Codex, Claude, and setup tests from any directory with Python 3.11+:
+
+```text
+python scripts/run_tests.py
+```
+
+From outside the repository, use the absolute path to that script. It runs all
+suites even if one fails and returns a nonzero exit status on failure. Tests use
+temporary repositories and subprocess fixtures; no modelling servers, credentials,
+or third-party Python packages are required. The GitHub Actions workflow runs the
+same command on Python 3.11 and 3.13.
+
+The launcher retains its CLI and helper imports, with implementation split into
+`launcher_config.py` (transport and isolation), `launcher_process.py` (streaming,
+cancellation, and redaction), and `launcher_provenance.py` (invocation artifacts).
+
+Completed Codex handoffs require existing files, SHA-256 digests, and the mandatory
+stage artifacts. Read-only specialist drafts remain `needs_approval` until the
+orchestrator persists and validates their outputs. See the exact requirements and
+limits in [handoff validation](docs/handoff-validation.md).
 
 ## Further documentation
 
