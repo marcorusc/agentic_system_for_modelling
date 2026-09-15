@@ -355,7 +355,7 @@ for _ in range(12):
             self.assertTrue(
                 any(
                     value.endswith(
-                        'disabled_tools=["delete_session","clean_generated_files"]'
+                        'disabled_tools=["delete_session","clean_generated_files","close_session"]'
                     )
                     for value in command
                 )

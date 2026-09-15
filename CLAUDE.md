@@ -245,3 +245,45 @@ autonomously.
   specialist runtime state from typed handoffs and artifacts.
 - After restart or restore, instruct the user to run `/clear` so assumptions
   from the previous Claude conversation do not contaminate the loaded model state.
+
+## ODE branch and formulation decisions
+
+During specification compare Boolean and ODE formulations against the objective,
+observables, measurement types, time scales, mechanistic evidence and numerical
+uncertainty. Recommend a formulation and obtain researcher confirmation before
+entering a branch. Record the rationale and rejected alternatives in MODEL_SPEC.md
+and DECISIONS.md. Full ODE operation and artifact contracts are in docs/ode-workflow.md.
+
+The sequential stages above describe the Boolean branch. The approved ODE alternative
+is specification approval → approved exported NeKo-to-BioMASS handoff OR explicitly
+authorized standalone input → fresh BioMASS authoring session → bounded ODE literature
+review and researcher approval of mechanisms/kinetics/quantities → approved construction
+and optional requested simulation → researcher review → final bundle export.
+All modelling remains sequential; only independent read-only reviews may run in parallel.
+Do not create BioMASS before the source NeKo registry row is exported. No BNET or
+Boolean connectivity constraint applies to the ODE handoff.
+
+Use ode_modeler (Claude: ode-modeler), restricted to BioMASS alone. The orchestrator,
+literature reviewer and all other specialists must have no BioMASS namespace. Treat
+parent BioMASS exposure as blocked for scientific execution; repository integration
+maintenance can continue without modelling calls. Codex uses the existing separate
+process launcher, never same-process modelling agents. No direct parent modelling calls.
+
+The orchestrator owns all formulation decisions, stage transitions and shared scientific
+state. Never infer kinetics, molecular-state mappings, units or values from signed edges.
+Keep proposed assumptions and default placeholders distinct from accepted inputs.
+Require explicit researcher approval for consequential assumptions and parameters before
+use, for the NeKo-to-BioMASS export, and for final export of the reviewed ODE revision.
+Export approval must be recorded as specified in docs/ode-workflow.md.
+
+Store ODE results under runs/ode-modeler/{biomass_session_id}/. Register stage biomass_ode,
+full session and upstream IDs, source kind, selected revision, artifact paths and the
+pending/approved/exported handoff status without replacing existing lineage rows.
+Standalone ODEs have null upstream lineage and explicit source/request provenance.
+Evidence reviews use literal mechanism, kinetic-law or quantity claims: at most 13 per
+invocation and two concurrent reviewers. Store immutable reports under
+evidence/reports/{biomass_session_id}/ode/{claim_id}.md; existing NeKo edge contracts
+remain unchanged. No specialist may search outside its permitted literature backend.
+The ODE specialist consumes reviewed reports and returns additional requests to the
+orchestrator rather than delegating itself. No calibration, sensitivity analysis or
+ODE-to-PhysiCell coupling is included. Preserve all sessions and generated artifacts.

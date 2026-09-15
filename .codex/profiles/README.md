@@ -12,12 +12,13 @@ copy them to the user's Codex home with these exact names:
 - `~/.codex/biomodel-literature-reviewer.config.toml`
 - `~/.codex/biomodel-boolean-dynamics-modeler.config.toml`
 - `~/.codex/biomodel-multicellular-configurator.config.toml`
+- `~/.codex/biomodel-ode-modeler.config.toml` (optional BioMASS component)
 
 Replace only the permitted server's placeholder transport with the complete local
 `command`, `args`, `env`, and `cwd` values as applicable. Never commit those local
 profiles. The launcher also applies fixed highest-precedence `enabled` overrides:
-exactly one of `neko`, `maboss`, and `physicell` is enabled for a modelling role;
-all three are disabled for literature review. Destructive session and artifact
+exactly one of `neko`, `maboss`, `physicell`, and `biomass` is enabled for a modelling role;
+all four are disabled for literature review. Destructive session and artifact
 cleanup tools are disabled for every modelling process.
 
 The literature profile may additionally define a complete `pubmed` transport. If
@@ -50,3 +51,8 @@ under non-interactive execution.
 Run a read-only tool-inventory preflight after installing or upgrading Codex. A
 specialist must stop with `blocked` if its permitted namespace is absent or any
 prohibited modelling namespace is visible.
+
+Use setup --environment-mode reuse --with-biomass to configure an existing ODE-ready
+environment without installing packages. BioMASS gets a writable Numba cache under
+the ignored .setup/cache directory. ODE literature tasks use --review-kind ode;
+see docs/ode-workflow.md for claims, lineage and artifact recording.

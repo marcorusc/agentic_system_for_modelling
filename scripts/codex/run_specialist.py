@@ -239,6 +239,7 @@ def parser() -> argparse.ArgumentParser:
         )
     )
     result.add_argument("specialist", choices=sorted(SPECIALISTS))
+    result.add_argument("--review-kind", choices=("edge", "ode"), default="edge")
     prompt_group = result.add_mutually_exclusive_group(required=True)
     prompt_group.add_argument("--prompt", help="Bounded specialist task text")
     prompt_group.add_argument("--prompt-file", help="UTF-8 task file inside the project")
@@ -292,6 +293,7 @@ def run_windows_bridge(args: argparse.Namespace) -> int:
             allow_web_search=args.allow_web_search,
             record_session_id=args.record_session_id,
             approved_tools=getattr(args, "approve_tool", []),
+            review_kind=getattr(args, "review_kind", "edge"),
         )
         process = subprocess.Popen(command, stdin=subprocess.DEVNULL)
         try:
@@ -306,6 +308,10 @@ def run_windows_bridge(args: argparse.Namespace) -> int:
 
 
 def run_native(args: argparse.Namespace) -> int:
+    review_kind = getattr(args, "review_kind", "edge")
+    if review_kind == "ode" and (args.specialist != "literature_reviewer" or not args.record_session_id):
+        emit_status("ODE literature review requires literature_reviewer and --record-session-id")
+        return 2
     started_at = utc_now()
     invocation_id = f"{started_at[:19].replace(':', '')}-{uuid.uuid4()}"
     launcher_started = time.monotonic()
@@ -413,12 +419,14 @@ def run_native(args: argparse.Namespace) -> int:
 
     if args.specialist == "literature_reviewer" and literature_backend == "unavailable":
         handoff = unavailable_literature_handoff(args.record_session_id)
+        handoff["review_kind"] = review_kind
         final_output = json.dumps(handoff, indent=2, sort_keys=True) + "\n"
         provenance = {
             "schema_version": 1,
             "invocation_id": invocation_id,
             "launcher_run_id": invocation_id,
             "specialist": args.specialist,
+            "review_kind": review_kind if args.specialist == "literature_reviewer" else None,
             "profile": profile,
             "transport": args.provenance_transport,
             "started_at": started_at,
@@ -447,6 +455,7 @@ def run_native(args: argparse.Namespace) -> int:
                 handoff,
                 project_root=PROJECT_ROOT,
                 expected_specialist=args.specialist,
+                expected_review_kind=review_kind if args.specialist == "literature_reviewer" else None,
                 expected_session_id=args.record_session_id,
             )
             artifact_dir = record_invocation(
@@ -458,6 +467,7 @@ def run_native(args: argparse.Namespace) -> int:
                 expected_session_id=args.record_session_id,
                 provenance=provenance,
                 invocation_id=invocation_id,
+                review_kind=review_kind,
             )
         except (HandoffValidationError, OSError, ValueError) as error:
             emit_status(f"failed to record blocked literature invocation: {error}")
@@ -481,6 +491,7 @@ def run_native(args: argparse.Namespace) -> int:
             specialist=args.specialist,
             prompt=prompt,
             launcher_run_id=invocation_id,
+            review_kind=review_kind,
         )
         output_path = launcher_dir / "specialist-output.txt"
         emit_status(
@@ -497,6 +508,8 @@ def run_native(args: argparse.Namespace) -> int:
             approved_tools,
             pubmed_transport=pubmed_transport,
         )
+        if args.specialist == "literature_reviewer":
+            command[-1] += f"\nRequired review_kind={review_kind}; include it in the typed result."
         result = stream_jsonl_process(
             command,
             cwd=PROJECT_ROOT,
@@ -532,6 +545,7 @@ def run_native(args: argparse.Namespace) -> int:
                 handoff,
                 project_root=PROJECT_ROOT,
                 expected_specialist=args.specialist,
+                expected_review_kind=review_kind if args.specialist == "literature_reviewer" else None,
                 expected_session_id=args.record_session_id,
             )
         except HandoffValidationError as error:
@@ -546,6 +560,7 @@ def run_native(args: argparse.Namespace) -> int:
         "invocation_id": invocation_id,
         "launcher_run_id": invocation_id,
         "specialist": args.specialist,
+        "review_kind": review_kind if args.specialist == "literature_reviewer" else None,
         "profile": profile,
         "transport": args.provenance_transport,
         "started_at": started_at,
@@ -580,6 +595,7 @@ def run_native(args: argparse.Namespace) -> int:
             expected_session_id=args.record_session_id,
             provenance=provenance,
             invocation_id=invocation_id,
+            review_kind=review_kind,
             launcher_dir=launcher_dir,
         )
         emit_status(

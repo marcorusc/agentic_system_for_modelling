@@ -3,14 +3,16 @@
 
 from __future__ import annotations
 
+import json
+import re
 import unittest
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
-MODELLING_ENV = Path("/home/marcorusc/miniforge3/envs/mcp_modelling")
 
 AGENTS = {
+    "ode-modeler.md": ("biomass", "mcp-biomass-server", "biomass-workflow"),
     "network-curator.md": ("neko", "mcp-neko-server", "neko-workflow"),
     "boolean-dynamics-modeler.md": (
         "maboss",
@@ -51,10 +53,18 @@ class SpecialistMcpAccessTests(unittest.TestCase):
         for filename, (server, executable, _) in AGENTS.items():
             with self.subTest(agent=filename):
                 metadata = frontmatter(agent_text(filename))
-                command = MODELLING_ENV / "bin" / executable
+                values = {}
+                for key in ("command", "CONDA_PREFIX"):
+                    match = re.search(rf"^\s+{key}: (.+)$", metadata, re.MULTILINE)
+                    self.assertIsNotNone(match)
+                    value = match.group(1)
+                    values[key] = json.loads(value) if value.startswith('"') else value
+                command = Path(values["command"])
+                prefix = Path(values["CONDA_PREFIX"])
                 self.assertIn(f"mcpServers:\n  - {server}:\n", metadata)
-                self.assertIn(f"      command: {command}\n", metadata)
-                self.assertIn(f"        CONDA_PREFIX: {MODELLING_ENV}\n", metadata)
+                self.assertTrue(prefix.is_absolute())
+                self.assertEqual(command, prefix / "bin" / executable)
+                self.assertEqual(re.findall(r"^  - (\w+):$", metadata, re.MULTILINE), [server])
                 self.assertNotIn(f"mcpServers:\n  - {server}\n", metadata)
                 self.assertNotIn("${MCP_MODELLING_ENV}", metadata)
                 self.assertTrue(command.is_absolute())

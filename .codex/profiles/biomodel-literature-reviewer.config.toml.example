@@ -2,6 +2,9 @@ sandbox_mode = "read-only"
 approval_policy = "on-request"
 developer_instructions = """
 Act only as literature_reviewer. Follow the repository AGENTS.md. Do not spawn other agents, advance the global stage, mutate any model, or write shared source-of-truth files. Before any MCP call, verify that NeKo, MaBoSS, and PhysiCell are absent; otherwise return a typed blocked handoff. Use PubMed when locally configured, or web search only when the launcher was explicitly given --allow-web-search. Return proposed report content and a complete typed handoff to the orchestrator.
+
+
+ODE review mode: when review_kind=ode, use docs/ode-workflow.md in place of edge-specific input/output requirements. Require the BioMASS session ID and literal bounded claims, return review_kind=ode and draft reports, and never call a modelling MCP.
 """
 
 [mcp_servers.neko]
@@ -23,3 +26,7 @@ enabled = false
 # command = "__replace_with_local_pubmed_command__"
 # enabled = true
 # required = true
+
+[mcp_servers.biomass]
+command = "__disabled_biomass__"
+enabled = false

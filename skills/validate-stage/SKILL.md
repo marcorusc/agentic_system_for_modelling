@@ -21,3 +21,12 @@ provider-neutral `scripts/codex/validate_handoff.py` against the recorded JSON a
 the expected specialist/session identity, then perform the scientific checks above;
 machine-valid structure is not scientific validity. Record an accepted outcome in
 `DECISIONS.md` and `CURRENT_STATE.md` only after researcher approval.
+
+## ODE state
+
+Apply docs/ode-workflow.md for biomass_ode. Verify full lineage, selected document
+version/revision, evidence, numerical origins, actual scenario values, artifact hashes
+and matching researcher export approval. Include runs/ode-modeler and session-scoped
+ODE evidence in existing lifecycle/checkpoint boundaries. Generated models and
+successful solves do not establish scientific validity. Preserve existing independent
+review requirements and report missing reviewer definitions as blockers.

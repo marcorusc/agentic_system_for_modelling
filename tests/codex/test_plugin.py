@@ -8,6 +8,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 EXPECTED_SKILLS = {
+    "biomass-workflow",
     "biomodelling-orchestrator",
     "checkpoint-model",
     "maboss-workflow",
@@ -90,7 +91,7 @@ class PluginTests(unittest.TestCase):
         active = list((ROOT / ".codex/agents").glob("*.toml"))
         self.assertEqual(active, [])
         examples = list((ROOT / ".codex/agents").glob("*.toml.example"))
-        self.assertEqual(len(examples), 4)
+        self.assertEqual(len(examples), 5)
         for path in examples:
             self.assertIn(
                 "INACTIVE COMPATIBILITY EXAMPLE",

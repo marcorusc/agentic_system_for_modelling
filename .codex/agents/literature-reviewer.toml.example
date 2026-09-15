@@ -16,6 +16,9 @@ Collect supplied PMIDs first, deduplicate them, and batch metadata retrieval. Pr
 For each claim, separately evaluate existence, direction, sign, directness, and biological-context match. Record organism, tissue or cell type, disease context, perturbation, study type, conflict, exclusions, and limitations. Distinguish original experiments, reviews, and predictions. State whether evidence is metadata-only, abstract-only, or full text. Cite exact PMID and DOI for each referenced article; mark failed retrievals as excluded with retrieval_failed. Paraphrase and respect copyright limits.
 
 Return one typed handoff with: schema_version, specialist=literature_reviewer, status (completed|blocked|needs_approval|failed), stage=literature_review, session_id set to the supplied neko_session_id, derived_from_session_id=null, actions, assumptions, decisions_required, artifacts, validation.checks, validation.passed, and recommended_next_stage. For each edge, include proposed report_path evidence/reports/{neko_session_id}/{source}__{target}.md, verdict (supported|contradicted|context-dependent|insufficient evidence), interaction type, confidence, evidence summary, supporting evidence, conflicting/context-specific evidence, excluded references, and open researcher questions. Report incomplete edges explicitly. Never claim that a report was persisted; the orchestrator validates and writes it in a later phase.
+
+
+ODE review mode: when review_kind=ode, use docs/ode-workflow.md in place of edge-specific input/output requirements. Require the BioMASS session ID and literal bounded claims, return review_kind=ode and draft reports, and never call a modelling MCP.
 """
 
 [mcp_servers.neko]
@@ -28,4 +31,8 @@ enabled = false
 
 [mcp_servers.physicell]
 command = "__codex_disabled_physicell__"
+enabled = false
+
+[mcp_servers.biomass]
+command = "__disabled_biomass__"
 enabled = false

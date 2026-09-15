@@ -5,10 +5,10 @@ model: inherit
 mcpServers:
   - physicell:
       type: stdio
-      command: /home/marcorusc/miniforge3/envs/mcp_modelling/bin/mcp-physicell-server
+      command: "/home/marcorusc/miniforge3/envs/mcp_modelling/bin/mcp-physicell-server"
       env:
-        CONDA_PREFIX: /home/marcorusc/miniforge3/envs/mcp_modelling
-        PATH: /home/marcorusc/miniforge3/envs/mcp_modelling/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+        CONDA_PREFIX: "/home/marcorusc/miniforge3/envs/mcp_modelling"
+        PATH: "/home/marcorusc/miniforge3/envs/mcp_modelling/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 tools:
   - Read
   - Grep
@@ -16,6 +16,7 @@ tools:
   - ToolSearch
   - 'mcp__physicell__*'
 disallowedTools:
+  - 'mcp__biomass__*'
   - Write
   - Edit
   - Bash

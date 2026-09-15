@@ -90,3 +90,12 @@ only if it fails. Costs assume seed/group sizes of a few dozen genes.
   partition, then `analyze_gene_set()` on the originally requested genes.
 - **Comparing history states before reverting** → `compare_network_states()`
   first; don't checkout blind.
+
+## ODE routing
+
+Follow docs/ode-workflow.md when the researcher confirms ODE formulation. The
+orchestrator must have no BioMASS MCP tools. network_curator may perform an explicitly
+approved export_biomass_handoff after topology/evidence approval, preserving complete
+references, context and edge IDs. Record the exact handoff type as neko-to-biomass.
+Do not export BNET for this branch or require connectivity solely to enable ODE export.
+Only the separate ode_modeler receives BioMASS. All other stage gates still apply.

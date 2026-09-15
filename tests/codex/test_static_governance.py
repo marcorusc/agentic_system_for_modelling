@@ -35,7 +35,7 @@ def source_files():
 class StaticConfigurationTests(unittest.TestCase):
     def test_every_compatibility_agent_is_valid_toml(self) -> None:
         agents = sorted((ROOT / ".codex/agents").glob("*.toml.example"))
-        self.assertEqual(len(agents), 4)
+        self.assertEqual(len(agents), 5)
         for path in agents:
             with self.subTest(path=path.name):
                 payload = tomllib.loads(path.read_text(encoding="utf-8"))

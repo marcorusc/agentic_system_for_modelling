@@ -16,6 +16,7 @@ tools:
   - 'mcp__pubmed__get_full_text_article'
   - 'mcp__pubmed__find_related_articles'
 disallowedTools:
+  - 'mcp__biomass__*'
   - Edit
   - Bash
   - Task
@@ -28,7 +29,7 @@ hooks:
     - matcher: "Read|Write"
       hooks:
         - type: command
-          command: python
+          command: "/home/marcorusc/miniforge3/envs/mcp_modelling/bin/python"
           args:
             - "${CLAUDE_PROJECT_DIR}/.claude/scripts/literature_file_guard.py"
 color: yellow
@@ -147,3 +148,22 @@ Full report: evidence/reports/{neko_session_id}/{A}__{B}.md
 End your final turn with only these pointer lines (one per edge reviewed) plus a note
 on any edges left incomplete due to turn or access limits. Do not maintain or write to
 any shared index/manifest file — that is the coordinator's responsibility.
+
+## ODE claim review mode
+
+When explicitly invoked with review_kind=ode, use the ODE report contract in
+docs/ode-workflow.md instead of the edge-specific input/output instructions above.
+Require the full BioMASS session ID and at most 13 literal coherent claims with stable
+claim IDs, kind, context and known citations. No NeKo session or SIF is needed for
+standalone ODE work. Assess mechanisms, kinetic approximations and quantity evidence
+separately. Return review_kind=ode in the common literature result. Never call BioMASS
+or another modelling MCP. The orchestrator coordinates at most two independent reviews.
+
+Codex invocation: scripts/codex/run_specialist.py literature_reviewer --review-kind ode
+--record-session-id <biomass-session-id> --prompt-file <bounded-task>. The reviewer
+returns report drafts; the orchestrator writes them with write_literature_report.py
+--claim-id <claim> and validates completion. Claude writes the same report format through
+its guard and reads each exact path back. ODE reports are immutable at
+evidence/reports/{biomass_session_id}/ode/{claim_id}.md. Invocation provenance belongs
+under the BioMASS session's runs/ode-modeler directory. Missing backend returns blocked;
+after failure redispatch only missing claims. Existing edge mode is unchanged.

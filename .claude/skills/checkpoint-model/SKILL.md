@@ -33,3 +33,12 @@ Do not push, pull, fetch, switch branches, rebase, amend, create tags or remotes
 rewrite history, clean the worktree, or delete sessions or artifacts. Do not create
 an empty commit. State whether it is safe to run `/compact`, `/clear`, or end the
 session.
+
+## ODE state
+
+Apply docs/ode-workflow.md for biomass_ode. Verify full lineage, selected document
+version/revision, evidence, numerical origins, actual scenario values, artifact hashes
+and matching researcher export approval. Include runs/ode-modeler and session-scoped
+ODE evidence in existing lifecycle/checkpoint boundaries. Generated models and
+successful solves do not establish scientific validity. Preserve existing independent
+review requirements and report missing reviewer definitions as blockers.

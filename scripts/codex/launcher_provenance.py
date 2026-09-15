@@ -15,6 +15,7 @@ except ModuleNotFoundError:
 
 
 RUN_ROOTS = {
+    "ode_modeler": Path("runs/ode-modeler"),
     "network_curator": Path("runs/network-curator"),
     "literature_reviewer": Path("runs/network-curator"),
     "boolean_dynamics_modeler": Path("runs/boolean-dynamics-modeler"),
@@ -43,9 +44,12 @@ def write_json(path: Path, payload: object) -> None:
     )
 
 
-def specialist_run_base(project_root: Path, specialist: str) -> Path:
+def specialist_run_base(project_root: Path, specialist: str, review_kind: str = "edge") -> Path:
     project = project_root.resolve(strict=True)
-    base = (project / RUN_ROOTS[specialist]).resolve(strict=False)
+    if review_kind not in {"edge", "ode"}:
+        raise ValueError("unknown literature review kind")
+    role = "ode_modeler" if specialist == "literature_reviewer" and review_kind == "ode" else specialist
+    base = (project / RUN_ROOTS[role]).resolve(strict=False)
     try:
         base.relative_to(project)
     except ValueError as exc:
@@ -54,10 +58,10 @@ def specialist_run_base(project_root: Path, specialist: str) -> Path:
 
 
 def create_launcher_run(
-    *, project_root: Path, specialist: str, prompt: str, launcher_run_id: str
+    *, project_root: Path, specialist: str, prompt: str, launcher_run_id: str, review_kind: str = "edge"
 ) -> Path:
     validate_session_id(launcher_run_id)
-    base = specialist_run_base(project_root, specialist)
+    base = specialist_run_base(project_root, specialist, review_kind)
     target = (base / "_launcher-runs" / launcher_run_id).resolve(strict=False)
     try:
         target.relative_to(base)
@@ -79,6 +83,7 @@ def record_invocation(
     provenance: dict[str, Any],
     invocation_id: str,
     launcher_dir: Path | None = None,
+    review_kind: str = "edge",
 ) -> Path:
     handoff_session_id = handoff.get("session_id") if handoff is not None else None
     if handoff_session_id is not None and not isinstance(handoff_session_id, str):
@@ -99,7 +104,7 @@ def record_invocation(
         status = handoff.get("status") if handoff is not None else None
         session_id = "_blocked" if status == "blocked" else "_unresolved"
 
-    base = specialist_run_base(project_root, specialist)
+    base = specialist_run_base(project_root, specialist, review_kind)
     target = (base / session_id / "specialist-invocations" / invocation_id).resolve(
         strict=False
     )

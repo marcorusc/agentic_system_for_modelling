@@ -37,3 +37,12 @@ The operational tool semantics correspond to `mcp-biomodelling-servers` 2.3.0 an
 must be revalidated after server upgrades. Expensive all-pairs or open-ended
 connection strategies require size inspection and a non-mutating preview; prefer a
 targeted strategy when it answers the scientific question.
+
+## ODE routing
+
+Follow docs/ode-workflow.md when the researcher confirms ODE formulation. The
+orchestrator must have no BioMASS MCP tools. network_curator may perform an explicitly
+approved export_biomass_handoff after topology/evidence approval, preserving complete
+references, context and edge IDs. Record the exact handoff type as neko-to-biomass.
+Do not export BNET for this branch or require connectivity solely to enable ODE export.
+Only the separate ode_modeler receives BioMASS. All other stage gates still apply.

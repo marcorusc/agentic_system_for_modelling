@@ -33,3 +33,12 @@ worktree, or delete sessions/artifacts. The verified prompt cleanup above is the
 only cleanup exception. Report missing provenance, unresolved decisions, unmatched
 prompts, paths committed, resulting IDs, and whether it is safe to compact, clear,
 or exit.
+
+## ODE state
+
+Apply docs/ode-workflow.md for biomass_ode. Verify full lineage, selected document
+version/revision, evidence, numerical origins, actual scenario values, artifact hashes
+and matching researcher export approval. Include runs/ode-modeler and session-scoped
+ODE evidence in existing lifecycle/checkpoint boundaries. Generated models and
+successful solves do not establish scientific validity. Preserve existing independent
+review requirements and report missing reviewer definitions as blockers.

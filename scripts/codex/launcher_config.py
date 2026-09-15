@@ -22,7 +22,7 @@ def require_supported_python() -> None:
         raise ValueError("Python 3.11 or newer is required")
 
 
-MODELLING_SERVERS = ("neko", "maboss", "physicell")
+MODELLING_SERVERS = ("neko", "maboss", "physicell", "biomass")
 
 
 PUBMED_TOOLS = (
@@ -35,6 +35,7 @@ PUBMED_TOOLS = (
 
 
 SPECIALISTS = {
+    "ode_modeler": ("biomodel-ode-modeler", "biomass"),
     "network_curator": ("biomodel-network-curator", "neko"),
     "literature_reviewer": ("biomodel-literature-reviewer", None),
     "boolean_dynamics_modeler": ("biomodel-boolean-dynamics-modeler", "maboss"),
@@ -48,7 +49,7 @@ SESSION_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 MCP_TOOL_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$")
 
 
-PERMANENTLY_DISABLED_TOOLS = {"delete_session", "clean_generated_files"}
+PERMANENTLY_DISABLED_TOOLS = {"delete_session", "clean_generated_files", "close_session"}
 
 
 WINDOWS_CONFIG_FIELDS = {
@@ -144,7 +145,7 @@ def mcp_config_arguments(
                 "-c",
                 (
                     f'mcp_servers.{permitted_server}.disabled_tools='
-                    '["delete_session","clean_generated_files"]'
+                    '["delete_session","clean_generated_files","close_session"]'
                 ),
             ]
         )
@@ -401,6 +402,7 @@ def build_wsl_command(
     allow_web_search: bool,
     record_session_id: str | None,
     approved_tools: list[str] | None = None,
+    review_kind: str = "edge",
 ) -> list[str]:
     command = [
         config["wsl_executable"],
@@ -424,6 +426,8 @@ def build_wsl_command(
         command.extend(["--prompt-file", validate_wsl_prompt_file(prompt_file)])
     else:
         raise ValueError("provide --prompt or --prompt-file")
+    if review_kind == "ode":
+        command.extend(["--review-kind", "ode"])
     if allow_web_search:
         command.append("--allow-web-search")
     if record_session_id is not None:

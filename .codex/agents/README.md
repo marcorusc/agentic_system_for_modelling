@@ -45,3 +45,6 @@ environment values. A future Codex version must demonstrate both that the permit
 server is visible independently of parent state and that all prohibited modelling
 servers are absent before same-process agents can replace the separate-process
 launcher.
+
+The optional ode_modeler compatibility example follows the same restriction. Launch
+its active process through run_specialist.py ode_modeler; see docs/ode-workflow.md.

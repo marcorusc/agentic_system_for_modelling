@@ -22,3 +22,7 @@ enabled = false
 [mcp_servers.pubmed]
 command = "__disabled_pubmed__"
 enabled = false
+
+[mcp_servers.biomass]
+command = "__disabled_biomass__"
+enabled = false
