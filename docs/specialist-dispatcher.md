@@ -353,3 +353,10 @@ The bounded test's run artifacts remain local under the recorded session paths;
 committed validation records pin their hashes. They are not bundled into the code
 refactor. Literature review, topology approval, Boolean dynamics, and comparison
 against the published reference remain outstanding scientific work.
+
+## Subsequent curation findings
+
+The single-invocation smoke test does not establish live session continuity across
+ephemeral specialists. [Curation follow-up](neko-curation-continuity.md) records the
+observed session-lifetime and targeted-preview limitations, a rejected reconstruction
+handoff, and the tested JSON-safe redaction fix. Scientific curation remains pending.

@@ -68,6 +68,16 @@ def parse_handoff(output: str) -> dict[str, Any] | None:
     return None
 
 
+def sanitize_final_output(output: str) -> tuple[str, dict[str, Any] | None]:
+    """Redact parsed values before serializing a handoff, preserving JSON syntax."""
+    handoff = parse_handoff(output)
+    if handoff is None:
+        return redact_text(output), None
+    sanitized = sanitize_json_value(handoff)
+    assert isinstance(sanitized, dict)
+    return json.dumps(sanitized, indent=2, ensure_ascii=False) + "\n", sanitized
+
+
 def unavailable_literature_handoff(session_id: str | None) -> dict[str, Any]:
     """Return a valid fail-closed result without starting a backend-less agent."""
 
@@ -327,14 +337,8 @@ def _run(request: SpecialistInvocationRequest, execution: SpecialistExecutionRes
     final_output = (
         output_path.read_text(encoding="utf-8") if output_path.is_file() else ""
     )
-    final_output = redact_text(final_output)
+    final_output, handoff = sanitize_final_output(final_output)
     output_path.write_text(final_output, encoding="utf-8")
-
-    handoff = parse_handoff(final_output)
-    if handoff is not None:
-        sanitized_handoff = sanitize_json_value(handoff)
-        assert isinstance(sanitized_handoff, dict)
-        handoff = sanitized_handoff
     handoff_error: str | None = None
     if handoff is None:
         handoff_error = "specialist did not return a JSON handoff"

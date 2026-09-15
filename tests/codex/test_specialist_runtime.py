@@ -15,6 +15,30 @@ from scripts.codex.launcher_config import build_command, SPECIALISTS
 
 
 class RuntimeTests(unittest.TestCase):
+    def test_final_output_redaction_preserves_nested_report_json(self):
+        handoff = {
+            "specialist": "network_curator",
+            "actions": ["inspection"],
+            "draft_report": {"content": 'Researcher authorization: "approved", then inspect.'},
+            "draft_manifest": {"specialist": "network_curator"},
+            "api_key": "secret-test-value",
+            "notes": "password=other-test-value",
+        }
+        for raw in (json.dumps(handoff), "```json\n" + json.dumps(handoff) + "\n```"):
+            with self.subTest(raw=raw):
+                output, parsed = executor.sanitize_final_output(raw)
+                self.assertEqual(json.loads(output), parsed)
+                self.assertEqual(parsed["actions"], ["inspection"])
+                self.assertEqual(executor.parse_handoff(output), parsed)
+                self.assertNotIn("secret-test-value", output)
+                self.assertNotIn("other-test-value", output)
+                self.assertIn("[REDACTED]", parsed["draft_report"]["content"])
+
+    def test_final_output_without_handoff_still_redacts(self):
+        output, parsed = executor.sanitize_final_output("failed: password=secret-test-value")
+        self.assertIsNone(parsed)
+        self.assertNotIn("secret-test-value", output)
+
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
