@@ -48,7 +48,7 @@ Disposable task-file cleanup remains available for the CLI fallback.
 | 0 | Baseline and invariants | Passed |
 | 1 | Shared runtime, unchanged CLI protections | Passed |
 | 2 | Persistent task manager and fake-worker tests | Passed |
-| 3 | Local MCP server and protocol tests | Pending |
+| 3 | Local MCP server and protocol tests | Passed |
 | 4 | Root isolation, live specialist smoke tests, CLI equivalence | Pending |
 | 5 | Orchestrator and skill routing | Gated on Phase 4 |
 | 6 | Same-conversation ChatGPT observability | Pending |
@@ -115,3 +115,39 @@ escapes, restart recovery, concurrent ownership, concurrency caps, redaction,
 pagination, and actual fake-Codex subprocesses. Integration cases cover a valid
 handoff, malformed JSONL, invalid handoff, nonzero process exit, recording failure,
 unsafe inventory, active-tool progress, heartbeats, and cancellation.
+
+## Phase 3 — MCP server
+
+The official MCP SDK 2.0.0 was already installed in the modelling environment.
+The server uses its low-level stdio API and Pydantic's strict input validation;
+unknown tools and extra arguments fail before task creation. The only dependency
+is `mcp>=2.0.0,<3` (which supplies Pydantic). No network listener, external queue,
+or new model-execution wrapper was introduced.
+
+The [official SDK server contract](https://py.sdk.modelcontextprotocol.io/advanced/low-level-server/)
+requires applications to validate low-level tool arguments themselves. Our strict
+models enforce that boundary and produce schemas with `additionalProperties=false`.
+
+Validation: 124 Codex, 19 Claude, and 26 setup tests passed (169 total) using the
+SDK environment. Tests exercise MCP initialization, all eight tool schemas,
+forbidden inputs, error results, asynchronous start/query/cancel calls, actual
+stdio subprocess transport, clean disconnect, and lease release. A separate CI
+job installs the SDK so these tests cannot disappear behind optional skips.
+
+```mermaid
+flowchart TD
+    O[Scientific orchestrator] -->|bounded task| D[Dispatcher MCP: local stdio]
+    D --> M[Persistent technical task manager]
+    M --> R[Shared specialist runtime]
+    C[CLI fallback] --> R
+    R --> P[Independent MCP inventory preflight]
+    P --> N[Fresh ephemeral Codex process]
+    N --> S[One permitted specialist server]
+    N --> V[Handoff validation and provenance]
+    V --> D
+    D -->|technical state and validated handoff| O
+```
+
+Orchestrator instructions and the installed plugin remain unchanged. Server
+configuration and live equivalence are the next phase, not implied by passing
+protocol tests.

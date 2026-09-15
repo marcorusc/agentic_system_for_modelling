@@ -1,0 +1,2 @@
+# Official MCP SDK; reuse an existing compatible local environment when available.
+mcp>=2.0.0,<3

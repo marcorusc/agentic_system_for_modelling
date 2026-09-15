@@ -1,0 +1,48 @@
+# Specialist dispatcher (local stdio)
+
+This package provides a technical MCP interface to the existing isolated runtime.
+It does not read or update scientific state or select stages. See
+[architecture and migration gates](../../../docs/specialist-dispatcher.md).
+
+Requires Linux/WSL, Python 3.11+, and the official MCP SDK 2.x. Reuse a compatible
+existing environment or install `requirements.txt` into a dedicated environment.
+Run from the project root:
+
+```sh
+python -m scripts.codex.dispatcher.server
+```
+
+The entry point uses stdio only and binds no network port. Its stdout is reserved
+for MCP; launcher diagnostics go to stderr. The process uses existing user-local
+specialist profiles and Codex executable resolution. The Windows CLI bridge stays
+available; the dispatcher itself runs inside WSL.
+
+Tools:
+
+- `start_network_curator(task, record_session_id?, approved_tools?)`
+- `start_literature_reviewer(task, record_session_id?, allow_web_search?)`
+- `start_boolean_dynamics_modeler(task, record_session_id?, approved_tools?)`
+- `start_multicellular_configurator(task, record_session_id?, approved_tools?)`
+- `get_specialist_task(task_id)`
+- `get_specialist_events(task_id, after_sequence=0, limit=50)`
+- `list_specialist_tasks(limit=50)`
+- `cancel_specialist_task(task_id)`
+
+Unknown arguments and tool names are rejected. A task ID identifies operational
+execution; it is not a scientific session ID. Start calls return before child
+execution. Use the event cursor until a terminal execution state is reached.
+Only `succeeded` carries a validated handoff; inspect its independent scientific
+status before considering any next stage.
+
+One manager can own a project's `.dispatcher/` directory. On disconnect, it asks
+workers to stop. Restart marks interrupted tasks failed without rerunning them.
+It never deletes scientific sessions. Preserve `.dispatcher/` and the referenced
+invocation directories when troubleshooting. A failed task may have useful partial
+artifacts but cannot authorize a downstream stage.
+
+Run `python scripts/run_tests.py` with the SDK installed to include real MCP client
+and stdio tests. The stdlib-only job skips protocol tests; a separate CI job
+installs the SDK and runs the full suite. Real model calls are never part of CI.
+
+The existing `scripts/codex/run_specialist.py` remains the supported workflow until
+the migration's live isolation and equivalence gate is recorded as passed.
