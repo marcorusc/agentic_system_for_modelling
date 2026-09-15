@@ -46,7 +46,7 @@ Disposable task-file cleanup remains available for the CLI fallback.
 | Phase | Scope | Status |
 | --- | --- | --- |
 | 0 | Baseline and invariants | Passed |
-| 1 | Shared runtime, unchanged CLI protections | Pending |
+| 1 | Shared runtime, unchanged CLI protections | Passed |
 | 2 | Persistent task manager and fake-worker tests | Pending |
 | 3 | Local MCP server and protocol tests | Pending |
 | 4 | Root isolation, live specialist smoke tests, CLI equivalence | Pending |
@@ -57,3 +57,30 @@ Disposable task-file cleanup remains available for the CLI fallback.
 
 No scientific state, scientific policy, Claude implementation, or routing changes
 are part of Phase 0.
+
+## Phase 1 — shared runtime
+
+The CLI now adapts arguments to `SpecialistInvocationRequest` and calls
+`specialist_runtime.executor.execute()` directly. Results carry execution state,
+validated handoff, errors, timestamps, and artifact paths. Compatibility helper
+exports and the Windows-to-WSL CLI remain available. Security-relevant command
+construction and the existing validators are unchanged.
+
+Validation: 106 Codex, 19 Claude, and 26 setup tests passed (151 total). Added
+request-boundary, fresh-ID, command-boundary, preflight-failure, and blocked-handoff
+status tests; existing native execution mocks now target the extracted module.
+
+Live CLI inventory inspection passed on Codex 0.154.0, with a validated typed
+blocked handoff (no scientific work requested), exit 0, and recorded provenance:
+`runs/network-curator/_blocked/specialist-invocations/2026-09-15T024253-9029ba54-cddb-4100-a598-b50c4206329e/`.
+The child observed NeKo and no MaBoSS/PhysiCell; no modelling tools were called.
+
+Environment findings: the desktop inherits a Windows Codex home without the
+specialist profiles. Native WSL checks must use the existing Linux home (the test
+removed the inherited `CODEX_HOME` for that command only). Inventory checks passed
+for all four Linux profiles and the root had no enabled modelling servers. PubMed
+is not configured. The first child attempt failed because the enclosing sandbox
+made Codex's state directory read-only; it was preserved under `_unresolved` with
+invocation ID `2026-09-15T024233-42482320-c91a-4b6e-bd6a-473d8c5d9b69`. The successful
+retry had permission to initialize Codex's local state; the specialist retained
+its read-only sandbox and isolation overrides. No global settings were changed.
