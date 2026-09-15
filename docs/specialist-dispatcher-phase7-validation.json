@@ -1,0 +1,175 @@
+{
+  "schema_version": 1,
+  "phase": 7,
+  "gate_status": "blocked",
+  "task_id": "eea21797ded6449cbd653c1fd45eb2c8",
+  "session_id": "31b5cbb8-4161-4f04-8796-37067069b3fc",
+  "invocation_id": "2026-09-15T042415-0fea4165-f7e5-4aaa-9a10-375f15a92137",
+  "execution_state": "succeeded",
+  "scientific_handoff_status": "failed",
+  "failure": {
+    "error": "tool call error: tool call failed for `neko/create_network`\n\nCaused by:\n    timed out awaiting tools/call after 300s",
+    "retry_count": 0,
+    "server_side_outcome": "unknown",
+    "session_preserved": true,
+    "tool": "mcp__neko__create_network"
+  },
+  "original_child_processes_exited": true,
+  "source_dimensions": {
+    "edges": 387,
+    "negative": 168,
+    "nodes": 90,
+    "positive": 219
+  },
+  "effective_parameters": {
+    "consensus": false,
+    "database": "omnipath",
+    "list_of_initial_genes": [],
+    "max_len": 1,
+    "only_signed": true,
+    "path_policy": "one_shortest",
+    "policy_execution": "Arguments supplied as authorized. The task states connection policies do not execute in the installed SIF import branch; import completion was not observed.",
+    "reuse_policy": "none",
+    "scaling": {
+      "applied": false,
+      "reason": "Outside this source-topology import test.",
+      "researcher_approved_value": 37.5
+    },
+    "session_id": "31b5cbb8-4161-4f04-8796-37067069b3fc",
+    "sif_file": "/home/marcorusc/projects/github/agentic_system_for_modelling/.dispatcher/phase7-input/reference.sif",
+    "verbosity": "summary"
+  },
+  "scientific_state_unchanged": true,
+  "scientific_file_hashes": {
+    "MODEL_SPEC.md": "1e537df00cb9f8ce2d1911c7dc703b1163b9ff76e78ca6aa827302786e2c2487",
+    "DATA_DICTIONARY.md": "63578b9889792484c1bc977462b7bdf61928a98d54cb26f3c6128d2a4804587b",
+    "ASSUMPTIONS.md": "f7ed5bcb3ad7d68b3d29a97613c8673cf322446e80250391f4b70a4ac7cd9696",
+    "DECISIONS.md": "1aa85d04d0494be4a56c4faf5dc8a5f1026619f8fa3f9e24afb48e26e29064bb",
+    "CURRENT_STATE.md": "bd7ccdc87283d1b100db41822098c04d8e39bb3845c036e0cca0dc24dee63852",
+    "VALIDATION_PLAN.md": "4b0228138c1aba833d0a62e7002a699012015dd9d9e9d6e92fdf3c3ae8dc1b86"
+  },
+  "validation": {
+    "checks": [
+      {
+        "detail": "31 NeKo tools; no other MCP namespace, dispatcher, or app connector.",
+        "name": "neko_only_visible_mcp_inventory",
+        "passed": true
+      },
+      {
+        "detail": "Expected SHA256 matched; 90 nodes and 387 unique triples.",
+        "name": "pinned_sif_hash_and_dimensions",
+        "passed": true
+      },
+      {
+        "name": "source_sif_matches_audit_edges",
+        "passed": true
+      },
+      {
+        "name": "fresh_session_empty_before_import",
+        "passed": true
+      },
+      {
+        "detail": "300-second tool timeout; server-side outcome unknown.",
+        "name": "single_authorized_import_completed",
+        "passed": false
+      },
+      {
+        "detail": "Not verified after import timeout.",
+        "name": "import_inspection_and_export_fidelity",
+        "passed": false
+      },
+      {
+        "detail": "No export or persisted report/manifest; session stage-artifact directory absent.",
+        "name": "completed_stage_artifacts",
+        "passed": false
+      },
+      {
+        "detail": "SIF hash remained unchanged; original BND hash matched the source audit.",
+        "name": "source_integrity",
+        "passed": true
+      },
+      {
+        "detail": "Before/after SHA256 matched for MODEL_SPEC.md, DATA_DICTIONARY.md, ASSUMPTIONS.md, DECISIONS.md, CURRENT_STATE.md, and VALIDATION_PLAN.md.",
+        "name": "shared_scientific_files_unchanged",
+        "passed": true
+      },
+      {
+        "detail": "Repository validate_handoff accepted the failed handoff structure and session identity; this does not establish scientific or stage completion.",
+        "name": "typed_failure_contract",
+        "passed": true
+      }
+    ],
+    "passed": false
+  },
+  "operational_mcp_calls": [
+    {
+      "type": "mcp_tool_call_started",
+      "summary": "MCP tool call started: neko.create_session",
+      "tool_name": "neko.create_session",
+      "active_tools": [
+        "neko.create_session"
+      ],
+      "sequence": 16,
+      "timestamp": "2026-09-15T04:25:28.167634Z"
+    },
+    {
+      "type": "mcp_tool_call_completed",
+      "summary": "MCP tool call completed: neko.create_session",
+      "tool_name": "neko.create_session",
+      "active_tools": [],
+      "sequence": 17,
+      "timestamp": "2026-09-15T04:25:28.176596Z"
+    },
+    {
+      "type": "mcp_tool_call_started",
+      "summary": "MCP tool call started: neko.status",
+      "tool_name": "neko.status",
+      "active_tools": [
+        "neko.status"
+      ],
+      "sequence": 18,
+      "timestamp": "2026-09-15T04:25:35.606675Z"
+    },
+    {
+      "type": "mcp_tool_call_completed",
+      "summary": "MCP tool call completed: neko.status",
+      "tool_name": "neko.status",
+      "active_tools": [],
+      "sequence": 19,
+      "timestamp": "2026-09-15T04:25:35.617515Z"
+    },
+    {
+      "type": "mcp_tool_call_started",
+      "summary": "MCP tool call started: neko.create_network",
+      "tool_name": "neko.create_network",
+      "active_tools": [
+        "neko.create_network"
+      ],
+      "sequence": 20,
+      "timestamp": "2026-09-15T04:25:43.345888Z"
+    },
+    {
+      "type": "mcp_tool_call_failed",
+      "summary": "MCP tool call failed: neko.create_network",
+      "tool_name": "neko.create_network",
+      "active_tools": [],
+      "sequence": 30,
+      "timestamp": "2026-09-15T04:30:43.351319Z"
+    }
+  ],
+  "artifact_dir": "runs/network-curator/31b5cbb8-4161-4f04-8796-37067069b3fc",
+  "invocation_artifact_hashes": {
+    "task.txt": "8dbb75639feda29c42b9a3553affd82d38b2be078daec2bacddc30b40055e380",
+    "specialist-output.txt": "0efbf48f9b63a2664aebab9517c4c676bd857b9f3ee8e9079ebbcb33446d4954",
+    "provenance.json": "099b3b455caed7e7892a3d56beee72d13cdf41e9b9b47a3dad46e90865ac5d17",
+    "events.jsonl": "d4ce5f5fb8b54758758f7c1d5fc5fc68f466510ab1782d20f94695827775095d",
+    "handoff.json": "751cb70fd263d07dc804bdf3211fee80e5ed456d57d0323d7850a17431a3ea0f"
+  },
+  "failure_artifact_hashes": {
+    "reference-input.sif": "4da5850240c916f7d56cea7f9d3a2a3f588cddac06a6fb339e8f21fe2c20f154",
+    "source-audit.json": "6c36d1d6faced322a2d0d2a7d9da1cd5c844df7d5b2aa12e5f32d3024439cc59",
+    "prepare_reference.py": "ad64ab5c440724a70eae00a788ee73e13cd2f8e7795681a1ac55423cc5ede1ea",
+    "failure-report.md": "7903f1cdfb53a72449750fee7f5c2fab5c398fe25931dae1ed58d9d89f7100f9"
+  },
+  "next_action": "Diagnose NeKo resource initialization/import timeout through read-only inspection; any further import requires a new explicit invocation, no automatic retry or session reuse."
+}

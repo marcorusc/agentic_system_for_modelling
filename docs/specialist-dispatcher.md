@@ -290,3 +290,25 @@ For Phase 7 the researcher proposed a cancer cell-cycle model validated against
 published models. Cancer type, reference model, bounded operation, construction
 policies, and validation targets remain to be specified and approved before any
 scientific stage transition. Phase 8 remains pending a successful real operation.
+
+
+## Phase 7 — real source-import attempt blocked
+
+On 2026-09-15 the researcher authorized proceeding with the bounded benchmark.
+The dispatcher launched a fresh NeKo specialist, verified isolation, and returned
+source verification for the pinned PhysiBoSS topology (90 nodes, 387 functional
+edges). Session `31b5cbb8-4161-4f04-8796-37067069b3fc` was created and verified empty.
+The single source-only SIF import timed out after 300 seconds. No export or topology
+comparison was obtained. No retry, model substitution, or repair was attempted.
+
+Task `eea21797ded6449cbd653c1fd45eb2c8` completed technically with a validated
+scientific `failed` handoff, correctly distinguishing successful result delivery
+from a successful scientific operation. Both original child processes subsequently
+exited. Preserve the session identifier as provenance; do not assume runtime state
+survives. All six shared scientific files remain unchanged.
+
+[Phase 7 failure evidence](specialist-dispatcher-phase7-validation.json) records
+hashes, calls, parameters, and validation failures. The source input, audit,
+derivation script, and failure report were preserved under the session run directory.
+The next step is diagnosis of the NeKo import timeout; its exact internal cause
+has not been established. Phase 7 remains blocked and Phase 8 has not begun.
