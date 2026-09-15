@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "phase": 6,
+  "gate_status": "passed",
+  "verification_context": "Branched Codex desktop conversation in the same WSL workspace, using exposed MCP tools directly.",
+  "root_dispatcher_tools": [
+    "start_network_curator",
+    "start_literature_reviewer",
+    "start_boolean_dynamics_modeler",
+    "start_multicellular_configurator",
+    "get_specialist_task",
+    "get_specialist_events",
+    "list_specialist_tasks",
+    "cancel_specialist_task"
+  ],
+  "root_modelling_tools_visible": false,
+  "task_id": "35048b9e9f424fb89a7c67a103c4ad9e",
+  "invocation_id": "2026-09-15T040756-ab13da50-9b1d-48c0-b2f9-8efc7aac7a39",
+  "artifact_dir": "runs/network-curator/_blocked/specialist-invocations/2026-09-15T040756-ab13da50-9b1d-48c0-b2f9-8efc7aac7a39",
+  "execution_state": "succeeded",
+  "scientific_status": "blocked",
+  "handoff_valid": true,
+  "same_conversation_start_status_events_and_handoff": true,
+  "event_query_cursors": [
+    0,
+    5,
+    11
+  ],
+  "last_event_sequence": 16,
+  "preflight_inventory": {
+    "biomass": false,
+    "maboss": false,
+    "neko": true,
+    "physicell": false,
+    "pubmed": false,
+    "specialist_dispatcher": false
+  },
+  "scientific_state_unchanged": true,
+  "scientific_file_hashes": {
+    "MODEL_SPEC.md": "1e537df00cb9f8ce2d1911c7dc703b1163b9ff76e78ca6aa827302786e2c2487",
+    "DATA_DICTIONARY.md": "63578b9889792484c1bc977462b7bdf61928a98d54cb26f3c6128d2a4804587b",
+    "ASSUMPTIONS.md": "f7ed5bcb3ad7d68b3d29a97613c8673cf322446e80250391f4b70a4ac7cd9696",
+    "DECISIONS.md": "1aa85d04d0494be4a56c4faf5dc8a5f1026619f8fa3f9e24afb48e26e29064bb",
+    "CURRENT_STATE.md": "bd7ccdc87283d1b100db41822098c04d8e39bb3845c036e0cca0dc24dee63852",
+    "VALIDATION_PLAN.md": "4b0228138c1aba833d0a62e7002a699012015dd9d9e9d6e92fdf3c3ae8dc1b86"
+  },
+  "artifact_hashes": {
+    "task.txt": "55eb0015b21f104c394720083bcab86808bc23b9fd03fc534e247ff3676748fb",
+    "specialist-output.txt": "4bc1f86ece4505739de8ac47d4e6dc821da05bb1d6e54865120747ba369dd933",
+    "provenance.json": "1231c5fd2a67f1b82c5770f009c451045f02c808339367654d08338d05ae7511",
+    "events.jsonl": "d8ca8b01e8201312ea1783b4caa551dd1082b38339591657788169bb32f051a5",
+    "handoff.json": "949ecc57b2b96e0293cc39ae25575650188f06283d012156bf9da900f5807e52"
+  },
+  "model_tool_or_search_calls": 0,
+  "limitations": [
+    "Inventory-only; no scientific session or simulation.",
+    "Does not establish native Windows host support independent of this WSL workspace.",
+    "Windows cached skills remain older; current repository AGENTS and project MCP configuration are authoritative."
+  ]
+}

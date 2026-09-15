@@ -230,7 +230,7 @@ Validation: 127 Codex, 19 Claude, and 26 setup tests passed; all five changed sk
 passed the skill-creator validator.
 
 
-## Phase 6 — integration prepared; desktop verification pending
+## Phase 6 — completed in the branched desktop conversation
 
 The WSL local plugin was refreshed from the verified repository marketplace with
 `codex plugin add agentic-system-for-modelling@agentic-modelling-local`, using
@@ -240,7 +240,7 @@ The manifest passes the plugin-creator validator. The plugin remains skills-only
 the project `.codex/config.toml` owns the dispatcher transport so execution stays
 bound to the working repository rather than a cached plugin copy.
 
-This existing desktop conversation has no callable dispatcher tools. Its available
+The original desktop conversation had no callable dispatcher tools. Its available
 tool inventory contains no direct NeKo, MaBoSS, or PhysiCell tools, but that alone
 does not pass Phase 6. There is no exposed tool to reload this conversation's MCP
 inventory. The Windows-side cached plugin is still the older version; native CLI
@@ -267,3 +267,26 @@ web-search authorization does not authorize a scientific search, topology policy
 or stage advancement. Resolve the bounded scientific task and its prerequisites
 before its real smoke test. Phase 8 remains gated on that test's success; retain
 all legacy code and partial artifacts.
+
+
+### Phase 6 verification result
+
+On 2026-09-15, branching the conversation in the same WSL workspace loaded all eight
+dispatcher tools, with no direct modelling MCP tools. The root called
+`start_network_curator`, queried events at cursors 0, 5, and 11, and received the
+validated handoff through `get_specialist_task` in that same conversation.
+Task `35048b9e9f424fb89a7c67a103c4ad9e` succeeded technically; its scientific status
+was correctly `blocked` because only inventory inspection was requested. The
+preflight and specialist observation agreed: NeKo enabled; MaBoSS, PhysiCell,
+BioMASS, PubMed, and recursive dispatcher access disabled. All six scientific file
+hashes are unchanged, and the JSONL contains no modelling or search calls.
+
+[Phase 6 evidence](specialist-dispatcher-phase6-validation.json) records the task,
+invocation, artifact hashes, and cursor sequence. This passes the desktop workflow
+gate for this workspace; the earlier reload blocker is resolved. No native Windows
+host claim is made.
+
+For Phase 7 the researcher proposed a cancer cell-cycle model validated against
+published models. Cancer type, reference model, bounded operation, construction
+policies, and validation targets remain to be specified and approved before any
+scientific stage transition. Phase 8 remains pending a successful real operation.
