@@ -47,6 +47,10 @@ installs the SDK and runs the full suite. Real model calls are never part of CI.
 The live isolation and equivalence gate passed in Phase 4. Phase 5 routes
 specialist work through this dispatcher; `scripts/codex/run_specialist.py` remains
 the supported fallback/debug interface. Scientific approval gates are unchanged.
+Phases 6–7 verified same-conversation
+progress and a real 60-gene construction in this WSL workspace. The parent verified
+and persisted its review artifacts; biological approval remains pending. See
+[troubleshooting and recovery](../../../docs/specialist-dispatcher.md#troubleshooting-and-recovery).
 
 ## Workstation startup
 

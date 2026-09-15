@@ -1,4 +1,8 @@
-# Specialist dispatcher migration
+# Specialist dispatcher
+
+The dispatcher is the preferred specialist interface. Phases 0–8 are complete in this WSL workspace. The shared-runtime CLI remains the supported fallback.
+Scientific approval gates remain unchanged; the completed live test does not
+establish biological validity. See the [tool and startup guide](../scripts/codex/dispatcher/README.md).
 
 ## Phase 0 — baseline (2026-09-15)
 
@@ -50,10 +54,10 @@ Disposable task-file cleanup remains available for the CLI fallback.
 | 2 | Persistent task manager and fake-worker tests | Passed |
 | 3 | Local MCP server and protocol tests | Passed |
 | 4 | Root isolation, live specialist smoke tests, CLI equivalence | Passed |
-| 5 | Orchestrator and skill routing | Gated on Phase 4 |
-| 6 | Same-conversation ChatGPT observability | Pending |
-| 7 | Bounded real scientific operation | Pending |
-| 8 | Cleanup and preferred-path documentation | Gated on real operation |
+| 5 | Orchestrator and skill routing | Passed after Phase 4 |
+| 6 | Same-conversation ChatGPT observability | Passed in WSL desktop conversation |
+| 7 | Bounded real scientific operation | Passed with parent artifact persistence |
+| 8 | Cleanup and preferred-path documentation | Complete after Phase 7 |
 
 No scientific state, scientific policy, Claude implementation, or routing changes
 are part of Phase 0.
@@ -207,19 +211,6 @@ root inventory, preserved initial failures, and the CLI equivalence results.
 Raw invocation artifacts remain at those local paths; they are not bundled into
 the code commit.
 
-### Remaining sequence
-
-1. Phase 4 is complete; authorization was limited to its inventory-only test.
-2. Phase 5 is complete; see the routing validation below.
-3. Verify the ChatGPT-facing tool inventory and same-conversation progress in
-   Phase 6; availability in this existing conversation has not been established.
-4. Obtain a bounded scientific task whose stage prerequisites and approvals are
-   satisfied before Phase 7. The model is still at unspecified specification.
-5. Perform Phase 8 cleanup only after that real operation succeeds.
-
-`AGENTS.md`, all skill routing, the installed plugin, and scientific state remain
-unchanged at the completion of Phase 4. Routing migration follows in Phase 5.
-
 ## Phase 5 — orchestrator routing
 
 Completed after the Phase 4 isolation gate passed (commit `90e9479`). AGENTS and
@@ -245,29 +236,9 @@ tool inventory contains no direct NeKo, MaBoSS, or PhysiCell tools, but that alo
 does not pass Phase 6. There is no exposed tool to reload this conversation's MCP
 inventory. The Windows-side cached plugin is still the older version; native CLI
 listing attempts did not resolve its registration, so the Windows cache was not
-edited or reported as refreshed. WSL installation is verified; Windows desktop
-installation and tool loading remain unverified.
-
-Continue in a new local Codex task opened on this WSL repository and the existing
-`codex/specialist-dispatcher` branch. Do not create a separate worktree for this
-verification: its local settings and task store would be different. First verify
-that the effective root exposes the eight dispatcher tools and no modelling MCP.
-If it does not, diagnose the desktop host/configuration loading before proceeding;
-CLI availability is not proof of desktop availability.
-
-From that same conversation, start one inventory-only `start_network_curator`
-request, with no approved writes, no modelling calls, and no session creation.
-Query `get_specialist_events` incrementally and `get_specialist_task` through its
-terminal state. Record the validated handoff, provenance, and unchanged scientific
-file hashes. Only then mark Phase 6 complete and commit its verification.
-
-Phase 7 remains unstarted: `CURRENT_STATE.md` has an undefined scientific objective,
-active stage `specification`, and no session registry entries. The inventory-only
-web-search authorization does not authorize a scientific search, topology policy,
-or stage advancement. Resolve the bounded scientific task and its prerequisites
-before its real smoke test. Phase 8 remains gated on that test's success; retain
-all legacy code and partial artifacts.
-
+edited or reported as refreshed. WSL installation is verified; native Windows
+installation was not verified.
+The same-workspace branched conversation resolved tool loading as recorded below.
 
 ### Phase 6 verification result
 
@@ -285,12 +256,6 @@ hashes are unchanged, and the JSONL contains no modelling or search calls.
 invocation, artifact hashes, and cursor sequence. This passes the desktop workflow
 gate for this workspace; the earlier reload blocker is resolved. No native Windows
 host claim is made.
-
-For Phase 7 the researcher proposed a cancer cell-cycle model validated against
-published models. Cancer type, reference model, bounded operation, construction
-policies, and validation targets remain to be specified and approved before any
-scientific stage transition. Phase 8 remains pending a successful real operation.
-
 
 ## Phase 7 — real source-import attempt blocked
 
@@ -310,8 +275,9 @@ survives. All six shared scientific files remain unchanged.
 [Phase 7 failure evidence](specialist-dispatcher-phase7-validation.json) records
 hashes, calls, parameters, and validation failures. The source input, audit,
 derivation script, and failure report were preserved under the session run directory.
-The next step is diagnosis of the NeKo import timeout; its exact internal cause
-has not been established. Phase 7 remains blocked and Phase 8 has not begun.
+The [timeout diagnosis](neko-phase7-timeout-diagnosis.md) records the available
+evidence and remaining uncertainty. The researcher superseded this test design
+with the gene-based construction below.
 
 ### Revised Phase 7 direction — de novo construction
 
@@ -320,9 +286,9 @@ Sizek, builds a new network and Boolean model, and compares its behavior with th
 published models. The direct-SIF import approach is superseded, not repaired or
 retried. Its failure evidence remains intact. The current
 [Phase 7 proposal](phase7-benchmark-proposal.md) provides a complete component map,
-a provisional 60-gene first pass, explicit unresolved choices, and proposed SIGNOR
-construction policies. Approval of those concrete scientific choices and the stage
-transition is pending. Phase 7 remains incomplete and Phase 8 has not begun.
+the approved 60-gene first pass, explicit omissions, and SIGNOR construction
+policies. Its completed technical validation follows; scientific acceptance
+and downstream work remain separately gated.
 
 
 ### Phase 7 completion — approved de novo construction
@@ -345,3 +311,45 @@ records exact IDs, hashes, findings, and parent resolution. All six shared scien
 files remain unchanged. Phase 7's technical gate passes; topology and biological
 validity remain unapproved, with no BNET export or downstream session. Phase 8 may
 now proceed. The earlier import failure remains historical evidence.
+
+
+## Phase 8 — documentation cleanup complete
+
+Completed after Phase 7 passed. The migration table now reflects verified status,
+superseded setup instructions have been removed, and the preferred dispatcher path
+links to one tool/startup guide. The CLI, Windows bridge, legacy implementation,
+and verified task-file cleanup are retained. No scientific policy changed.
+Validation: completed Phase 7 artifact validation and `git diff --check` passed.
+No runtime code changed in this phase; the 172-test Phase 5 regression result remains
+the latest full suite run.
+
+## Troubleshooting and recovery
+
+- **Dispatcher tools absent:** verify the project transport, SDK interpreter, and
+  native Codex home using the startup guide. Reload into a conversation on the same
+  workspace, then check the actual root inventory. A working CLI does not prove
+  that the desktop loaded the tools. Direct modelling tools in the root are a blocker.
+- **Task still running:** use `get_specialist_events` with the last sequence cursor
+  and `get_specialist_task` for state. Heartbeats report activity, not success.
+  Cancel through `cancel_specialist_task`; do not kill arbitrary processes.
+- **Interrupted server:** preserve `.dispatcher/` and invocation artifacts. Restart
+  marks interrupted work failed and never resumes it automatically. Inspect partial
+  artifacts before an explicitly requested replacement invocation.
+- **Technical success, scientific failure:** read the typed result and checks.
+  Technical delivery alone cannot authorize a stage transition. Preserve the original
+  result. If only report persistence or local file verification remains, the parent
+  can resolve that under the [artifact contract](handoff-validation.md), recording a
+  separate validated result. Failed modelling operations require diagnosis and a
+  separately authorized invocation; do not relabel them as successful.
+- **CLI fallback:** use `scripts/codex/run_specialist.py` through the same runtime and
+  fixed profile. Only this path needs a project-contained `.codex-tasks/` prompt
+  file; dispatcher starts accept structured task text and persist it automatically.
+  `scripts/codex/cleanup_tasks.py` retains preview and verified-leftover cleanup for
+  legacy prompts. Do not remove unmatched prompts or scientific artifacts.
+- **Rollback:** disable the dispatcher transport, retain disabled root modelling
+  servers, and use the CLI. Keep profiles, sessions, histories, and task records.
+
+The bounded test's run artifacts remain local under the recorded session paths;
+committed validation records pin their hashes. They are not bundled into the code
+refactor. Literature review, topology approval, Boolean dynamics, and comparison
+against the published reference remain outstanding scientific work.
