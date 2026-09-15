@@ -312,3 +312,14 @@ hashes, calls, parameters, and validation failures. The source input, audit,
 derivation script, and failure report were preserved under the session run directory.
 The next step is diagnosis of the NeKo import timeout; its exact internal cause
 has not been established. Phase 7 remains blocked and Phase 8 has not begun.
+
+### Revised Phase 7 direction — de novo construction
+
+The researcher clarified that the intended test starts from genes comparable to
+Sizek, builds a new network and Boolean model, and compares its behavior with the
+published models. The direct-SIF import approach is superseded, not repaired or
+retried. Its failure evidence remains intact. The current
+[Phase 7 proposal](phase7-benchmark-proposal.md) provides a complete component map,
+a provisional 60-gene first pass, explicit unresolved choices, and proposed SIGNOR
+construction policies. Approval of those concrete scientific choices and the stage
+transition is pending. Phase 7 remains incomplete and Phase 8 has not begun.

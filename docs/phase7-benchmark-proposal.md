@@ -1,106 +1,98 @@
-# Phase 7 benchmark proposal — pending researcher approval
+# Phase 7 — de novo construction benchmark
 
-## Requested objective
+## Direction approved by the researcher
 
-The researcher proposed a cancer cell-cycle model compared with published models,
-prioritizing substantial literature and experimental support over a particular cancer.
-This document proposes a benchmark; it does not approve a scientific assumption,
-mutate topology, create a session, or advance the specification stage.
+Construct a network from a biological gene pool comparable to Sizek, formulate a
+Boolean model through the existing evidence and approval workflow, and compare its
+behavior with Sizek and the researcher's PhysiBoSS implementation. This replaces
+the earlier direct-SIF import approach. The failed import and timeout diagnosis
+remain preserved as historical evidence; they are not the route forward.
 
-## Candidate references
+Reference topology and logical functions are comparison material, not construction
+inputs. The network specialist receives the approved genes, context, database, and
+policies, without the reference SIF, BND, desired edges, or desired Boolean rules.
+Keep reference outcomes in the orchestrator's evaluation record; do not ask evidence
+reviewers to find support for desired conclusions. Any later fitting to reference
+outcomes must be explicitly declared, approved, and separated from held-out tests.
 
-**Recommended for cell-cycle mechanisms: Sizek et al. (2019).** The 87-node model
-connects growth signaling, cell-cycle regulation, and apoptosis. The authors report
-comparisons with 34 knockout and 11 overexpression phenotypes. S1 Table documents
-rules and their experimental support; S4 Table lists perturbation comparisons.
-It is a general mammalian model addressing oncogenic PI3K, not a calibrated model
-of a specific patient or cancer cell line. Some results use biased asynchronous
-updates; MaBoSS equivalence must be demonstrated, not assumed.
-Source: https://doi.org/10.1371/journal.pcbi.1006402
-Access: publisher full text inspected; supplementary files not yet audited.
+## Reviewable gene pool
 
-**Alternative for cancer-specific drug-response validation: Zañudo et al. (2021).**
-The paper reports experimental testing of predicted combinations in ER-positive
-breast cancer. Its authors supply MCF7 and T47D model rules and reproduction code.
-This is attractive if drug response and proliferation are the priority; detailed
-phase-by-phase cell-cycle validation would require checking its observable coverage.
-Sources: https://pubmed.ncbi.nlm.nih.gov/34257082/
-and https://github.com/jgtz/BreastCancerModelv2
-Access: abstract and author repository documentation inspected.
+[Component map](phase7-gene-pool.csv): every one of the 90 labels in the pinned
+PhysiBoSS reference has a proposed mapping or an explicit reason for exclusion.
+[Draft request](phase7-construction-request.json): exact 60-gene first-pass pool
+and proposed policies. All proposed symbols occur in the local reviewed-human
+identifier table. This checks identifier availability, not biological equivalence.
 
-## Proposed validation design
+Important naming checks:
 
-1. Audit exact source files, license, version, identifiers, rules, and evidence.
-   Pin their hashes before import. Record unavailable supporting datasets.
-2. Specify the biological scope and mathematical semantics in a reviewable draft.
-   Distinguish reproduction of the reference from experimental validation.
-3. Build a validation matrix identifying which experiments informed construction
-   and which can serve as independent tests. Do not describe reused fitting data
-   as independent validation. No claim of clinical validity or exhaustive review.
-4. Predefine candidate baseline cycling/arrest outcomes and published perturbations.
-   Confirm exact nodes, interventions, initial states, update scheme, and acceptance
-   criteria from sources before requesting approval to run them. Do not invent
-   physical units, rates, or a conversion from update steps to hours.
+- Model PDK1 in PI3K/AKT signaling is proposed as **PDPK1**, not the PDK1 gene.
+  [NCBI PDPK1](https://www.ncbi.nlm.nih.gov/gene/5170).
+- Caspase-activated DNase (CAD) is proposed as **DFFB**, not the CAD gene.
+  [NCBI DFFB](https://www.ncbi.nlm.nih.gov/gene/1677).
+- APC/C coactivator Cdh1 is proposed as **FZR1**, not CDH1/E-cadherin.
+  [Primary FZR1/Cdh1 study](https://pubmed.ncbi.nlm.nih.gov/31318984/).
 
-## Bounded dispatcher smoke operation
+The source S1 Table's component descriptions were inspected for context:
+https://doi.org/10.1371/journal.pcbi.1006402.s015
+This is component mapping, not an adjudicated edge-evidence review.
 
-After specification approval and the explicit transition to network work, propose a
-fresh NeKo session containing an exact source-derived topology for inspection.
-Before launch, verify the supported import and signed-edge semantics and obtain
-approval for that exact import. No automated connection repair or expansion is
-proposed. Path-search policies are not applicable to an exact import unless the
-chosen tool requires them; any such requirement must be resolved before execution.
+Material representation choices are still **proposed**: examples include Cyclin A/B/E
+as CCNA2/CCNB1/CCNE1, AKT states represented by AKT1, and PI3K activity represented
+by PIK3CA. Multiple activity or transcript states collapse to one seed gene; this
+does not imply that they should collapse to one variable in the later model.
+Families and complexes with unresolved scope (ERK, MEK, RAF, RAS, SOS, IAPs, ORC,
+mTOR complexes, APC/C, pre-replication complex, and RTK) are held out of the initial
+pool. Their resolution is necessary before claiming comparable biological scope.
+Growth-factor inputs, small molecules, replication states, and phase readouts are
+not supplied as gene names. No receptor identity is invented.
 
-The immediate operation should produce the existing review artifacts and a valid
-handoff, with exact lineage and hashes, without advancing global state automatically.
-A successful network smoke test is not completion of the biological validation.
-Literature edge review, researcher approval, BNET export, and MaBoSS analyses retain
-their separate existing gates. Phase 8 cleanup remains gated on the real operation.
+## Proposed first construction
 
-## Next decision
+- Biological scope: human cell-cycle/growth/apoptosis mechanisms; no specific cancer
+  line or patient calibration is claimed.
+- Database: SIGNOR, to start from curated causal interactions.
+- `path_policy=one_shortest`; `reuse_policy=none`; `max_len=1`;
+  `only_signed=true`; `consensus=false`.
+- `sif_file=null`; the explicit approved gene list is the input.
+- Create a fresh session and record effective database/version/policies.
+- First inspect requested-gene coverage, missing genes, components, signs, source
+  references, and history. Do not silently drop missing genes or remove conflicts.
+- Direct-edge-only construction introduces no intermediate connector genes. It may
+  produce disconnected components; that is a finding to review, not permission to
+  repair. Any later `max_len=2` expansion requires a separate impact proposal.
 
-Approve the Sizek reference as the starting benchmark for cell-cycle mechanisms,
-or choose the breast-cancer alternative. Then audit source materials and prepare
-the exact specification and import proposal. No scientific model is accepted yet.
+These policies, mappings, exclusions, and the transition to network work require
+researcher approval. This document does not launch a specialist or advance state.
 
-## Researcher-supplied PhysiBoSS reference
+## Execution and validation sequence
 
-The researcher identified their published Sizek-derived implementation:
-Ruscone et al. (2024), Building multiscale models with PhysiBoSS, an agent-based
-modeling tool. https://doi.org/10.1093/bib/bbae509
-The full text describes a MaBoSS analysis and added phase readouts connected to
-PhysiCell. It reports wild-type, PLK1/FOXO3 loss, and p110 activation examples.
-Use this adaptation as a candidate reproduction reference, retaining Sizek as
-upstream mechanistic provenance. Reproduction remains distinct from independent
-experimental validation. No stage transition or mutation is authorized by this note.
+1. Approve specification, gene mapping, and the exact first-pass request.
+2. Construct and inspect the fresh network through the dispatcher; persist SIF,
+   report, important-paths summary, literature queue, typed manifest, and handoff.
+3. Review exact edge clusters, at most 13 edges per literature invocation, and
+   obtain researcher approval of topology and evidence.
+4. Export the gated NeKo-to-MaBoSS handoff. Define rule inference, outputs, initial
+   states, rates, and perturbations explicitly before dynamics.
+5. Compare predeclared qualitative cycling/arrest/apoptosis outcomes and selected
+   published perturbations. Establish comparable update semantics and observables
+   first. Model agreement is distinct from independent experimental validation.
+6. After its own approval gate, compare PhysiBoSS configurations. The approved
+   scaling **37.5** belongs to the reference comparison; it is not automatically a
+   valid calibration for a newly inferred model. Simulation execution is outside
+   the multicellular configuration specialist's claimed capabilities.
 
-### Version discrepancy to resolve before selecting parameters
+Phase 7's first technical success criterion is a real validated network operation
+with observable progress, persisted artifacts, and no automatic global stage
+advancement. Completing that check does not complete the biological comparison.
+Phase 8 remains gated on a successful real operation.
 
-- Article cell-cycle integration text: scaling 40, intracellular_dt 1 minute.
-- Figure 2 caption: scaling 41, intracellular_dt 2.5.
-- Current tutorial XML inspected on 2026-09-15: scaling 37.5,
-  intracellular_dt 2.5, maximum simulation time 2880 minutes.
+## Reference provenance and current status
 
-Current XML source:
-https://raw.githubusercontent.com/PhysiBoSS/PhysiBoSS/master/sample_projects_intracellular/boolean/tutorial/config/cell_cycle/PhysiCell_settings.xml
-Tutorial landing page: https://physiboss.github.io/tutorial/
-
-The moving master branch is not yet a pinned reproduction artifact. Resolve the
-paper-associated release/commit or supplementary archive, then hash the BND, CFG,
-XML, initialization files, and analysis notebook together. Do not mix versions or
-silently choose among these timing settings. The article confirms that a MaBoSS
-adaptation exists; it does not establish equivalence with every Sizek update scheme.
-
-
-## Approved scaling and pinned reference (2026-09-15)
-
-Researcher instruction: **use 37.5**. The benchmark scaling value is therefore
-37.5; this resolves the scaling choice recorded above. Other observed settings
-remain source values, not additional approvals or permission to advance a stage.
-
-The current tutorial source is pinned at commit
-`7180dffc72d3ce021b2eff385ff49735de5f02d8`. The XML contains scaling 37.5. BND, CFG, XML,
-initial cell positions, and both cell-cycle notebooks were downloaded for read-only
-inspection and hashed in [the reference manifest](phase7-reference-manifest.json).
-No code from those files was executed. This pins the selected current tutorial;
-it does not claim that this revision generated the original paper figures.
+Sizek et al. (2019): https://doi.org/10.1371/journal.pcbi.1006402
+Ruscone et al. (2024): https://doi.org/10.1093/bib/bbae509
+Pinned comparison revision: `7180dffc72d3ce021b2eff385ff49735de5f02d8`.
+[Reference file hashes and approved scaling](phase7-reference-manifest.json).
+The old source-derived SIF is retained only as evidence of the superseded test.
+Shared scientific state remains at specification. No new session has been created
+for the revised approach. Next decision: review the 60-gene first-pass mapping and
+SIGNOR policies, including the explicit omissions and isoform assumptions above.
