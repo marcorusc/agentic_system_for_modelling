@@ -62,3 +62,31 @@ their separate existing gates. Phase 8 cleanup remains gated on the real operati
 Approve the Sizek reference as the starting benchmark for cell-cycle mechanisms,
 or choose the breast-cancer alternative. Then audit source materials and prepare
 the exact specification and import proposal. No scientific model is accepted yet.
+
+## Researcher-supplied PhysiBoSS reference
+
+The researcher identified their published Sizek-derived implementation:
+Ruscone et al. (2024), Building multiscale models with PhysiBoSS, an agent-based
+modeling tool. https://doi.org/10.1093/bib/bbae509
+The full text describes a MaBoSS analysis and added phase readouts connected to
+PhysiCell. It reports wild-type, PLK1/FOXO3 loss, and p110 activation examples.
+Use this adaptation as a candidate reproduction reference, retaining Sizek as
+upstream mechanistic provenance. Reproduction remains distinct from independent
+experimental validation. No stage transition or mutation is authorized by this note.
+
+### Version discrepancy to resolve before selecting parameters
+
+- Article cell-cycle integration text: scaling 40, intracellular_dt 1 minute.
+- Figure 2 caption: scaling 41, intracellular_dt 2.5.
+- Current tutorial XML inspected on 2026-09-15: scaling 37.5,
+  intracellular_dt 2.5, maximum simulation time 2880 minutes.
+
+Current XML source:
+https://raw.githubusercontent.com/PhysiBoSS/PhysiBoSS/master/sample_projects_intracellular/boolean/tutorial/config/cell_cycle/PhysiCell_settings.xml
+Tutorial landing page: https://physiboss.github.io/tutorial/
+
+The moving master branch is not yet a pinned reproduction artifact. Resolve the
+paper-associated release/commit or supplementary archive, then hash the BND, CFG,
+XML, initialization files, and analysis notebook together. Do not mix versions or
+silently choose among these timing settings. The article confirms that a MaBoSS
+adaptation exists; it does not establish equivalence with every Sizek update scheme.
