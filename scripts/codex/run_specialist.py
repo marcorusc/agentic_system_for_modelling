@@ -273,7 +273,11 @@ def run_native(args: argparse.Namespace) -> int:
     except (OSError, ValueError) as exc:
         emit_status(f"preflight failed: {exc}")
         return 2
-    result = executor.execute(request, codex_executable=args.codex_executable)
+    try:
+        result = executor.execute(request, codex_executable=args.codex_executable)
+    except (OSError, ValueError) as exc:
+        emit_status(f"specialist preparation failed: {exc}")
+        return 3
     if result.artifact_dir is not None:
         output = result.artifact_dir / "specialist-output.txt"
         if output.is_file():

@@ -9,3 +9,6 @@ __pycache__/
 
 # Machine-local installer environment, state, backups, and reports
 .setup/
+
+# Dispatcher operational registry; scientific artifacts remain under runs/
+.dispatcher/

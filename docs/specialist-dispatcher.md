@@ -47,7 +47,7 @@ Disposable task-file cleanup remains available for the CLI fallback.
 | --- | --- | --- |
 | 0 | Baseline and invariants | Passed |
 | 1 | Shared runtime, unchanged CLI protections | Passed |
-| 2 | Persistent task manager and fake-worker tests | Pending |
+| 2 | Persistent task manager and fake-worker tests | Passed |
 | 3 | Local MCP server and protocol tests | Pending |
 | 4 | Root isolation, live specialist smoke tests, CLI equivalence | Pending |
 | 5 | Orchestrator and skill routing | Gated on Phase 4 |
@@ -84,3 +84,34 @@ made Codex's state directory read-only; it was preserved under `_unresolved` wit
 invocation ID `2026-09-15T024233-42482320-c91a-4b6e-bd6a-473d8c5d9b69`. The successful
 retry had permission to initialize Codex's local state; the specialist retained
 its read-only sandbox and isolation overrides. No global settings were changed.
+
+## Phase 2 — persistent task manager
+
+Task input is durably recorded before preflight. The file-backed `.dispatcher/`
+registry uses atomic replacements, file and directory synchronization, a single
+process lease, and strict IDs/path containment. Runtime callbacks report technical
+state, inventory verification, tool activity, and heartbeat events. Terminal
+success requires handoff validation and provenance. A scientific `blocked`
+handoff can still be a successful technical execution.
+
+The dispatcher limits modelling to one active worker globally and literature to
+two. Cancellation signals only managed children through the existing streaming
+mechanism. Preflight subprocesses have a 30-second deadline; cancellation during
+preflight is acted on before scientific execution. Shutdown retains its lease if
+workers have not stopped. On restart, transient records become failed and are
+never resumed or retried. Partial artifacts remain available. A corrupt task
+record is reported individually.
+
+Operational events live in `.dispatcher/events/<task-id>.jsonl`; raw sanitized
+Codex JSONL remains in the established invocation `events.jsonl`. This chooses
+the plan's separate-stream option to avoid mixing public progress with raw
+transcript/reasoning events. Queries return only the operational projection, not
+raw command arguments, search queries, tool results, or reasoning. Registry data
+is operational metadata and never replaces scientific state.
+
+Validation: 120 Codex, 19 Claude, and 26 setup tests passed (165 total). New tests
+exercise every state transition, atomic-write failure, corrupt records, symlink
+escapes, restart recovery, concurrent ownership, concurrency caps, redaction,
+pagination, and actual fake-Codex subprocesses. Integration cases cover a valid
+handoff, malformed JSONL, invalid handoff, nonzero process exit, recording failure,
+unsafe inventory, active-tool progress, heartbeats, and cancellation.

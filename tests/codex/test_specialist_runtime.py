@@ -15,6 +15,13 @@ from scripts.codex.launcher_config import build_command, SPECIALISTS
 
 
 class RuntimeTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        patch = mock.patch.object(executor, "PROJECT_ROOT", Path(temporary.name))
+        patch.start()
+        self.addCleanup(patch.stop)
+
     def test_request_rejects_unsafe_arguments(self):
         cases = [
             {"specialist": "shell"}, {"task": " "}, {"task": "x\x00y"},

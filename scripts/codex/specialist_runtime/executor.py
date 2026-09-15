@@ -8,7 +8,7 @@ import subprocess
 import time
 import uuid
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from scripts.codex.validate_handoff import HandoffValidationError, validate_handoff
 from scripts.codex.launcher_config import (
@@ -24,6 +24,21 @@ from scripts.codex.launcher_provenance import (
     utc_now, sha256_file, create_launcher_run, record_invocation,
 )
 from .models import SpecialistInvocationRequest, SpecialistExecutionResult, ExecutionState
+from .lifecycle import validate_transition
+
+
+def prepare(request: SpecialistInvocationRequest) -> SpecialistExecutionResult:
+    """Persist the bounded input before preflight or any child can start."""
+    started_at = utc_now()
+    invocation_id = f"{started_at[:19].replace(':', '')}-{uuid.uuid4()}"
+    artifact_dir = create_launcher_run(
+        project_root=PROJECT_ROOT, specialist=request.specialist,
+        prompt=request.task, launcher_run_id=invocation_id,
+    )
+    # Store the exact original bytes, including trailing whitespace.
+    (artifact_dir / "task.txt").write_text(request.task, encoding="utf-8")
+    return SpecialistExecutionResult(invocation_id, started_at, artifact_dir=artifact_dir)
+
 
 
 def parse_handoff(output: str) -> dict[str, Any] | None:
@@ -81,11 +96,17 @@ def unavailable_literature_handoff(session_id: str | None) -> dict[str, Any]:
 
 
 def _run(request: SpecialistInvocationRequest, execution: SpecialistExecutionResult,
-         *, codex_executable: str | None = None) -> int:
+         *, codex_executable: str | None = None,
+         transition: Callable[[ExecutionState], None],
+         event_callback: Callable[[dict], None],
+         cancellation_requested: Callable[[], bool],
+         dispatcher_task_id: str | None = None) -> int:
     started_at = execution.started_at
     invocation_id = execution.invocation_id
     launcher_started = time.monotonic()
     prompt = request.task
+    if cancellation_requested():
+        return 130
     try:
         codex = resolve_codex_executable(codex_executable)
         approved_tools = list(request.approved_tools)
@@ -120,16 +141,18 @@ def _run(request: SpecialistInvocationRequest, execution: SpecialistExecutionRes
             capture_output=True,
             text=True,
             env=execution_environment,
+            timeout=30,
         )
         version_text = (version_result.stdout + version_result.stderr).strip()
         version = parse_version(version_text)
-    except (OSError, subprocess.CalledProcessError, ValueError) as exc:
+    except (OSError, subprocess.SubprocessError, ValueError) as exc:
         emit_status(f"preflight failed: unable to verify Codex version: {exc}")
         return 2
     if version < MINIMUM_CODEX_VERSION:
         emit_status("preflight failed: Codex 0.153.0 or newer is required")
         return 2
 
+    event_callback({"type": "version_verified", "summary": "Codex version verified"})
     try:
         pubmed_transport = bool(transport_arguments) and request.specialist == "literature_reviewer"
         inventory_result = subprocess.run(
@@ -145,6 +168,7 @@ def _run(request: SpecialistInvocationRequest, execution: SpecialistExecutionRes
             capture_output=True,
             text=True,
             env=execution_environment,
+            timeout=30,
         )
         configured = validate_mcp_inventory(
             json.loads(inventory_result.stdout),
@@ -154,13 +178,17 @@ def _run(request: SpecialistInvocationRequest, execution: SpecialistExecutionRes
     except (
         json.JSONDecodeError,
         OSError,
-        subprocess.CalledProcessError,
+        subprocess.SubprocessError,
         ValueError,
     ) as exc:
         execution.handoff_error = redact_text(str(exc))
         emit_status(f"MCP inventory preflight failed: {exc}")
         return 2
 
+    if cancellation_requested():
+        return 130
+    event_callback({"type": "inventory_verified", "summary": "MCP inventory verified",
+                    "mcp_enabled": configured})
     modelling_inventory = ", ".join(
         f"{server}={'enabled' if configured.get(server, False) else 'disabled'}"
         for server in MODELLING_SERVERS
@@ -184,11 +212,14 @@ def _run(request: SpecialistInvocationRequest, execution: SpecialistExecutionRes
         )
 
     if request.specialist == "literature_reviewer" and literature_backend == "unavailable":
+        transition(ExecutionState.VALIDATING)
         handoff = unavailable_literature_handoff(request.record_session_id)
         final_output = json.dumps(handoff, indent=2, sort_keys=True) + "\n"
         handoff_error = None
+        transition(ExecutionState.RECORDING)
         provenance = {
             "schema_version": 1,
+            "dispatcher_task_id": dispatcher_task_id,
             "invocation_id": invocation_id,
             "launcher_run_id": invocation_id,
             "specialist": request.specialist,
@@ -231,6 +262,7 @@ def _run(request: SpecialistInvocationRequest, execution: SpecialistExecutionRes
                 expected_session_id=request.record_session_id,
                 provenance=provenance,
                 invocation_id=invocation_id,
+                launcher_dir=execution.artifact_dir,
             )
         except (HandoffValidationError, OSError, ValueError) as error:
             emit_status(f"failed to record blocked literature invocation: {error}")
@@ -240,6 +272,7 @@ def _run(request: SpecialistInvocationRequest, execution: SpecialistExecutionRes
             artifact_dir / "events.jsonl" if (artifact_dir / "events.jsonl").is_file() else None
         )
         execution.handoff = handoff if handoff_error is None else None
+        event_callback({"type": "provenance_recorded", "summary": "Provenance recorded"})
         emit_status(
             f"Recorded specialist invocation: {artifact_dir.relative_to(PROJECT_ROOT)}"
         )
@@ -251,12 +284,8 @@ def _run(request: SpecialistInvocationRequest, execution: SpecialistExecutionRes
 
     prompt_digest = hashlib.sha256(prompt.encode("utf-8")).hexdigest()
     try:
-        launcher_dir = create_launcher_run(
-            project_root=PROJECT_ROOT,
-            specialist=request.specialist,
-            prompt=prompt,
-            launcher_run_id=invocation_id,
-        )
+        launcher_dir = execution.artifact_dir
+        assert launcher_dir is not None
         output_path = launcher_dir / "specialist-output.txt"
         emit_status(
             f"launcher_run={invocation_id} event stream="
@@ -274,7 +303,7 @@ def _run(request: SpecialistInvocationRequest, execution: SpecialistExecutionRes
         )
         execution.artifact_dir = launcher_dir
         execution.event_stream = launcher_dir / "events.jsonl"
-        execution.execution_state = ExecutionState.RUNNING
+        transition(ExecutionState.RUNNING)
         result = stream_jsonl_process(
             command,
             cwd=PROJECT_ROOT,
@@ -283,12 +312,14 @@ def _run(request: SpecialistInvocationRequest, execution: SpecialistExecutionRes
             specialist=request.specialist,
             profile=profile,
             launcher_run_id=invocation_id,
+            cancellation_requested=cancellation_requested,
+            event_callback=event_callback,
         )
     except (OSError, ValueError) as exc:
         emit_status(f"specialist launch failed: {exc}")
         return 2
 
-    execution.execution_state = ExecutionState.VALIDATING
+    transition(ExecutionState.VALIDATING)
     final_output = (
         output_path.read_text(encoding="utf-8") if output_path.is_file() else ""
     )
@@ -319,9 +350,10 @@ def _run(request: SpecialistInvocationRequest, execution: SpecialistExecutionRes
         )
 
     execution.handoff_error = handoff_error
-    execution.execution_state = ExecutionState.RECORDING
+    transition(ExecutionState.RECORDING)
     provenance = {
         "schema_version": 1,
+        "dispatcher_task_id": dispatcher_task_id,
         "invocation_id": invocation_id,
         "launcher_run_id": invocation_id,
         "specialist": request.specialist,
@@ -366,6 +398,7 @@ def _run(request: SpecialistInvocationRequest, execution: SpecialistExecutionRes
             artifact_dir / "events.jsonl" if (artifact_dir / "events.jsonl").is_file() else None
         )
         execution.handoff = handoff if handoff_error is None else None
+        event_callback({"type": "provenance_recorded", "summary": "Provenance recorded"})
         emit_status(
             f"Recorded specialist invocation: {artifact_dir.relative_to(PROJECT_ROOT)}"
         )
@@ -405,20 +438,39 @@ def _run(request: SpecialistInvocationRequest, execution: SpecialistExecutionRes
 
 
 def execute(request: SpecialistInvocationRequest, *,
-            codex_executable: str | None = None) -> SpecialistExecutionResult:
-    """Execute directly in this process; only the isolated Codex child is spawned.
+            codex_executable: str | None = None,
+            prepared: SpecialistExecutionResult | None = None,
+            state_callback: Callable[[SpecialistExecutionResult], None] | None = None,
+            event_callback: Callable[[dict], None] | None = None,
+            cancellation_requested: Callable[[], bool] | None = None,
+            dispatcher_task_id: str | None = None) -> SpecialistExecutionResult:
+    """Shared execution, with internal hooks for durable technical orchestration.
 
-    Executable overrides are internal/CLI-only and never part of the MCP contract.
+    No executable, environment, path, or callback overrides are exposed over MCP.
     """
-    started_at = utc_now()
-    execution = SpecialistExecutionResult(
-        invocation_id=f"{started_at[:19].replace(':', '')}-{uuid.uuid4()}",
-        started_at=started_at,
-        execution_state=ExecutionState.PREFLIGHTING,
-    )
+    execution = prepared or prepare(request)
+    cancelled = cancellation_requested or (lambda: False)
+    def observe(event: dict) -> None:
+        if state_callback is not None:
+            state_callback(execution)
+        if event_callback is not None:
+            event_callback(sanitize_json_value(event))
+    def transition(state: ExecutionState) -> None:
+        validate_transition(execution.execution_state, state)
+        execution.execution_state = state
+        if state_callback is not None:
+            state_callback(execution)
+
     try:
-        code = _run(request, execution, codex_executable=codex_executable)
-    except (OSError, ValueError) as error:
+        if cancelled():
+            code = 130
+        else:
+            transition(ExecutionState.PREFLIGHTING)
+            code = _run(request, execution, codex_executable=codex_executable,
+                        transition=transition, event_callback=observe,
+                        cancellation_requested=cancelled,
+                        dispatcher_task_id=dispatcher_task_id)
+    except Exception as error:
         execution.handoff_error = redact_text(str(error))
         emit_status(f"specialist execution failed: {error}")
         code = 3
@@ -426,10 +478,23 @@ def execute(request: SpecialistInvocationRequest, *,
         execution.handoff = None
     execution.return_code = code
     execution.finished_at = utc_now()
-    execution.execution_state = (
-        ExecutionState.SUCCEEDED if code == 0 else
-        ExecutionState.CANCELLED if code == 130 else ExecutionState.FAILED
-    )
     if code != 0 and execution.handoff_error is None:
         execution.handoff_error = f"Specialist execution failed (exit {code}); see launcher diagnostics"
+    # Preserve early failures/cancellations as technical provenance, without inventing a handoff.
+    if execution.artifact_dir is not None and not (execution.artifact_dir / "provenance.json").exists():
+        from scripts.codex.launcher_provenance import write_json
+        try:
+            write_json(execution.artifact_dir / "provenance.json", {
+                "schema_version": 1, "invocation_id": execution.invocation_id,
+                "dispatcher_task_id": dispatcher_task_id, "specialist": request.specialist,
+                "started_at": execution.started_at, "finished_at": execution.finished_at,
+                "launcher_exit_code": code, "cancelled": code == 130,
+                "error": execution.handoff_error,
+                "prompt_sha256": hashlib.sha256(request.task.encode("utf-8")).hexdigest(),
+            })
+        except OSError:
+            code = execution.return_code = 3
+            execution.handoff_error = "Failed to record execution provenance"
+    transition(ExecutionState.SUCCEEDED if code == 0 else
+               ExecutionState.CANCELLED if code == 130 else ExecutionState.FAILED)
     return execution
