@@ -323,3 +323,25 @@ retried. Its failure evidence remains intact. The current
 a provisional 60-gene first pass, explicit unresolved choices, and proposed SIGNOR
 construction policies. Approval of those concrete scientific choices and the stage
 transition is pending. Phase 7 remains incomplete and Phase 8 has not begun.
+
+
+### Phase 7 completion — approved de novo construction
+
+The researcher approved the exact 60-gene SIGNOR first pass on 2026-09-15.
+Task `af9cdb6a6b8e45ccbc1d327b5c4a2863` created fresh session
+`d63363b6-59b4-47cf-adae-6b9110e438fd`, constructed 151 edges without connector
+genes, inspected coverage/history/connectivity/references, and exported its SIF.
+All NeKo calls succeeded; progress was visible through dispatcher events.
+
+The original scientific handoff reported `failed` because its local Python hash
+command was unavailable and repository artifacts were still drafts. The parent
+used the established [persistence contract](handoff-validation.md) to independently
+verify the existing SIF and write the reports, queue, full node list, and manifest.
+A separate orchestrator result passes the completed-artifact validator. The original
+failed result is preserved; no modelling operation was retried or result rewritten.
+
+[De novo validation evidence](specialist-dispatcher-phase7-denovo-validation.json)
+records exact IDs, hashes, findings, and parent resolution. All six shared scientific
+files remain unchanged. Phase 7's technical gate passes; topology and biological
+validity remain unapproved, with no BNET export or downstream session. Phase 8 may
+now proceed. The earlier import failure remains historical evidence.

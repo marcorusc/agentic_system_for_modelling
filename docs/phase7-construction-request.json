@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "status": "draft_requires_researcher_approval",
+  "status": "researcher_approved_first_pass",
   "objective": "Construct a human cell-cycle/growth/apoptosis network from proposed genes and causal interaction evidence, then compare independently formulated Boolean dynamics with Sizek and the researcher PhysiBoSS reference.",
   "reference_use": "Component selection and predeclared evaluation only; no reference edges or Boolean functions as construction inputs.",
   "gene_pool": [
@@ -84,13 +84,17 @@
     "follow_up": "Inspect coverage, components, signs, provenance and history before proposing any connector expansion."
   },
   "not_authorized_yet": [
-    "Gene/isoform mappings and exclusions",
-    "First-pass topology policies and construction",
-    "Scientific stage transition",
+    "Topology repair or expansion",
+    "Acceptance of edge evidence and topology",
     "Any downstream model parameters, simulations or conclusive handoff"
   ],
   "scaling": {
     "approved_value": 37.5,
     "scope": "Researcher PhysiBoSS comparison reference; not a NeKo parameter or automatic calibration of the new model."
+  },
+  "approval": {
+    "date": "2026-09-15",
+    "instruction": "I approve it",
+    "scope": "60-gene first-pass mappings/exclusions and specified SIGNOR construction policies; no repair, evidence acceptance, downstream simulation or conclusive export."
   }
 }

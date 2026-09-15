@@ -1,0 +1,292 @@
+{
+  "schema_version": 1,
+  "phase": 7,
+  "gate": "passed",
+  "scope": "Approved first-pass construction and review-artifact persistence only; no scientific acceptance or stage transition.",
+  "task_id": "af9cdb6a6b8e45ccbc1d327b5c4a2863",
+  "session_id": "d63363b6-59b4-47cf-adae-6b9110e438fd",
+  "invocation_id": "2026-09-15T045213-908a7c78-54fe-49c7-ae4a-9bed04402024",
+  "execution_state": "succeeded",
+  "original_handoff_status": "failed",
+  "original_validation_passed": false,
+  "resolution": "Parent independently verified and persisted existing export and drafts under docs/handoff-validation.md; no modelling retry and no original record rewritten.",
+  "parent_result": {
+    "path": "runs/network-curator/d63363b6-59b4-47cf-adae-6b9110e438fd/orchestrator-result.json",
+    "sha256": "0d7158082ab17be7d7db92f0a9e76ca8481c339dd302063501b4a89a3abadcfb"
+  },
+  "artifacts": [
+    {
+      "path": "runs/network-curator/d63363b6-59b4-47cf-adae-6b9110e438fd/Network.sif",
+      "sha256": "3a8a690db5f522e18e340e9526b03e1b7b66664b0d442de3ae95ee16d1dc6cb8"
+    },
+    {
+      "path": "runs/network-curator/d63363b6-59b4-47cf-adae-6b9110e438fd/nodes.json",
+      "sha256": "ba50123085e4aee342d2d317b635e3d923770db9bb54f24974bd47daf8c96298"
+    },
+    {
+      "path": "runs/network-curator/d63363b6-59b4-47cf-adae-6b9110e438fd/report.md",
+      "sha256": "5311f8fa2ea6f56ea0b87a4fec49fc6482730d3069d26edc631f125e28222f8c"
+    },
+    {
+      "path": "runs/network-curator/d63363b6-59b4-47cf-adae-6b9110e438fd/important_paths.md",
+      "sha256": "0b6bbc9e284431510598cd32d7cc78d48f874f2aa94fb506710454b0ce099938"
+    },
+    {
+      "path": "runs/network-curator/d63363b6-59b4-47cf-adae-6b9110e438fd/literature_queue.json",
+      "sha256": "27b3cd55984fc439863b611ec2a1d5be5738b9854c8e592c734a1737dfc3211b"
+    },
+    {
+      "path": "runs/network-curator/d63363b6-59b4-47cf-adae-6b9110e438fd/manifest.json",
+      "sha256": "f24d9326408565a53fc52e9cf8418bb6f8fbe5fa86ac7a1515b5feb6ac8128aa"
+    }
+  ],
+  "scientific_state_before_and_after": {
+    "MODEL_SPEC.md": "1e537df00cb9f8ce2d1911c7dc703b1163b9ff76e78ca6aa827302786e2c2487",
+    "DATA_DICTIONARY.md": "63578b9889792484c1bc977462b7bdf61928a98d54cb26f3c6128d2a4804587b",
+    "ASSUMPTIONS.md": "f7ed5bcb3ad7d68b3d29a97613c8673cf322446e80250391f4b70a4ac7cd9696",
+    "DECISIONS.md": "1aa85d04d0494be4a56c4faf5dc8a5f1026619f8fa3f9e24afb48e26e29064bb",
+    "CURRENT_STATE.md": "bd7ccdc87283d1b100db41822098c04d8e39bb3845c036e0cca0dc24dee63852",
+    "VALIDATION_PLAN.md": "4b0228138c1aba833d0a62e7002a699012015dd9d9e9d6e92fdf3c3ae8dc1b86"
+  },
+  "findings": {
+    "bimodal_edges": [
+      [
+        "CDK1",
+        "bimodal",
+        "BCL2"
+      ],
+      [
+        "FOXO3",
+        "bimodal",
+        "BCL2L11"
+      ],
+      [
+        "CDK1",
+        "bimodal",
+        "CDC25C"
+      ],
+      [
+        "CDK1",
+        "bimodal",
+        "ECT2"
+      ],
+      [
+        "FOXO3",
+        "bimodal",
+        "CDKN1B"
+      ],
+      [
+        "CHEK1",
+        "bimodal",
+        "PLK1"
+      ]
+    ],
+    "components": {
+      "connectivity": "weak",
+      "count": 9,
+      "partition": [
+        [
+          "AKT1",
+          "AKT1S1",
+          "ATR",
+          "BAD",
+          "BAK1",
+          "BAX",
+          "BCL2",
+          "BCL2L1",
+          "BCL2L11",
+          "BID",
+          "BIK",
+          "CASP3",
+          "CASP8",
+          "CASP9",
+          "CCNA2",
+          "CCNB1",
+          "CCND1",
+          "CCNE1",
+          "CDC20",
+          "CDC25A",
+          "CDC25B",
+          "CDC25C",
+          "CDC6",
+          "CDK1",
+          "CDKN1A",
+          "CDKN1B",
+          "CHEK1",
+          "CYCS",
+          "DFFB",
+          "DIABLO",
+          "E2F1",
+          "ECT2",
+          "FBXO5",
+          "FOXM1",
+          "FOXO1",
+          "FOXO3",
+          "FZR1",
+          "GSK3B",
+          "MCL1",
+          "MYC",
+          "PDPK1",
+          "PIK3CA",
+          "PLCG1",
+          "PLK1",
+          "RB1",
+          "RHEB",
+          "RPS6KB1",
+          "TSC2",
+          "WEE1"
+        ],
+        [
+          "TNFRSF10A",
+          "TNFRSF10B",
+          "TNFSF10"
+        ],
+        [
+          "CDT1",
+          "GMNN"
+        ],
+        [
+          "CASP2"
+        ],
+        [
+          "EIF4E"
+        ],
+        [
+          "GRB2"
+        ],
+        [
+          "MAD2L1"
+        ],
+        [
+          "NEDD4L"
+        ],
+        [
+          "UBE2C"
+        ]
+      ],
+      "sizes": [
+        49,
+        3,
+        2,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "count_reconciliation": "The create_network text reported 54 nodes. Final status and both coverage/connectivity inspections reported 60 nodes, including six isolates; 54 is the number participating in interactions.",
+    "coverage": {
+      "boundary_edge_count": 0,
+      "edge_count": 151,
+      "isolated_genes": [
+        "CASP2",
+        "EIF4E",
+        "GRB2",
+        "MAD2L1",
+        "NEDD4L",
+        "UBE2C"
+      ],
+      "missing_genes": [],
+      "node_count": 60,
+      "nodes_with_interactions": 54,
+      "requested_count": 60,
+      "resolved_count": 60,
+      "unexpected_genes": []
+    },
+    "history": {
+      "comparison_0_to_1": {
+        "added_edges": 151,
+        "added_nodes": [],
+        "removed_edges": 0,
+        "removed_nodes": []
+      },
+      "current_state_id": 1,
+      "max_states": null,
+      "root_state_id": 0,
+      "state_count": 2,
+      "states": [
+        {
+          "metadata": {
+            "label": "initial"
+          },
+          "parent_state_ids": [],
+          "state_id": 0
+        },
+        {
+          "metadata": {
+            "args": [],
+            "kwargs": {
+              "consensus": "False",
+              "maxlen": "1",
+              "only_signed": "True",
+              "path_policy": "one_shortest",
+              "reuse_policy": "none"
+            },
+            "method": "complete_connection"
+          },
+          "parent_state_ids": [
+            0
+          ],
+          "state_id": 1
+        }
+      ]
+    },
+    "objective": "First-pass de novo human cell-cycle/growth/apoptosis network.",
+    "references": {
+      "cross_check": {
+        "edge": [
+          "CDK1",
+          "bimodal",
+          "BCL2"
+        ],
+        "matches_history_annotations": true,
+        "pmids": [
+          "19917720",
+          "10766756"
+        ],
+        "tool": "get_references"
+      },
+      "edge_mechanism_type": "Type was null for all returned edge records.",
+      "edges_with_nonempty_reference_annotations": 151,
+      "source": "compare_network_states(session_id, state_a=0, state_b=1), added_edges[].References"
+    },
+    "sign_counts": {
+      "bimodal": 6,
+      "inhibition": 75,
+      "stimulation": 70,
+      "undefined": 0
+    }
+  },
+  "earlier_attempt": "docs/specialist-dispatcher-phase7-validation.json",
+  "scientific_approval": "pending",
+  "conclusive_handoff": "not_exported",
+  "invocation_artifacts": [
+    {
+      "path": "runs/network-curator/d63363b6-59b4-47cf-adae-6b9110e438fd/specialist-invocations/2026-09-15T045213-908a7c78-54fe-49c7-ae4a-9bed04402024/events.jsonl",
+      "sha256": "9116e4d2c914fe852c10a372be28bab11838bb824aa3aa298ff10a510defcb65"
+    },
+    {
+      "path": "runs/network-curator/d63363b6-59b4-47cf-adae-6b9110e438fd/specialist-invocations/2026-09-15T045213-908a7c78-54fe-49c7-ae4a-9bed04402024/handoff.json",
+      "sha256": "f059dfdd029007e7f1ffb70b65a096685c53a9279f9c2f6e680e8bf97906f04c"
+    },
+    {
+      "path": "runs/network-curator/d63363b6-59b4-47cf-adae-6b9110e438fd/specialist-invocations/2026-09-15T045213-908a7c78-54fe-49c7-ae4a-9bed04402024/provenance.json",
+      "sha256": "4395a702c9521cd9ff19b037a1fe64d8378ada0f246913a8855a49dfdf04c926"
+    },
+    {
+      "path": "runs/network-curator/d63363b6-59b4-47cf-adae-6b9110e438fd/specialist-invocations/2026-09-15T045213-908a7c78-54fe-49c7-ae4a-9bed04402024/specialist-output.txt",
+      "sha256": "7041dc345632df1b384c4ffd1bef93d1134ee5239836a158246f11e3ce9d8044"
+    },
+    {
+      "path": "runs/network-curator/d63363b6-59b4-47cf-adae-6b9110e438fd/specialist-invocations/2026-09-15T045213-908a7c78-54fe-49c7-ae4a-9bed04402024/task.txt",
+      "sha256": "8b8f75aa903ae1c431109499bacff3a624b7c17ae5879b70443cb93bfc08efcb"
+    }
+  ],
+  "event_sequence": 56,
+  "operational_events": {
+    "path": "runs/network-curator/d63363b6-59b4-47cf-adae-6b9110e438fd/specialist-invocations/2026-09-15T045213-908a7c78-54fe-49c7-ae4a-9bed04402024/events.jsonl",
+    "sha256": "9116e4d2c914fe852c10a372be28bab11838bb824aa3aa298ff10a510defcb65"
+  }
+}

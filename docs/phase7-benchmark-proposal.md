@@ -19,8 +19,8 @@ outcomes must be explicitly declared, approved, and separated from held-out test
 
 [Component map](phase7-gene-pool.csv): every one of the 90 labels in the pinned
 PhysiBoSS reference has a proposed mapping or an explicit reason for exclusion.
-[Draft request](phase7-construction-request.json): exact 60-gene first-pass pool
-and proposed policies. All proposed symbols occur in the local reviewed-human
+[Approved request](phase7-construction-request.json): exact 60-gene first-pass pool
+and approved policies. All proposed symbols occur in the local reviewed-human
 identifier table. This checks identifier availability, not biological equivalence.
 
 Important naming checks:
@@ -36,7 +36,7 @@ The source S1 Table's component descriptions were inspected for context:
 https://doi.org/10.1371/journal.pcbi.1006402.s015
 This is component mapping, not an adjudicated edge-evidence review.
 
-Material representation choices are still **proposed**: examples include Cyclin A/B/E
+Material representation choices were **approved for the first pass on 2026-09-15**: examples include Cyclin A/B/E
 as CCNA2/CCNB1/CCNE1, AKT states represented by AKT1, and PI3K activity represented
 by PIK3CA. Multiple activity or transcript states collapse to one seed gene; this
 does not imply that they should collapse to one variable in the later model.
@@ -46,7 +46,7 @@ pool. Their resolution is necessary before claiming comparable biological scope.
 Growth-factor inputs, small molecules, replication states, and phase readouts are
 not supplied as gene names. No receptor identity is invented.
 
-## Proposed first construction
+## Approved first construction
 
 - Biological scope: human cell-cycle/growth/apoptosis mechanisms; no specific cancer
   line or patient calibration is claimed.
@@ -61,8 +61,9 @@ not supplied as gene names. No receptor identity is invented.
   produce disconnected components; that is a finding to review, not permission to
   repair. Any later `max_len=2` expansion requires a separate impact proposal.
 
-These policies, mappings, exclusions, and the transition to network work require
-researcher approval. This document does not launch a specialist or advance state.
+The researcher approved these policies, mappings, exclusions, and bounded first-pass
+construction with “I approve it” on 2026-09-15. Topology acceptance, repair, and
+downstream modelling remain separate approval gates.
 
 ## Execution and validation sequence
 
@@ -84,7 +85,7 @@ researcher approval. This document does not launch a specialist or advance state
 Phase 7's first technical success criterion is a real validated network operation
 with observable progress, persisted artifacts, and no automatic global stage
 advancement. Completing that check does not complete the biological comparison.
-Phase 8 remains gated on a successful real operation.
+The real operation and parent artifact validation passed; Phase 8 is now eligible.
 
 ## Reference provenance and current status
 
@@ -93,6 +94,15 @@ Ruscone et al. (2024): https://doi.org/10.1093/bib/bbae509
 Pinned comparison revision: `7180dffc72d3ce021b2eff385ff49735de5f02d8`.
 [Reference file hashes and approved scaling](phase7-reference-manifest.json).
 The old source-derived SIF is retained only as evidence of the superseded test.
-Shared scientific state remains at specification. No new session has been created
-for the revised approach. Next decision: review the 60-gene first-pass mapping and
-SIGNOR policies, including the explicit omissions and isoform assumptions above.
+Shared scientific state remains at specification; no global stage was advanced.
+The approved construction created session `d63363b6-59b4-47cf-adae-6b9110e438fd`:
+60 genes, 151 interactions, nine weak components, six isolated genes, and six bimodal
+interactions. All seeds resolved and no connector genes were introduced.
+
+The specialist exported the SIF but returned `failed` after an unavailable local
+Python command prevented hashing. Following the existing parent-persistence
+contract, the orchestrator verified the export and persisted the required review
+artifacts, preserving the original failed result. The separate completed result
+passes the artifact validator. [Technical validation evidence](specialist-dispatcher-phase7-denovo-validation.json)
+records both statuses, artifact hashes, and unchanged scientific-file hashes.
+This completes the dispatcher smoke test, not the biological comparison.
