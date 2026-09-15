@@ -356,7 +356,8 @@ against the published reference remain outstanding scientific work.
 
 ## Subsequent curation findings
 
-The single-invocation smoke test does not establish live session continuity across
-ephemeral specialists. [Curation follow-up](neko-curation-continuity.md) records the
-observed session-lifetime and targeted-preview limitations, a rejected reconstruction
-handoff, and the tested JSON-safe redaction fix. Scientific curation remains pending.
+Specialists execute complete bounded workflows through export. Later adjustments
+import the exported artifact into a fresh session; persistent live sessions are
+not required. [Curation follow-up](neko-curation-continuity.md) records this clarified
+design, the targeted-preview limitation, a rejected reconstruction handoff, and
+the tested JSON-safe redaction fix. Scientific curation remains pending.

@@ -1,10 +1,11 @@
-# NeKo curation continuation: observed limitations
+# NeKo curation: artifact-based continuation
 
 2026-09-15. This records live findings after the dispatcher migration smoke test.
-The earlier test established single-invocation construction, not continuity of
-in-memory modelling state between fresh specialist processes.
+The researcher clarified that specialist sessions are intentionally ephemeral.
+Continuation uses exported artifacts in fresh sessions; live-session persistence
+is not a requirement or a defect to fix.
 
-## Session lifetime
+## Intended workflow and session lifetime
 
 The network profile launches `mcp-neko-server` by command over stdio. Each ephemeral
 specialist therefore gets its own server. Installed `NeKoSessionManager.__init__`
@@ -24,10 +25,31 @@ original, SHA-256 `3a8a690db5f522e18e340e9526b03e1b7b66664b0d442de3ae95ee16d1dc6
 This verifies export bytes only, not a complete accepted live-state handoff.
 Artifacts and failure metadata remain under the descendant's run directory.
 
-Durable session serialization/restoration or a separately designed local persistent
-server would be needed for continuing the same mutable session across invocations.
-Neither is implemented or authorized by this diagnosis. No server exposure or
-root modelling-tool access was introduced.
+The earlier proposal to fix session continuity was an orchestrator interpretation
+error, withdrawn following researcher clarification. No persistent server or live
+session restoration is planned.
+
+The orchestrator supplies a complete bounded workflow to the specialist: create a
+fresh session, construct or import the input artifact, inspect it, execute the
+explicitly authorized curation/analysis, validate, and export before returning.
+For later adjustments, import the project's own exported SIF into a fresh NeKo
+session and execute a new fixing workflow through export. Do not query a prior
+invocation's session ID as though it were still live, or rebuild from database
+seeds by default when the intended input is the saved network.
+
+Importing our own constructed SIF for continuation is distinct from using the
+Sizek reference SIF to construct the original network. The reference remains
+comparison material. Carry the complete node inventory, references, policies and
+upstream artifact hashes alongside SIF: this export omits the six isolated genes.
+Verify restored nodes/edges and report any importer-induced differences before
+applying the authorized edits; SIF alone does not restore full session history.
+
+“Complete workflow” is bounded by its existing approvals. Export SIF for review
+when further scientific decisions are needed; produce BNET or a conclusive typed
+handoff only when the relevant topology/evidence approval is already present.
+An approval pause starts a later artifact-based workflow, not a resumed agent.
+The dispatcher remains the execution interface; scientific scope and stage
+transitions remain the orchestrator's responsibility.
 
 ## Preview scope
 
