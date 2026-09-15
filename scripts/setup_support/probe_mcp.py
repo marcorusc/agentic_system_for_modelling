@@ -12,12 +12,14 @@ from mcp.types import PaginatedRequestParams
 async def main():
     async with stdio_client(StdioServerParameters(command=sys.argv[1], env=dict(os.environ))) as (read, write):
         async with ClientSession(read, write) as session:
-            await session.initialize()
+            async with asyncio.timeout(30):
+                await session.initialize()
             names = []
             cursor = None
             seen = set()
             while True:
-                result = await session.list_tools(params=PaginatedRequestParams(cursor=cursor))
+                async with asyncio.timeout(30):
+                    result = await session.list_tools(params=PaginatedRequestParams(cursor=cursor))
                 names.extend(tool.name for tool in result.tools)
                 cursor = result.next_cursor
                 if not cursor:

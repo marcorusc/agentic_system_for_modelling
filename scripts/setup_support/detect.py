@@ -30,7 +30,16 @@ def run(argv: list[str], *, cwd: Path | None = None, timeout: int = 30,
                     pass
             else:
                 process.kill()
-            process.communicate()
+            # A transport may start a child in a separate process group that still
+            # holds these pipes. Never turn the timeout into an unbounded drain.
+            try:
+                process.communicate(timeout=2)
+            except subprocess.TimeoutExpired:
+                if process.stdout is not None:
+                    process.stdout.close()
+                if process.stderr is not None:
+                    process.stderr.close()
+                process.wait(timeout=2)
             raise
         result = subprocess.CompletedProcess(argv, process.returncode, stdout, stderr)
     except (OSError, subprocess.TimeoutExpired) as error:

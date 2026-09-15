@@ -21,13 +21,15 @@ from scripts.setup_support.state import SetupError, atomic_write, read_json, wri
 
 
 INPUT_KEYS = {"client", "env_prefix", "manager", "codex_path", "claude_path", "codex_home",
-              "manager_path", "package_source"}
+              "manager_path", "package_source", "environment_mode", "biomass"}
 
 
 def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--client", choices=("codex", "claude", "both"))
     p.add_argument("--manager", choices=("auto", "conda", "venv"))
+    p.add_argument("--environment-mode", choices=("managed", "reuse"))
+    p.add_argument("--with-biomass", dest="biomass", action="store_const", const="enabled")
     for name in ("env-prefix", "codex-path", "claude-path", "codex-home", "manager-path", "package-source"):
         p.add_argument("--" + name)
     p.add_argument("--config", type=Path, help="JSON path overrides; no credentials")
@@ -62,6 +64,12 @@ def settings(args, root: Path) -> dict:
         raise SetupError("client must be codex, claude, or both")
     if values.get("manager", "auto") not in ("auto", "conda", "venv"):
         raise SetupError("manager must be auto, conda, or venv")
+    if values.get("environment_mode", "managed") not in {"managed", "reuse"}:
+        raise SetupError("environment_mode must be managed or reuse")
+    if values.get("biomass", "disabled") not in {"enabled", "disabled"}:
+        raise SetupError("biomass must be enabled or disabled")
+    if values.get("environment_mode") == "reuse" and values.get("package_source"):
+        raise SetupError("reuse mode cannot install --package-source; omit it")
     return values
 
 
@@ -114,22 +122,23 @@ def plan(args, root: Path, manifest: dict) -> tuple[dict, list[str]]:
                 errors.append(str(error))
     clients = {name: clients[name] for name in selected if name in clients}
     prefix = Path(values.get("env_prefix", str(root/".setup/environment"))).expanduser().absolute()
+    reuse = values.get("environment_mode") == "reuse"
     manager = values.get("manager", "auto")
     manager_path = values.get("manager_path")
     if manager == "auto":
         manager = "conda" if detect.discover("conda") else "venv"
     try:
-        executable = detect.discover("conda", manager_path) if manager == "conda" else detect.discover("python", manager_path or sys.executable)
+        executable = str(prefix / "bin/python") if reuse else (detect.discover("conda", manager_path) if manager == "conda" else detect.discover("python", manager_path or sys.executable))
     except SetupError as error:
         errors.append(str(error))
         executable = None
     if not executable:
         errors.append(f"Missing environment manager {manager}; supply --manager-path")
-    elif manager == "venv" and manager_path:
+    elif not reuse and manager == "venv" and manager_path:
         version = detect.client_version("python", executable)
         if tuple(map(int, version.split("."))) < (3, 11):
             errors.append("The selected venv Python must be 3.11 or newer")
-    if manager == "venv" and not detect.discover("dot"):
+    if not reuse and manager == "venv" and not detect.discover("dot"):
         errors.append("Graphviz dot is missing; install Graphviz or select --manager conda")
     source = values.get("package_source")
     if source:
@@ -145,6 +154,8 @@ def plan(args, root: Path, manifest: dict) -> tuple[dict, list[str]]:
     home = str(Path(values.get("codex_home", os.environ.get("CODEX_HOME", str(Path.home()/".codex")))).expanduser().absolute())
     resolved = {"client": selection, "clients": clients, "client_versions": versions,
                 "system": system, "env_prefix": str(prefix), "manager": manager,
+                "environment_mode": "reuse" if reuse else "managed",
+                "biomass": values.get("biomass", "disabled"),
                 "manager_path": executable, "codex_home": home, "package_source": source,
                 "package": f'{manifest["package"]}=={manifest["version"]}'}
     return resolved, errors
@@ -158,22 +169,32 @@ def execute(args, root: Path = ROOT) -> dict:
     if errors:
         return report
     prefix = Path(resolved["env_prefix"])
+    with_biomass = resolved["biomass"] == "enabled"
+    options = {"with_biomass": True} if with_biomass else {}
     outputs = {}
     if "codex" in resolved["clients"]:
-        outputs.update(configure_codex.render(root, prefix, Path(resolved["codex_home"])))
+        outputs.update(configure_codex.render(root, prefix, Path(resolved["codex_home"]), **options))
     if "claude" in resolved["clients"]:
-        outputs.update(configure_claude.render(root, prefix))
+        outputs.update(configure_claude.render(root, prefix, **options))
     report["configuration_files"] = [str(path) for path in outputs]
     if args.dry_run:
         report["passed"] = True
         return report
-    if not args.check:
+    if not args.check and resolved["environment_mode"] != "reuse":
         print("Preparing modelling environment…", file=sys.stderr, flush=True)
         environment.install(prefix, resolved["manager"], resolved["manager_path"], manifest, resolved["package_source"])
+    if with_biomass:
+        manifest = {**manifest, "executables": [*manifest["executables"], "mcp-biomass-server"],
+                    "imports": [*manifest["imports"], "biomass", "mcp_biomodelling_servers.BioMASS"]}
     report["environment"] = environment.verify_environment(prefix, manifest)
     if not report["environment"]["passed"]:
         report["errors"].extend(report["environment"]["errors"])
         return report
+    if with_biomass:
+        report["capabilities"] = verify.probe_servers(prefix, with_biomass=True)
+        if not report["capabilities"]["passed"]:
+            report["errors"].extend(report["capabilities"]["errors"])
+            return report
     if args.check:
         for path, text in outputs.items():
             if not path.is_file() or path.read_text(encoding="utf-8") != text:
@@ -192,7 +213,7 @@ def execute(args, root: Path = ROOT) -> dict:
         if "codex" in resolved["clients"]:
             configure_codex.ensure_plugin(root, resolved["clients"]["codex"], check=args.check)
         print("Checking MCP startup and client inventories…", file=sys.stderr, flush=True)
-        report["verification"] = verify.verify(root, prefix, resolved["clients"])
+        report["verification"] = verify.verify(root, prefix, resolved["clients"], **options)
     finally:
         if previous_home is None:
             os.environ.pop("CODEX_HOME", None)

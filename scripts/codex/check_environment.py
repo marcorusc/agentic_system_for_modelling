@@ -244,6 +244,7 @@ def check_environment(
     codex: str,
     expected_branch: str,
     allow_web_search: bool,
+    with_biomass: bool = False,
 ) -> dict[str, Any]:
     branch = current_branch(project_root)
     required, missing = required_paths(project_root)
@@ -253,12 +254,13 @@ def check_environment(
         "servers": [],
         "error": "Codex version check failed",
     }
+    model_specialists = MODEL_SPECIALISTS + (("ode_modeler",) if with_biomass else ())
     specialists = {
         specialist: specialist_inventory(codex, specialist, project_root)
-        for specialist in MODEL_SPECIALISTS
+        for specialist in model_specialists
     } if version_passed else {
         specialist: {"passed": False, "servers": [], "error": "Codex version check failed"}
-        for specialist in MODEL_SPECIALISTS
+        for specialist in model_specialists
     }
     literature = literature_inventory(codex, project_root) if version_passed else {
         "passed": False,
@@ -308,6 +310,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--expected-branch", default="codex-compatible")
     parser.add_argument("--allow-web-search", action="store_true")
+    parser.add_argument("--with-biomass", action="store_true")
     parser.add_argument("--codex-executable", help=argparse.SUPPRESS)
     return parser.parse_args(argv)
 
@@ -324,6 +327,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             codex=codex,
             expected_branch=arguments.expected_branch,
             allow_web_search=arguments.allow_web_search,
+            with_biomass=arguments.with_biomass,
         )
     except (OSError, ValueError) as error:
         print(json.dumps({"schema_version": 1, "passed": False, "error": str(error)}))

@@ -2,20 +2,21 @@
 from __future__ import annotations
 
 import json
-import os
 import re
 from pathlib import Path
 
 from .state import SetupError
+from .environment import transport_path
 
 
 ROLES = {"network-curator": "neko", "boolean-dynamics-modeler": "maboss",
          "multicellular-configurator": "physicell"}
 
 
-def render(root: Path, prefix: Path) -> dict[Path, str]:
+def render(root: Path, prefix: Path, *, with_biomass: bool = False) -> dict[Path, str]:
     outputs = {}
-    for role, server in ROLES.items():
+    roles = {**ROLES, **({"ode-modeler": "biomass"} if with_biomass else {})}
+    for role, server in roles.items():
         path = root/".claude/agents"/f"{role}.md"
         text = path.read_text(encoding="utf-8")
         parts = text.split("---\n", 2)
@@ -34,7 +35,7 @@ def render(root: Path, prefix: Path) -> dict[Path, str]:
         values = {
             "command": str(prefix/"bin"/f"mcp-{server}-server"),
             "CONDA_PREFIX": str(prefix),
-            "PATH": str(prefix/"bin") + os.pathsep + os.environ.get("PATH", ""),
+            "PATH": transport_path(prefix),
         }
         for key, value in values.items():
             indent = "      " if key == "command" else "        "
@@ -42,6 +43,14 @@ def render(root: Path, prefix: Path) -> dict[Path, str]:
             if len(re.findall(pattern, block, re.MULTILINE)) != 1:
                 raise SetupError(f"Unsupported {key} field in {path.name}; restore the standard transport layout")
             block = re.sub(pattern, lambda _: indent + key + ": " + json.dumps(value), block, flags=re.MULTILINE)
+        if server == "biomass":
+            for key, value in {"NUMBA_CACHE_DIR": str(root/".setup/cache/biomass-numba"), "PYTHONDONTWRITEBYTECODE": "1"}.items():
+                pattern = rf"^        {key}: .+$"
+                line = "        " + key + ": " + json.dumps(value)
+                if re.search(pattern, block, re.MULTILINE):
+                    block = re.sub(pattern, lambda _: line, block, flags=re.MULTILINE)
+                else:
+                    block += line + "\n"
         outputs[path] = "---\n" + header[:begin] + block + header[end:] + "---\n" + parts[2]
     hook = root/".claude/agents/literature-reviewer.md"
     text = hook.read_text(encoding="utf-8")

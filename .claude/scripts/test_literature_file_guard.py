@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -215,7 +216,13 @@ class LiteratureReviewerDefinitionTests(unittest.TestCase):
         definition = AGENT.read_text(encoding="utf-8")
         self.assertIn("  - Write\n", definition)
         self.assertIn('    - matcher: "Read|Write"\n', definition)
-        self.assertIn("          command: python\n", definition)
+        match = re.search(r"^          command: (.+)$", definition, re.MULTILINE)
+        self.assertIsNotNone(match)
+        scalar = match.group(1)
+        command = json.loads(scalar) if scalar.startswith('"') else scalar
+        self.assertIn(Path(command).name, ("python", "python3"))
+        if command not in ("python", "python3"):
+            self.assertTrue(Path(command).is_absolute())
         self.assertIn(
             '            - "${CLAUDE_PROJECT_DIR}/.claude/scripts/'
             'literature_file_guard.py"\n',

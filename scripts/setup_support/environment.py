@@ -42,9 +42,15 @@ def install(prefix: Path, manager: str, manager_path: str, manifest: dict,
         atomic_write(prefix/".setup-installed", b"installed\n")
 
 
+def transport_path(prefix: Path) -> str:
+    """Stable Linux/WSL transport PATH; never persist IDE or Codex temporary helpers."""
+    return os.pathsep.join(dict.fromkeys([str(prefix / "bin"), "/usr/local/sbin", "/usr/local/bin",
+                                         "/usr/sbin", "/usr/bin", "/sbin", "/bin"]))
+
+
 def runtime_env(prefix: Path) -> dict:
     inherited = {k: v for k, v in os.environ.items() if k not in {"PYTHONPATH", "PYTHONHOME"}}
-    return {**inherited, "PATH": str(prefix/"bin") + os.pathsep + os.environ.get("PATH", ""),
+    return {**inherited, "PATH": transport_path(prefix),
             "CONDA_PREFIX": str(prefix), "PYTHONNOUSERSITE": "1", "PYTHONDONTWRITEBYTECODE": "1"}
 
 
@@ -59,7 +65,7 @@ def verify_environment(prefix: Path, manifest: dict) -> dict:
     program += f"print(json.dumps({{'version':m.version({manifest['package']!r})}}))"
     try:
         with tempfile.TemporaryDirectory(prefix="biomodelling-imports-") as temporary:
-            versions = json.loads(run([str(python), "-I", "-B", "-c", program], cwd=Path(temporary), env=runtime_env(prefix), timeout=120).stdout)
+            versions = json.loads(run([str(python), "-I", "-B", "-c", program], cwd=Path(temporary), env={**runtime_env(prefix), "NUMBA_CACHE_DIR": str(Path(temporary)/"numba-cache")}, timeout=120).stdout)
         if versions["version"] != manifest["version"]:
             errors.append(f"Expected {manifest['package']} {manifest['version']}, found {versions['version']}")
         run([str(python), "-m", "pip", "check"], timeout=60)
