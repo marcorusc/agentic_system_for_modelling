@@ -43,11 +43,12 @@ def is_strictly_below(path: Path, directory: Path) -> bool:
     return True
 
 
-def load_hook_input() -> tuple[str, Path]:
+def load_hook_input(payload: object = None) -> tuple[str, Path]:
     """Parse and validate the common tool-call fields used by this guard."""
 
     try:
-        payload = json.load(sys.stdin)
+        if payload is None:
+            payload = json.load(sys.stdin)
     except (json.JSONDecodeError, OSError) as error:
         deny(f"invalid hook JSON input: {error}")
 
@@ -107,8 +108,34 @@ def validate_read(candidate: Path) -> None:
 
 
 def main() -> int:
-    tool_name, candidate = load_hook_input()
+    try:
+        payload = json.load(sys.stdin)
+    except (ValueError, OSError) as error:
+        deny(f"invalid hook JSON input: {error}")
+    tool_name, candidate = load_hook_input(payload)
     if tool_name == "Write":
+        # ODE mode adds content/identity/immutability checks; legacy edge behaviour stays intact.
+        try:
+            relative = candidate.relative_to(Path(os.environ.get("CLAUDE_PROJECT_DIR", "")))
+        except ValueError:
+            relative = Path()
+        if len(relative.parts) >= 4 and relative.parts[:2] == ("evidence", "reports") and relative.parts[3] == "ode":
+            sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+            from scripts.codex.ode_evidence import destination, validate_ode_report
+            try:
+                project = Path(os.environ.get("CLAUDE_PROJECT_DIR", ""))
+                relative = candidate.relative_to(project)
+                if len(relative.parts) != 5 or relative.parts[:2] != ("evidence", "reports") or relative.parts[3] != "ode" or candidate.suffix != ".md":
+                    raise ValueError("invalid ODE evidence path")
+                expected = destination(project, relative.parts[2], candidate.stem)
+                if expected != candidate or expected.exists():
+                    raise ValueError("refusing ODE report overwrite or path mismatch")
+                content = payload["tool_input"].get("content")
+                if not isinstance(content, str):
+                    raise ValueError("ODE report Write requires content")
+                validate_ode_report(content, candidate.stem)
+            except (ValueError, OSError, KeyError) as error:
+                deny(str(error))
         validate_write(candidate)
     else:
         validate_read(candidate)

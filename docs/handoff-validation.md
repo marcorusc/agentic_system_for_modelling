@@ -73,3 +73,11 @@ Unknown enabled names are rejected, including aliases. Disabled unrelated entrie
 are allowed. The inventory checks configuration, not whether a server binary is
 trustworthy or responds correctly; required server startup and tool availability
 must still succeed. Parent desktop-tool isolation remains an external requirement.
+
+## BioMASS and ODE literature
+
+The version-1 envelope additionally supports ode_modeler / biomass_ode, with the
+required ode provenance object and completion rules in docs/ode-workflow.md.
+Existing edge reviews default to review_kind=edge; review_kind=ode uses immutable
+claim reports under the BioMASS evidence session. New ODE results do not relax the
+existing specialists' lineage, artifact or approval requirements.

@@ -17,18 +17,21 @@ SCHEMA_VERSION = 1
 SESSION_ID = re.compile(r"\A[A-Za-z0-9][A-Za-z0-9._-]{0,127}\Z")
 STATUSES = {"completed", "blocked", "needs_approval", "failed"}
 SPECIALIST_STAGES = {
+    "ode_modeler": "biomass_ode",
     "network_curator": "neko_network",
     "literature_reviewer": "literature_review",
     "boolean_dynamics_modeler": "maboss_dynamics",
     "multicellular_configurator": "physicell_configuration",
 }
 SAFE_NEXT_STAGES = {
+    "biomass_ode": {None, "researcher_approval"},
     "neko_network": {None, "literature_review", "researcher_approval"},
     "literature_review": {None, "researcher_approval"},
     "maboss_dynamics": {None, "researcher_approval"},
     "physicell_configuration": {None, "researcher_approval"},
 }
 ARTIFACT_ROOTS = {
+    "ode_modeler": ("runs/ode-modeler",),
     "network_curator": ("runs/network-curator",),
     "literature_reviewer": ("evidence/reports",),
     "boolean_dynamics_modeler": ("runs/boolean-dynamics-modeler",),
@@ -162,7 +165,22 @@ def _completed_artifacts(handoff: dict[str, Any], project: Path) -> None:
             from scripts.codex.write_literature_report import validate_report
         except ModuleNotFoundError:
             from write_literature_report import validate_report
+        if handoff.get("review_kind", "edge") == "ode":
+            try:
+                from scripts.codex.ode_evidence import validate_ode_report
+            except ModuleNotFoundError:
+                from ode_evidence import validate_ode_report
+            for path, file in files.items():
+                if file.parent != project / "evidence/reports" / handoff["session_id"] / "ode" or file.suffix != ".md":
+                    raise HandoffValidationError("ODE claim report has an invalid location")
+                try:
+                    validate_ode_report(file.read_text(), file.stem)
+                except (OSError, ValueError) as error:
+                    raise HandoffValidationError(str(error)) from error
+            return
         for path, file in files.items():
+            if file.parent != project / "evidence/reports" / handoff["session_id"]:
+                raise HandoffValidationError("edge report must be directly under its NeKo session")
             parts = file.stem.split("__")
             if file.suffix != ".md" or len(parts) != 2:
                 raise HandoffValidationError(f"invalid edge report filename: {path}")
@@ -202,6 +220,17 @@ def _completed_artifacts(handoff: dict[str, Any], project: Path) -> None:
     elif specialist == "boolean_dynamics_modeler":
         if not {".bnd", ".cfg"} <= suffixes:
             raise HandoffValidationError("MaBoSS stage requires BND and CFG exports")
+    elif specialist == "ode_modeler":
+        try:
+            from scripts.codex.ode_artifacts import validate_completion
+        except ModuleNotFoundError:
+            from ode_artifacts import validate_completion
+        try:
+            if manifest.get("ode") != handoff.get("ode"):
+                raise ValueError("ODE manifest provenance differs from the typed result")
+            validate_completion(handoff, project, files)
+        except (OSError, ValueError, KeyError, TypeError) as error:
+            raise HandoffValidationError(str(error)) from error
     elif ".xml" not in suffixes:
         raise HandoffValidationError("PhysiCell stage requires an XML configuration export")
     if specialist == "multicellular_configurator":
@@ -220,6 +249,7 @@ def validate_handoff(
     project_root: Path = PROJECT_ROOT,
     expected_specialist: str | None = None,
     expected_session_id: str | None = None,
+    expected_review_kind: str | None = None,
 ) -> dict[str, Any]:
     """Validate and return the original handoff object."""
 
@@ -238,6 +268,10 @@ def validate_handoff(
         raise HandoffValidationError(
             f"specialist {specialist!r} does not match requested role {expected_specialist!r}"
         )
+    if specialist == "literature_reviewer":
+        kind = handoff.get("review_kind", "edge")
+        if kind not in {"edge", "ode"} or (expected_review_kind is not None and kind != expected_review_kind):
+            raise HandoffValidationError("literature review kind mismatch")
     expected_stage = SPECIALIST_STAGES[specialist]
     if handoff["stage"] != expected_stage:
         raise HandoffValidationError(
@@ -265,6 +299,15 @@ def validate_handoff(
     ):
         raise HandoffValidationError(f"{specialist} requires upstream session lineage")
 
+    if specialist == "ode_modeler" and status in {"completed", "needs_approval"}:
+        try:
+            from scripts.codex.ode_artifacts import validate_metadata
+        except ModuleNotFoundError:
+            from ode_artifacts import validate_metadata
+        try:
+            validate_metadata(handoff)
+        except (ValueError, TypeError) as error:
+            raise HandoffValidationError(str(error)) from error
     for field in ("actions", "assumptions", "decisions_required"):
         _list_field(handoff, field)
     artifacts = _list_field(handoff, "artifacts")
@@ -311,6 +354,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("handoff", type=Path, help="JSON handoff file")
     parser.add_argument("--specialist", choices=sorted(SPECIALIST_STAGES))
     parser.add_argument("--session-id")
+    parser.add_argument("--review-kind", choices=("edge", "ode"))
     return parser.parse_args(argv)
 
 
@@ -327,6 +371,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             payload,
             expected_specialist=arguments.specialist,
             expected_session_id=arguments.session_id,
+            expected_review_kind=arguments.review_kind,
         )
     except (OSError, UnicodeError, json.JSONDecodeError, HandoffValidationError) as error:
         fail(str(error))
