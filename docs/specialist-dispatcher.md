@@ -210,7 +210,7 @@ the code commit.
 ### Remaining sequence
 
 1. Phase 4 is complete; authorization was limited to its inventory-only test.
-2. Perform Phase 5 orchestrator/skill migration.
+2. Phase 5 is complete; see the routing validation below.
 3. Verify the ChatGPT-facing tool inventory and same-conversation progress in
    Phase 6; availability in this existing conversation has not been established.
 4. Obtain a bounded scientific task whose stage prerequisites and approvals are
@@ -228,3 +228,42 @@ execution success from scientific status, and retain the shared-runtime CLI fall
 Scientific policy, stage gates, shared state, and Claude implementation are unchanged.
 Validation: 127 Codex, 19 Claude, and 26 setup tests passed; all five changed skills
 passed the skill-creator validator.
+
+
+## Phase 6 — integration prepared; desktop verification pending
+
+The WSL local plugin was refreshed from the verified repository marketplace with
+`codex plugin add agentic-system-for-modelling@agentic-modelling-local`, using
+`CODEX_HOME=/home/marcorusc/.codex`. Structured plugin listing confirms version
+`0.1.0+codex.20260915040240`, enabled, with this repository as its local source.
+The manifest passes the plugin-creator validator. The plugin remains skills-only;
+the project `.codex/config.toml` owns the dispatcher transport so execution stays
+bound to the working repository rather than a cached plugin copy.
+
+This existing desktop conversation has no callable dispatcher tools. Its available
+tool inventory contains no direct NeKo, MaBoSS, or PhysiCell tools, but that alone
+does not pass Phase 6. There is no exposed tool to reload this conversation's MCP
+inventory. The Windows-side cached plugin is still the older version; native CLI
+listing attempts did not resolve its registration, so the Windows cache was not
+edited or reported as refreshed. WSL installation is verified; Windows desktop
+installation and tool loading remain unverified.
+
+Continue in a new local Codex task opened on this WSL repository and the existing
+`codex/specialist-dispatcher` branch. Do not create a separate worktree for this
+verification: its local settings and task store would be different. First verify
+that the effective root exposes the eight dispatcher tools and no modelling MCP.
+If it does not, diagnose the desktop host/configuration loading before proceeding;
+CLI availability is not proof of desktop availability.
+
+From that same conversation, start one inventory-only `start_network_curator`
+request, with no approved writes, no modelling calls, and no session creation.
+Query `get_specialist_events` incrementally and `get_specialist_task` through its
+terminal state. Record the validated handoff, provenance, and unchanged scientific
+file hashes. Only then mark Phase 6 complete and commit its verification.
+
+Phase 7 remains unstarted: `CURRENT_STATE.md` has an undefined scientific objective,
+active stage `specification`, and no session registry entries. The inventory-only
+web-search authorization does not authorize a scientific search, topology policy,
+or stage advancement. Resolve the bounded scientific task and its prerequisites
+before its real smoke test. Phase 8 remains gated on that test's success; retain
+all legacy code and partial artifacts.
