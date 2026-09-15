@@ -19,3 +19,10 @@
 ## Candidate alternatives
 
 ## Known limitations
+
+## Formulation decision
+
+- Candidate formulations and suitability:
+- Researcher-confirmed formulation and decision reference:
+- Quantitative data and parameter limitations:
+- ODE mechanisms, kinetic approximations and species mappings (when applicable):

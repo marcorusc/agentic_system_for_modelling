@@ -617,3 +617,31 @@ limits in [handoff validation](docs/handoff-validation.md).
 
 This template configures agents and project workflows. It does not modify or release
 the NeKo, MaBoSS, PubMed, or PhysiCell MCP server source repositories.
+
+## BioMASS ODE specialist
+
+The orchestrator recommends Boolean or ODE formulation during specification and
+records the researcher's choice. `ode_modeler` (Codex) / `ode-modeler` (Claude) builds
+ODEs using BioMASS alone. It supports approved NeKo-to-BioMASS handoffs, standalone
+Text2Model inputs, conversational reaction authoring and requested exploratory runs.
+Read [ODE workflow and contracts](docs/ode-workflow.md).
+
+To connect an existing environment without reinstalling packages:
+
+```bash
+python scripts/setup.py --client both --environment-mode reuse --env-prefix /path/to/mcp_modelling --with-biomass --dry-run
+python scripts/setup.py --client both --environment-mode reuse --env-prefix /path/to/mcp_modelling --with-biomass
+```
+
+Existing installations can omit `--with-biomass`. Capability checks detect the local
+ODE build even though it shares package version 2.3.0 with older releases. Reuse mode
+never takes ownership of or installs into the existing environment. Restart the clients
+after configuration changes. Validate Codex with `scripts/codex/check_environment.py
+--with-biomass --expected-branch <current-branch>`. Parent modelling tools must be absent.
+
+Example requests: “Help choose Boolean or ODE formulation for my measured time
+courses”; “Build the approved reactions from this Text2Model file”; “Preview this
+reaction change”; “Simulate the approved scenario for the reviewed ODE revision.”
+Kinetic choices and missing quantities require evidence or explicit approved hypotheses.
+The ODE branch ends at a reproducible bundle. Claude's pre-existing missing independent
+review agents still prevent claiming complete independent stage validation.

@@ -507,3 +507,27 @@ skill when the MCP server package changes.
 - Ollama concurrency: https://docs.ollama.com/faq
 
 Re-check these sources after major Claude Code or Ollama upgrades.
+
+## ODE alternative
+
+See [ODE workflow](ode-workflow.md) for the implemented contract and setup.
+
+```mermaid
+flowchart TD
+    S[Specification and formulation discussion] --> A{Researcher confirms formulation}
+    A -->|Boolean| N[NeKo topology and edge evidence approval]
+    N --> B[Approved Boolean handoff to MaBoSS]
+    B --> P[Approved MaBoSS handoff to PhysiCell]
+    A -->|ODE network| O[NeKo topology and edge evidence approval]
+    O --> H[Approved NeKo-to-BioMASS handoff]
+    A -->|ODE standalone| T[Authorized text or reaction request]
+    H --> D[Isolated ODE specialist]
+    T --> D
+    D --> R[Bounded claim evidence and researcher decisions]
+    R --> C[Approved construction and requested exploration]
+    C --> E[Researcher approval of revision and final bundle]
+```
+
+All coordination passes through the orchestrator. BioMASS is available only to
+ode_modeler, with a dedicated full session ID, generated revision and artifact root.
+There is no implemented ODE-to-PhysiCell path.

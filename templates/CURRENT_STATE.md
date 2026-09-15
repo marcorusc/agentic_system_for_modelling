@@ -38,3 +38,10 @@ _(none)_
 
 Define the scientific objective, system boundary, and validation criteria with the
 orchestrator.
+
+## Formulation and ODE revision
+
+- Confirmed formulation and decision reference: _(not yet defined)_
+- ODE source kind and upstream handoff: _(none)_
+- BioMASS document version and selected generated revision: _(none)_
+- ODE evidence and export approval references: _(none)_
