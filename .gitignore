@@ -1,3 +1,11 @@
 .claude/settings.local.json
+.codex/agents/*.toml
+.codex/launcher.local.json
+.codex/tasks/
+.codex-tasks/
+.codex-task-*.txt
 __pycache__/
 *.pyc
+
+# Machine-local installer environment, state, backups, and reports
+.setup/

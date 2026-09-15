@@ -1,0 +1,6 @@
+interface:
+  display_name: "Archive Model State"
+  short_description: "Checkpoint and name the current model state"
+  default_prompt: "Use $model-archive to create a named, recoverable archive of the current model state."
+policy:
+  allow_implicit_invocation: false

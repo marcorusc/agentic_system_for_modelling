@@ -1,9 +1,9 @@
 # Biological project agent template
 
-A Claude Code workspace for building one traceable biological model per repository.
-The main Claude session acts as the scientific orchestrator and delegates modelling
-operations to restricted specialist agents for NeKo, MaBoSS, PhysiCell, and
-literature review.
+A Claude Code and local Codex workspace for building one traceable biological model
+per repository. The main session acts as the scientific orchestrator and delegates
+modelling operations to restricted specialist agents for NeKo, MaBoSS, PhysiCell,
+and literature review.
 
 The repository stores scientific decisions in files rather than relying on chat
 history. It also provides Git-backed commands for checkpointing work, archiving a
@@ -40,9 +40,12 @@ Four specialist agents are currently included:
 | `multicellular-configurator` | Configure PhysiCell/PhysiBoSS domains, cells, substrates, rules, and mappings | Inline PhysiCell server only |
 
 The architecture also describes an independent scientific reviewer and a
-reproducibility auditor. Their agent definitions are not yet included. Consequently,
-the `/validate-stage` skill describes the intended validation workflow but cannot
-complete it until those two agents are implemented.
+reproducibility auditor. Their agent definitions are not yet included. Claude's
+`/validate-stage` requires both and remains blocked until they are implemented.
+The Codex `skills/validate-stage` workflow instead assigns the checks to the main
+orchestrator, followed by researcher approval. It does not provide independent
+review or audit. These are different existing workflows; see
+[validation responsibilities](docs/handoff-validation.md#validation-responsibilities).
 
 The three modelling specialists start isolated inline MCP servers. The literature
 specialist still requires a configured literature server. Availability depends on
@@ -51,7 +54,7 @@ your local installation.
 ## Prerequisites
 
 - Git
-- Python 3
+- Python 3.11 or newer (the Codex launcher uses the standard-library `tomllib`)
 - Claude Code with custom agents and skills enabled
 - A modelling environment containing the NeKo, MaBoSS, and PhysiCell MCP executables
 - An optional PubMed MCP server for literature review
@@ -68,7 +71,21 @@ The agents inherit whichever model is running the main Claude Code session. The
 remote Ollama/Qwen setup described in the architecture document is supported but is
 not required by the repository structure.
 
-## Initial setup
+## Automatic setup (Linux / WSL)
+
+With Python 3.11+ and Git installed, run:
+
+```text
+python scripts/setup.py
+```
+
+The guided installer detects Codex/Claude, creates a dedicated modelling environment,
+updates managed paths, and runs diagnostics. Use `--client codex`, `--client claude`,
+or `--client both` to select clients; `--dry-run` previews and `--check` diagnoses
+an existing setup. See [automatic setup](docs/automatic-setup.md) for environment
+options, prerequisites, saved settings, and verification limits.
+
+## Manual setup
 
 1. Clone the repository and enter it:
 
@@ -109,6 +126,128 @@ The modelling specialists define their servers inline, restrict their callable
 toolsets, and preload versioned workflow skills from `.claude/skills/`. This avoids
 Claude Code's unavailable MCP-resource bridge in background subagents and prevents
 the orchestrator from receiving the modelling MCP tools.
+
+## Codex / ChatGPT Work
+
+The Codex port is additive: Claude continues to use `.claude/`, while Codex reads
+`AGENTS.md`, loads the repository plugin, and launches each specialist in a separate
+process. Codex 0.153.0 is the minimum supported CLI version.
+
+This workflow requires a local Codex client, such as the Codex extension in VS
+Code, because NeKo, MaBoSS, and PhysiCell are local stdio MCP servers. A hosted
+Workspace Agent cannot reach those processes or local files unless they are
+separately exposed through approved infrastructure; this repository neither
+creates nor authorizes that exposure.
+
+### Local setup
+
+1. Open the repository root in VS Code under WSL (or another local environment
+   containing the modelling executables) and fully reload the window after Codex
+   configuration changes.
+2. Copy each example from `.codex/profiles/` to the exact user-local filename shown
+   in `.codex/profiles/README.md`. Add the complete transport only to the matching
+   profile. Never commit those files.
+3. Register and install the repository-local plugin if it is not already visible:
+
+   ```text
+   codex plugin marketplace add .
+   codex plugin add agentic-system-for-modelling@agentic-modelling-local
+   codex plugin marketplace list
+   codex plugin list
+   ```
+
+   The marketplace manifest is `.agents/plugins/marketplace.json`; the plugin source
+   and `.codex-plugin/plugin.json` manifest remain in this repository. Installation
+   copies the package into the user-local Codex cache, so reinstall after changing
+   plugin skills when testing the installed copy.
+4. Run the non-mutating preflight:
+
+   ```text
+   python scripts/codex/check_environment.py --allow-web-search
+   ```
+
+   Omit `--allow-web-search` when literature searches must use only a configured
+   PubMed MCP. A healthy result reports the orchestrator with no enabled modelling
+   MCP and each modelling specialist with exactly its own server.
+
+Ask Codex to “inspect the durable model state and recommend the next permitted
+stage” to invoke the orchestrator. Do not select the same-process files under
+`.codex/agents/`; they are inactive compatibility examples because Codex 0.153.0
+cannot enforce per-child MCP isolation there.
+
+For a bounded specialist task, place its text under the ignored, writable
+`.codex-tasks/` directory. Do not use `.codex/tasks/`: Codex clients may protect the
+`.codex/` configuration directory as read-only. Use the sole supported entry point:
+
+```text
+python scripts/codex/run_specialist.py network_curator --prompt-file .codex-tasks/network.txt
+python scripts/codex/run_specialist.py literature_reviewer --prompt-file .codex-tasks/literature.txt --record-session-id <neko-session-id> --allow-web-search
+python scripts/codex/run_specialist.py boolean_dynamics_modeler --prompt-file .codex-tasks/maboss.txt
+python scripts/codex/run_specialist.py multicellular_configurator --prompt-file .codex-tasks/physicell.txt
+```
+
+After an invocation is recorded, the launcher verifies the prompt digest and its
+stored `task.txt`, then removes the recognized source task. Interrupted or
+unrecorded prompts are retained. Preview and clean verified leftovers—including
+legacy root `.codex-task-*.txt` files—during checkpointing:
+
+```text
+python scripts/codex/cleanup_tasks.py
+python scripts/codex/cleanup_tasks.py --apply
+```
+
+The cleanup command never deletes an unmatched prompt.
+
+Use repeated `--approve-tool <tool-name>` arguments only for exact modelling writes
+already authorized for that invocation. Destructive cleanup tools cannot be
+approved by the launcher. For Windows-to-WSL routing, copy
+`.codex/launcher.example.json` to the ignored `.codex/launcher.local.json`, fill in
+local values, and add `--transport wsl` to the same command.
+
+Literature review prefers a complete `pubmed` transport in the ignored user-local
+literature profile. Otherwise it uses hosted search only when
+`--allow-web-search` is present; parent ChatGPT web access is never assumed. Search
+is limited to primary biomedical sources, and reports distinguish metadata,
+abstract-only review, and retrieved full text. With neither backend, the launcher
+records a typed `blocked` handoff. The optional structured NCBI MCP is not bundled.
+
+Claude's `PreToolUse` hook is not the Codex write boundary. The Codex literature
+subprocess is read-only, and the orchestrator sends each returned draft through
+`scripts/codex/write_literature_report.py`, which validates its exact session path,
+headings, verdict, confidence, and PMID/DOI fields and refuses overwrites. See
+`docs/codex-phase4-enforcement.md` for the enforcement mapping.
+
+### Claude-to-Codex mapping
+
+| Claude implementation | Codex implementation |
+|---|---|
+| `CLAUDE.md` | `AGENTS.md` |
+| `.claude/agents/*.md` inline specialists | Separate processes through `scripts/codex/run_specialist.py`; `.codex/agents/*.toml.example` are inactive |
+| `.claude/skills/*/SKILL.md` | Repository plugin skills under `skills/*/SKILL.md` |
+| Claude inline MCP transports | Ignored user-local profiles based on `.codex/profiles/*.example` |
+| `literature_file_guard.py` hook | Read-only specialist plus `write_literature_report.py` |
+| Agent result conventions | `validate_handoff.py` provider-neutral JSON schema |
+| Manual environment inspection | `check_environment.py` sanitized preflight |
+
+### Codex troubleshooting
+
+- If a WSL launch fails, confirm every value in `.codex/launcher.local.json`, run
+  the configured Python and Codex executables directly inside that distribution,
+  and keep task paths repository-relative.
+- If a specialist reports a missing MCP, verify its ignored user-local profile and
+  rerun `check_environment.py`. Never put the local executable path in tracked
+  configuration.
+- If an MCP configuration changed but inventory is stale, fully reload VS Code and
+  start a fresh Codex session before retesting.
+- If a recorded session ID no longer exists in a restarted MCP process, treat it as
+  provenance only and reconstruct runtime state from the validated handoff and
+  artifacts. Do not silently reuse a different live session.
+- If task prompts remain after checkpointing, run `cleanup_tasks.py` without
+  `--apply` and inspect the `unmatched` reasons. A missing recorded invocation is a
+  provenance problem, not permission to delete the prompt.
+- The ChatGPT Windows parent is unsupported unless an external policy can
+  mechanically prove it has no modelling MCP tools. The WSL bridge isolates the
+  child process but cannot remove tools already granted to the parent app.
 
 ## Repository state files
 
@@ -233,7 +372,7 @@ the current branch and refuses to commit on `main` or a detached HEAD.
 |---|---|---|
 | `/checkpoint-model` | Save a validated stage checkpoint in local Git history | Yes |
 | `/review-literature-evidence` | Apply the structured evidence-review procedure | Only through the assigned reviewer output |
-| `/validate-stage` | Coordinate scientific and reproducibility review | Intended feature; currently awaits two agent definitions |
+| `/validate-stage` | Validate stage artifacts and scientific claims | Claude awaits two independent agents; Codex uses orchestrator checks and researcher approval |
 | `/model-list` | Show the current model attempt and named archives | No |
 | `/model-list --all` | Also show automatic recovery points | No |
 | `/model-archive <name>` | Commit and tag the current model state | Yes |
@@ -444,6 +583,29 @@ python .claude/scripts/test_model_lifecycle.py -v
 The test creates a disposable Git repository and exercises archive, restart,
 recovery, manifest verification, input preservation, and restore without modifying
 the active model.
+
+## Development and tests
+
+Run all Codex, Claude, and setup tests from any directory with Python 3.11+:
+
+```text
+python scripts/run_tests.py
+```
+
+From outside the repository, use the absolute path to that script. It runs all
+suites even if one fails and returns a nonzero exit status on failure. Tests use
+temporary repositories and subprocess fixtures; no modelling servers, credentials,
+or third-party Python packages are required. The GitHub Actions workflow runs the
+same command on Python 3.11 and 3.13.
+
+The launcher retains its CLI and helper imports, with implementation split into
+`launcher_config.py` (transport and isolation), `launcher_process.py` (streaming,
+cancellation, and redaction), and `launcher_provenance.py` (invocation artifacts).
+
+Completed Codex handoffs require existing files, SHA-256 digests, and the mandatory
+stage artifacts. Read-only specialist drafts remain `needs_approval` until the
+orchestrator persists and validates their outputs. See the exact requirements and
+limits in [handoff validation](docs/handoff-validation.md).
 
 ## Further documentation
 
