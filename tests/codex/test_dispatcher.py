@@ -140,3 +140,14 @@ class DispatcherTests(unittest.TestCase):
                 inventory = [row for row in safe if row['name']!=name]+[{'name':name,'enabled':True}]
                 with self.subTest(role=role, prohibited=name), self.assertRaises(ValueError):
                     validate_mcp_inventory(inventory,role)
+
+    def test_partial_event_after_crash_does_not_block_other_tasks(self):
+        store = TaskStore(self.root)
+        task_id = self.record(store, 'running')['task_id']
+        path = store.path(task_id, 'events')
+        path.write_text('{"sequence":1')
+        manager = self.manager()
+        record = manager.get(task_id)
+        self.assertEqual(record['execution_state'], 'failed')
+        self.assertIn('corrupt or unavailable', record['error'])
+        self.assertEqual(path.read_text(), '{"sequence":1')

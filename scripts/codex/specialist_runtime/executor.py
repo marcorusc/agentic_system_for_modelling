@@ -229,6 +229,10 @@ def _run(request: SpecialistInvocationRequest, execution: SpecialistExecutionRes
             "finished_at": utc_now(),
             "codex_version": ".".join(str(part) for part in version),
             "codex_executable_sha256": sha256_file(Path(codex)),
+            "effective_mcp_inventory": configured,
+            "apps_enabled": False,
+            "sandbox": "read-only",
+            "ephemeral": True,
             "mcp_enabled": {
                 server: configured.get(server, False) for server in MODELLING_SERVERS
             },
@@ -363,6 +367,10 @@ def _run(request: SpecialistInvocationRequest, execution: SpecialistExecutionRes
         "finished_at": utc_now(),
         "codex_version": ".".join(str(part) for part in version),
         "codex_executable_sha256": sha256_file(Path(codex)),
+        "effective_mcp_inventory": configured,
+        "apps_enabled": False,
+        "sandbox": "read-only",
+        "ephemeral": True,
         "mcp_enabled": {
             server: configured.get(server, False) for server in MODELLING_SERVERS
         },

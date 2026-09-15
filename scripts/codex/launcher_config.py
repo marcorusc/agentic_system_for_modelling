@@ -133,7 +133,12 @@ def mcp_config_arguments(
     pubmed_transport: bool = False,
 ) -> list[str]:
     _, permitted_server = SPECIALISTS[specialist]
-    arguments: list[str] = []
+    # Specialists must not inherit the root's dispatcher and delegate recursively.
+    arguments: list[str] = [
+        # Built-in connector tools are not listed by `codex mcp list`.
+        "-c", "features.apps=false",
+        "-c", 'mcp_servers.specialist_dispatcher={"command"="__disabled_specialist_dispatcher__","enabled"=false}',
+    ]
     for server in MODELLING_SERVERS:
         enabled = "true" if server == permitted_server else "false"
         arguments.extend(["-c", f"mcp_servers.{server}.enabled={enabled}"])

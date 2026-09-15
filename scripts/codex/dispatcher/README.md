@@ -46,3 +46,22 @@ installs the SDK and runs the full suite. Real model calls are never part of CI.
 
 The existing `scripts/codex/run_specialist.py` remains the supported workflow until
 the migration's live isolation and equivalence gate is recorded as passed.
+
+## Workstation startup
+
+The project MCP entry invokes `launch.py` from the project root. That small
+bootstrap replaces itself with the SDK interpreter; it does not wrap specialist
+execution. It uses existing `.setup/local.json` settings (`env_prefix` and
+`codex_home`). Explicit overrides can be placed in ignored
+`.setup/dispatcher.local.json`, using `.codex/dispatcher.example.json` as a template.
+No workstation path is committed. A configured native Codex home takes precedence
+over an inherited Windows home for this server process and all of its children.
+
+Root configuration keeps NeKo, MaBoSS, PhysiCell, and the discovered optional
+BioMASS server disabled. Specialist command overrides disable the dispatcher and
+built-in app connectors, preventing either from expanding a specialist's MCP
+inventory. This is applied to both the inventory check and child execution.
+
+Rollback: set `mcp_servers.specialist_dispatcher.enabled=false` in the project
+configuration, retain disabled modelling servers, and use the existing CLI.
+Do not delete profiles, tasks, sessions, or invocation artifacts to roll back.

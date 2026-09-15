@@ -49,7 +49,7 @@ Disposable task-file cleanup remains available for the CLI fallback.
 | 1 | Shared runtime, unchanged CLI protections | Passed |
 | 2 | Persistent task manager and fake-worker tests | Passed |
 | 3 | Local MCP server and protocol tests | Passed |
-| 4 | Root isolation, live specialist smoke tests, CLI equivalence | Pending |
+| 4 | Root isolation, live specialist smoke tests, CLI equivalence | Integration tested; literature gate blocked |
 | 5 | Orchestrator and skill routing | Gated on Phase 4 |
 | 6 | Same-conversation ChatGPT observability | Pending |
 | 7 | Bounded real scientific operation | Pending |
@@ -151,3 +151,69 @@ flowchart TD
 Orchestrator instructions and the installed plugin remain unchanged. Server
 configuration and live equivalence are the next phase, not implied by passing
 protocol tests.
+
+## Phase 4 — local integration; literature gate still blocked
+
+The root configuration now exposes a required local stdio dispatcher. The bootstrap
+uses the existing ignored installer settings or explicit ignored dispatcher
+settings, without committing workstation paths. NeKo, MaBoSS, PhysiCell, and the
+unexpected user-global BioMASS modelling server are disabled for this project.
+The verified root inventory has only `specialist_dispatcher` enabled. Global
+configuration and the Claude implementation were not changed.
+
+The first live run discovered that Codex 0.154.0 exposes built-in `codex_apps`
+connectors outside `codex mcp list`. Their presence failed the strict live
+namespace check. Both preflight and execution now receive fixed
+`features.apps=false` and a disabled dispatcher override. The
+[official configuration reference](https://learn.chatgpt.com/docs/config-file/config-reference)
+documents the app feature flag and required MCP startup behavior. This tightens
+the execution boundary without changing scientific policy or adding a backend.
+
+After the fix, fresh live processes reported:
+
+| Specialist | Observed MCP namespace | Result |
+| --- | --- | --- |
+| Network curator | `neko` only | Passed |
+| Boolean dynamics modeller | `maboss` only | Passed |
+| Multicellular configurator | `physicell` only | Passed |
+| Literature reviewer | No child started: no approved backend | Live gate blocked |
+
+The three live modelling tests made no MCP/modelling calls, created no scientific
+sessions, and returned validated inspection-only blocked handoffs. The literature
+request exercised the expected fail-closed path: a recorded blocked handoff with
+no child launch. This is **not** counted as a passed live literature context test.
+The researcher has been asked to authorize web search solely for the inventory
+smoke test (no search call), or provide a configured PubMed backend. No authorization
+has yet been received, so the full Phase 4 gate remains blocked.
+
+A matched real CLI invocation passed all 23 equivalence checks against the
+corrected dispatcher network inspection: identity/profile, binary hash/version,
+complete MCP inventory, disabled apps, read-only sandbox, ephemeral execution,
+exact task hash, approvals, search settings, exit semantics, sanitized events,
+validated handoff, provenance, and expected artifacts. Invocation IDs were distinct.
+All six scientific source-of-truth files retained their hashes.
+
+Validation: 127 Codex, 19 Claude, and 26 setup tests passed (172 total), with all
+MCP SDK tests enabled. The stdlib-only fallback also passed with four SDK protocol
+tests explicitly skipped. A partial operational event written before a crash is
+now isolated during recovery and cannot prevent other task records from loading.
+
+[Machine-readable validation record](specialist-dispatcher-phase4-validation.json)
+contains exact task and invocation IDs, artifact directories and hashes, corrected
+root inventory, preserved initial failures, and the CLI equivalence results.
+Raw invocation artifacts remain at those local paths; they are not bundled into
+the code commit.
+
+### Remaining sequence
+
+1. Complete the live literature isolation check using an explicitly authorized
+   backend, then mark the Phase 4 gate passed with its evidence.
+2. Only then perform Phase 5 orchestrator/skill migration.
+3. Verify the ChatGPT-facing tool inventory and same-conversation progress in
+   Phase 6; availability in this existing conversation has not been established.
+4. Obtain a bounded scientific task whose stage prerequisites and approvals are
+   satisfied before Phase 7. The model is still at unspecified specification.
+5. Perform Phase 8 cleanup only after that real operation succeeds.
+
+`AGENTS.md`, all skill routing, the installed plugin, and scientific state remain
+unchanged. The CLI remains the supported routing path while this gate is blocked.

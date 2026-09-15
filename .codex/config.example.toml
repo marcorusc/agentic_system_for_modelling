@@ -14,3 +14,18 @@ enabled = false
 [mcp_servers.physicell]
 command = "__orchestrator_disabled_physicell__"
 enabled = false
+
+# Local dispatcher: workstation paths stay in ignored .setup/ settings.
+# Start Codex from the project root. Scientific routing remains CLI until the
+# dispatcher live-isolation/equivalence gate passes; see docs/specialist-dispatcher.md.
+[mcp_servers.specialist_dispatcher]
+command = "python3"
+args = ["scripts/codex/dispatcher/launch.py"]
+enabled = true
+required = true
+startup_timeout_sec = 30
+
+# A user-global optional modelling server must not leak into the orchestrator.
+[mcp_servers.biomass]
+command = "__orchestrator_disabled_biomass__"
+enabled = false

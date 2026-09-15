@@ -123,7 +123,10 @@ class TaskStore:
             if "schema_version" in record and ExecutionState(record["execution_state"]) not in TERMINAL:
                 self.update(record["task_id"], execution_state="failed", finished_at=utc_now(),
                             current_activity=None, error="Dispatcher restarted during active execution; automatic resumption is prohibited")
-                self.append_event(record["task_id"], {"type": "dispatcher.recovery", "summary": "Interrupted task marked failed; partial artifacts preserved"})
+                try:
+                    self.append_event(record["task_id"], {"type": "dispatcher.recovery", "summary": "Interrupted task marked failed; partial artifacts preserved"})
+                except (OSError, ValueError, KeyError, TypeError):
+                    self.update(record["task_id"], error="Dispatcher restarted during active execution; operational event log is corrupt or unavailable; partial artifacts preserved")
 
     def append_event(self, task_id: str, event: dict) -> dict:
         with self.lock:
@@ -149,7 +152,7 @@ class TaskStore:
         with path.open(encoding="utf-8") as handle:
             for line in handle:
                 event = json.loads(line)
-                if event["sequence"] != last + 1:
+                if not isinstance(event, dict) or type(event.get("sequence")) is not int or event["sequence"] != last + 1:
                     raise ValueError("corrupt operational event sequence")
                 last += 1
         return last
