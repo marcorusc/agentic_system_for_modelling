@@ -49,7 +49,7 @@ Disposable task-file cleanup remains available for the CLI fallback.
 | 1 | Shared runtime, unchanged CLI protections | Passed |
 | 2 | Persistent task manager and fake-worker tests | Passed |
 | 3 | Local MCP server and protocol tests | Passed |
-| 4 | Root isolation, live specialist smoke tests, CLI equivalence | Integration tested; literature gate blocked |
+| 4 | Root isolation, live specialist smoke tests, CLI equivalence | Passed |
 | 5 | Orchestrator and skill routing | Gated on Phase 4 |
 | 6 | Same-conversation ChatGPT observability | Pending |
 | 7 | Bounded real scientific operation | Pending |
@@ -152,7 +152,7 @@ Orchestrator instructions and the installed plugin remain unchanged. Server
 configuration and live equivalence are the next phase, not implied by passing
 protocol tests.
 
-## Phase 4 — local integration; literature gate still blocked
+## Phase 4 — local integration and completed isolation gate
 
 The root configuration now exposes a required local stdio dispatcher. The bootstrap
 uses the existing ignored installer settings or explicit ignored dispatcher
@@ -176,15 +176,18 @@ After the fix, fresh live processes reported:
 | Network curator | `neko` only | Passed |
 | Boolean dynamics modeller | `maboss` only | Passed |
 | Multicellular configurator | `physicell` only | Passed |
-| Literature reviewer | No child started: no approved backend | Live gate blocked |
+| Literature reviewer | No MCP namespace; authorized web search available | Passed |
 
 The three live modelling tests made no MCP/modelling calls, created no scientific
 sessions, and returned validated inspection-only blocked handoffs. The literature
 request exercised the expected fail-closed path: a recorded blocked handoff with
 no child launch. This is **not** counted as a passed live literature context test.
 The researcher has been asked to authorize web search solely for the inventory
-smoke test (no search call), or provide a configured PubMed backend. No authorization
-has yet been received, so the full Phase 4 gate remains blocked.
+smoke test (no search call), or provide a configured PubMed backend. The initial attempt remained blocked until authorization was received.
+The researcher subsequently authorized the inventory-only web-search test. Its
+fresh child observed no MCP namespace, reported web search available, made no web
+or modelling calls, and returned a validated handoff with recorded provenance.
+All four live context checks now pass; the Phase 4 gate is complete.
 
 A matched real CLI invocation passed all 23 equivalence checks against the
 corrected dispatcher network inspection: identity/profile, binary hash/version,
@@ -206,9 +209,8 @@ the code commit.
 
 ### Remaining sequence
 
-1. Complete the live literature isolation check using an explicitly authorized
-   backend, then mark the Phase 4 gate passed with its evidence.
-2. Only then perform Phase 5 orchestrator/skill migration.
+1. Phase 4 is complete; authorization was limited to its inventory-only test.
+2. Perform Phase 5 orchestrator/skill migration.
 3. Verify the ChatGPT-facing tool inventory and same-conversation progress in
    Phase 6; availability in this existing conversation has not been established.
 4. Obtain a bounded scientific task whose stage prerequisites and approvals are
@@ -216,4 +218,4 @@ the code commit.
 5. Perform Phase 8 cleanup only after that real operation succeeds.
 
 `AGENTS.md`, all skill routing, the installed plugin, and scientific state remain
-unchanged. The CLI remains the supported routing path while this gate is blocked.
+unchanged at the completion of Phase 4. Routing migration follows in Phase 5.

@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "phase": 4,
-  "gate_status": "blocked",
-  "blocker": "Live literature context isolation is untested: PubMed is not configured and web-search authorization is pending.",
+  "gate_status": "passed",
+  "blocker": null,
   "routing_changed": false,
   "root_inventory": {
     "biomass": false,
@@ -91,19 +91,22 @@
     },
     {
       "specialist": "literature_reviewer",
-      "task_id": "b202b5e955174a54849459926e39acef",
-      "invocation_id": "2026-09-15T025955-f6a7b437-16dd-4169-a536-3a68a1617834",
-      "artifact_dir": "runs/network-curator/_blocked/specialist-invocations/2026-09-15T025955-f6a7b437-16dd-4169-a536-3a68a1617834",
+      "task_id": "de647cb740f34c58a59aba18b9a8049b",
+      "invocation_id": "2026-09-15T035705-8a728f9b-b5bc-45d8-a611-28a8647ba94b",
+      "artifact_dir": "runs/network-curator/_blocked/specialist-invocations/2026-09-15T035705-8a728f9b-b5bc-45d8-a611-28a8647ba94b",
       "artifact_sha256": {
-        "task.txt": "0c620e599552c2daa55278da9d321ad5e783869a9e413dd63ff6f2d568586eba",
-        "specialist-output.txt": "f373ce1efdffca9661937d1eed9d3443427961cc318454ff41fae7283361f7ee",
-        "provenance.json": "2c78bb6749780af2d8bfdbb41b9f9cecd5467c2300c43c625ed03fcbe3efadec",
-        "handoff.json": "f373ce1efdffca9661937d1eed9d3443427961cc318454ff41fae7283361f7ee"
+        "task.txt": "c50590ccd8720645ae786c316b68d94cb4e32c2f76252f9e856fd2b8e5093b2c",
+        "specialist-output.txt": "e33dbea71acfc291beadb445e75a19838ad1b595dc3710bde62a191696a07d66",
+        "provenance.json": "51f8c0ebf8f0dc0f231ba475ef26bc92a6fbc5d00b1ca681fe74223a10c46c08",
+        "events.jsonl": "eaf11d1eca2c6281a4cde932178631bdab4b4f3690baf96d6aab5b3e17b4d220",
+        "handoff.json": "5cace234787a20572646e7925b0fdf85e4355f484f1e6b079490b6fe348ba9ef"
       },
       "execution_state": "succeeded",
       "handoff_status": "blocked",
-      "live_context_isolation": "not_run_no_backend",
-      "scientific_or_modelling_tools_called": false
+      "live_context_isolation": "passed",
+      "web_search_available": true,
+      "scientific_or_modelling_tools_called": false,
+      "web_search_calls": 0
     }
   ],
   "cli_equivalence": {
@@ -135,5 +138,22 @@
       "scientific_state_unchanged": true
     },
     "passed": true
+  },
+  "literature_authorization": "Researcher explicitly approved web search solely for the inventory smoke test; no search calls authorized or performed.",
+  "prior_backendless_literature_check": {
+    "specialist": "literature_reviewer",
+    "task_id": "b202b5e955174a54849459926e39acef",
+    "invocation_id": "2026-09-15T025955-f6a7b437-16dd-4169-a536-3a68a1617834",
+    "artifact_dir": "runs/network-curator/_blocked/specialist-invocations/2026-09-15T025955-f6a7b437-16dd-4169-a536-3a68a1617834",
+    "artifact_sha256": {
+      "task.txt": "0c620e599552c2daa55278da9d321ad5e783869a9e413dd63ff6f2d568586eba",
+      "specialist-output.txt": "f373ce1efdffca9661937d1eed9d3443427961cc318454ff41fae7283361f7ee",
+      "provenance.json": "2c78bb6749780af2d8bfdbb41b9f9cecd5467c2300c43c625ed03fcbe3efadec",
+      "handoff.json": "f373ce1efdffca9661937d1eed9d3443427961cc318454ff41fae7283361f7ee"
+    },
+    "execution_state": "succeeded",
+    "handoff_status": "blocked",
+    "live_context_isolation": "not_run_no_backend",
+    "scientific_or_modelling_tools_called": false
   }
 }
