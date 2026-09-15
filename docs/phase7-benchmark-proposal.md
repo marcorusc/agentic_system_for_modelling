@@ -90,3 +90,17 @@ paper-associated release/commit or supplementary archive, then hash the BND, CFG
 XML, initialization files, and analysis notebook together. Do not mix versions or
 silently choose among these timing settings. The article confirms that a MaBoSS
 adaptation exists; it does not establish equivalence with every Sizek update scheme.
+
+
+## Approved scaling and pinned reference (2026-09-15)
+
+Researcher instruction: **use 37.5**. The benchmark scaling value is therefore
+37.5; this resolves the scaling choice recorded above. Other observed settings
+remain source values, not additional approvals or permission to advance a stage.
+
+The current tutorial source is pinned at commit
+`7180dffc72d3ce021b2eff385ff49735de5f02d8`. The XML contains scaling 37.5. BND, CFG, XML,
+initial cell positions, and both cell-cycle notebooks were downloaded for read-only
+inspection and hashed in [the reference manifest](phase7-reference-manifest.json).
+No code from those files was executed. This pins the selected current tutorial;
+it does not claim that this revision generated the original paper figures.
