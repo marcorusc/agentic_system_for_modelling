@@ -5,12 +5,15 @@ description: Formulate and route governed MaBoSS import, configuration, simulati
 
 # MaBoSS workflow
 
-Never call MaBoSS tools from the orchestrator or this skill. Write a bounded task
-file and invoke only:
+Never call MaBoSS tools from the orchestrator or this skill. Send the bounded
+`task` to `specialist_dispatcher.start_boolean_dynamics_modeler`. Supply
+`record_session_id` for an existing approved session and exact `approved_tools`
+only for writes already authorized for this invocation.
 
-`python scripts/codex/run_specialist.py boolean_dynamics_modeler --prompt-file <project-relative-task-file>`
-
-For an existing run, add `--record-session-id <full-id>`. Output is recorded below
+Query `get_specialist_events` with its sequence cursor and `get_specialist_task`
+until terminal. Consume only the validated handoff returned on `succeeded`, then
+check its independent scientific status and approval requirements. Do not update
+shared state while execution is active. Output remains under
 `runs/boolean-dynamics-modeler/{maboss_session_id}/specialist-invocations/`.
 
 ## Task contract
@@ -35,3 +38,11 @@ the form. Structural needs route back to NeKo.
 The typed MaBoSS-to-PhysiCell handoff is gated and may be requested only after
 researcher approval of the dynamics. Require the complete typed result, upstream
 lineage, settings, scenario summaries, warnings, artifacts, and export status.
+
+## CLI fallback
+
+If the dispatcher is unavailable, the same bounded request may use
+`python scripts/codex/run_specialist.py boolean_dynamics_modeler --prompt-file
+<project-relative-task-file>`. Place that file in `.codex-tasks/`; add
+`--record-session-id` and exact `--approve-tool` entries as applicable. Preserve
+all scientific gates and validate the recorded result before synthesis.

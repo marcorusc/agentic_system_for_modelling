@@ -69,12 +69,19 @@ class PluginTests(unittest.TestCase):
             self.assertIsInstance(frontmatter.get("description"), str)
             self.assertTrue(str(frontmatter["description"]).strip())
 
-    def test_specialist_skills_route_only_through_launcher(self) -> None:
+    def test_specialist_skills_route_through_dispatcher_with_cli_fallback(self) -> None:
         entrypoint = "scripts/codex/run_specialist.py"
         for name in SPECIALIST_SKILLS:
             text = (ROOT / "skills" / name / "SKILL.md").read_text(
                 encoding="utf-8"
             )
+            role = {"neko-workflow":"network_curator", "maboss-workflow":"boolean_dynamics_modeler",
+                    "physicell-workflow":"multicellular_configurator",
+                    "review-literature-evidence":"literature_reviewer"}[name]
+            self.assertIn(f"specialist_dispatcher.start_{role}", text)
+            self.assertIn("get_specialist_task", text)
+            self.assertIn("get_specialist_events", text)
+            self.assertIn("## CLI fallback", text)
             self.assertIn(entrypoint, text)
             self.assertNotIn("mcp__", text)
             self.assertNotIn("spawn_agent", text)

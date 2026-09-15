@@ -44,8 +44,9 @@ Run `python scripts/run_tests.py` with the SDK installed to include real MCP cli
 and stdio tests. The stdlib-only job skips protocol tests; a separate CI job
 installs the SDK and runs the full suite. Real model calls are never part of CI.
 
-The existing `scripts/codex/run_specialist.py` remains the supported workflow until
-the migration's live isolation and equivalence gate is recorded as passed.
+The live isolation and equivalence gate passed in Phase 4. Phase 5 routes
+specialist work through this dispatcher; `scripts/codex/run_specialist.py` remains
+the supported fallback/debug interface. Scientific approval gates are unchanged.
 
 ## Workstation startup
 

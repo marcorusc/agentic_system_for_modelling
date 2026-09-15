@@ -175,16 +175,42 @@ stage” to invoke the orchestrator. Do not select the same-process files under
 `.codex/agents/`; they are inactive compatibility examples because Codex 0.153.0
 cannot enforce per-child MCP isolation there.
 
-For a bounded specialist task, place its text under the ignored, writable
-`.codex-tasks/` directory. Do not use `.codex/tasks/`: Codex clients may protect the
-`.codex/` configuration directory as read-only. Use the sole supported entry point:
+### Dispatcher workflow
+
+After scientific prerequisites and approvals are satisfied, send the bounded task
+through the matching `specialist_dispatcher.start_*` tool. For example, an
+inspection request uses `start_network_curator` with `task` and no approved writes.
+Add `record_session_id` for an existing session and exact `approved_tools` only for
+already-authorized mutations. The dispatcher records the task before starting a
+fresh isolated specialist and returns promptly with a task ID.
+
+Use `get_specialist_events(after_sequence=...)` for operational progress and
+`get_specialist_task` for state. Wait for `succeeded`, `failed`, or `cancelled`.
+Only `succeeded` returns a validated handoff; its scientific status can still be
+`blocked` or `needs_approval`. The orchestrator applies the existing approval gates
+and alone updates shared scientific state. Task IDs are not scientific session IDs.
+
+The project configuration starts the local dispatcher through the existing ignored
+installer settings. Its Python environment needs the official MCP SDK 2.x.
+See [dispatcher setup, recovery, and validation](docs/specialist-dispatcher.md) and
+[workstation configuration](scripts/codex/dispatcher/README.md). The root keeps
+modelling servers disabled; specialists cannot call the dispatcher recursively.
+
+### CLI fallback
+
+If dispatcher access is unavailable, place the bounded task under ignored
+`.codex-tasks/` and use the same isolated runtime through the existing CLI:
 
 ```text
 python scripts/codex/run_specialist.py network_curator --prompt-file .codex-tasks/network.txt
-python scripts/codex/run_specialist.py literature_reviewer --prompt-file .codex-tasks/literature.txt --record-session-id <neko-session-id> --allow-web-search
+python scripts/codex/run_specialist.py literature_reviewer --prompt-file .codex-tasks/literature.txt --record-session-id <neko-session-id>
 python scripts/codex/run_specialist.py boolean_dynamics_modeler --prompt-file .codex-tasks/maboss.txt
 python scripts/codex/run_specialist.py multicellular_configurator --prompt-file .codex-tasks/physicell.txt
 ```
+
+Do not use `.codex/tasks/`: configuration directories may be read-only. Dispatcher
+requests do not require disposable prompt files. Both routes preserve the same
+isolation, handoff validation, lineage, and scientific approval requirements.
 
 After an invocation is recorded, the launcher verifies the prompt digest and its
 stored `task.txt`, then removes the recognized source task. Interrupted or
@@ -206,7 +232,8 @@ local values, and add `--transport wsl` to the same command.
 
 Literature review prefers a complete `pubmed` transport in the ignored user-local
 literature profile. Otherwise it uses hosted search only when
-`--allow-web-search` is present; parent ChatGPT web access is never assumed. Search
+`allow_web_search=true` was explicitly authorized (CLI: `--allow-web-search`);
+parent ChatGPT web access is never assumed. Search
 is limited to primary biomedical sources, and reports distinguish metadata,
 abstract-only review, and retrieved full text. With neither backend, the launcher
 records a typed `blocked` handoff. The optional structured NCBI MCP is not bundled.
@@ -222,7 +249,7 @@ headings, verdict, confidence, and PMID/DOI fields and refuses overwrites. See
 | Claude implementation | Codex implementation |
 |---|---|
 | `CLAUDE.md` | `AGENTS.md` |
-| `.claude/agents/*.md` inline specialists | Separate processes through `scripts/codex/run_specialist.py`; `.codex/agents/*.toml.example` are inactive |
+| `.claude/agents/*.md` inline specialists | Dispatcher-managed separate processes; `run_specialist.py` is the CLI fallback |
 | `.claude/skills/*/SKILL.md` | Repository plugin skills under `skills/*/SKILL.md` |
 | Claude inline MCP transports | Ignored user-local profiles based on `.codex/profiles/*.example` |
 | `literature_file_guard.py` hook | Read-only specialist plus `write_literature_report.py` |

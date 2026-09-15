@@ -42,11 +42,13 @@ the only writer of shared sources of truth unless a narrower writer is explicitl
 authorized.
 
 The orchestrator must not call NeKo, MaBoSS, or PhysiCell modelling tools directly.
-Codex 0.153.0 does not enforce per-child MCP isolation in same-process custom agents,
-so never use same-process agent spawning for modelling operations. Launch the
-matching specialist as a separate process through
-`python scripts/codex/run_specialist.py <specialist> ...`; its user-local profile
-and fixed command-line overrides must expose exactly one modelling server.
+Use the matching `specialist_dispatcher.start_*` MCP tool to delegate bounded
+work. The dispatcher calls the shared runtime, which creates a fresh, ephemeral
+Codex process with a fixed specialist profile. Never use same-process agent
+spawning for modelling operations. The runtime mechanically disables built-in
+app connectors and dispatcher access in specialists and verifies their restricted
+MCP inventory before execution. `python scripts/codex/run_specialist.py
+<specialist> ...` remains the fallback/debug path through the same runtime.
 `.codex/config.toml` disables all modelling servers in the orchestrator itself. If a
 parent process still exposes one, stop as `blocked`; do not rely on instructions to
 avoid calling it. Repository code cannot currently verify or remove tools already
@@ -106,16 +108,31 @@ calling any modelling tool. The orchestrator may run independent literature revi
 in parallel, but never more than two at once. Wait for all required reports before
 synthesis or mutation.
 
-Pass bounded tasks through project-contained prompt files under the ignored,
-writable `.codex-tasks/` directory, rather than the sandbox-protected `.codex/`
-configuration directory or interpolated shell text. The launcher must use the same
-resolved Codex executable, complete
-user-local profile transport, fixed configuration overrides, working directory, and
-environment for MCP preflight and execution. It records task text, final specialist
-output, parsed handoff, and non-secret execution provenance under the matching
-session's `specialist-invocations/` directory. Treat a nonzero exit code, missing or
-malformed handoff, identity mismatch, unsafe inventory, or recording failure as a
-blocked/failed specialist result.
+Pass the exact bounded task as the dispatcher start tool's structured `task`
+argument, with `record_session_id` when applicable and exact `approved_tools`
+only for already-authorized writes. Literature `allow_web_search` requires explicit
+researcher authorization. The dispatcher persists `task.txt` before execution and
+returns a technical task ID; it is not a scientific MCP session ID.
+
+Use `get_specialist_events` with its sequence cursor for operational progress and
+`get_specialist_task` for execution state. Wait for a terminal state. Only
+`succeeded` carries a validated handoff; its independent scientific status may
+still be `blocked` or `needs_approval`. A technical failure, cancellation, missing
+handoff, or failed validation cannot authorize synthesis or a stage transition.
+The dispatcher never updates shared scientific state or chooses a next stage.
+Cancel only through `cancel_specialist_task`; preserve partial artifacts and
+require a new explicit invocation rather than automatic resumption after restart.
+
+For CLI fallback, pass bounded tasks through project-contained prompt files under
+the ignored, writable `.codex-tasks/` directory, not sandbox-protected `.codex/`
+configuration or interpolated shell text. Both paths use the same resolved Codex
+executable, complete user-local profile transport, fixed configuration overrides,
+working directory, and environment for preflight and execution. They record task
+text, final output, parsed handoff, sanitized JSONL, and non-secret provenance under
+the matching session's `specialist-invocations/` directory. Treat a nonzero exit,
+missing or malformed handoff, identity mismatch, unsafe inventory, or recording
+failure as a blocked/failed result. See `docs/specialist-dispatcher.md` for the
+validated architecture and CLI rollback.
 
 Task prompts are disposable only after the launcher has recorded an identical
 `task.txt` and matching prompt hash. The launcher removes recognized verified task

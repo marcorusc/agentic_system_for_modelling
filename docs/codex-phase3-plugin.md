@@ -1,5 +1,9 @@
 # Phase 3 local Codex plugin architecture
 
+This document records the original CLI integration. Current dispatcher routing
+and its validation gates are documented in [Specialist dispatcher migration](specialist-dispatcher.md);
+the CLI procedure below remains a fallback.
+
 ## Package
 
 The repository root is a local plugin source. `.codex-plugin/plugin.json` discovers

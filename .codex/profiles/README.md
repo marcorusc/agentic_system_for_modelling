@@ -2,8 +2,8 @@
 
 Codex 0.153.0 cannot narrow or independently enable MCP servers for a same-process
 custom child. The supported project workflow therefore runs each modelling
-specialist as a separate `codex exec` process through
-`scripts/codex/run_specialist.py`.
+specialist as a separate `codex exec` process through the dispatcher shared
+runtime. `scripts/codex/run_specialist.py` remains the CLI fallback.
 
 The tracked `*.example` files contain no real executable paths. For each workstation,
 copy them to the user's Codex home with these exact names:
@@ -50,3 +50,9 @@ under non-interactive execution.
 Run a read-only tool-inventory preflight after installing or upgrading Codex. A
 specialist must stop with `blocked` if its permitted namespace is absent or any
 prohibited modelling namespace is visible.
+
+The dispatcher receives the bounded task directly and uses these same profiles.
+Fixed runtime overrides also disable `specialist_dispatcher` and built-in app
+connectors (`features.apps=false`) in children. See
+`docs/specialist-dispatcher-phase4-validation.json` for the passed live namespace
+checks, including the explicitly authorized literature web-search inventory test.

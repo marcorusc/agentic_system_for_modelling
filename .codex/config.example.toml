@@ -16,8 +16,8 @@ command = "__orchestrator_disabled_physicell__"
 enabled = false
 
 # Local dispatcher: workstation paths stay in ignored .setup/ settings.
-# Start Codex from the project root. Scientific routing remains CLI until the
-# dispatcher live-isolation/equivalence gate passes; see docs/specialist-dispatcher.md.
+# Start Codex from the project root. The live-isolation/equivalence gate passed;
+# see docs/specialist-dispatcher.md. The CLI remains available as a fallback.
 [mcp_servers.specialist_dispatcher]
 command = "python3"
 args = ["scripts/codex/dispatcher/launch.py"]

@@ -219,3 +219,12 @@ the code commit.
 
 `AGENTS.md`, all skill routing, the installed plugin, and scientific state remain
 unchanged at the completion of Phase 4. Routing migration follows in Phase 5.
+
+## Phase 5 — orchestrator routing
+
+Completed after the Phase 4 isolation gate passed (commit `90e9479`). AGENTS and
+all five routing skills now use the dispatcher start/status/event tools, distinguish
+execution success from scientific status, and retain the shared-runtime CLI fallback.
+Scientific policy, stage gates, shared state, and Claude implementation are unchanged.
+Validation: 127 Codex, 19 Claude, and 26 setup tests passed; all five changed skills
+passed the skill-creator validator.
