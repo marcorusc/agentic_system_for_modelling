@@ -1,0 +1,52 @@
+e99cd6ada89e00df31b1d0393dc48d4f6182dcb8
+.codex-plugin/plugin.json
+.codex/config.example.toml
+.codex/config.toml
+.codex/profiles/README.md
+AGENTS.md
+CURRENT_STATE.md
+MODEL_SPEC.md
+docs/handoff-validation.md
+scripts/codex/launcher_config.py
+scripts/codex/run_specialist.py
+scripts/setup_support/verify.py
+skills/biomodelling-orchestrator/SKILL.md
+skills/neko-workflow/SKILL.md
+skills/review-literature-evidence/SKILL.md
+
+Auto-merging .codex-plugin/plugin.json
+CONFLICT (content): Merge conflict in .codex-plugin/plugin.json
+Auto-merging .codex/config.example.toml
+CONFLICT (content): Merge conflict in .codex/config.example.toml
+Auto-merging .codex/config.toml
+CONFLICT (content): Merge conflict in .codex/config.toml
+Auto-merging .codex/profiles/README.md
+CONFLICT (content): Merge conflict in .codex/profiles/README.md
+Auto-merging .codex/profiles/biomodel-literature-reviewer.config.toml.example
+Auto-merging AGENTS.md
+CONFLICT (content): Merge conflict in AGENTS.md
+Auto-merging CURRENT_STATE.md
+CONFLICT (content): Merge conflict in CURRENT_STATE.md
+Auto-merging MODEL_SPEC.md
+CONFLICT (content): Merge conflict in MODEL_SPEC.md
+Auto-merging README.md
+Auto-merging docs/handoff-validation.md
+CONFLICT (content): Merge conflict in docs/handoff-validation.md
+Auto-merging scripts/codex/check_environment.py
+Auto-merging scripts/codex/launcher_config.py
+CONFLICT (content): Merge conflict in scripts/codex/launcher_config.py
+Auto-merging scripts/codex/launcher_provenance.py
+Auto-merging scripts/codex/run_specialist.py
+CONFLICT (content): Merge conflict in scripts/codex/run_specialist.py
+Auto-merging scripts/codex/validate_handoff.py
+Auto-merging scripts/setup_support/configure_codex.py
+Auto-merging scripts/setup_support/verify.py
+CONFLICT (content): Merge conflict in scripts/setup_support/verify.py
+Auto-merging skills/biomodelling-orchestrator/SKILL.md
+CONFLICT (content): Merge conflict in skills/biomodelling-orchestrator/SKILL.md
+Auto-merging skills/neko-workflow/SKILL.md
+CONFLICT (content): Merge conflict in skills/neko-workflow/SKILL.md
+Auto-merging skills/review-literature-evidence/SKILL.md
+CONFLICT (content): Merge conflict in skills/review-literature-evidence/SKILL.md
+Auto-merging tests/codex/test_plugin.py
+Auto-merging tests/codex/test_run_specialist.py

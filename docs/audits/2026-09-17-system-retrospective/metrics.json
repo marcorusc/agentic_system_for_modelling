@@ -1,0 +1,2905 @@
+{
+  "scope": "All 49 invocation provenance records present under runs/ at audit snapshot; includes infrastructure probes, blocked attempts and scientific tasks. Not a scientific success-rate denominator or full account/conversation bill.",
+  "method": "Unique invocation_id; sum numeric usage fields from final JSONL usage events; no inference for missing events. Cached input is a subset of input. Reasoning output is reported separately, not added to output. Process durations may overlap and are not end-to-end wall time.",
+  "all_recorded_invocations": {
+    "invocations": 49,
+    "with_usage": 42,
+    "usage_sum": {
+      "input_tokens": 42631005,
+      "cached_input_tokens": 38935680,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 407540,
+      "reasoning_output_tokens": 40172
+    },
+    "process_seconds_sum": 20785.733,
+    "handoff_status_counts": {
+      "blocked": 19,
+      "needs_approval": 22,
+      "draft": 1,
+      "failed": 2,
+      "null": 5
+    }
+  },
+  "by_specialist": {
+    "boolean_dynamics_modeler": {
+      "invocations": 3,
+      "with_usage": 3,
+      "usage_sum": {
+        "input_tokens": 1348789,
+        "cached_input_tokens": 1179136,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 13880,
+        "reasoning_output_tokens": 1170
+      },
+      "process_seconds_sum": 523.055,
+      "handoff_status_counts": {
+        "blocked": 2,
+        "needs_approval": 1
+      }
+    },
+    "literature_reviewer": {
+      "invocations": 16,
+      "with_usage": 14,
+      "usage_sum": {
+        "input_tokens": 23071526,
+        "cached_input_tokens": 21145984,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 175935,
+        "reasoning_output_tokens": 18242
+      },
+      "process_seconds_sum": 7016.038,
+      "handoff_status_counts": {
+        "needs_approval": 11,
+        "blocked": 5
+      }
+    },
+    "multicellular_configurator": {
+      "invocations": 2,
+      "with_usage": 2,
+      "usage_sum": {
+        "input_tokens": 79126,
+        "cached_input_tokens": 40576,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1053,
+        "reasoning_output_tokens": 159
+      },
+      "process_seconds_sum": 51.727,
+      "handoff_status_counts": {
+        "blocked": 2
+      }
+    },
+    "network_curator": {
+      "invocations": 22,
+      "with_usage": 18,
+      "usage_sum": {
+        "input_tokens": 7935375,
+        "cached_input_tokens": 6978048,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 110337,
+        "reasoning_output_tokens": 5409
+      },
+      "process_seconds_sum": 7109.574,
+      "handoff_status_counts": {
+        "needs_approval": 6,
+        "draft": 1,
+        "failed": 2,
+        "blocked": 9,
+        "null": 4
+      }
+    },
+    "ode_dynamics_modeler": {
+      "invocations": 6,
+      "with_usage": 5,
+      "usage_sum": {
+        "input_tokens": 10196189,
+        "cached_input_tokens": 9591936,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 106335,
+        "reasoning_output_tokens": 15192
+      },
+      "process_seconds_sum": 6085.339,
+      "handoff_status_counts": {
+        "needs_approval": 4,
+        "blocked": 1,
+        "null": 1
+      }
+    }
+  },
+  "dispatcher_registry": {
+    "tasks": 42,
+    "execution_states": {
+      "succeeded": 39,
+      "cancelled": 2,
+      "failed": 1
+    },
+    "handoff_statuses": {
+      "needs_approval": 22,
+      "null": 3,
+      "blocked": 15,
+      "failed": 2
+    }
+  },
+  "smoke_cohort": {
+    "invocations": [
+      {
+        "invocation_id": "2026-09-17T051829-149f6350-dbc8-4611-84e2-1e6aded9bad7",
+        "dispatcher_task_id": "4f426f3937184de89c3b87baf463d558",
+        "specialist": "boolean_dynamics_modeler",
+        "started_at": "2026-09-17T05:18:29.079676Z",
+        "finished_at": "2026-09-17T05:26:05.065900Z",
+        "process_elapsed_seconds": 455.464,
+        "process_exit_code": 0,
+        "cancelled": false,
+        "dispatcher_execution_state": "succeeded",
+        "handoff_status": "needs_approval",
+        "session_id": "ce2b4804-0309-4f07-8921-364324d1a337",
+        "usage_events": 1,
+        "usage_sum": {
+          "input_tokens": 1232548,
+          "cached_input_tokens": 1134336,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 12852,
+          "reasoning_output_tokens": 932
+        },
+        "event_types": {
+          "thread.started": 1,
+          "turn.started": 1,
+          "item.completed": 58,
+          "item.started": 53,
+          "turn.completed": 1
+        },
+        "mcp_calls_started": {
+          "maboss.create_session": 2,
+          "maboss.import_neko_handoff": 2,
+          "maboss.get_maboss_nodes": 2,
+          "maboss.get_maboss_logical_rules": 2,
+          "maboss.get_maboss_initial_state": 2,
+          "maboss.update_maboss_parameters": 4,
+          "maboss.get_maboss_mutations": 2,
+          "maboss.set_maboss_output_nodes": 2,
+          "maboss.set_maboss_initial_state": 2,
+          "maboss.export_maboss_bnd_cfg": 2,
+          "maboss.run_simulation": 2,
+          "maboss.get_simulation_result": 2,
+          "maboss.visualize_network_trajectories": 2,
+          "maboss.list_generated_files": 2
+        },
+        "parse_errors": 0,
+        "serialized_mcp_result_chars": 350538,
+        "largest_mcp_results": [
+          {
+            "tool": "maboss.visualize_network_trajectories",
+            "serialized_result_chars": 136817
+          },
+          {
+            "tool": "maboss.visualize_network_trajectories",
+            "serialized_result_chars": 133464
+          },
+          {
+            "tool": "maboss.get_maboss_logical_rules",
+            "serialized_result_chars": 11394
+          },
+          {
+            "tool": "maboss.get_maboss_logical_rules",
+            "serialized_result_chars": 11394
+          },
+          {
+            "tool": "maboss.get_maboss_initial_state",
+            "serialized_result_chars": 8869
+          },
+          {
+            "tool": "maboss.get_maboss_initial_state",
+            "serialized_result_chars": 8869
+          }
+        ],
+        "simulation_tool_calls": [
+          {
+            "tool": "maboss.run_simulation",
+            "started_at": "2026-09-17T05:20:36.423536Z",
+            "finished_at": "2026-09-17T05:20:37.642634Z",
+            "wall_seconds": 1.219098
+          },
+          {
+            "tool": "maboss.run_simulation",
+            "started_at": "2026-09-17T05:21:52.393063Z",
+            "finished_at": "2026-09-17T05:21:53.799034Z",
+            "wall_seconds": 1.405971
+          }
+        ],
+        "last_model_bundle_export_finished_at": null,
+        "provenance_path": "runs/boolean-dynamics-modeler/ce2b4804-0309-4f07-8921-364324d1a337/specialist-invocations/2026-09-17T051829-149f6350-dbc8-4611-84e2-1e6aded9bad7/provenance.json",
+        "provenance_sha256": "81e0628af9408bc1e38ea9b8bcb53e256585267e5974f50da556bf17b767751f",
+        "events_sha256": "3234946efd4951b717f6ab68a24aff29c017d9a0094b9f6154804adf576b6861",
+        "task_bytes": 3241,
+        "final_output_bytes": 16780,
+        "label": "Boolean two-fixture smoke test"
+      },
+      {
+        "invocation_id": "2026-09-17T050954-a6a9cf3d-269a-4c79-bc9e-0459e48a1039",
+        "dispatcher_task_id": "6d83af6278ea477f8a213ba2505faff0",
+        "specialist": "ode_dynamics_modeler",
+        "started_at": "2026-09-17T05:09:54.494746Z",
+        "finished_at": "2026-09-17T05:17:04.373210Z",
+        "process_elapsed_seconds": 429.236,
+        "process_exit_code": 0,
+        "cancelled": false,
+        "dispatcher_execution_state": "succeeded",
+        "handoff_status": "needs_approval",
+        "session_id": "27e4ca92-6c16-47e4-a14c-7c7c13996e4b",
+        "usage_events": 1,
+        "usage_sum": {
+          "input_tokens": 1419285,
+          "cached_input_tokens": 1300096,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 10345,
+          "reasoning_output_tokens": 311
+        },
+        "event_types": {
+          "thread.started": 1,
+          "turn.started": 1,
+          "item.completed": 43,
+          "item.started": 38,
+          "turn.completed": 1
+        },
+        "mcp_calls_started": {
+          "biomass.list_mcp_resources": 1,
+          "biomass.read_mcp_resource": 5,
+          "biomass.create_session": 1,
+          "biomass.import_neko_handoff": 1,
+          "biomass.set_evidence": 1,
+          "biomass.set_reactions": 1,
+          "biomass.build_reactions": 1,
+          "biomass.inspect_model": 1,
+          "biomass.configure_model": 2,
+          "biomass.validate_model": 2,
+          "biomass.generate_model": 1,
+          "biomass.visualize_model": 1,
+          "biomass.run_simulation": 2,
+          "biomass.export_model_bundle": 1
+        },
+        "parse_errors": 0,
+        "serialized_mcp_result_chars": 5035989,
+        "largest_mcp_results": [
+          {
+            "tool": "biomass.configure_model",
+            "serialized_result_chars": 990443
+          },
+          {
+            "tool": "biomass.configure_model",
+            "serialized_result_chars": 988979
+          },
+          {
+            "tool": "biomass.inspect_model",
+            "serialized_result_chars": 835560
+          },
+          {
+            "tool": "biomass.set_reactions",
+            "serialized_result_chars": 808841
+          },
+          {
+            "tool": "biomass.set_evidence",
+            "serialized_result_chars": 330330
+          },
+          {
+            "tool": "biomass.generate_model",
+            "serialized_result_chars": 278630
+          }
+        ],
+        "simulation_tool_calls": [
+          {
+            "tool": "biomass.run_simulation",
+            "started_at": "2026-09-17T05:13:10.856257Z",
+            "finished_at": "2026-09-17T05:13:17.425284Z",
+            "wall_seconds": 6.569027
+          },
+          {
+            "tool": "biomass.run_simulation",
+            "started_at": "2026-09-17T05:13:26.068910Z",
+            "finished_at": "2026-09-17T05:13:33.248190Z",
+            "wall_seconds": 7.17928
+          }
+        ],
+        "last_model_bundle_export_finished_at": "2026-09-17T05:13:46.365964Z",
+        "provenance_path": "runs/ode-dynamics-modeler/27e4ca92-6c16-47e4-a14c-7c7c13996e4b/specialist-invocations/2026-09-17T050954-a6a9cf3d-269a-4c79-bc9e-0459e48a1039/provenance.json",
+        "provenance_sha256": "65d076d0ee8308e8bd883873058d7af2bf743c27a00c806151d2ba4d583a0cf2",
+        "events_sha256": "c81c91bea405a05d77e0e093b27283e5af9f50ea5f42fed8c45896c2a4930c5b",
+        "task_bytes": 4645,
+        "final_output_bytes": 14167,
+        "label": "ODE two-fixture smoke test"
+      },
+      {
+        "invocation_id": "2026-09-17T050448-d0913987-b8b1-4562-a3a5-7d99276bf520",
+        "dispatcher_task_id": "3a980fcde34f44a0a0fb2307c88a5532",
+        "specialist": "ode_dynamics_modeler",
+        "started_at": "2026-09-17T05:04:48.384356Z",
+        "finished_at": "2026-09-17T05:08:44.242657Z",
+        "process_elapsed_seconds": 234.867,
+        "process_exit_code": 0,
+        "cancelled": false,
+        "dispatcher_execution_state": "succeeded",
+        "handoff_status": "blocked",
+        "session_id": "6635da4e-9ae5-4a6d-a3a8-3de4c84a6bc4",
+        "usage_events": 1,
+        "usage_sum": {
+          "input_tokens": 1066612,
+          "cached_input_tokens": 995200,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 5563,
+          "reasoning_output_tokens": 195
+        },
+        "event_types": {
+          "thread.started": 1,
+          "turn.started": 1,
+          "item.completed": 39,
+          "item.started": 35,
+          "turn.completed": 1
+        },
+        "mcp_calls_started": {
+          "biomass.list_mcp_resources": 1,
+          "biomass.read_mcp_resource": 7,
+          "biomass.create_session": 1,
+          "biomass.import_neko_handoff": 1,
+          "biomass.set_evidence": 1,
+          "biomass.set_reactions": 1,
+          "biomass.build_reactions": 1,
+          "biomass.inspect_model": 1,
+          "biomass.list_generated_files": 1
+        },
+        "parse_errors": 0,
+        "serialized_mcp_result_chars": 2132712,
+        "largest_mcp_results": [
+          {
+            "tool": "biomass.set_reactions",
+            "serialized_result_chars": 808841
+          },
+          {
+            "tool": "biomass.inspect_model",
+            "serialized_result_chars": 808841
+          },
+          {
+            "tool": "biomass.set_evidence",
+            "serialized_result_chars": 330330
+          },
+          {
+            "tool": "biomass.import_neko_handoff",
+            "serialized_result_chars": 127954
+          },
+          {
+            "tool": "biomass.read_mcp_resource",
+            "serialized_result_chars": 9841
+          },
+          {
+            "tool": "biomass.read_mcp_resource",
+            "serialized_result_chars": 8241
+          }
+        ],
+        "simulation_tool_calls": [],
+        "last_model_bundle_export_finished_at": null,
+        "provenance_path": "runs/ode-dynamics-modeler/6635da4e-9ae5-4a6d-a3a8-3de4c84a6bc4/specialist-invocations/2026-09-17T050448-d0913987-b8b1-4562-a3a5-7d99276bf520/provenance.json",
+        "provenance_sha256": "a1cfe2fa160b48d46d5caa7959a63ebb0aaa8311605ae3afca6d17b515f7c5ee",
+        "events_sha256": "4bfb83e639a259fc2172aa745680ba1de520aaaf5dce986af6c185e70a5c075c",
+        "task_bytes": 4005,
+        "final_output_bytes": 6307,
+        "label": "ODE permission-blocked attempt"
+      }
+    ],
+    "with_usage": 3,
+    "usage_sum": {
+      "input_tokens": 3718445,
+      "cached_input_tokens": 3429632,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 28760,
+      "reasoning_output_tokens": 1438
+    },
+    "process_seconds_sum": 1119.567,
+    "handoff_status_counts": {
+      "needs_approval": 2,
+      "blocked": 1
+    }
+  },
+  "rows": [
+    {
+      "invocation_id": "2026-09-15T025632-0506e397-615c-4010-a66a-6dbc439428f8",
+      "dispatcher_task_id": "8d4290961aa84cc881b278f3aad8c583",
+      "specialist": "boolean_dynamics_modeler",
+      "started_at": "2026-09-15T02:56:32.950334Z",
+      "finished_at": "2026-09-15T02:57:10.761190Z",
+      "process_elapsed_seconds": 37.576,
+      "process_exit_code": 0,
+      "cancelled": false,
+      "dispatcher_execution_state": "succeeded",
+      "handoff_status": "blocked",
+      "session_id": null,
+      "usage_events": 1,
+      "usage_sum": {
+        "input_tokens": 76777,
+        "cached_input_tokens": 27648,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 435,
+        "reasoning_output_tokens": 14
+      },
+      "event_types": {
+        "thread.started": 1,
+        "turn.started": 1,
+        "item.started": 2,
+        "item.completed": 3,
+        "turn.completed": 1
+      },
+      "mcp_calls_started": {},
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 0,
+      "largest_mcp_results": [],
+      "simulation_tool_calls": [],
+      "last_model_bundle_export_finished_at": null,
+      "provenance_path": "runs/boolean-dynamics-modeler/_blocked/specialist-invocations/2026-09-15T025632-0506e397-615c-4010-a66a-6dbc439428f8/provenance.json",
+      "provenance_sha256": "da944b06480a1f135ea994a45735e7096664c8fa8309d6d737e4fa679d708925",
+      "events_sha256": "78dc89e7077d3e2d656cca6de746966e43c75470abb61651d29bddfa3b5bb03f",
+      "task_bytes": 933,
+      "final_output_bytes": 1231
+    },
+    {
+      "invocation_id": "2026-09-15T025857-f405adb2-a9a7-4485-b174-de1003c58756",
+      "dispatcher_task_id": "6eface3bd65f468085807a02b2cf1c4a",
+      "specialist": "boolean_dynamics_modeler",
+      "started_at": "2026-09-15T02:58:57.082001Z",
+      "finished_at": "2026-09-15T02:59:27.325351Z",
+      "process_elapsed_seconds": 30.015,
+      "process_exit_code": 0,
+      "cancelled": false,
+      "dispatcher_execution_state": "succeeded",
+      "handoff_status": "blocked",
+      "session_id": null,
+      "usage_events": 1,
+      "usage_sum": {
+        "input_tokens": 39464,
+        "cached_input_tokens": 17152,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 593,
+        "reasoning_output_tokens": 224
+      },
+      "event_types": {
+        "thread.started": 1,
+        "turn.started": 1,
+        "item.completed": 3,
+        "item.started": 1,
+        "turn.completed": 1
+      },
+      "mcp_calls_started": {},
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 0,
+      "largest_mcp_results": [],
+      "simulation_tool_calls": [],
+      "last_model_bundle_export_finished_at": null,
+      "provenance_path": "runs/boolean-dynamics-modeler/_blocked/specialist-invocations/2026-09-15T025857-f405adb2-a9a7-4485-b174-de1003c58756/provenance.json",
+      "provenance_sha256": "95154d4b3d64e228797205e19a0c4ab899ec6b0c79ac03b128d60735a58a91cb",
+      "events_sha256": "64ca7a71d5c9c55341e1ca83bbe093648006e063f0e17b6a484ffcf3f2acfb1f",
+      "task_bytes": 933,
+      "final_output_bytes": 1194
+    },
+    {
+      "invocation_id": "2026-09-17T051829-149f6350-dbc8-4611-84e2-1e6aded9bad7",
+      "dispatcher_task_id": "4f426f3937184de89c3b87baf463d558",
+      "specialist": "boolean_dynamics_modeler",
+      "started_at": "2026-09-17T05:18:29.079676Z",
+      "finished_at": "2026-09-17T05:26:05.065900Z",
+      "process_elapsed_seconds": 455.464,
+      "process_exit_code": 0,
+      "cancelled": false,
+      "dispatcher_execution_state": "succeeded",
+      "handoff_status": "needs_approval",
+      "session_id": "ce2b4804-0309-4f07-8921-364324d1a337",
+      "usage_events": 1,
+      "usage_sum": {
+        "input_tokens": 1232548,
+        "cached_input_tokens": 1134336,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 12852,
+        "reasoning_output_tokens": 932
+      },
+      "event_types": {
+        "thread.started": 1,
+        "turn.started": 1,
+        "item.completed": 58,
+        "item.started": 53,
+        "turn.completed": 1
+      },
+      "mcp_calls_started": {
+        "maboss.create_session": 2,
+        "maboss.import_neko_handoff": 2,
+        "maboss.get_maboss_nodes": 2,
+        "maboss.get_maboss_logical_rules": 2,
+        "maboss.get_maboss_initial_state": 2,
+        "maboss.update_maboss_parameters": 4,
+        "maboss.get_maboss_mutations": 2,
+        "maboss.set_maboss_output_nodes": 2,
+        "maboss.set_maboss_initial_state": 2,
+        "maboss.export_maboss_bnd_cfg": 2,
+        "maboss.run_simulation": 2,
+        "maboss.get_simulation_result": 2,
+        "maboss.visualize_network_trajectories": 2,
+        "maboss.list_generated_files": 2
+      },
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 350538,
+      "largest_mcp_results": [
+        {
+          "tool": "maboss.visualize_network_trajectories",
+          "serialized_result_chars": 136817
+        },
+        {
+          "tool": "maboss.visualize_network_trajectories",
+          "serialized_result_chars": 133464
+        },
+        {
+          "tool": "maboss.get_maboss_logical_rules",
+          "serialized_result_chars": 11394
+        },
+        {
+          "tool": "maboss.get_maboss_logical_rules",
+          "serialized_result_chars": 11394
+        },
+        {
+          "tool": "maboss.get_maboss_initial_state",
+          "serialized_result_chars": 8869
+        },
+        {
+          "tool": "maboss.get_maboss_initial_state",
+          "serialized_result_chars": 8869
+        }
+      ],
+      "simulation_tool_calls": [
+        {
+          "tool": "maboss.run_simulation",
+          "started_at": "2026-09-17T05:20:36.423536Z",
+          "finished_at": "2026-09-17T05:20:37.642634Z",
+          "wall_seconds": 1.219098
+        },
+        {
+          "tool": "maboss.run_simulation",
+          "started_at": "2026-09-17T05:21:52.393063Z",
+          "finished_at": "2026-09-17T05:21:53.799034Z",
+          "wall_seconds": 1.405971
+        }
+      ],
+      "last_model_bundle_export_finished_at": null,
+      "provenance_path": "runs/boolean-dynamics-modeler/ce2b4804-0309-4f07-8921-364324d1a337/specialist-invocations/2026-09-17T051829-149f6350-dbc8-4611-84e2-1e6aded9bad7/provenance.json",
+      "provenance_sha256": "81e0628af9408bc1e38ea9b8bcb53e256585267e5974f50da556bf17b767751f",
+      "events_sha256": "3234946efd4951b717f6ab68a24aff29c017d9a0094b9f6154804adf576b6861",
+      "task_bytes": 3241,
+      "final_output_bytes": 16780
+    },
+    {
+      "invocation_id": "2026-09-15T025711-128ec177-0a11-44d3-b4c3-59a264b7cd11",
+      "dispatcher_task_id": "8cd3b2f8df95423ba964ade7eb00de0b",
+      "specialist": "multicellular_configurator",
+      "started_at": "2026-09-15T02:57:11.112448Z",
+      "finished_at": "2026-09-15T02:57:38.201532Z",
+      "process_elapsed_seconds": 26.861,
+      "process_exit_code": 0,
+      "cancelled": false,
+      "dispatcher_execution_state": "succeeded",
+      "handoff_status": "blocked",
+      "session_id": null,
+      "usage_events": 1,
+      "usage_sum": {
+        "input_tokens": 39921,
+        "cached_input_tokens": 23680,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 534,
+        "reasoning_output_tokens": 77
+      },
+      "event_types": {
+        "thread.started": 1,
+        "turn.started": 1,
+        "item.completed": 3,
+        "item.started": 1,
+        "turn.completed": 1
+      },
+      "mcp_calls_started": {},
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 0,
+      "largest_mcp_results": [],
+      "simulation_tool_calls": [],
+      "last_model_bundle_export_finished_at": null,
+      "provenance_path": "runs/multicellular-configurator/_blocked/specialist-invocations/2026-09-15T025711-128ec177-0a11-44d3-b4c3-59a264b7cd11/provenance.json",
+      "provenance_sha256": "0fe3cc1006978272995584ab99ffabe52b74e5eb9ff62d04b59f6bbd267a0691",
+      "events_sha256": "e801d35548ebd3451182a42147a7af4dabf9aebec606430f7f6dec5d3a93a3fb",
+      "task_bytes": 943,
+      "final_output_bytes": 1179
+    },
+    {
+      "invocation_id": "2026-09-15T025929-ccd1c2f4-db5b-4095-9de2-7d931b8c3f7b",
+      "dispatcher_task_id": "92d9f3544ab44982931dcbffe6f0b984",
+      "specialist": "multicellular_configurator",
+      "started_at": "2026-09-15T02:59:29.231577Z",
+      "finished_at": "2026-09-15T02:59:54.321766Z",
+      "process_elapsed_seconds": 24.866,
+      "process_exit_code": 0,
+      "cancelled": false,
+      "dispatcher_execution_state": "succeeded",
+      "handoff_status": "blocked",
+      "session_id": null,
+      "usage_events": 1,
+      "usage_sum": {
+        "input_tokens": 39205,
+        "cached_input_tokens": 16896,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 519,
+        "reasoning_output_tokens": 82
+      },
+      "event_types": {
+        "thread.started": 1,
+        "turn.started": 1,
+        "item.completed": 3,
+        "item.started": 1,
+        "turn.completed": 1
+      },
+      "mcp_calls_started": {},
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 0,
+      "largest_mcp_results": [],
+      "simulation_tool_calls": [],
+      "last_model_bundle_export_finished_at": null,
+      "provenance_path": "runs/multicellular-configurator/_blocked/specialist-invocations/2026-09-15T025929-ccd1c2f4-db5b-4095-9de2-7d931b8c3f7b/provenance.json",
+      "provenance_sha256": "fbbabe84070d8a4e9a2abb39bbaccdecae23e07ef923d70ba35e067fcbb5bc5e",
+      "events_sha256": "dc5e70b04d457aa51376ce2a276e6186a5d8799c09c44c8e64e30ad305ecb708",
+      "task_bytes": 943,
+      "final_output_bytes": 1459
+    },
+    {
+      "invocation_id": "2026-09-16T053409-1436ca1d-e05f-4241-bcd9-dbef0f79e95a",
+      "dispatcher_task_id": "bd77d3b480da48509b8b825d5ab04b7b",
+      "specialist": "network_curator",
+      "started_at": "2026-09-16T05:34:09.657788Z",
+      "finished_at": "2026-09-16T05:39:08.026286Z",
+      "process_elapsed_seconds": 297.145,
+      "process_exit_code": 0,
+      "cancelled": false,
+      "dispatcher_execution_state": "succeeded",
+      "handoff_status": "needs_approval",
+      "session_id": "00e3eab9-1e3b-4d9a-a7fd-5716edb7b645",
+      "usage_events": 1,
+      "usage_sum": {
+        "input_tokens": 392873,
+        "cached_input_tokens": 309248,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 8262,
+        "reasoning_output_tokens": 337
+      },
+      "event_types": {
+        "thread.started": 1,
+        "turn.started": 1,
+        "item.completed": 13,
+        "item.started": 9,
+        "turn.completed": 1
+      },
+      "mcp_calls_started": {},
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 0,
+      "largest_mcp_results": [],
+      "simulation_tool_calls": [],
+      "last_model_bundle_export_finished_at": null,
+      "provenance_path": "runs/network-curator/00e3eab9-1e3b-4d9a-a7fd-5716edb7b645/specialist-invocations/2026-09-16T053409-1436ca1d-e05f-4241-bcd9-dbef0f79e95a/provenance.json",
+      "provenance_sha256": "14af8373fb44e0a2494ce375c9854ea9ecacf1f9bdbcb7e5edef46d5ed0f9102",
+      "events_sha256": "65163ed76e17d95ff20ee1277306628721bebfa5d7547e9204ab382d10a07a76",
+      "task_bytes": 3317,
+      "final_output_bytes": 11588
+    },
+    {
+      "invocation_id": "2026-09-16T054148-693a2e0a-8212-4bf0-a892-9c7ff52fdac4",
+      "dispatcher_task_id": "c252875a5c954622bba5d21a8ed9fe35",
+      "specialist": "literature_reviewer",
+      "started_at": "2026-09-16T05:41:48.672416Z",
+      "finished_at": "2026-09-16T05:51:16.581846Z",
+      "process_elapsed_seconds": 567.569,
+      "process_exit_code": 0,
+      "cancelled": false,
+      "dispatcher_execution_state": "succeeded",
+      "handoff_status": "needs_approval",
+      "session_id": "00e3eab9-1e3b-4d9a-a7fd-5716edb7b645",
+      "usage_events": 1,
+      "usage_sum": {
+        "input_tokens": 1932188,
+        "cached_input_tokens": 1759360,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 15101,
+        "reasoning_output_tokens": 1494
+      },
+      "event_types": {
+        "thread.started": 1,
+        "turn.started": 1,
+        "item.completed": 29,
+        "item.started": 24,
+        "turn.completed": 1
+      },
+      "mcp_calls_started": {},
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 0,
+      "largest_mcp_results": [],
+      "simulation_tool_calls": [],
+      "last_model_bundle_export_finished_at": null,
+      "provenance_path": "runs/network-curator/00e3eab9-1e3b-4d9a-a7fd-5716edb7b645/specialist-invocations/2026-09-16T054148-693a2e0a-8212-4bf0-a892-9c7ff52fdac4/provenance.json",
+      "provenance_sha256": "97fe72c283e50adf63f4dba5fd12eefa9664cc99ccf6b03237eec2d08c5dee62",
+      "events_sha256": "c00c0f7fa2f5673b31ab080a56921fcf1ac435e1045533c1421791838e4a3bdd",
+      "task_bytes": 3977,
+      "final_output_bytes": 23525
+    },
+    {
+      "invocation_id": "2026-09-16T054153-aa403008-c599-4b1e-b961-27724b792d16",
+      "dispatcher_task_id": "a8d83dbcb9b741e38d1ce0c95cc2ccfc",
+      "specialist": "literature_reviewer",
+      "started_at": "2026-09-16T05:41:53.464336Z",
+      "finished_at": "2026-09-16T05:51:08.224429Z",
+      "process_elapsed_seconds": 554.426,
+      "process_exit_code": 0,
+      "cancelled": false,
+      "dispatcher_execution_state": "succeeded",
+      "handoff_status": "needs_approval",
+      "session_id": "00e3eab9-1e3b-4d9a-a7fd-5716edb7b645",
+      "usage_events": 1,
+      "usage_sum": {
+        "input_tokens": 1490830,
+        "cached_input_tokens": 1330944,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 14135,
+        "reasoning_output_tokens": 1847
+      },
+      "event_types": {
+        "thread.started": 1,
+        "turn.started": 1,
+        "item.completed": 54,
+        "item.started": 49,
+        "turn.completed": 1
+      },
+      "mcp_calls_started": {},
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 0,
+      "largest_mcp_results": [],
+      "simulation_tool_calls": [],
+      "last_model_bundle_export_finished_at": null,
+      "provenance_path": "runs/network-curator/00e3eab9-1e3b-4d9a-a7fd-5716edb7b645/specialist-invocations/2026-09-16T054153-aa403008-c599-4b1e-b961-27724b792d16/provenance.json",
+      "provenance_sha256": "ca1f0a3708b079c4a5e3c69bd3a5c1d2c818c73af8afb0ca644586b27ae33c21",
+      "events_sha256": "40f740851fdb0522eb019171f474f8eced61bda9a44e16b42236a9cb644407e9",
+      "task_bytes": 3904,
+      "final_output_bytes": 18953
+    },
+    {
+      "invocation_id": "2026-09-16T055607-d9fef0df-3981-4ad3-9e36-3da58d9ed3d0",
+      "dispatcher_task_id": "55cfa706e74d4773976da9679bda8e12",
+      "specialist": "literature_reviewer",
+      "started_at": "2026-09-16T05:56:07.074173Z",
+      "finished_at": "2026-09-16T06:01:44.633377Z",
+      "process_elapsed_seconds": 336.534,
+      "process_exit_code": 0,
+      "cancelled": false,
+      "dispatcher_execution_state": "succeeded",
+      "handoff_status": "needs_approval",
+      "session_id": "00e3eab9-1e3b-4d9a-a7fd-5716edb7b645",
+      "usage_events": 1,
+      "usage_sum": {
+        "input_tokens": 777701,
+        "cached_input_tokens": 679424,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 8112,
+        "reasoning_output_tokens": 774
+      },
+      "event_types": {
+        "thread.started": 1,
+        "turn.started": 1,
+        "item.completed": 22,
+        "item.started": 17,
+        "turn.completed": 1
+      },
+      "mcp_calls_started": {},
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 0,
+      "largest_mcp_results": [],
+      "simulation_tool_calls": [],
+      "last_model_bundle_export_finished_at": null,
+      "provenance_path": "runs/network-curator/00e3eab9-1e3b-4d9a-a7fd-5716edb7b645/specialist-invocations/2026-09-16T055607-d9fef0df-3981-4ad3-9e36-3da58d9ed3d0/provenance.json",
+      "provenance_sha256": "4c0da0e5e5c408de247c55f1218dfb2c13ce2ccc51e7f1e5e0472ff56569d892",
+      "events_sha256": "bcc89f84e0ea55eec567117d02ed5e9531fde13385593d6a1bda9f9c214c6de0",
+      "task_bytes": 3595,
+      "final_output_bytes": 11038
+    },
+    {
+      "invocation_id": "2026-09-16T055613-b736d389-a179-4393-a376-14554bb0b0f4",
+      "dispatcher_task_id": "c5f70042f42c421596e1141714981470",
+      "specialist": "literature_reviewer",
+      "started_at": "2026-09-16T05:56:13.019595Z",
+      "finished_at": "2026-09-16T06:03:35.811768Z",
+      "process_elapsed_seconds": 442.186,
+      "process_exit_code": 0,
+      "cancelled": false,
+      "dispatcher_execution_state": "succeeded",
+      "handoff_status": "needs_approval",
+      "session_id": "00e3eab9-1e3b-4d9a-a7fd-5716edb7b645",
+      "usage_events": 1,
+      "usage_sum": {
+        "input_tokens": 1408722,
+        "cached_input_tokens": 1277312,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 11254,
+        "reasoning_output_tokens": 1199
+      },
+      "event_types": {
+        "thread.started": 1,
+        "turn.started": 1,
+        "item.completed": 28,
+        "item.started": 23,
+        "turn.completed": 1
+      },
+      "mcp_calls_started": {},
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 0,
+      "largest_mcp_results": [],
+      "simulation_tool_calls": [],
+      "last_model_bundle_export_finished_at": null,
+      "provenance_path": "runs/network-curator/00e3eab9-1e3b-4d9a-a7fd-5716edb7b645/specialist-invocations/2026-09-16T055613-b736d389-a179-4393-a376-14554bb0b0f4/provenance.json",
+      "provenance_sha256": "6bcc39832ee6596eca283b55a86c6bef738b0e426929fdd40fff635fabaa09d6",
+      "events_sha256": "0a202afb2bd95c0738ba3b6bd91c168f4989b96dc35fcf94250923c3cfb12c35",
+      "task_bytes": 3611,
+      "final_output_bytes": 13344
+    },
+    {
+      "invocation_id": "2026-09-15T054259-a1ae477b-925b-4db8-9bc0-1b967898ba4c",
+      "dispatcher_task_id": "67f603a312ef4a1a9fc154de8f6af761",
+      "specialist": "network_curator",
+      "started_at": "2026-09-15T05:42:59.807070Z",
+      "finished_at": "2026-09-15T05:49:56.552333Z",
+      "process_elapsed_seconds": 416.513,
+      "process_exit_code": 0,
+      "cancelled": false,
+      "dispatcher_execution_state": "failed",
+      "handoff_status": "draft",
+      "session_id": "22b9aa48-d173-49d5-b9a8-f6c3c03f7e16",
+      "usage_events": 1,
+      "usage_sum": {
+        "input_tokens": 525754,
+        "cached_input_tokens": 465280,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 11974,
+        "reasoning_output_tokens": 719
+      },
+      "event_types": {
+        "thread.started": 1,
+        "turn.started": 1,
+        "item.completed": 31,
+        "item.started": 26,
+        "turn.completed": 1
+      },
+      "mcp_calls_started": {
+        "neko.create_session": 1,
+        "neko.status": 3,
+        "neko.list_network_history": 3,
+        "neko.create_network": 1,
+        "neko.filter_interactions": 2,
+        "neko.analyze_connectivity": 2,
+        "neko.analyze_gene_set": 1,
+        "neko.compare_network_states": 2,
+        "neko.export_network": 1,
+        "neko.preview_connection_impact": 1
+      },
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 183044,
+      "largest_mcp_results": [
+        {
+          "tool": "neko.compare_network_states",
+          "serialized_result_chars": 43183
+        },
+        {
+          "tool": "neko.compare_network_states",
+          "serialized_result_chars": 43183
+        },
+        {
+          "tool": "neko.analyze_gene_set",
+          "serialized_result_chars": 25546
+        },
+        {
+          "tool": "neko.filter_interactions",
+          "serialized_result_chars": 20488
+        },
+        {
+          "tool": "neko.filter_interactions",
+          "serialized_result_chars": 20488
+        },
+        {
+          "tool": "neko.analyze_connectivity",
+          "serialized_result_chars": 11007
+        }
+      ],
+      "simulation_tool_calls": [],
+      "last_model_bundle_export_finished_at": null,
+      "provenance_path": "runs/network-curator/22b9aa48-d173-49d5-b9a8-f6c3c03f7e16/specialist-invocations/2026-09-15T054259-a1ae477b-925b-4db8-9bc0-1b967898ba4c/provenance.json",
+      "provenance_sha256": "019d9f6f817157cfabc42e153592a7fedc60d58a2eab59161bffa68cb58ebb79",
+      "events_sha256": "8c083d34b450775f9413f4e5c5357a34b81b96e6764f6227d392e045410212d8",
+      "task_bytes": 3296,
+      "final_output_bytes": 16897
+    },
+    {
+      "invocation_id": "2026-09-15T042415-0fea4165-f7e5-4aaa-9a10-375f15a92137",
+      "dispatcher_task_id": "eea21797ded6449cbd653c1fd45eb2c8",
+      "specialist": "network_curator",
+      "started_at": "2026-09-15T04:24:15.857582Z",
+      "finished_at": "2026-09-15T04:32:49.421959Z",
+      "process_elapsed_seconds": 513.021,
+      "process_exit_code": 0,
+      "cancelled": false,
+      "dispatcher_execution_state": "succeeded",
+      "handoff_status": "failed",
+      "session_id": "31b5cbb8-4161-4f04-8796-37067069b3fc",
+      "usage_events": 1,
+      "usage_sum": {
+        "input_tokens": 1234235,
+        "cached_input_tokens": 1183104,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 6636,
+        "reasoning_output_tokens": 412
+      },
+      "event_types": {
+        "thread.started": 1,
+        "turn.started": 1,
+        "item.completed": 17,
+        "item.started": 9,
+        "turn.completed": 1
+      },
+      "mcp_calls_started": {
+        "neko.create_session": 1,
+        "neko.status": 1,
+        "neko.create_network": 1
+      },
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 540,
+      "largest_mcp_results": [
+        {
+          "tool": "neko.create_session",
+          "serialized_result_chars": 277
+        },
+        {
+          "tool": "neko.status",
+          "serialized_result_chars": 259
+        },
+        {
+          "tool": "neko.create_network",
+          "serialized_result_chars": 4
+        }
+      ],
+      "simulation_tool_calls": [],
+      "last_model_bundle_export_finished_at": null,
+      "provenance_path": "runs/network-curator/31b5cbb8-4161-4f04-8796-37067069b3fc/specialist-invocations/2026-09-15T042415-0fea4165-f7e5-4aaa-9a10-375f15a92137/provenance.json",
+      "provenance_sha256": "099b3b455caed7e7892a3d56beee72d13cdf41e9b9b47a3dad46e90865ac5d17",
+      "events_sha256": "d4ce5f5fb8b54758758f7c1d5fc5fc68f466510ab1782d20f94695827775095d",
+      "task_bytes": 2865,
+      "final_output_bytes": 7423
+    },
+    {
+      "invocation_id": "2026-09-16T061843-1301e46a-d5d7-45dc-81ef-272ef600e432",
+      "dispatcher_task_id": "a651e8485e094c5784a3a6160ee334cb",
+      "specialist": "network_curator",
+      "started_at": "2026-09-16T06:18:43.723211Z",
+      "finished_at": "2026-09-16T06:25:29.551187Z",
+      "process_elapsed_seconds": 404.879,
+      "process_exit_code": 0,
+      "cancelled": false,
+      "dispatcher_execution_state": "succeeded",
+      "handoff_status": "needs_approval",
+      "session_id": "5d63dfca-0bcb-4117-b0bd-75478e8e20dd",
+      "usage_events": 1,
+      "usage_sum": {
+        "input_tokens": 558773,
+        "cached_input_tokens": 478720,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 10665,
+        "reasoning_output_tokens": 397
+      },
+      "event_types": {
+        "thread.started": 1,
+        "turn.started": 1,
+        "item.completed": 26,
+        "item.started": 22,
+        "turn.completed": 1
+      },
+      "mcp_calls_started": {
+        "neko.create_session": 1,
+        "neko.status": 2,
+        "neko.list_network_history": 2,
+        "neko.create_network": 1,
+        "neko.analyze_gene_set": 1,
+        "neko.export_network": 1,
+        "neko.export_neko_handoff": 1
+      },
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 34941,
+      "largest_mcp_results": [
+        {
+          "tool": "neko.analyze_gene_set",
+          "serialized_result_chars": 25999
+        },
+        {
+          "tool": "neko.export_neko_handoff",
+          "serialized_result_chars": 5942
+        },
+        {
+          "tool": "neko.list_network_history",
+          "serialized_result_chars": 802
+        },
+        {
+          "tool": "neko.export_network",
+          "serialized_result_chars": 781
+        },
+        {
+          "tool": "neko.create_network",
+          "serialized_result_chars": 441
+        },
+        {
+          "tool": "neko.status",
+          "serialized_result_chars": 269
+        }
+      ],
+      "simulation_tool_calls": [],
+      "last_model_bundle_export_finished_at": null,
+      "provenance_path": "runs/network-curator/5d63dfca-0bcb-4117-b0bd-75478e8e20dd/specialist-invocations/2026-09-16T061843-1301e46a-d5d7-45dc-81ef-272ef600e432/provenance.json",
+      "provenance_sha256": "aeaee56dcbc8a42677a69ab26c1aa7b04cc06eb74191d61a1fe99422fe175204",
+      "events_sha256": "29b060d6ec2b84ce5fd1dd3da9ed28ca08871696f7619bc01f5eebc514a9dfef",
+      "task_bytes": 4011,
+      "final_output_bytes": 20151
+    },
+    {
+      "invocation_id": "2026-09-16T064559-741ef5e5-2743-4199-9420-982f061beab3",
+      "dispatcher_task_id": "31605e5e1411414e960b7e38203bcfd2",
+      "specialist": "network_curator",
+      "started_at": "2026-09-16T06:45:59.074011Z",
+      "finished_at": "2026-09-16T06:51:32.757021Z",
+      "process_elapsed_seconds": 332.715,
+      "process_exit_code": 0,
+      "cancelled": false,
+      "dispatcher_execution_state": "succeeded",
+      "handoff_status": "needs_approval",
+      "session_id": "67b4e02b-8cfc-469d-a0c6-1092a34593d5",
+      "usage_events": 1,
+      "usage_sum": {
+        "input_tokens": 1051241,
+        "cached_input_tokens": 973696,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 7475,
+        "reasoning_output_tokens": 210
+      },
+      "event_types": {
+        "thread.started": 1,
+        "turn.started": 1,
+        "item.completed": 32,
+        "item.started": 28,
+        "turn.completed": 1
+      },
+      "mcp_calls_started": {
+        "neko.create_session": 1,
+        "neko.status": 1,
+        "neko.list_network_history": 3,
+        "neko.create_network": 1,
+        "neko.analyze_gene_set": 1,
+        "neko.analyze_connectivity": 1,
+        "neko.export_network": 1,
+        "neko.export_biomass_handoff": 1
+      },
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 44978,
+      "largest_mcp_results": [
+        {
+          "tool": "neko.analyze_gene_set",
+          "serialized_result_chars": 25999
+        },
+        {
+          "tool": "neko.analyze_connectivity",
+          "serialized_result_chars": 9382
+        },
+        {
+          "tool": "neko.export_biomass_handoff",
+          "serialized_result_chars": 6024
+        },
+        {
+          "tool": "neko.list_network_history",
+          "serialized_result_chars": 802
+        },
+        {
+          "tool": "neko.list_network_history",
+          "serialized_result_chars": 802
+        },
+        {
+          "tool": "neko.export_network",
+          "serialized_result_chars": 781
+        }
+      ],
+      "simulation_tool_calls": [],
+      "last_model_bundle_export_finished_at": null,
+      "provenance_path": "runs/network-curator/67b4e02b-8cfc-469d-a0c6-1092a34593d5/specialist-invocations/2026-09-16T064559-741ef5e5-2743-4199-9420-982f061beab3/provenance.json",
+      "provenance_sha256": "f922232fb83aeaa8c4323f9d20d4632356482e33ebb4852623900a78cbc55484",
+      "events_sha256": "a5909bd43301d24c5b22358f55a74698fa9bf9e90dfac81b383fcf99b5bd0795",
+      "task_bytes": 2566,
+      "final_output_bytes": 9121
+    },
+    {
+      "invocation_id": "2026-09-17T012930-54d69183-a9b6-49e9-a22a-a455b21fa498",
+      "dispatcher_task_id": "a40ca6bd9f3c4578a1784be1c02f2369",
+      "specialist": "literature_reviewer",
+      "started_at": "2026-09-17T01:29:30.518521Z",
+      "finished_at": "2026-09-17T01:41:29.457350Z",
+      "process_elapsed_seconds": 718.378,
+      "process_exit_code": 0,
+      "cancelled": false,
+      "dispatcher_execution_state": "succeeded",
+      "handoff_status": "needs_approval",
+      "session_id": "67b4e02b-8cfc-469d-a0c6-1092a34593d5",
+      "usage_events": 1,
+      "usage_sum": {
+        "input_tokens": 2024755,
+        "cached_input_tokens": 1862656,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 17622,
+        "reasoning_output_tokens": 1864
+      },
+      "event_types": {
+        "thread.started": 1,
+        "turn.started": 1,
+        "item.completed": 29,
+        "item.started": 23,
+        "turn.completed": 1
+      },
+      "mcp_calls_started": {},
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 0,
+      "largest_mcp_results": [],
+      "simulation_tool_calls": [],
+      "last_model_bundle_export_finished_at": null,
+      "provenance_path": "runs/network-curator/67b4e02b-8cfc-469d-a0c6-1092a34593d5/specialist-invocations/2026-09-17T012930-54d69183-a9b6-49e9-a22a-a455b21fa498/provenance.json",
+      "provenance_sha256": "69ea311225e92e479884155fdbe27ae61e4470bf3b59645c60803d46d5a47221",
+      "events_sha256": "62679e3743436eec12dd64c4c62e56c6afdd3a56d4a7519e8d703c2745c79ac6",
+      "task_bytes": 1989,
+      "final_output_bytes": 22995
+    },
+    {
+      "invocation_id": "2026-09-17T022348-8e1a591a-07cc-4d01-b11a-567d71a45108",
+      "dispatcher_task_id": "eabec6ea4b094c7abec094d876956822",
+      "specialist": "literature_reviewer",
+      "started_at": "2026-09-17T02:23:48.354150Z",
+      "finished_at": "2026-09-17T02:38:07.486370Z",
+      "process_elapsed_seconds": 858.573,
+      "process_exit_code": 0,
+      "cancelled": false,
+      "dispatcher_execution_state": "succeeded",
+      "handoff_status": "needs_approval",
+      "session_id": "67b4e02b-8cfc-469d-a0c6-1092a34593d5",
+      "usage_events": 1,
+      "usage_sum": {
+        "input_tokens": 3832507,
+        "cached_input_tokens": 3609216,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 19873,
+        "reasoning_output_tokens": 2051
+      },
+      "event_types": {
+        "thread.started": 1,
+        "turn.started": 1,
+        "item.completed": 62,
+        "item.started": 56,
+        "turn.completed": 1
+      },
+      "mcp_calls_started": {},
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 0,
+      "largest_mcp_results": [],
+      "simulation_tool_calls": [],
+      "last_model_bundle_export_finished_at": null,
+      "provenance_path": "runs/network-curator/67b4e02b-8cfc-469d-a0c6-1092a34593d5/specialist-invocations/2026-09-17T022348-8e1a591a-07cc-4d01-b11a-567d71a45108/provenance.json",
+      "provenance_sha256": "0a86faece772b21b1ccbdf422ee89e81ca2533e2445368dec1b4d7244c106ece",
+      "events_sha256": "e050f9d51ad8b4eb3f6d425bac15dd530a96d13bb945fb35c10953261d4484ad",
+      "task_bytes": 2638,
+      "final_output_bytes": 25756
+    },
+    {
+      "invocation_id": "2026-09-17T022352-fb2a385e-403b-4c94-91dd-0f94b380e593",
+      "dispatcher_task_id": "a4a12875a7894234865d3eb2d59dcea1",
+      "specialist": "literature_reviewer",
+      "started_at": "2026-09-17T02:23:52.054399Z",
+      "finished_at": "2026-09-17T02:25:50.326724Z",
+      "process_elapsed_seconds": 117.759,
+      "process_exit_code": 0,
+      "cancelled": false,
+      "dispatcher_execution_state": "succeeded",
+      "handoff_status": "blocked",
+      "session_id": "67b4e02b-8cfc-469d-a0c6-1092a34593d5",
+      "usage_events": 1,
+      "usage_sum": {
+        "input_tokens": 290020,
+        "cached_input_tokens": 255360,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 2774,
+        "reasoning_output_tokens": 208
+      },
+      "event_types": {
+        "thread.started": 1,
+        "turn.started": 1,
+        "item.completed": 11,
+        "item.started": 8,
+        "turn.completed": 1
+      },
+      "mcp_calls_started": {},
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 0,
+      "largest_mcp_results": [],
+      "simulation_tool_calls": [],
+      "last_model_bundle_export_finished_at": null,
+      "provenance_path": "runs/network-curator/67b4e02b-8cfc-469d-a0c6-1092a34593d5/specialist-invocations/2026-09-17T022352-fb2a385e-403b-4c94-91dd-0f94b380e593/provenance.json",
+      "provenance_sha256": "5ed3157b9a64675f9b503ea903a9bd396e29bee0cfe6ae8c291512ccd169da0d",
+      "events_sha256": "b95394f9da9eab59847b9ad7219ead13628c6df126bd1dc62763b66881272fda",
+      "task_bytes": 2767,
+      "final_output_bytes": 3811
+    },
+    {
+      "invocation_id": "2026-09-17T022802-2754c21e-66b0-41e3-a784-2818a33cfb04",
+      "dispatcher_task_id": "19bc3e00078342b59cf6e2168a6763ed",
+      "specialist": "literature_reviewer",
+      "started_at": "2026-09-17T02:28:02.747101Z",
+      "finished_at": "2026-09-17T02:40:18.384009Z",
+      "process_elapsed_seconds": 735.114,
+      "process_exit_code": 0,
+      "cancelled": false,
+      "dispatcher_execution_state": "succeeded",
+      "handoff_status": "needs_approval",
+      "session_id": "67b4e02b-8cfc-469d-a0c6-1092a34593d5",
+      "usage_events": 1,
+      "usage_sum": {
+        "input_tokens": 2431017,
+        "cached_input_tokens": 2264064,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 18700,
+        "reasoning_output_tokens": 1765
+      },
+      "event_types": {
+        "thread.started": 1,
+        "turn.started": 1,
+        "item.completed": 60,
+        "item.started": 53,
+        "turn.completed": 1
+      },
+      "mcp_calls_started": {},
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 0,
+      "largest_mcp_results": [],
+      "simulation_tool_calls": [],
+      "last_model_bundle_export_finished_at": null,
+      "provenance_path": "runs/network-curator/67b4e02b-8cfc-469d-a0c6-1092a34593d5/specialist-invocations/2026-09-17T022802-2754c21e-66b0-41e3-a784-2818a33cfb04/provenance.json",
+      "provenance_sha256": "e693f8ce98da711a2b9bd2f06a8be611d7b9253afe5a502e5682158afeda773d",
+      "events_sha256": "be2d60744c56072daa944c8fa6ec84a9fd43574566f31fa5b00f9baa8cba9531",
+      "task_bytes": 3329,
+      "final_output_bytes": 27159
+    },
+    {
+      "invocation_id": "2026-09-17T023835-8a36975d-0965-4d31-8377-b8ddfe1468ae",
+      "dispatcher_task_id": "bba9142cd85649f69478ac2d803c68f4",
+      "specialist": "literature_reviewer",
+      "started_at": "2026-09-17T02:38:35.473918Z",
+      "finished_at": "2026-09-17T02:50:19.102840Z",
+      "process_elapsed_seconds": 703.083,
+      "process_exit_code": 0,
+      "cancelled": false,
+      "dispatcher_execution_state": "succeeded",
+      "handoff_status": "needs_approval",
+      "session_id": "67b4e02b-8cfc-469d-a0c6-1092a34593d5",
+      "usage_events": 1,
+      "usage_sum": {
+        "input_tokens": 2724063,
+        "cached_input_tokens": 2517120,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 18248,
+        "reasoning_output_tokens": 1683
+      },
+      "event_types": {
+        "thread.started": 1,
+        "turn.started": 1,
+        "item.completed": 44,
+        "item.started": 38,
+        "turn.completed": 1
+      },
+      "mcp_calls_started": {},
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 0,
+      "largest_mcp_results": [],
+      "simulation_tool_calls": [],
+      "last_model_bundle_export_finished_at": null,
+      "provenance_path": "runs/network-curator/67b4e02b-8cfc-469d-a0c6-1092a34593d5/specialist-invocations/2026-09-17T023835-8a36975d-0965-4d31-8377-b8ddfe1468ae/provenance.json",
+      "provenance_sha256": "d742ce149748f9c26547aa6f3a2e9149ce61f3864b42e14f01942df2db83cded",
+      "events_sha256": "a883255b7a42b5f692ddefa87d972aeb4c7597b873412a503b49db93369b2dd7",
+      "task_bytes": 3369,
+      "final_output_bytes": 26756
+    },
+    {
+      "invocation_id": "2026-09-16T043518-ae209baa-e47d-4cef-8268-26950de1dae2",
+      "dispatcher_task_id": "71409d3249334ddb9d408a267d04e764",
+      "specialist": "network_curator",
+      "started_at": "2026-09-16T04:35:18.725031Z",
+      "finished_at": "2026-09-16T04:41:58.860479Z",
+      "process_elapsed_seconds": 399.559,
+      "process_exit_code": 0,
+      "cancelled": false,
+      "dispatcher_execution_state": "succeeded",
+      "handoff_status": "needs_approval",
+      "session_id": "6a86ae56-4821-4ddb-84a9-a71768ac19d8",
+      "usage_events": 1,
+      "usage_sum": {
+        "input_tokens": 733686,
+        "cached_input_tokens": 671744,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 10666,
+        "reasoning_output_tokens": 263
+      },
+      "event_types": {
+        "thread.started": 1,
+        "turn.started": 1,
+        "item.completed": 30,
+        "item.started": 25,
+        "turn.completed": 1
+      },
+      "mcp_calls_started": {
+        "neko.create_session": 1,
+        "neko.status": 2,
+        "neko.list_network_history": 2,
+        "neko.create_network": 1,
+        "neko.list_genes_and_interactions": 1,
+        "neko.analyze_gene_set": 1,
+        "neko.analyze_connectivity": 1,
+        "neko.find_paths": 1,
+        "neko.compare_network_states": 1,
+        "neko.export_network": 1
+      },
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 60229,
+      "largest_mcp_results": [
+        {
+          "tool": "neko.analyze_gene_set",
+          "serialized_result_chars": 25578
+        },
+        {
+          "tool": "neko.list_genes_and_interactions",
+          "serialized_result_chars": 16240
+        },
+        {
+          "tool": "neko.analyze_connectivity",
+          "serialized_result_chars": 11010
+        },
+        {
+          "tool": "neko.list_network_history",
+          "serialized_result_chars": 3912
+        },
+        {
+          "tool": "neko.compare_network_states",
+          "serialized_result_chars": 812
+        },
+        {
+          "tool": "neko.export_network",
+          "serialized_result_chars": 781
+        }
+      ],
+      "simulation_tool_calls": [],
+      "last_model_bundle_export_finished_at": null,
+      "provenance_path": "runs/network-curator/6a86ae56-4821-4ddb-84a9-a71768ac19d8/specialist-invocations/2026-09-16T043518-ae209baa-e47d-4cef-8268-26950de1dae2/provenance.json",
+      "provenance_sha256": "b2072853e072def5d126fb763d8340f65b7740525cdf7755279f2c753162028f",
+      "events_sha256": "d8dbc488c62ea4b99349cbadca118d1369dddf25830d6ffd5c8c5e92c9f07ae4",
+      "task_bytes": 3275,
+      "final_output_bytes": 17366
+    },
+    {
+      "invocation_id": "2026-09-15T020019-edf04523-328e-419a-9aca-5edb3b9b1826",
+      "dispatcher_task_id": null,
+      "specialist": "network_curator",
+      "started_at": "2026-09-15T02:00:19.057063Z",
+      "finished_at": "2026-09-15T02:02:39.777190Z",
+      "process_elapsed_seconds": 140.546,
+      "process_exit_code": 0,
+      "cancelled": false,
+      "dispatcher_execution_state": null,
+      "handoff_status": "blocked",
+      "session_id": null,
+      "usage_events": 1,
+      "usage_sum": {
+        "input_tokens": 132039,
+        "cached_input_tokens": 89088,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 3642,
+        "reasoning_output_tokens": 289
+      },
+      "event_types": {
+        "thread.started": 1,
+        "turn.started": 1,
+        "item.completed": 8,
+        "item.started": 5,
+        "turn.completed": 1
+      },
+      "mcp_calls_started": {},
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 0,
+      "largest_mcp_results": [],
+      "simulation_tool_calls": [],
+      "last_model_bundle_export_finished_at": null,
+      "provenance_path": "runs/network-curator/_blocked/specialist-invocations/2026-09-15T020019-edf04523-328e-419a-9aca-5edb3b9b1826/provenance.json",
+      "provenance_sha256": "62c0164e1b01f49d52bcd4c1def904c00e3bd248233988f93ae8baa0136fd830",
+      "events_sha256": "7ebcc7ebccd84fa8980219792a30a34871d8b365ed4ff5f3346205cfba9da3da",
+      "task_bytes": 3757,
+      "final_output_bytes": 12768
+    },
+    {
+      "invocation_id": "2026-09-15T020446-2660d8fd-cb0e-4f03-b8be-f4ce7767436b",
+      "dispatcher_task_id": null,
+      "specialist": "network_curator",
+      "started_at": "2026-09-15T02:04:46.946773Z",
+      "finished_at": "2026-09-15T02:06:38.591625Z",
+      "process_elapsed_seconds": 111.487,
+      "process_exit_code": 0,
+      "cancelled": false,
+      "dispatcher_execution_state": null,
+      "handoff_status": "blocked",
+      "session_id": null,
+      "usage_events": 1,
+      "usage_sum": {
+        "input_tokens": 170384,
+        "cached_input_tokens": 125696,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 2906,
+        "reasoning_output_tokens": 247
+      },
+      "event_types": {
+        "thread.started": 1,
+        "turn.started": 1,
+        "item.completed": 10,
+        "item.started": 7,
+        "turn.completed": 1
+      },
+      "mcp_calls_started": {
+        "neko.list_mcp_resources": 1,
+        "neko.list_mcp_resource_templates": 1,
+        "neko.read_mcp_resource": 1
+      },
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 6970,
+      "largest_mcp_results": [
+        {
+          "tool": "neko.read_mcp_resource",
+          "serialized_result_chars": 6171
+        },
+        {
+          "tool": "neko.list_mcp_resource_templates",
+          "serialized_result_chars": 421
+        },
+        {
+          "tool": "neko.list_mcp_resources",
+          "serialized_result_chars": 378
+        }
+      ],
+      "simulation_tool_calls": [],
+      "last_model_bundle_export_finished_at": null,
+      "provenance_path": "runs/network-curator/_blocked/specialist-invocations/2026-09-15T020446-2660d8fd-cb0e-4f03-b8be-f4ce7767436b/provenance.json",
+      "provenance_sha256": "294a3302d66833c4f870ff330c9314b1d465c1ddaf35758fb8b51464452e6435",
+      "events_sha256": "3508b334901bb4267a4b19059d2750b13446eead9e4fc7859f0e9e5e6ca8469f",
+      "task_bytes": 2767,
+      "final_output_bytes": 8377
+    },
+    {
+      "invocation_id": "2026-09-15T024253-9029ba54-cddb-4100-a598-b50c4206329e",
+      "dispatcher_task_id": null,
+      "specialist": "network_curator",
+      "started_at": "2026-09-15T02:42:53.531708Z",
+      "finished_at": "2026-09-15T02:43:30.229927Z",
+      "process_elapsed_seconds": 36.553,
+      "process_exit_code": 0,
+      "cancelled": false,
+      "dispatcher_execution_state": null,
+      "handoff_status": "blocked",
+      "session_id": null,
+      "usage_events": 1,
+      "usage_sum": {
+        "input_tokens": 64832,
+        "cached_input_tokens": 46080,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 475,
+        "reasoning_output_tokens": 13
+      },
+      "event_types": {
+        "thread.started": 1,
+        "turn.started": 1,
+        "item.completed": 4,
+        "item.started": 2,
+        "turn.completed": 1
+      },
+      "mcp_calls_started": {},
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 0,
+      "largest_mcp_results": [],
+      "simulation_tool_calls": [],
+      "last_model_bundle_export_finished_at": null,
+      "provenance_path": "runs/network-curator/_blocked/specialist-invocations/2026-09-15T024253-9029ba54-cddb-4100-a598-b50c4206329e/provenance.json",
+      "provenance_sha256": "ebfd2a903c246baa752c77a44d8d50a92401fceae4859e276db8e401dc047758",
+      "events_sha256": "4b12545a72d2bbdb18e388d31f473b5a47059d24143113953f75dbae25380740",
+      "task_bytes": 672,
+      "final_output_bytes": 1166
+    },
+    {
+      "invocation_id": "2026-09-15T025534-66d65a9a-cee8-4165-824c-00c49519bd66",
+      "dispatcher_task_id": "5520cc1f9e1341c38a68ccbb3f1e553e",
+      "specialist": "network_curator",
+      "started_at": "2026-09-15T02:55:34.703540Z",
+      "finished_at": "2026-09-15T02:56:31.336761Z",
+      "process_elapsed_seconds": 56.416,
+      "process_exit_code": 0,
+      "cancelled": false,
+      "dispatcher_execution_state": "succeeded",
+      "handoff_status": "blocked",
+      "session_id": null,
+      "usage_events": 1,
+      "usage_sum": {
+        "input_tokens": 72392,
+        "cached_input_tokens": 56064,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 873,
+        "reasoning_output_tokens": 261
+      },
+      "event_types": {
+        "thread.started": 1,
+        "turn.started": 1,
+        "item.completed": 3,
+        "item.started": 1,
+        "turn.completed": 1
+      },
+      "mcp_calls_started": {},
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 0,
+      "largest_mcp_results": [],
+      "simulation_tool_calls": [],
+      "last_model_bundle_export_finished_at": null,
+      "provenance_path": "runs/network-curator/_blocked/specialist-invocations/2026-09-15T025534-66d65a9a-cee8-4165-824c-00c49519bd66/provenance.json",
+      "provenance_sha256": "6662cfa763cb1da9057ee7d84045220feec7d3b6f3f21421c35eef587fcc7821",
+      "events_sha256": "581f042d9379531805dc920e4b57d50db21881f3683d58f45342dce8e27423f3",
+      "task_bytes": 921,
+      "final_output_bytes": 1235
+    },
+    {
+      "invocation_id": "2026-09-15T025739-aaa95aba-e113-4ea3-b3ed-bb7b1ea58487",
+      "dispatcher_task_id": "4bc4fbacbcdd458aba019d44c766b176",
+      "specialist": "literature_reviewer",
+      "started_at": "2026-09-15T02:57:39.242722Z",
+      "finished_at": "2026-09-15T02:57:39.446355Z",
+      "process_elapsed_seconds": 0.0,
+      "process_exit_code": null,
+      "cancelled": false,
+      "dispatcher_execution_state": "succeeded",
+      "handoff_status": "blocked",
+      "session_id": null,
+      "usage_events": 0,
+      "usage_sum": {
+        "input_tokens": 0,
+        "cached_input_tokens": 0,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 0,
+        "reasoning_output_tokens": 0
+      },
+      "event_types": {},
+      "mcp_calls_started": {},
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 0,
+      "largest_mcp_results": [],
+      "simulation_tool_calls": [],
+      "last_model_bundle_export_finished_at": null,
+      "provenance_path": "runs/network-curator/_blocked/specialist-invocations/2026-09-15T025739-aaa95aba-e113-4ea3-b3ed-bb7b1ea58487/provenance.json",
+      "provenance_sha256": "b56b1ed19ad92bc0aa5c7c2d1280682210ea97c2a1bd0b76b31c01e29e19d8cb",
+      "events_sha256": null,
+      "task_bytes": 930,
+      "final_output_bytes": 634
+    },
+    {
+      "invocation_id": "2026-09-15T025812-dc736705-3e21-4430-a62c-5abad67d5671",
+      "dispatcher_task_id": "b8dc440bf373477a880ebbf8e9629d35",
+      "specialist": "network_curator",
+      "started_at": "2026-09-15T02:58:12.881567Z",
+      "finished_at": "2026-09-15T02:58:56.485799Z",
+      "process_elapsed_seconds": 43.38,
+      "process_exit_code": 0,
+      "cancelled": false,
+      "dispatcher_execution_state": "succeeded",
+      "handoff_status": "blocked",
+      "session_id": null,
+      "usage_events": 1,
+      "usage_sum": {
+        "input_tokens": 70250,
+        "cached_input_tokens": 49664,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 652,
+        "reasoning_output_tokens": 101
+      },
+      "event_types": {
+        "thread.started": 1,
+        "turn.started": 1,
+        "item.completed": 3,
+        "item.started": 1,
+        "turn.completed": 1
+      },
+      "mcp_calls_started": {},
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 0,
+      "largest_mcp_results": [],
+      "simulation_tool_calls": [],
+      "last_model_bundle_export_finished_at": null,
+      "provenance_path": "runs/network-curator/_blocked/specialist-invocations/2026-09-15T025812-dc736705-3e21-4430-a62c-5abad67d5671/provenance.json",
+      "provenance_sha256": "007db1f6f5ef9f9fe7d18ddbfab8d6f640d5eb525ccfe07f16c4bf917b66645b",
+      "events_sha256": "37c63dc68ecc73081c7cda152dbf515349420ffa7432ac1e69ab1bc383ada6be",
+      "task_bytes": 921,
+      "final_output_bytes": 1365
+    },
+    {
+      "invocation_id": "2026-09-15T025955-f6a7b437-16dd-4169-a536-3a68a1617834",
+      "dispatcher_task_id": "b202b5e955174a54849459926e39acef",
+      "specialist": "literature_reviewer",
+      "started_at": "2026-09-15T02:59:55.350643Z",
+      "finished_at": "2026-09-15T02:59:55.546393Z",
+      "process_elapsed_seconds": 0.0,
+      "process_exit_code": null,
+      "cancelled": false,
+      "dispatcher_execution_state": "succeeded",
+      "handoff_status": "blocked",
+      "session_id": null,
+      "usage_events": 0,
+      "usage_sum": {
+        "input_tokens": 0,
+        "cached_input_tokens": 0,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 0,
+        "reasoning_output_tokens": 0
+      },
+      "event_types": {},
+      "mcp_calls_started": {},
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 0,
+      "largest_mcp_results": [],
+      "simulation_tool_calls": [],
+      "last_model_bundle_export_finished_at": null,
+      "provenance_path": "runs/network-curator/_blocked/specialist-invocations/2026-09-15T025955-f6a7b437-16dd-4169-a536-3a68a1617834/provenance.json",
+      "provenance_sha256": "2c78bb6749780af2d8bfdbb41b9f9cecd5467c2300c43c625ed03fcbe3efadec",
+      "events_sha256": null,
+      "task_bytes": 930,
+      "final_output_bytes": 634
+    },
+    {
+      "invocation_id": "2026-09-15T030033-967bd695-8478-4e64-9def-81e159037457",
+      "dispatcher_task_id": null,
+      "specialist": "network_curator",
+      "started_at": "2026-09-15T03:00:33.796873Z",
+      "finished_at": "2026-09-15T03:01:22.278609Z",
+      "process_elapsed_seconds": 48.336,
+      "process_exit_code": 0,
+      "cancelled": false,
+      "dispatcher_execution_state": null,
+      "handoff_status": "blocked",
+      "session_id": null,
+      "usage_events": 1,
+      "usage_sum": {
+        "input_tokens": 70226,
+        "cached_input_tokens": 43264,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 682,
+        "reasoning_output_tokens": 148
+      },
+      "event_types": {
+        "thread.started": 1,
+        "turn.started": 1,
+        "item.completed": 4,
+        "item.started": 2,
+        "turn.completed": 1
+      },
+      "mcp_calls_started": {},
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 0,
+      "largest_mcp_results": [],
+      "simulation_tool_calls": [],
+      "last_model_bundle_export_finished_at": null,
+      "provenance_path": "runs/network-curator/_blocked/specialist-invocations/2026-09-15T030033-967bd695-8478-4e64-9def-81e159037457/provenance.json",
+      "provenance_sha256": "590268031ccb69f36affff2cf4d97e4c6a9a38205bdc8fe40784620137780f83",
+      "events_sha256": "911bd30e6e11d1effd4ff4a8c9717ad1a99bca07d0b85b298972c945e37966c1",
+      "task_bytes": 921,
+      "final_output_bytes": 1299
+    },
+    {
+      "invocation_id": "2026-09-15T035705-8a728f9b-b5bc-45d8-a611-28a8647ba94b",
+      "dispatcher_task_id": "de647cb740f34c58a59aba18b9a8049b",
+      "specialist": "literature_reviewer",
+      "started_at": "2026-09-15T03:57:05.324905Z",
+      "finished_at": "2026-09-15T03:57:40.153080Z",
+      "process_elapsed_seconds": 34.601,
+      "process_exit_code": 0,
+      "cancelled": false,
+      "dispatcher_execution_state": "succeeded",
+      "handoff_status": "blocked",
+      "session_id": null,
+      "usage_events": 1,
+      "usage_sum": {
+        "input_tokens": 37450,
+        "cached_input_tokens": 16256,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 661,
+        "reasoning_output_tokens": 120
+      },
+      "event_types": {
+        "thread.started": 1,
+        "turn.started": 1,
+        "item.completed": 3,
+        "item.started": 1,
+        "turn.completed": 1
+      },
+      "mcp_calls_started": {},
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 0,
+      "largest_mcp_results": [],
+      "simulation_tool_calls": [],
+      "last_model_bundle_export_finished_at": null,
+      "provenance_path": "runs/network-curator/_blocked/specialist-invocations/2026-09-15T035705-8a728f9b-b5bc-45d8-a611-28a8647ba94b/provenance.json",
+      "provenance_sha256": "51f8c0ebf8f0dc0f231ba475ef26bc92a6fbc5d00b1ca681fe74223a10c46c08",
+      "events_sha256": "eaf11d1eca2c6281a4cde932178631bdab4b4f3690baf96d6aab5b3e17b4d220",
+      "task_bytes": 1083,
+      "final_output_bytes": 1827
+    },
+    {
+      "invocation_id": "2026-09-15T040756-ab13da50-9b1d-48c0-b2f9-8efc7aac7a39",
+      "dispatcher_task_id": "35048b9e9f424fb89a7c67a103c4ad9e",
+      "specialist": "network_curator",
+      "started_at": "2026-09-15T04:07:56.725016Z",
+      "finished_at": "2026-09-15T04:08:45.707779Z",
+      "process_elapsed_seconds": 48.719,
+      "process_exit_code": 0,
+      "cancelled": false,
+      "dispatcher_execution_state": "succeeded",
+      "handoff_status": "blocked",
+      "session_id": null,
+      "usage_events": 1,
+      "usage_sum": {
+        "input_tokens": 74363,
+        "cached_input_tokens": 43264,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 680,
+        "reasoning_output_tokens": 45
+      },
+      "event_types": {
+        "thread.started": 1,
+        "turn.started": 1,
+        "item.completed": 4,
+        "item.started": 2,
+        "turn.completed": 1
+      },
+      "mcp_calls_started": {},
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 0,
+      "largest_mcp_results": [],
+      "simulation_tool_calls": [],
+      "last_model_bundle_export_finished_at": null,
+      "provenance_path": "runs/network-curator/_blocked/specialist-invocations/2026-09-15T040756-ab13da50-9b1d-48c0-b2f9-8efc7aac7a39/provenance.json",
+      "provenance_sha256": "1231c5fd2a67f1b82c5770f009c451045f02c808339367654d08338d05ae7511",
+      "events_sha256": "d8ca8b01e8201312ea1783b4caa551dd1082b38339591657788169bb32f051a5",
+      "task_bytes": 760,
+      "final_output_bytes": 2129
+    },
+    {
+      "invocation_id": "2026-09-16T043111-d5a8c528-a0bb-408c-9c98-6456b4f55d8e",
+      "dispatcher_task_id": "3cb7853beb084f8ab33a4ed8f1fa2161",
+      "specialist": "network_curator",
+      "started_at": "2026-09-16T04:31:11.271719Z",
+      "finished_at": "2026-09-16T04:34:47.882081Z",
+      "process_elapsed_seconds": 215.608,
+      "process_exit_code": 0,
+      "cancelled": false,
+      "dispatcher_execution_state": "succeeded",
+      "handoff_status": "blocked",
+      "session_id": null,
+      "usage_events": 1,
+      "usage_sum": {
+        "input_tokens": 278494,
+        "cached_input_tokens": 224768,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 6121,
+        "reasoning_output_tokens": 258
+      },
+      "event_types": {
+        "thread.started": 1,
+        "turn.started": 1,
+        "item.completed": 14,
+        "item.started": 10,
+        "turn.completed": 1
+      },
+      "mcp_calls_started": {
+        "neko.create_session": 1
+      },
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 4,
+      "largest_mcp_results": [
+        {
+          "tool": "neko.create_session",
+          "serialized_result_chars": 4
+        }
+      ],
+      "simulation_tool_calls": [],
+      "last_model_bundle_export_finished_at": null,
+      "provenance_path": "runs/network-curator/_blocked/specialist-invocations/2026-09-16T043111-d5a8c528-a0bb-408c-9c98-6456b4f55d8e/provenance.json",
+      "provenance_sha256": "c665a701f3a7f6494eabe0ff05efc28e13b37a25cf24085543fa53efcdebb8bc",
+      "events_sha256": "e5807f81ad1c9bc4dd0c31779eaf1c897dc2ae1cce9dbf4d5dd4d9937956b56d",
+      "task_bytes": 2944,
+      "final_output_bytes": 10348
+    },
+    {
+      "invocation_id": "2026-09-15T015933-c05a57b9-0fb1-4f3b-a30b-6c3c267c45d0",
+      "dispatcher_task_id": null,
+      "specialist": "network_curator",
+      "started_at": "2026-09-15T01:59:33.518042Z",
+      "finished_at": "2026-09-15T01:59:33.790555Z",
+      "process_elapsed_seconds": 0.112,
+      "process_exit_code": 1,
+      "cancelled": false,
+      "dispatcher_execution_state": null,
+      "handoff_status": null,
+      "session_id": null,
+      "usage_events": 0,
+      "usage_sum": {
+        "input_tokens": 0,
+        "cached_input_tokens": 0,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 0,
+        "reasoning_output_tokens": 0
+      },
+      "event_types": {},
+      "mcp_calls_started": {},
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 0,
+      "largest_mcp_results": [],
+      "simulation_tool_calls": [],
+      "last_model_bundle_export_finished_at": null,
+      "provenance_path": "runs/network-curator/_unresolved/specialist-invocations/2026-09-15T015933-c05a57b9-0fb1-4f3b-a30b-6c3c267c45d0/provenance.json",
+      "provenance_sha256": "7a6ad8dd367231c798fa3bf3a7e34caf761684c338aab006057677d8270cbf3d",
+      "events_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "task_bytes": 3757,
+      "final_output_bytes": 0
+    },
+    {
+      "invocation_id": "2026-09-15T020730-87578626-63bf-41c2-a06a-db3eccf4ecb4",
+      "dispatcher_task_id": null,
+      "specialist": "network_curator",
+      "started_at": "2026-09-15T02:07:30.202028Z",
+      "finished_at": "2026-09-15T02:08:33.147281Z",
+      "process_elapsed_seconds": 62.786,
+      "process_exit_code": 1,
+      "cancelled": false,
+      "dispatcher_execution_state": null,
+      "handoff_status": null,
+      "session_id": null,
+      "usage_events": 0,
+      "usage_sum": {
+        "input_tokens": 0,
+        "cached_input_tokens": 0,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 0,
+        "reasoning_output_tokens": 0
+      },
+      "event_types": {
+        "thread.started": 1,
+        "turn.started": 1,
+        "item.completed": 10,
+        "item.started": 8,
+        "error": 1,
+        "turn.failed": 1
+      },
+      "mcp_calls_started": {
+        "neko.list_mcp_resources": 1,
+        "neko.read_mcp_resource": 1,
+        "neko.list_mcp_resource_templates": 1,
+        "neko.create_session": 1
+      },
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 7329,
+      "largest_mcp_results": [
+        {
+          "tool": "neko.read_mcp_resource",
+          "serialized_result_chars": 6171
+        },
+        {
+          "tool": "neko.list_mcp_resource_templates",
+          "serialized_result_chars": 421
+        },
+        {
+          "tool": "neko.list_mcp_resources",
+          "serialized_result_chars": 378
+        },
+        {
+          "tool": "neko.create_session",
+          "serialized_result_chars": 359
+        }
+      ],
+      "simulation_tool_calls": [],
+      "last_model_bundle_export_finished_at": null,
+      "provenance_path": "runs/network-curator/_unresolved/specialist-invocations/2026-09-15T020730-87578626-63bf-41c2-a06a-db3eccf4ecb4/provenance.json",
+      "provenance_sha256": "1f3a62be42152d10d3b491194346f4c5acae31926435de8260b5bdd2adce3a7f",
+      "events_sha256": "4b2786018214e5b8b18346ed9cf5a6d41bbeed1a89fed708009f3f8b4ccd3076",
+      "task_bytes": 4245,
+      "final_output_bytes": 0
+    },
+    {
+      "invocation_id": "2026-09-15T024233-42482320-c91a-4b6e-bd6a-473d8c5d9b69",
+      "dispatcher_task_id": null,
+      "specialist": "network_curator",
+      "started_at": "2026-09-15T02:42:33.240965Z",
+      "finished_at": "2026-09-15T02:42:33.471499Z",
+      "process_elapsed_seconds": 0.092,
+      "process_exit_code": 1,
+      "cancelled": false,
+      "dispatcher_execution_state": null,
+      "handoff_status": null,
+      "session_id": null,
+      "usage_events": 0,
+      "usage_sum": {
+        "input_tokens": 0,
+        "cached_input_tokens": 0,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 0,
+        "reasoning_output_tokens": 0
+      },
+      "event_types": {},
+      "mcp_calls_started": {},
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 0,
+      "largest_mcp_results": [],
+      "simulation_tool_calls": [],
+      "last_model_bundle_export_finished_at": null,
+      "provenance_path": "runs/network-curator/_unresolved/specialist-invocations/2026-09-15T024233-42482320-c91a-4b6e-bd6a-473d8c5d9b69/provenance.json",
+      "provenance_sha256": "0e9f59d34731c7b1579e2745f1db147a46101bc5808bd449135b52c0c2a94a73",
+      "events_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "task_bytes": 672,
+      "final_output_bytes": 0
+    },
+    {
+      "invocation_id": "2026-09-16T044950-eac7e5b0-0416-48ee-a633-690fb0571896",
+      "dispatcher_task_id": "34c0ff72a37343f281ae8b17877e8030",
+      "specialist": "network_curator",
+      "started_at": "2026-09-16T04:49:50.151107Z",
+      "finished_at": "2026-09-16T05:31:51.747653Z",
+      "process_elapsed_seconds": 2520.983,
+      "process_exit_code": -15,
+      "cancelled": true,
+      "dispatcher_execution_state": "cancelled",
+      "handoff_status": null,
+      "session_id": null,
+      "usage_events": 0,
+      "usage_sum": {
+        "input_tokens": 0,
+        "cached_input_tokens": 0,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 0,
+        "reasoning_output_tokens": 0
+      },
+      "event_types": {
+        "thread.started": 1,
+        "turn.started": 1,
+        "item.completed": 232,
+        "item.started": 232,
+        "error": 3
+      },
+      "mcp_calls_started": {
+        "neko.create_session": 1,
+        "neko.status": 2,
+        "neko.create_network": 1,
+        "neko.analyze_connectivity": 4,
+        "neko.filter_interactions": 6,
+        "neko.list_network_history": 4,
+        "neko.preview_connection_impact": 1,
+        "neko.compare_network_states": 3,
+        "neko.bridge_components": 1,
+        "neko.get_references": 188,
+        "neko.export_network": 2,
+        "neko.navigate_network_history": 1
+      },
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 836163,
+      "largest_mcp_results": [
+        {
+          "tool": "neko.compare_network_states",
+          "serialized_result_chars": 134851
+        },
+        {
+          "tool": "neko.compare_network_states",
+          "serialized_result_chars": 134851
+        },
+        {
+          "tool": "neko.filter_interactions",
+          "serialized_result_chars": 68595
+        },
+        {
+          "tool": "neko.filter_interactions",
+          "serialized_result_chars": 65764
+        },
+        {
+          "tool": "neko.filter_interactions",
+          "serialized_result_chars": 47533
+        },
+        {
+          "tool": "neko.filter_interactions",
+          "serialized_result_chars": 37422
+        }
+      ],
+      "simulation_tool_calls": [],
+      "last_model_bundle_export_finished_at": null,
+      "provenance_path": "runs/network-curator/_unresolved/specialist-invocations/2026-09-16T044950-eac7e5b0-0416-48ee-a633-690fb0571896/provenance.json",
+      "provenance_sha256": "f6003bbbc15e656463004f9ccb9f3bf13f7828d40cf2bc81fb25abfecde0edc3",
+      "events_sha256": "3221c92f44a4b48f81b7f47e7141c3d7e39ff47a6952af9a97719fab9c9d948f",
+      "task_bytes": 4385,
+      "final_output_bytes": 0
+    },
+    {
+      "invocation_id": "2026-09-16T012220-12591419-bb7c-462f-93cf-64519ad065f4",
+      "dispatcher_task_id": "351fa36b995949fca0d33ace39f9a2ee",
+      "specialist": "network_curator",
+      "started_at": "2026-09-16T01:22:20.144868Z",
+      "finished_at": "2026-09-16T01:28:32.319379Z",
+      "process_elapsed_seconds": 371.578,
+      "process_exit_code": 0,
+      "cancelled": false,
+      "dispatcher_execution_state": "succeeded",
+      "handoff_status": "needs_approval",
+      "session_id": "b049ba5d-626c-485a-9c5d-d7c1ac7751d5",
+      "usage_events": 1,
+      "usage_sum": {
+        "input_tokens": 785945,
+        "cached_input_tokens": 702208,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 9599,
+        "reasoning_output_tokens": 304
+      },
+      "event_types": {
+        "thread.started": 1,
+        "turn.started": 1,
+        "item.completed": 33,
+        "item.started": 28,
+        "turn.completed": 1
+      },
+      "mcp_calls_started": {
+        "neko.create_session": 1,
+        "neko.status": 1,
+        "neko.create_network": 1,
+        "neko.list_genes_and_interactions": 2,
+        "neko.analyze_gene_set": 2,
+        "neko.list_network_history": 2,
+        "neko.remove_gene": 1,
+        "neko.analyze_connectivity": 1,
+        "neko.compare_network_states": 1,
+        "neko.export_network": 1
+      },
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 107191,
+      "largest_mcp_results": [
+        {
+          "tool": "neko.analyze_gene_set",
+          "serialized_result_chars": 26263
+        },
+        {
+          "tool": "neko.analyze_gene_set",
+          "serialized_result_chars": 25928
+        },
+        {
+          "tool": "neko.list_genes_and_interactions",
+          "serialized_result_chars": 16317
+        },
+        {
+          "tool": "neko.list_genes_and_interactions",
+          "serialized_result_chars": 16216
+        },
+        {
+          "tool": "neko.analyze_connectivity",
+          "serialized_result_chars": 11010
+        },
+        {
+          "tool": "neko.list_network_history",
+          "serialized_result_chars": 4436
+        }
+      ],
+      "simulation_tool_calls": [],
+      "last_model_bundle_export_finished_at": null,
+      "provenance_path": "runs/network-curator/b049ba5d-626c-485a-9c5d-d7c1ac7751d5/specialist-invocations/2026-09-16T012220-12591419-bb7c-462f-93cf-64519ad065f4/provenance.json",
+      "provenance_sha256": "6d50899be45e83fe0dd0a295c1f43a09b0bcb2238e91ea67695cde8960c0ab0d",
+      "events_sha256": "f36fb552083a8d84b458a5030ed8841eda510ed4411006d73391684fea1a5121",
+      "task_bytes": 2917,
+      "final_output_bytes": 12553
+    },
+    {
+      "invocation_id": "2026-09-15T045213-908a7c78-54fe-49c7-ae4a-9bed04402024",
+      "dispatcher_task_id": "af9cdb6a6b8e45ccbc1d327b5c4a2863",
+      "specialist": "network_curator",
+      "started_at": "2026-09-15T04:52:13.142849Z",
+      "finished_at": "2026-09-15T04:58:40.503394Z",
+      "process_elapsed_seconds": 387.094,
+      "process_exit_code": 0,
+      "cancelled": false,
+      "dispatcher_execution_state": "succeeded",
+      "handoff_status": "failed",
+      "session_id": "d63363b6-59b4-47cf-adae-6b9110e438fd",
+      "usage_events": 1,
+      "usage_sum": {
+        "input_tokens": 455500,
+        "cached_input_tokens": 397184,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 10862,
+        "reasoning_output_tokens": 670
+      },
+      "event_types": {
+        "thread.started": 1,
+        "turn.started": 1,
+        "item.completed": 22,
+        "item.started": 18,
+        "turn.completed": 1
+      },
+      "mcp_calls_started": {
+        "neko.create_session": 1,
+        "neko.status": 2,
+        "neko.create_network": 1,
+        "neko.analyze_gene_set": 1,
+        "neko.analyze_connectivity": 1,
+        "neko.list_network_history": 1,
+        "neko.filter_interactions": 1,
+        "neko.export_network": 1,
+        "neko.get_references": 1,
+        "neko.compare_network_states": 1
+      },
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 90776,
+      "largest_mcp_results": [
+        {
+          "tool": "neko.compare_network_states",
+          "serialized_result_chars": 43183
+        },
+        {
+          "tool": "neko.filter_interactions",
+          "serialized_result_chars": 20491
+        },
+        {
+          "tool": "neko.analyze_gene_set",
+          "serialized_result_chars": 12012
+        },
+        {
+          "tool": "neko.analyze_connectivity",
+          "serialized_result_chars": 11007
+        },
+        {
+          "tool": "neko.list_network_history",
+          "serialized_result_chars": 1616
+        },
+        {
+          "tool": "neko.export_network",
+          "serialized_result_chars": 781
+        }
+      ],
+      "simulation_tool_calls": [],
+      "last_model_bundle_export_finished_at": null,
+      "provenance_path": "runs/network-curator/d63363b6-59b4-47cf-adae-6b9110e438fd/specialist-invocations/2026-09-15T045213-908a7c78-54fe-49c7-ae4a-9bed04402024/provenance.json",
+      "provenance_sha256": "4395a702c9521cd9ff19b037a1fe64d8378ada0f246913a8855a49dfdf04c926",
+      "events_sha256": "9116e4d2c914fe852c10a372be28bab11838bb824aa3aa298ff10a510defcb65",
+      "task_bytes": 2886,
+      "final_output_bytes": 24782
+    },
+    {
+      "invocation_id": "2026-09-15T051126-04b5db9e-b5cd-4431-926c-06a902d1d920",
+      "dispatcher_task_id": "8ccfba1b0ccb42a0b15638d43515a72b",
+      "specialist": "literature_reviewer",
+      "started_at": "2026-09-15T05:11:26.808229Z",
+      "finished_at": "2026-09-15T05:13:14.451355Z",
+      "process_elapsed_seconds": 107.384,
+      "process_exit_code": 0,
+      "cancelled": false,
+      "dispatcher_execution_state": "succeeded",
+      "handoff_status": "blocked",
+      "session_id": "d63363b6-59b4-47cf-adae-6b9110e438fd",
+      "usage_events": 1,
+      "usage_sum": {
+        "input_tokens": 274684,
+        "cached_input_tokens": 235776,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 2681,
+        "reasoning_output_tokens": 347
+      },
+      "event_types": {
+        "thread.started": 1,
+        "turn.started": 1,
+        "item.completed": 11,
+        "item.started": 8,
+        "turn.completed": 1
+      },
+      "mcp_calls_started": {},
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 0,
+      "largest_mcp_results": [],
+      "simulation_tool_calls": [],
+      "last_model_bundle_export_finished_at": null,
+      "provenance_path": "runs/network-curator/d63363b6-59b4-47cf-adae-6b9110e438fd/specialist-invocations/2026-09-15T051126-04b5db9e-b5cd-4431-926c-06a902d1d920/provenance.json",
+      "provenance_sha256": "fb7dd8911d4a55167e3dad680f8e6c133f30eca07bbb65ed5e4d08495f60c6d9",
+      "events_sha256": "0e5113fb520b0aaec7dbd9dfaf0523a69f798b1d9998197e55631df09fc07edc",
+      "task_bytes": 2743,
+      "final_output_bytes": 3088
+    },
+    {
+      "invocation_id": "2026-09-15T051433-ac245261-a84f-4f52-9822-e64236042c45",
+      "dispatcher_task_id": "054bffdfb346451ba4892f8de5d39583",
+      "specialist": "literature_reviewer",
+      "started_at": "2026-09-15T05:14:33.270312Z",
+      "finished_at": "2026-09-15T05:26:30.550711Z",
+      "process_elapsed_seconds": 717.048,
+      "process_exit_code": 0,
+      "cancelled": false,
+      "dispatcher_execution_state": "succeeded",
+      "handoff_status": "needs_approval",
+      "session_id": "d63363b6-59b4-47cf-adae-6b9110e438fd",
+      "usage_events": 1,
+      "usage_sum": {
+        "input_tokens": 2514606,
+        "cached_input_tokens": 2320512,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 19078,
+        "reasoning_output_tokens": 2263
+      },
+      "event_types": {
+        "thread.started": 1,
+        "turn.started": 1,
+        "item.completed": 31,
+        "item.started": 25,
+        "turn.completed": 1
+      },
+      "mcp_calls_started": {},
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 0,
+      "largest_mcp_results": [],
+      "simulation_tool_calls": [],
+      "last_model_bundle_export_finished_at": null,
+      "provenance_path": "runs/network-curator/d63363b6-59b4-47cf-adae-6b9110e438fd/specialist-invocations/2026-09-15T051433-ac245261-a84f-4f52-9822-e64236042c45/provenance.json",
+      "provenance_sha256": "7bb62d24c93e26083def33fa17d4a3e1e9b1b8c56d5a90338905810a2d445309",
+      "events_sha256": "2b722dc4b73f9f7fb5019820283cc9dd50d2c5402361332c9483f3378c3979a3",
+      "task_bytes": 3704,
+      "final_output_bytes": 28804
+    },
+    {
+      "invocation_id": "2026-09-15T053045-5132326f-add0-400d-afa4-297dad90b69f",
+      "dispatcher_task_id": "38e361a836184c60896fd61c410ba63a",
+      "specialist": "network_curator",
+      "started_at": "2026-09-15T05:30:45.792421Z",
+      "finished_at": "2026-09-15T05:32:15.306120Z",
+      "process_elapsed_seconds": 89.27,
+      "process_exit_code": 0,
+      "cancelled": false,
+      "dispatcher_execution_state": "succeeded",
+      "handoff_status": "blocked",
+      "session_id": "d63363b6-59b4-47cf-adae-6b9110e438fd",
+      "usage_events": 1,
+      "usage_sum": {
+        "input_tokens": 153176,
+        "cached_input_tokens": 91008,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 2000,
+        "reasoning_output_tokens": 48
+      },
+      "event_types": {
+        "thread.started": 1,
+        "turn.started": 1,
+        "item.completed": 11,
+        "item.started": 9,
+        "turn.completed": 1
+      },
+      "mcp_calls_started": {
+        "neko.status": 1,
+        "neko.list_network_history": 1,
+        "neko.analyze_connectivity": 1
+      },
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 508,
+      "largest_mcp_results": [
+        {
+          "tool": "neko.list_network_history",
+          "serialized_result_chars": 174
+        },
+        {
+          "tool": "neko.analyze_connectivity",
+          "serialized_result_chars": 174
+        },
+        {
+          "tool": "neko.status",
+          "serialized_result_chars": 160
+        }
+      ],
+      "simulation_tool_calls": [],
+      "last_model_bundle_export_finished_at": null,
+      "provenance_path": "runs/network-curator/d63363b6-59b4-47cf-adae-6b9110e438fd/specialist-invocations/2026-09-15T053045-5132326f-add0-400d-afa4-297dad90b69f/provenance.json",
+      "provenance_sha256": "8fb60cf44776c10df4b35e870ccd2c43edf6eceff761649a7c1d46f959e694b5",
+      "events_sha256": "5012adca6cb4be0bbde6483848ac16adcb2780efa95df918172e1d97ede9041a",
+      "task_bytes": 2282,
+      "final_output_bytes": 5060
+    },
+    {
+      "invocation_id": "2026-09-15T053308-96b11b2d-51cc-47ef-966e-232071cf2f53",
+      "dispatcher_task_id": "23d8a82728db418dbd0a7cd08df8e118",
+      "specialist": "literature_reviewer",
+      "started_at": "2026-09-15T05:33:08.983348Z",
+      "finished_at": "2026-09-15T05:41:15.615437Z",
+      "process_elapsed_seconds": 486.396,
+      "process_exit_code": 0,
+      "cancelled": false,
+      "dispatcher_execution_state": "succeeded",
+      "handoff_status": "needs_approval",
+      "session_id": "d63363b6-59b4-47cf-adae-6b9110e438fd",
+      "usage_events": 1,
+      "usage_sum": {
+        "input_tokens": 1280156,
+        "cached_input_tokens": 1137792,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 12117,
+        "reasoning_output_tokens": 1329
+      },
+      "event_types": {
+        "thread.started": 1,
+        "turn.started": 1,
+        "item.completed": 27,
+        "item.started": 22,
+        "turn.completed": 1
+      },
+      "mcp_calls_started": {},
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 0,
+      "largest_mcp_results": [],
+      "simulation_tool_calls": [],
+      "last_model_bundle_export_finished_at": null,
+      "provenance_path": "runs/network-curator/d63363b6-59b4-47cf-adae-6b9110e438fd/specialist-invocations/2026-09-15T053308-96b11b2d-51cc-47ef-966e-232071cf2f53/provenance.json",
+      "provenance_sha256": "fa586d6815f9a5041a1efb052ba565b5ac28098c4e96fef320f132daef5a9956",
+      "events_sha256": "39bfdbc3e0b2c44c54ffde47a6fdb1138979f83df813b38c00881a4a6762a0e6",
+      "task_bytes": 2396,
+      "final_output_bytes": 16962
+    },
+    {
+      "invocation_id": "2026-09-15T061922-7221f932-09c8-45b6-ba8f-6154ece70b2d",
+      "dispatcher_task_id": "f8db0125015447e4b95571c80ea8b497",
+      "specialist": "network_curator",
+      "started_at": "2026-09-15T06:19:22.004335Z",
+      "finished_at": "2026-09-15T06:29:35.216599Z",
+      "process_elapsed_seconds": 612.782,
+      "process_exit_code": 0,
+      "cancelled": false,
+      "dispatcher_execution_state": "succeeded",
+      "handoff_status": "needs_approval",
+      "session_id": "eef14ad4-7d32-45e7-b240-529b6a09d503",
+      "usage_events": 1,
+      "usage_sum": {
+        "input_tokens": 1111212,
+        "cached_input_tokens": 1027968,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 16167,
+        "reasoning_output_tokens": 687
+      },
+      "event_types": {
+        "thread.started": 1,
+        "turn.started": 1,
+        "item.completed": 48,
+        "item.started": 43,
+        "turn.completed": 1
+      },
+      "mcp_calls_started": {
+        "neko.create_session": 1,
+        "neko.create_network": 1,
+        "neko.list_genes_and_interactions": 3,
+        "neko.filter_interactions": 3,
+        "neko.analyze_connectivity": 3,
+        "neko.list_network_history": 3,
+        "neko.export_network": 3,
+        "neko.compare_network_states": 2,
+        "neko.connect_targeted_nodes": 1,
+        "neko.find_paths": 4,
+        "neko.navigate_network_history": 1
+      },
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 165545,
+      "largest_mcp_results": [
+        {
+          "tool": "neko.filter_interactions",
+          "serialized_result_chars": 21184
+        },
+        {
+          "tool": "neko.filter_interactions",
+          "serialized_result_chars": 20488
+        },
+        {
+          "tool": "neko.filter_interactions",
+          "serialized_result_chars": 20488
+        },
+        {
+          "tool": "neko.list_genes_and_interactions",
+          "serialized_result_chars": 16317
+        },
+        {
+          "tool": "neko.list_genes_and_interactions",
+          "serialized_result_chars": 16116
+        },
+        {
+          "tool": "neko.list_genes_and_interactions",
+          "serialized_result_chars": 16116
+        }
+      ],
+      "simulation_tool_calls": [],
+      "last_model_bundle_export_finished_at": null,
+      "provenance_path": "runs/network-curator/eef14ad4-7d32-45e7-b240-529b6a09d503/specialist-invocations/2026-09-15T061922-7221f932-09c8-45b6-ba8f-6154ece70b2d/provenance.json",
+      "provenance_sha256": "85a5c44b4286d4f1226de7ddd64ab0277417d56c3effd7b7897aa973614da1db",
+      "events_sha256": "63d65196a88c54f2bc02efa49bb722c6bdf13c9069efa4acc2cfa3c85c405967",
+      "task_bytes": 3878,
+      "final_output_bytes": 23108
+    },
+    {
+      "invocation_id": "2026-09-16T005914-bca44180-6677-494f-a718-b7669b044dc0",
+      "dispatcher_task_id": "bb0dcc01476543f39cc64a37f56b8ea2",
+      "specialist": "literature_reviewer",
+      "started_at": "2026-09-16T00:59:14.184618Z",
+      "finished_at": "2026-09-16T01:09:52.048426Z",
+      "process_elapsed_seconds": 636.987,
+      "process_exit_code": 0,
+      "cancelled": false,
+      "dispatcher_execution_state": "succeeded",
+      "handoff_status": "needs_approval",
+      "session_id": "eef14ad4-7d32-45e7-b240-529b6a09d503",
+      "usage_events": 1,
+      "usage_sum": {
+        "input_tokens": 2052827,
+        "cached_input_tokens": 1880192,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 15579,
+        "reasoning_output_tokens": 1298
+      },
+      "event_types": {
+        "thread.started": 1,
+        "turn.started": 1,
+        "item.completed": 31,
+        "item.started": 25,
+        "turn.completed": 1
+      },
+      "mcp_calls_started": {},
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 0,
+      "largest_mcp_results": [],
+      "simulation_tool_calls": [],
+      "last_model_bundle_export_finished_at": null,
+      "provenance_path": "runs/network-curator/eef14ad4-7d32-45e7-b240-529b6a09d503/specialist-invocations/2026-09-16T005914-bca44180-6677-494f-a718-b7669b044dc0/provenance.json",
+      "provenance_sha256": "5f8ce0fd654433bc04f6c9674012d5c37cfb51856ac7e7fbd21f3e1ed14c3e3d",
+      "events_sha256": "1b09447a511cc2a8777e00caabd764be1259701f3f90b9bb92c354c0f87ba7af",
+      "task_bytes": 3196,
+      "final_output_bytes": 23964
+    },
+    {
+      "invocation_id": "2026-09-17T050954-a6a9cf3d-269a-4c79-bc9e-0459e48a1039",
+      "dispatcher_task_id": "6d83af6278ea477f8a213ba2505faff0",
+      "specialist": "ode_dynamics_modeler",
+      "started_at": "2026-09-17T05:09:54.494746Z",
+      "finished_at": "2026-09-17T05:17:04.373210Z",
+      "process_elapsed_seconds": 429.236,
+      "process_exit_code": 0,
+      "cancelled": false,
+      "dispatcher_execution_state": "succeeded",
+      "handoff_status": "needs_approval",
+      "session_id": "27e4ca92-6c16-47e4-a14c-7c7c13996e4b",
+      "usage_events": 1,
+      "usage_sum": {
+        "input_tokens": 1419285,
+        "cached_input_tokens": 1300096,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 10345,
+        "reasoning_output_tokens": 311
+      },
+      "event_types": {
+        "thread.started": 1,
+        "turn.started": 1,
+        "item.completed": 43,
+        "item.started": 38,
+        "turn.completed": 1
+      },
+      "mcp_calls_started": {
+        "biomass.list_mcp_resources": 1,
+        "biomass.read_mcp_resource": 5,
+        "biomass.create_session": 1,
+        "biomass.import_neko_handoff": 1,
+        "biomass.set_evidence": 1,
+        "biomass.set_reactions": 1,
+        "biomass.build_reactions": 1,
+        "biomass.inspect_model": 1,
+        "biomass.configure_model": 2,
+        "biomass.validate_model": 2,
+        "biomass.generate_model": 1,
+        "biomass.visualize_model": 1,
+        "biomass.run_simulation": 2,
+        "biomass.export_model_bundle": 1
+      },
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 5035989,
+      "largest_mcp_results": [
+        {
+          "tool": "biomass.configure_model",
+          "serialized_result_chars": 990443
+        },
+        {
+          "tool": "biomass.configure_model",
+          "serialized_result_chars": 988979
+        },
+        {
+          "tool": "biomass.inspect_model",
+          "serialized_result_chars": 835560
+        },
+        {
+          "tool": "biomass.set_reactions",
+          "serialized_result_chars": 808841
+        },
+        {
+          "tool": "biomass.set_evidence",
+          "serialized_result_chars": 330330
+        },
+        {
+          "tool": "biomass.generate_model",
+          "serialized_result_chars": 278630
+        }
+      ],
+      "simulation_tool_calls": [
+        {
+          "tool": "biomass.run_simulation",
+          "started_at": "2026-09-17T05:13:10.856257Z",
+          "finished_at": "2026-09-17T05:13:17.425284Z",
+          "wall_seconds": 6.569027
+        },
+        {
+          "tool": "biomass.run_simulation",
+          "started_at": "2026-09-17T05:13:26.068910Z",
+          "finished_at": "2026-09-17T05:13:33.248190Z",
+          "wall_seconds": 7.17928
+        }
+      ],
+      "last_model_bundle_export_finished_at": "2026-09-17T05:13:46.365964Z",
+      "provenance_path": "runs/ode-dynamics-modeler/27e4ca92-6c16-47e4-a14c-7c7c13996e4b/specialist-invocations/2026-09-17T050954-a6a9cf3d-269a-4c79-bc9e-0459e48a1039/provenance.json",
+      "provenance_sha256": "65d076d0ee8308e8bd883873058d7af2bf743c27a00c806151d2ba4d583a0cf2",
+      "events_sha256": "c81c91bea405a05d77e0e093b27283e5af9f50ea5f42fed8c45896c2a4930c5b",
+      "task_bytes": 4645,
+      "final_output_bytes": 14167
+    },
+    {
+      "invocation_id": "2026-09-17T033351-65318f3e-264b-49c2-9ba3-d1cd7a359c45",
+      "dispatcher_task_id": "2afb09bbad8e4776be157aafad71bd62",
+      "specialist": "ode_dynamics_modeler",
+      "started_at": "2026-09-17T03:33:51.836870Z",
+      "finished_at": "2026-09-17T03:49:47.565113Z",
+      "process_elapsed_seconds": 955.13,
+      "process_exit_code": 0,
+      "cancelled": false,
+      "dispatcher_execution_state": "succeeded",
+      "handoff_status": "needs_approval",
+      "session_id": "41d7191b-abc5-41d0-bac0-74d6392f0b8a",
+      "usage_events": 1,
+      "usage_sum": {
+        "input_tokens": 2170731,
+        "cached_input_tokens": 2015872,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 28591,
+        "reasoning_output_tokens": 4240
+      },
+      "event_types": {
+        "thread.started": 1,
+        "turn.started": 1,
+        "item.completed": 28,
+        "item.started": 22,
+        "turn.completed": 1
+      },
+      "mcp_calls_started": {},
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 0,
+      "largest_mcp_results": [],
+      "simulation_tool_calls": [],
+      "last_model_bundle_export_finished_at": null,
+      "provenance_path": "runs/ode-dynamics-modeler/41d7191b-abc5-41d0-bac0-74d6392f0b8a/specialist-invocations/2026-09-17T033351-65318f3e-264b-49c2-9ba3-d1cd7a359c45/provenance.json",
+      "provenance_sha256": "c4131e688d0738cb7633dbbd9b7275ae1b630e4cdcc983cdb02fa50965a1c43e",
+      "events_sha256": "d5f89c929a746e452890044a36195415a3e412187f64db854fcd14dafdc79867",
+      "task_bytes": 4271,
+      "final_output_bytes": 46182
+    },
+    {
+      "invocation_id": "2026-09-17T015250-54ddad3e-c5c3-465c-a216-3390180a8f4b",
+      "dispatcher_task_id": "fac0d3d6a80746a4a568b86ec6b79752",
+      "specialist": "ode_dynamics_modeler",
+      "started_at": "2026-09-17T01:52:50.601962Z",
+      "finished_at": "2026-09-17T02:22:06.135152Z",
+      "process_elapsed_seconds": 1754.484,
+      "process_exit_code": 0,
+      "cancelled": false,
+      "dispatcher_execution_state": "succeeded",
+      "handoff_status": "needs_approval",
+      "session_id": "46b1b731-e312-4ab1-8df2-8d42291afdb5",
+      "usage_events": 1,
+      "usage_sum": {
+        "input_tokens": 4593046,
+        "cached_input_tokens": 4427520,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 48604,
+        "reasoning_output_tokens": 9348
+      },
+      "event_types": {
+        "thread.started": 1,
+        "turn.started": 1,
+        "item.completed": 62,
+        "item.started": 54,
+        "turn.completed": 1
+      },
+      "mcp_calls_started": {
+        "biomass.list_mcp_resources": 1,
+        "biomass.read_mcp_resource": 6,
+        "biomass.create_session": 1,
+        "biomass.import_neko_handoff": 1,
+        "biomass.inspect_reactions": 1,
+        "biomass.inspect_model": 4,
+        "biomass.build_reactions": 8,
+        "biomass.set_evidence": 1,
+        "biomass.validate_model": 1,
+        "biomass.generate_model": 2,
+        "biomass.export_model_graph": 1,
+        "biomass.export_model_bundle": 1
+      },
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 2597761,
+      "largest_mcp_results": [
+        {
+          "tool": "biomass.inspect_model",
+          "serialized_result_chars": 565890
+        },
+        {
+          "tool": "biomass.inspect_model",
+          "serialized_result_chars": 565728
+        },
+        {
+          "tool": "biomass.generate_model",
+          "serialized_result_chars": 224816
+        },
+        {
+          "tool": "biomass.generate_model",
+          "serialized_result_chars": 224754
+        },
+        {
+          "tool": "biomass.set_evidence",
+          "serialized_result_chars": 160066
+        },
+        {
+          "tool": "biomass.inspect_model",
+          "serialized_result_chars": 160066
+        }
+      ],
+      "simulation_tool_calls": [],
+      "last_model_bundle_export_finished_at": "2026-09-17T02:10:52.433019Z",
+      "provenance_path": "runs/ode-dynamics-modeler/46b1b731-e312-4ab1-8df2-8d42291afdb5/specialist-invocations/2026-09-17T015250-54ddad3e-c5c3-465c-a216-3390180a8f4b/provenance.json",
+      "provenance_sha256": "0c989f4f85a5907dda08b92b20a856d117ab21d09e9028a6ae5940c69d99764a",
+      "events_sha256": "4b4ca4750121b75cbcb9ac659a180bc0bef03bfb9cb8b416e915a8d977913377",
+      "task_bytes": 4606,
+      "final_output_bytes": 52984
+    },
+    {
+      "invocation_id": "2026-09-17T050448-d0913987-b8b1-4562-a3a5-7d99276bf520",
+      "dispatcher_task_id": "3a980fcde34f44a0a0fb2307c88a5532",
+      "specialist": "ode_dynamics_modeler",
+      "started_at": "2026-09-17T05:04:48.384356Z",
+      "finished_at": "2026-09-17T05:08:44.242657Z",
+      "process_elapsed_seconds": 234.867,
+      "process_exit_code": 0,
+      "cancelled": false,
+      "dispatcher_execution_state": "succeeded",
+      "handoff_status": "blocked",
+      "session_id": "6635da4e-9ae5-4a6d-a3a8-3de4c84a6bc4",
+      "usage_events": 1,
+      "usage_sum": {
+        "input_tokens": 1066612,
+        "cached_input_tokens": 995200,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 5563,
+        "reasoning_output_tokens": 195
+      },
+      "event_types": {
+        "thread.started": 1,
+        "turn.started": 1,
+        "item.completed": 39,
+        "item.started": 35,
+        "turn.completed": 1
+      },
+      "mcp_calls_started": {
+        "biomass.list_mcp_resources": 1,
+        "biomass.read_mcp_resource": 7,
+        "biomass.create_session": 1,
+        "biomass.import_neko_handoff": 1,
+        "biomass.set_evidence": 1,
+        "biomass.set_reactions": 1,
+        "biomass.build_reactions": 1,
+        "biomass.inspect_model": 1,
+        "biomass.list_generated_files": 1
+      },
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 2132712,
+      "largest_mcp_results": [
+        {
+          "tool": "biomass.set_reactions",
+          "serialized_result_chars": 808841
+        },
+        {
+          "tool": "biomass.inspect_model",
+          "serialized_result_chars": 808841
+        },
+        {
+          "tool": "biomass.set_evidence",
+          "serialized_result_chars": 330330
+        },
+        {
+          "tool": "biomass.import_neko_handoff",
+          "serialized_result_chars": 127954
+        },
+        {
+          "tool": "biomass.read_mcp_resource",
+          "serialized_result_chars": 9841
+        },
+        {
+          "tool": "biomass.read_mcp_resource",
+          "serialized_result_chars": 8241
+        }
+      ],
+      "simulation_tool_calls": [],
+      "last_model_bundle_export_finished_at": null,
+      "provenance_path": "runs/ode-dynamics-modeler/6635da4e-9ae5-4a6d-a3a8-3de4c84a6bc4/specialist-invocations/2026-09-17T050448-d0913987-b8b1-4562-a3a5-7d99276bf520/provenance.json",
+      "provenance_sha256": "a1cfe2fa160b48d46d5caa7959a63ebb0aaa8311605ae3afca6d17b515f7c5ee",
+      "events_sha256": "4bfb83e639a259fc2172aa745680ba1de520aaaf5dce986af6c185e70a5c075c",
+      "task_bytes": 4005,
+      "final_output_bytes": 6307
+    },
+    {
+      "invocation_id": "2026-09-17T011728-ffa7a5bb-869b-4495-a1c5-60927cefbd44",
+      "dispatcher_task_id": "b01d388a989941cc8fa550498d0b0a29",
+      "specialist": "ode_dynamics_modeler",
+      "started_at": "2026-09-17T01:17:28.044267Z",
+      "finished_at": "2026-09-17T01:24:50.019945Z",
+      "process_elapsed_seconds": 440.958,
+      "process_exit_code": 0,
+      "cancelled": false,
+      "dispatcher_execution_state": "succeeded",
+      "handoff_status": "needs_approval",
+      "session_id": "8bd90681-1a6a-4526-af4b-1f58483bf2d2",
+      "usage_events": 1,
+      "usage_sum": {
+        "input_tokens": 946515,
+        "cached_input_tokens": 853248,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 13232,
+        "reasoning_output_tokens": 1098
+      },
+      "event_types": {
+        "thread.started": 1,
+        "turn.started": 1,
+        "item.completed": 30,
+        "item.started": 25,
+        "turn.completed": 1
+      },
+      "mcp_calls_started": {
+        "biomass.list_mcp_resources": 1,
+        "biomass.read_mcp_resource": 6,
+        "biomass.create_session": 1,
+        "biomass.import_neko_handoff": 1,
+        "biomass.inspect_model": 1,
+        "biomass.inspect_reactions": 1,
+        "biomass.list_generated_files": 1
+      },
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 308824,
+      "largest_mcp_results": [
+        {
+          "tool": "biomass.import_neko_handoff",
+          "serialized_result_chars": 127954
+        },
+        {
+          "tool": "biomass.inspect_model",
+          "serialized_result_chars": 127954
+        },
+        {
+          "tool": "biomass.read_mcp_resource",
+          "serialized_result_chars": 9841
+        },
+        {
+          "tool": "biomass.read_mcp_resource",
+          "serialized_result_chars": 9841
+        },
+        {
+          "tool": "biomass.read_mcp_resource",
+          "serialized_result_chars": 8241
+        },
+        {
+          "tool": "biomass.read_mcp_resource",
+          "serialized_result_chars": 7068
+        }
+      ],
+      "simulation_tool_calls": [],
+      "last_model_bundle_export_finished_at": null,
+      "provenance_path": "runs/ode-dynamics-modeler/8bd90681-1a6a-4526-af4b-1f58483bf2d2/specialist-invocations/2026-09-17T011728-ffa7a5bb-869b-4495-a1c5-60927cefbd44/provenance.json",
+      "provenance_sha256": "37ed8994dfb93e1ed7105b506ac35ab2bdf43aaf57bdf32398f3494248bf338d",
+      "events_sha256": "c970c0dbda58f0406e2aed66ee0a7726d6b023880c136a753ba441baff2cfdaf",
+      "task_bytes": 3232,
+      "final_output_bytes": 31500
+    },
+    {
+      "invocation_id": "2026-09-17T025407-3277c879-edf5-4718-9977-2dc999a0807d",
+      "dispatcher_task_id": "db771ed53426475a8374aba148e251bf",
+      "specialist": "ode_dynamics_modeler",
+      "started_at": "2026-09-17T02:54:07.630048Z",
+      "finished_at": "2026-09-17T03:31:58.928971Z",
+      "process_elapsed_seconds": 2270.664,
+      "process_exit_code": -15,
+      "cancelled": true,
+      "dispatcher_execution_state": "cancelled",
+      "handoff_status": null,
+      "session_id": null,
+      "usage_events": 0,
+      "usage_sum": {
+        "input_tokens": 0,
+        "cached_input_tokens": 0,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 0,
+        "reasoning_output_tokens": 0
+      },
+      "event_types": {
+        "thread.started": 1,
+        "turn.started": 1,
+        "item.completed": 61,
+        "item.started": 55,
+        "error": 1
+      },
+      "mcp_calls_started": {
+        "biomass.list_mcp_resources": 1,
+        "biomass.read_mcp_resource": 4,
+        "biomass.create_session": 1,
+        "biomass.import_neko_handoff": 1,
+        "biomass.set_evidence": 1,
+        "biomass.inspect_reactions": 2,
+        "biomass.build_reactions": 2,
+        "biomass.validate_model": 1,
+        "biomass.generate_model": 1,
+        "biomass.export_model_graph": 1,
+        "biomass.export_model_bundle": 1
+      },
+      "parse_errors": 0,
+      "serialized_mcp_result_chars": 1365681,
+      "largest_mcp_results": [
+        {
+          "tool": "biomass.set_evidence",
+          "serialized_result_chars": 330330
+        },
+        {
+          "tool": "biomass.generate_model",
+          "serialized_result_chars": 278502
+        },
+        {
+          "tool": "biomass.build_reactions",
+          "serialized_result_chars": 147304
+        },
+        {
+          "tool": "biomass.build_reactions",
+          "serialized_result_chars": 147302
+        },
+        {
+          "tool": "biomass.inspect_reactions",
+          "serialized_result_chars": 147014
+        },
+        {
+          "tool": "biomass.import_neko_handoff",
+          "serialized_result_chars": 127954
+        }
+      ],
+      "simulation_tool_calls": [],
+      "last_model_bundle_export_finished_at": "2026-09-17T03:10:03.991183Z",
+      "provenance_path": "runs/ode-dynamics-modeler/_unresolved/specialist-invocations/2026-09-17T025407-3277c879-edf5-4718-9977-2dc999a0807d/provenance.json",
+      "provenance_sha256": "8a1e0476bea431009c2c4b9e6a1f8e8aee83cb3fa27d24d7ca2eba6496e87314",
+      "events_sha256": "2d3b679701b7a88b04989dfb8aadd7f9011d77629769772dedfc093bd58c2e5d",
+      "task_bytes": 5885,
+      "final_output_bytes": 0
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "baseline_commit": "d5316cedd5d5ed566684a4408a46b5d31706fd22",
+  "date": "2026-09-17",
+  "default_runtime": {
+    "python": "3.14.4",
+    "command": "python3 scripts/run_tests.py",
+    "exit_code": 0,
+    "codex": {
+      "discovered": 134,
+      "passed": 129,
+      "skipped": 5
+    },
+    "claude": {
+      "passed": 19
+    },
+    "setup": {
+      "passed": 27
+    }
+  },
+  "sdk_runtime": {
+    "python": "3.14.6",
+    "mcp": "2.0.0",
+    "full_suite": "interrupted_after_stall",
+    "isolated_test": "test_dispatcher_server.ServerTests.test_calls_and_validation_errors",
+    "assertions": "passed",
+    "teardown": "timed_out",
+    "timeout_seconds": 35,
+    "exit_code": 124
+  },
+  "native_helper": {
+    "started": false,
+    "error": "required specialist_dispatcher failed initialize handshake; connection closed",
+    "dispatcher_lease_held": true,
+    "root_cause_confirmed": false
+  },
+  "scientific_operations_performed": false
+}

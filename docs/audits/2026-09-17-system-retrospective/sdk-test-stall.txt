@@ -1,0 +1,15 @@
+test_calls_and_validation_errors (test_dispatcher_server.ServerTests.test_calls_and_validation_errors) ... ok
+Timeout (0:00:20)!
+Thread 0x000076267b928740 [python] (most recent call first):
+  File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/selectors.py", line 452 in select
+  File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/asyncio/base_events.py", line 2018 in _run_once
+  File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/asyncio/base_events.py", line 677 in run_forever
+  File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/asyncio/base_events.py", line 706 in run_until_complete
+  File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/asyncio/runners.py", line 74 in close
+  File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/unittest/async_case.py", line 142 in _tearDownAsyncioRunner
+  File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/unittest/async_case.py", line 149 in run
+  File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/unittest/case.py", line 725 in __call__
+  File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/unittest/suite.py", line 122 in run
+  File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/unittest/suite.py", line 84 in __call__
+  File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/unittest/runner.py", line 257 in run
+  File "<stdin>", line 5 in <module>

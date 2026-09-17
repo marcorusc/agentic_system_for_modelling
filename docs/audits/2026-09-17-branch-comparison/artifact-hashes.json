@@ -1,0 +1,10 @@
+{
+  "README.md": "da2c7e35374095594462c602be8851f141d56fa3c5d8338379f442324fa644e3",
+  "capture-atomicity.json": "85fe89414985bb7042f943399f6bfd69eccb8e80cc475cd79dddb3fba5ffbb74",
+  "dispatcher-plus-ode-merge.txt": "e4674286717f95653eaef934f36691d0d64efec2aa397f1d2b61947986e6d8f6",
+  "dispatcher-tests.log": "9d79620c807efae1929eccd308ffc9f0da5bbb9ef647338486142270260ac9a2",
+  "evidence.json": "88b7359991ef130698abfcb72302212c32b5e26f8d03697185a750810410b077",
+  "experiment-plus-ode-merge.txt": "33d935854d229c2702fc98ea35c2a825ac89e7a00c5fb0f6bd5b00f7f13ee669",
+  "ode-tests.log": "52724f53116fc094aeba3c582ddd8c6ab5ab9de86e135416c43a898abde7ee4d",
+  "reproduce_capture_failure.py": "c721e2b12fe824d6ca7a492a30b7072bf11843b3ca67f801bebc84282ae1ba25"
+}
