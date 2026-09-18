@@ -1,0 +1,106 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-18",
+  "phase": 2,
+  "status": "complete",
+  "branch": "codex/modelling-architecture-integration",
+  "starting_commit": "3f1813de6c0ea06a21adef9e3e16eb8d06639cfd",
+  "source_commit": "1e8f9a43c4fc249e43d94c71316fc798ee7ad01d",
+  "canonical_ode_role": "ode_modeler",
+  "ode_contract_version": 2,
+  "common_envelope_version": 1,
+  "test_runs": [
+    {
+      "environment": "default",
+      "python": "3.14.4",
+      "mcp": null,
+      "anyio": null,
+      "restricted_sandbox": true,
+      "exit_code": 0,
+      "passed": 258,
+      "skipped": 4,
+      "suites": [
+        {
+          "suite": "tests/codex",
+          "discovered": 217,
+          "passed": 213,
+          "skipped": 4,
+          "seconds": 6.911
+        },
+        {
+          "suite": ".claude/scripts",
+          "discovered": 19,
+          "passed": 19,
+          "skipped": 0,
+          "seconds": 3.908
+        },
+        {
+          "suite": "tests/setup",
+          "discovered": 26,
+          "passed": 26,
+          "skipped": 0,
+          "seconds": 0.242
+        }
+      ],
+      "temporary_log": "/tmp/integration-phase2-default-final.log",
+      "log_sha256": "6a1c3249cb43574430931fa67df530d34f836a7b60377404aaf2be14f34f8a7c"
+    },
+    {
+      "environment": "sdk",
+      "python": "3.14.6",
+      "mcp": "2.0.0",
+      "anyio": "4.14.2",
+      "restricted_sandbox": false,
+      "exit_code": 0,
+      "passed": 262,
+      "skipped": 0,
+      "suites": [
+        {
+          "suite": "tests/codex",
+          "discovered": 217,
+          "passed": 217,
+          "skipped": 0,
+          "seconds": 8.839
+        },
+        {
+          "suite": ".claude/scripts",
+          "discovered": 19,
+          "passed": 19,
+          "skipped": 0,
+          "seconds": 3.916
+        },
+        {
+          "suite": "tests/setup",
+          "discovered": 26,
+          "passed": 26,
+          "skipped": 0,
+          "seconds": 0.23
+        }
+      ],
+      "temporary_log": "/tmp/integration-phase2-sdk-final.log",
+      "log_sha256": "228d54b1f032b37aeb8314cf7d3d616b00afe68ecefa15c35067d0c8914a9dd1"
+    }
+  ],
+  "review_findings_fixed": [
+    "draft artifact verification bypass",
+    "lost NeKo relocation provenance",
+    "ZIP file/directory prefix collisions",
+    "malformed or empty simulation trajectories",
+    "malformed nested JSON producing untyped errors"
+  ],
+  "scientific_state_matches_preparation": true,
+  "scientific_state_sha256": {
+    "MODEL_SPEC.md": "1e537df00cb9f8ce2d1911c7dc703b1163b9ff76e78ca6aa827302786e2c2487",
+    "DATA_DICTIONARY.md": "63578b9889792484c1bc977462b7bdf61928a98d54cb26f3c6128d2a4804587b",
+    "ASSUMPTIONS.md": "f7ed5bcb3ad7d68b3d29a97613c8673cf322446e80250391f4b70a4ac7cd9696",
+    "DECISIONS.md": "1aa85d04d0494be4a56c4faf5dc8a5f1026619f8fa3f9e24afb48e26e29064bb",
+    "CURRENT_STATE.md": "bd7ccdc87283d1b100db41822098c04d8e39bb3845c036e0cca0dc24dee63852",
+    "VALIDATION_PLAN.md": "4b0228138c1aba833d0a62e7002a699012015dd9d9e9d6e92fdf3c3ae8dc1b86"
+  },
+  "runtime_routing_changed": false,
+  "dependencies_changed": false,
+  "scientific_sessions_created": false,
+  "live_specialist_inventory_test": false,
+  "remote_ci_run": false,
+  "phase3_started": false
+}

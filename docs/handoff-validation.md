@@ -1,7 +1,9 @@
 # Handoff validation
 
 `scripts/codex/validate_handoff.py` validates the provider-neutral handoff and,
-when `status` is `completed`, the files supporting completion. It does not approve
+when `status` is `completed`, the files supporting completion. ODE results also
+verify any claimed captured revision, simulation, approval or bundle while
+scientific approval is pending. It does not approve
 scientific conclusions, run a simulator, or authorize a conclusive handoff export.
 
 ## Drafts and completion
@@ -34,7 +36,8 @@ for drafts but cannot establish completion.
 | Network curator | `manifest.json`, Markdown report, SIF export, `important_paths.md`, `literature_queue.json` |
 | Boolean dynamics modeler | `manifest.json`, Markdown report, BND and CFG exports |
 | Multicellular configurator | `manifest.json`, Markdown report, XML configuration export |
-| Literature reviewer | Session-scoped `SOURCE__TARGET.md` reports that pass the report writer's content validator |
+| ODE modeler | Identity manifest, report and fully inventoried generated revision; additional checks for simulation, provisional bundles and conclusive export |
+| Literature reviewer | Session-scoped edge reports, or explicitly selected ODE claim reports, that pass their content validator |
 
 Modelling files belong under `runs/<specialist-directory>/<session_id>/`.
 Literature reports belong under `evidence/reports/<neko_session_id>/`. The NeKo
@@ -73,3 +76,11 @@ Unknown enabled names are rejected, including aliases. Disabled unrelated entrie
 are allowed. The inventory checks configuration, not whether a server binary is
 trustworthy or responds correctly; required server startup and tool availability
 must still succeed. Parent desktop-tool isolation remains an external requirement.
+
+## Versioned ODE alternative
+
+See the [ODE artifact contract](ode-contract.md) for `ode_modeler`,
+`ode.contract_version=2`, provisional preservation, revision approval, capture
+publication and ODE claim evidence. The common envelope and existing Boolean/
+PhysiCell contracts remain version 1. These Phase 2 helpers do not activate a
+new dispatcher route or change scientific stage policy.

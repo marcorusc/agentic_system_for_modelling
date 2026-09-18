@@ -8,7 +8,7 @@ The researcher approved creating a separate worktree based on `codex/specialist-
 - Base: `315cebcbc954068eafc16a26dfdfe784dc06a0a5`.
 - ODE feature source: `1e8f9a43c4fc249e43d94c71316fc798ee7ad01d`.
 - Preserved experiment: `model/cell-cycle-core`, audited at `3ce097e` and comparison committed at `8f0e0af`.
-- Current stage: **Phase 1 complete; Phase 2 contract decisions under discussion**.
+- Current stage: **Phase 2 complete; Phase 3 routing discussion next**.
 
 ## Evidence carried into this worktree
 
@@ -16,6 +16,7 @@ The researcher approved creating a separate worktree based on `codex/specialist-
 - [Three-branch comparison](../audits/2026-09-17-branch-comparison/README.md).
 - [Preparation checks](worktree-readiness.json).
 - [Phase 1 results and shutdown diagnosis](phase1-validation.md).
+- [Phase 2 contract and artifact validation](phase2-validation.md).
 
 The audit packages are byte-preserved from the experiment commit, including their hashes. They are historical records. Some relative links within them identify model artifacts or ODE documents in the original audited branches; those targets have deliberately not been copied into this software checkout. Resolve them using their recorded Git revision or the original experiment worktree. The audit reports are not the active scientific state.
 
@@ -50,21 +51,25 @@ Completed under the researcher's explicit approval on 2026-09-17. The heartbeat 
 
 The SDK stall reproduces with a minimal `asyncio.to_thread()` test without MCP or repository imports. Sandbox restrictions deny Python's internal wake-up socket writes (`PermissionError: [Errno 1] Operation not permitted`); the same test and all four SDK protocol tests terminate outside that sandbox. No dispatcher runtime or dependency change was needed. See the [validation report](phase1-validation.md) for reproduction and limits.
 
-The SDK run passed all 176 tests. The default run passed 172 tests with four explicitly reported SDK skips. The original experiment, scientific state, routing and dependency declarations remain unchanged. Phase 2 has not started.
+The SDK run passed all 176 tests. The default run passed 172 tests with four explicitly reported SDK skips. The original experiment, scientific state, routing and dependency declarations remain unchanged. Phase 2 subsequently began after approval of provisional preservation and the richer `ode_modeler` contract.
 
-## Proposed contract choices
+## Phase 2 outcome
 
-### 1. Canonical role and historical compatibility
+Completed after approval of the two contract decisions. The richer ODE contract and evidence mode are integrated with versioned provisional-preservation semantics; capture publication is atomic for cooperating POSIX recorders. Independent software review identified five validation gaps, all fixed and regression-tested. Final SDK run: 262 passed. Default run: 258 passed and four explicit SDK skips. See [Phase 2 validation](phase2-validation.md).
 
-Recommendation: use the dedicated feature branch's `ode_modeler`, `biomass_ode` and `runs/ode-modeler` names for the new implementation, with `start_ode_modeler` as its dispatcher tool. These align the role, skills and stronger artifact contract. Preserve all historical `ode_dynamics_modeler` records unchanged in the experiment.
+## Contract choices
 
-Before implementation, decide whether the new validator must read the experiment's older ODE envelope immediately or whether a separate historical verifier is sufficient. Either way, do not silently treat two different version-1 payloads as interchangeable, and do not rewrite saved evidence to match the new name. Version or discriminate any changed contract explicitly.
+### 1. Canonical role and historical compatibility — approved 2026-09-18
+
+Approved choice: use the dedicated feature branch's `ode_modeler`, `biomass_ode` and `runs/ode-modeler` names for the new implementation, with `start_ode_modeler` as its dispatcher tool. These align the role, skills and stronger artifact contract. Preserve all historical `ode_dynamics_modeler` records unchanged in the experiment.
+
+New runs use the richer contract with `ode.contract_version=2`. Historical experiment records remain unchanged and use their original verifier; an adapter is deferred. The common envelope remains version 1 for existing roles. See the accepted [Phase 2 decisions](phase2-decisions.md).
 
 ### 2. Routine snapshots versus scientific acceptance — approved 2026-09-18
 
 Approved policy: saving a provisional candidate, recording hashes and exporting a reproducible review snapshot should proceed within an already authorized workflow. These operations preserve work and do not imply scientific approval. Researcher approval should apply to accepting new scientific assumptions, consequential model changes, experiments outside the approved scope, and conclusive stage acceptance.
 
-The ODE branch currently treats `export_model_bundle` as a conclusive operation requiring exact revision approval, while the experiment used exports to preserve review candidates. The researcher approved separating routine preservation from scientific acceptance. Preserve provenance for both provisional and accepted artifacts. A candidate export must never masquerade as an accepted model. The exact decision, implementation requirements and pending compatibility choice are recorded in [Phase 2 decisions](phase2-decisions.md). This policy is approved; the runtime and contract changes have not yet been implemented.
+The ODE branch currently treats `export_model_bundle` as a conclusive operation requiring exact revision approval, while the experiment used exports to preserve review candidates. The researcher approved separating routine preservation from scientific acceptance. Preserve provenance for both provisional and accepted artifacts. A candidate export must never masquerade as an accepted model. The exact decisions and implementation requirements are recorded in [Phase 2 decisions](phase2-decisions.md). The Phase 2 validator and artifact helpers implement this distinction; runtime routing follows in Phase 3.
 
 ### 3. Completion and failure states
 
@@ -104,4 +109,4 @@ The desktop task that created this worktree remains attached to the original che
 
 ## Discussion checkpoint
 
-Preparation and Phase 1 are complete. The researcher has now approved automatic provisional snapshots within an authorized workflow, with scientific acceptance still gated. The next decision is the canonical ODE contract and whether the new runtime must ingest historical experiment handoffs immediately. Other proposed contract choices remain under discussion. Phase 2 implementation and its completion commit are still pending.
+Preparation and Phase 1 are complete. Provisional snapshot preservation and the richer `ode_modeler` contract are approved and implemented; Phase 2 is complete. The next discussion concerns Phase 3: adding the canonical start tool and carrying ODE evidence mode through the existing isolated runtime. Broader telemetry, recovery and independent-review work remains separately scoped.

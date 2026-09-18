@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate and immutably write one session-scoped literature edge report.
+"""Validate and immutably write one session-scoped edge or ODE claim report.
 
 The literature specialist runs read-only.  This command is the narrow write
 boundary used by the Codex orchestrator after it receives a report draft.
@@ -255,8 +255,9 @@ def _project_root() -> Path:
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--session-id", required=True)
-    parser.add_argument("--source", required=True)
-    parser.add_argument("--target", required=True)
+    parser.add_argument("--source")
+    parser.add_argument("--target")
+    parser.add_argument("--claim-id", help="ODE review mode; mutually exclusive with source/target")
     parser.add_argument("--draft-file", required=True, type=Path)
     parser.add_argument(
         "--output",
@@ -273,6 +274,28 @@ def fail(message: str) -> NoReturn:
 def main(argv: Sequence[str] | None = None) -> int:
     arguments = parse_args(argv)
     try:
+        if arguments.claim_id is not None:
+            if arguments.source is not None or arguments.target is not None:
+                raise ReportValidationError("--claim-id cannot be combined with --source/--target")
+            try:
+                from scripts.codex.ode_evidence import (
+                    write_ode_report, ReportValidationError as ODEReportValidationError,
+                )
+            except ModuleNotFoundError:
+                from ode_evidence import (
+                    write_ode_report, ReportValidationError as ODEReportValidationError,
+                )
+            try:
+                result = write_ode_report(_project_root(), arguments.session_id, arguments.claim_id,
+                                          arguments.draft_file, arguments.output)
+            except ODEReportValidationError as error:
+                # Direct script execution may import the writer under its module
+                # name as well as __main__; normalize the exception identity.
+                raise ReportValidationError(str(error)) from error
+            print(json.dumps(result, sort_keys=True))
+            return 0
+        if not arguments.source or not arguments.target:
+            raise ReportValidationError("provide --claim-id or both --source and --target")
         result = write_report(
             project_root=_project_root(),
             session_id=arguments.session_id,
@@ -281,7 +304,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             draft_path=arguments.draft_file,
             requested_output=arguments.output,
         )
-    except ReportValidationError as error:
+    except (ReportValidationError, OSError, UnicodeError) as error:
         fail(str(error))
     print(json.dumps(result, sort_keys=True))
     return 0
