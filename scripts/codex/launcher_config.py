@@ -323,7 +323,12 @@ def build_command(
     if specialist == "ode_modeler":
         contract_guidance = (
             " Follow docs/ode-contract.md: use specialist=ode_modeler, "
-            "stage=biomass_ode, schema_version=1 and ode.contract_version=2. "
+            "stage=biomass_ode and schema_version=1. For scientific ODE results, "
+            "include complete ode metadata with ode.contract_version=2. For a "
+            "pre-session blocked or failed result with session_id=null and "
+            "derived_from_session_id=null, when no scientific input, revision or "
+            "artifacts exist, omit the entire ode object. Do not fabricate ODE "
+            "provenance or return a partial ode object. "
             "Preserve provisional versus conclusive export authority; an artifact "
             "capture does not authorize simulation or scientific acceptance."
         )

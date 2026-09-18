@@ -4,7 +4,22 @@
 
 The integration branch validates the richer `ode_modeler` result and records BioMASS artifacts through filesystem-only helpers. Phase 3 adds the shared CLI/dispatcher execution route and explicit ODE evidence mode. The artifact helpers do not call BioMASS, generate or execute a model, advance a scientific stage, or update shared scientific records. Phase 4 adds specialist instructions, profiles and optional setup. Live installation and client/process verification remain a Phase 5 gate before scientific ODE execution in this integration worktree; see [the workflow](ode-workflow.md).
 
-New ODE results use the common `schema_version=1` envelope with `specialist=ode_modeler`, `stage=biomass_ode`, and **`ode.contract_version=2`**. Artifacts belong to `runs/ode-modeler/{session_id}/`. Historical unversioned ODE payloads and the experiment's `ode_dynamics_modeler` format require their original verifier. The new validator does not rewrite or alias them.
+Scientific ODE results use the common `schema_version=1` envelope with `specialist=ode_modeler` and `stage=biomass_ode`, plus complete `ode` metadata containing **`ode.contract_version=2`**. Artifacts belong to `runs/ode-modeler/{session_id}/`. Historical unversioned ODE payloads and the experiment's `ode_dynamics_modeler` format require their original verifier. The new validator does not rewrite or alias them.
+
+## Pre-session blocked or failed results
+
+A `blocked` or `failed` result before a session exists uses the common envelope
+with `session_id=null`, `derived_from_session_id=null`, `artifacts=[]`,
+`validation.passed=false`, and `recommended_next_stage=null`. When no scientific
+input, revision or artifacts exist, **omit the entire `ode` object**. Report the
+actual blocker in the common fields; do not fabricate an input kind, version,
+revision or scientific provenance to fill metadata.
+
+This is the existing validator's pre-session case, not a new schema. A partial
+object such as `"ode": {"contract_version": 2}` is invalid: whenever `ode` is
+present it must satisfy the complete metadata contract. Scientific results with
+ODE provenance, and all `completed` or `needs_approval` results, retain the full
+requirements below.
 
 ## ODE metadata
 
@@ -30,7 +45,7 @@ New ODE results use the common `schema_version=1` envelope with `specialist=ode_
 
 ## Read-only specialist and parent completion
 
-Before project capture, a specialist may return a metadata-only `needs_approval`
+For a scientific ODE result awaiting project capture, a specialist may return a metadata-only `needs_approval`
 result with `export_status=pending`, `artifacts=[]`, `simulation_paths=[]`, and
 external inventories in `server_artifacts`. It omits project preservation claims
 (`revision_path`, `bundle_path`, `workflow_authorization`, `export_approval`) until

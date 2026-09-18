@@ -97,6 +97,26 @@ ODE_PROFILE_GUIDANCE = {
     ),
 }
 
+# Clarify the existing null-session validator case without changing its schema.
+# Retain the exact previous setup-owned directive for idempotent migration.
+_ODE_GUIDANCE_BEFORE_PRESESSION = ODE_PROFILE_GUIDANCE["ode_modeler"]
+_ODE_PRESESSION_GUIDANCE = (
+    "For a pre-session blocked or failed result with session_id=null and "
+    "derived_from_session_id=null, when no scientific input, revision or artifacts "
+    "exist, omit the entire ode object. Do not fabricate ODE provenance or return "
+    "a partial ode object."
+)
+ODE_PROFILE_GUIDANCE["ode_modeler"] = _ODE_GUIDANCE_BEFORE_PRESESSION.replace(
+    "schema_version=1, stage=biomass_ode, ode.contract_version=2.",
+    "schema_version=1, stage=biomass_ode. For scientific ODE results, include "
+    "complete ode metadata with ode.contract_version=2. " + _ODE_PRESESSION_GUIDANCE,
+).replace(
+    "Before verified project capture, return a metadata-only needs_approval result",
+    "For a scientific ODE result awaiting verified project capture, return a "
+    "metadata-only needs_approval result",
+)
+
+
 # Recognize only direct blanket restrictions, not arbitrary custom scientific
 # policies. A near-match to the known rule must be reviewed, not silently relaxed.
 _CUSTOM_ODE_EXPORT_RESTRICTION = re.compile(
@@ -120,6 +140,18 @@ def _ode_instructions(role: str, instructions: str, target: Path) -> str:
                 "Setup has not overwritten the profile."
             )
     directive = ODE_PROFILE_GUIDANCE[role]
+    if role == "ode_modeler":
+        instructions = instructions.replace(_ODE_GUIDANCE_BEFORE_PRESESSION, directive)
+        # Correct only the exact envelope/capture wording shipped in our template.
+        instructions = instructions.replace(
+            "and ode.contract_version=2 with the provenance required by docs/ode-contract.md.",
+            "and the common envelope fields required by docs/ode-contract.md. For scientific "
+            "ODE results, include complete ode metadata with ode.contract_version=2. "
+            + _ODE_PRESESSION_GUIDANCE,
+        ).replace(
+            "Before parent capture, return a metadata-only needs_approval handoff",
+            "For a scientific ODE result awaiting parent capture, return a metadata-only needs_approval handoff",
+        )
     instructions = instructions.replace(_PREVIOUS_ODE_PROFILE_GUIDANCE[role], directive)
     if directive not in instructions:
         instructions += "\n" + directive
