@@ -2,7 +2,7 @@
 
 ## Availability and scope
 
-The integration branch validates the richer `ode_modeler` result and records BioMASS artifacts through filesystem-only helpers. Phase 3 adds the shared CLI/dispatcher execution route and explicit ODE evidence mode. The artifact helpers do not call BioMASS, generate or execute a model, advance a scientific stage, or update shared scientific records. Specialist instructions, profiles and setup follow in Phase 4; orchestrator routing is not yet activated for ODE.
+The integration branch validates the richer `ode_modeler` result and records BioMASS artifacts through filesystem-only helpers. Phase 3 adds the shared CLI/dispatcher execution route and explicit ODE evidence mode. The artifact helpers do not call BioMASS, generate or execute a model, advance a scientific stage, or update shared scientific records. Phase 4 adds specialist instructions, profiles and optional setup. Live installation and client/process verification remain a Phase 5 gate before scientific ODE execution in this integration worktree; see [the workflow](ode-workflow.md).
 
 New ODE results use the common `schema_version=1` envelope with `specialist=ode_modeler`, `stage=biomass_ode`, and **`ode.contract_version=2`**. Artifacts belong to `runs/ode-modeler/{session_id}/`. Historical unversioned ODE payloads and the experiment's `ode_dynamics_modeler` format require their original verifier. The new validator does not rewrite or alias them.
 
@@ -27,6 +27,30 @@ New ODE results use the common `schema_version=1` envelope with `specialist=ode_
 | `bundle_path` | Provisional/exported status: listed, verified ZIP |
 
 `manifest.json` must contain the common identity fields and the identical `ode` object. A Markdown report and hashed artifact entries accompany it. Unknown scientific units stay explicitly unknown; the validator does not infer mechanisms or numerical assumptions.
+
+## Read-only specialist and parent completion
+
+Before project capture, a specialist may return a metadata-only `needs_approval`
+result with `export_status=pending`, `artifacts=[]`, `simulation_paths=[]`, and
+external inventories in `server_artifacts`. It omits project preservation claims
+(`revision_path`, `bundle_path`, `workflow_authorization`, `export_approval`) until
+verified copies exist. Actual server revision/version and performed operations
+remain explicit. Parent recording work is distinct from scientific approval.
+
+The current envelope requires nonempty `decisions_required` for `needs_approval`.
+List operational work there with the prefix `Technical parent recording only`,
+for example: “Capture and verify the inventory, record the already approved
+preservation authority, and create the provisional completion; no new researcher
+approval is requested.” Keep actual scientific decisions as separate entries.
+The parent performs this recording work rather than sending it as an approval question.
+
+The orchestrator uses the already approved task scope to record preservation
+authority against the returned session ID, captures the inventory, and produces a
+separate validated provisional completion with matching manifest/report and hashes.
+The original specialist result remains immutable. A new-session invocation need not
+stop solely to create the session-bound authority record; the researcher authorization
+must already exist before it executes. This is the existing version-2 contract's
+recording sequence, not an additional scientific gate.
 
 ## Preservation and acceptance
 

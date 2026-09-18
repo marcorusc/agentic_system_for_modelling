@@ -29,6 +29,8 @@ to established scientific policy or data contracts.
   reports.
 - `runs/multicellular-configurator/{physicell_session_id}/`: PhysiCell artifacts
   and reports.
+- `runs/ode-modeler/{biomass_session_id}/`: BioMASS artifacts and reports.
+- `evidence/reports/{biomass_session_id}/ode/{claim_id}.md`: immutable ODE claim reviews.
 
 Keep evidence, assumptions, model output, and conclusions distinct. Store large
 outputs as artifacts and communicate summaries plus exact paths.
@@ -41,7 +43,7 @@ conflicts, requests researcher decisions, controls every stage transition, and i
 the only writer of shared sources of truth unless a narrower writer is explicitly
 authorized.
 
-The orchestrator must not call NeKo, MaBoSS, or PhysiCell modelling tools directly.
+The orchestrator must not call NeKo, MaBoSS, PhysiCell, or BioMASS modelling tools directly.
 Use the matching `specialist_dispatcher.start_*` MCP tool to delegate bounded
 work. The dispatcher calls the shared runtime, which creates a fresh, ephemeral
 Codex process with a fixed specialist profile. Never use same-process agent
@@ -181,7 +183,7 @@ the smallest clarification question and the exact blocked mutation or export.
 
 ## Sessions, inspection, and lineage
 
-NeKo, MaBoSS, and PhysiCell each issue a separate MCP session identifier; there is
+NeKo, MaBoSS, PhysiCell, and BioMASS each issue a separate MCP session identifier; there is
 no pipeline-wide run ID. Use the complete ID and pass the correct upstream ID to
 each downstream handoff. Before invoking a specialist, read `CURRENT_STATE.md` and
 resolve the relevant active session from its registry rather than chat context.
@@ -297,3 +299,47 @@ with a validated simulation. Preserve partial artifacts, record warnings and fai
 alternatives, and return the smallest actionable blocker. When policy, a data
 contract, paid access, remote exposure, or an enforcement boundary would change,
 stop and request researcher direction.
+
+
+## Optional mechanistic ODE branch
+
+Follow docs/ode-workflow.md for formulation, readiness, input and authoring workflow,
+and docs/ode-contract.md for the authoritative version-2 artifact contract. Phase 4
+prepares this route; scientific ODE execution in the integration worktree waits for
+Phase 5 live isolation/deployment verification. Source configuration alone is not
+proof that the current parent or specialist has the required tool inventory.
+
+The sequential stages above remain the Boolean branch. For researcher-approved ODE
+work, use an approved exported NeKo-to-BioMASS graph or explicitly authorized
+standalone Text2Model/reaction input, then fresh BioMASS authoring, bounded evidence
+review, researcher resolution of scientific choices, authorized construction and
+optional simulation, consolidated model review and conclusive export. Separate
+Boolean/ODE alternatives may share an explicitly approved topology with distinct
+sessions and representation provenance. No BNET prerequisite applies to this route.
+
+Use only `ode_modeler`, stage `biomass_ode`, through
+`specialist_dispatcher.start_ode_modeler` or the same-runtime CLI fallback. Its
+permitted modelling namespace is BioMASS alone; all other specialists and the
+orchestrator must have BioMASS disabled. Missing capabilities or unsafe inventory
+produce a blocker. No direct parent modelling calls or nested specialist delegation.
+
+Keep evidence, proposed assumptions and accepted mechanisms/kinetics/quantities
+separate. Never derive biochemical reactions or kinetic values from signed edges.
+Draft only within the requested scope. Respect a requested whole-model review
+without repeated per-reaction approval prompts. New consequential assumptions and
+actual numerical values still need researcher approval before scientific use.
+
+Preserve provisional bundles within an already approved workflow using the contract's
+session-bound workflow_authorization. Recording that existing authorization is not
+a new approval request. Provisional preservation is not scientific acceptance,
+simulation permission or a conclusive handoff. Exact session/revision approval is
+required for final acceptance/export. Keep the registry pending during candidate
+review, even when the artifact export_status is provisional.
+
+ODE evidence uses `literature_reviewer` with explicit `review_kind=ode` and a full
+BioMASS session ID. Send at most 13 literal coherent mechanism/kinetic-law/quantity
+claims, two independent reviews at most across both modes. Existing edge review
+stays the default. Reports use the immutable ODE paths above; the parent validates
+and writes Codex drafts through the approved report writer. Standalone input has
+null upstream lineage and exact source/request provenance. No calibration,
+sensitivity analysis or ODE-to-PhysiCell coupling is included.

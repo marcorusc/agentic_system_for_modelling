@@ -65,7 +65,8 @@ It uses the fixed `biomodel-ode-modeler` profile and permits only BioMASS. The
 profile must already exist; missing configuration fails before child execution.
 The other specialists disable BioMASS, including installations without an optional
 BioMASS transport. No additional scientific workflow is activated by this endpoint.
-Profile/skill/setup integration is Phase 4 work; the original dispatcher's live
+Phase 4 supplies profiles, skills and optional setup; live ODE verification is
+still required before scientific activation. In particular, the original dispatcher's live
 migration checks above are historical and do not establish live ODE readiness.
 
 Literature review defaults to `review_kind="edge"`. Use `review_kind="ode"` for

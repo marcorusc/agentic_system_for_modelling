@@ -8,6 +8,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 EXPECTED_SKILLS = {
+    "biomass-workflow",
     "biomodelling-orchestrator",
     "checkpoint-model",
     "maboss-workflow",
@@ -21,6 +22,7 @@ EXPECTED_SKILLS = {
     "validate-stage",
 }
 SPECIALIST_SKILLS = {
+    "biomass-workflow",
     "neko-workflow",
     "maboss-workflow",
     "physicell-workflow",
@@ -75,7 +77,7 @@ class PluginTests(unittest.TestCase):
             text = (ROOT / "skills" / name / "SKILL.md").read_text(
                 encoding="utf-8"
             )
-            role = {"neko-workflow":"network_curator", "maboss-workflow":"boolean_dynamics_modeler",
+            role = {"biomass-workflow":"ode_modeler", "neko-workflow":"network_curator", "maboss-workflow":"boolean_dynamics_modeler",
                     "physicell-workflow":"multicellular_configurator",
                     "review-literature-evidence":"literature_reviewer"}[name]
             self.assertIn(f"specialist_dispatcher.start_{role}", text)
@@ -89,7 +91,7 @@ class PluginTests(unittest.TestCase):
     def test_orchestrator_project_config_disables_modelling_servers(self) -> None:
         config = tomllib.loads((ROOT / ".codex/config.toml").read_text())
         servers = config["mcp_servers"]
-        for name in ("neko", "maboss", "physicell"):
+        for name in ("neko", "maboss", "physicell", "biomass"):
             self.assertFalse(servers[name]["enabled"])
             self.assertTrue(servers[name]["command"].startswith("__orchestrator_disabled_"))
 
@@ -97,7 +99,7 @@ class PluginTests(unittest.TestCase):
         active = list((ROOT / ".codex/agents").glob("*.toml"))
         self.assertEqual(active, [])
         examples = list((ROOT / ".codex/agents").glob("*.toml.example"))
-        self.assertEqual(len(examples), 4)
+        self.assertEqual(len(examples), 5)
         for path in examples:
             self.assertIn(
                 "INACTIVE COMPATIBILITY EXAMPLE",

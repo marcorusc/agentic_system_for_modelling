@@ -1,4 +1,5 @@
 ---
+name: validate-stage
 description: Coordinates independent scientific review and reproducibility audit before approving a modelling-stage transition.
 ---
 
@@ -17,3 +18,15 @@ The main orchestrator must:
 9. Update `CURRENT_STATE.md`.
 
 Return one status: `approved`, `approved_with_limitations`, `revision_required`, or `blocked`.
+
+
+## ODE state
+
+Apply `docs/ode-contract.md` to `ode_modeler` / `biomass_ode`. Verify source kind,
+lineage, document version, selected revision, complete captured inventory, evidence,
+actual numerical settings and scenario results. Validate ODE evidence with explicit
+`--review-kind ode`. Distinguish provisional workflow authorization from exact
+session/revision conclusive-export approval; a candidate snapshot keeps the
+scientific registry pending. Existing `runs/` and `evidence/` lifecycle scopes
+already include ODE artifacts. Successful solves are not biological validation.
+Preserve independent reviewer/auditor requirements; missing definitions remain blockers.

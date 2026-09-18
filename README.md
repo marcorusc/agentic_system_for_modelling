@@ -2,7 +2,7 @@
 
 A Claude Code and local Codex workspace for building one traceable biological model
 per repository. The main session acts as the scientific orchestrator and delegates
-modelling operations to restricted specialist agents for NeKo, MaBoSS, PhysiCell,
+modelling operations to restricted specialist agents for NeKo, MaBoSS, optional BioMASS ODEs, PhysiCell,
 and literature review.
 
 The repository stores scientific decisions in files rather than relying on chat
@@ -21,6 +21,8 @@ For the full design and runtime rationale, see
   contract.
 - Edge-level PubMed evidence review, separated by NeKo session.
 - MaBoSS simulation, mutation analysis, and explicitly gated rule refinement.
+- Optional mechanistic ODE authoring with BioMASS, bounded claim evidence and
+  reproducible provisional/final bundles.
 - PhysiCell and PhysiBoSS configuration from an approved MaBoSS handoff.
 - Typed, review-gated handoffs between modelling stages.
 - Durable MCP session and artifact provenance.
@@ -30,7 +32,7 @@ For the full design and runtime rationale, see
 
 ## Current implementation status
 
-Four specialist agents are currently included:
+Five specialist definitions are included; BioMASS setup is optional:
 
 | Agent | Purpose | MCP access |
 |---|---|---|
@@ -38,6 +40,7 @@ Four specialist agents are currently included:
 | `literature-reviewer` | Review evidence for edges and assumptions and write edge reports | Configured `pubmed` server |
 | `boolean-dynamics-modeler` | Import NeKo handoffs, run MaBoSS analyses, mutations, and bounded rule refinement | Inline MaBoSS server only |
 | `multicellular-configurator` | Configure PhysiCell/PhysiBoSS domains, cells, substrates, rules, and mappings | Inline PhysiCell server only |
+| `ode-modeler` | Build mechanistic ODEs from approved NeKo graphs, Text2Model or explicit reactions; preserve candidates and run approved scenarios | Optional inline BioMASS server only |
 
 The architecture also describes an independent scientific reviewer and a
 reproducibility auditor. Their agent definitions are not yet included. Claude's
@@ -47,7 +50,8 @@ orchestrator, followed by researcher approval. It does not provide independent
 review or audit. These are different existing workflows; see
 [validation responsibilities](docs/handoff-validation.md#validation-responsibilities).
 
-The three modelling specialists start isolated inline MCP servers. The literature
+The modelling specialists start isolated inline MCP servers in Claude; Codex uses
+the shared dispatcher runtime with fixed profiles. The literature
 specialist still requires a configured literature server. Availability depends on
 your local installation.
 
@@ -58,6 +62,7 @@ your local installation.
 - Claude Code with custom agents and skills enabled
 - A modelling environment containing the NeKo, MaBoSS, and PhysiCell MCP executables
 - An optional PubMed MCP server for literature review
+- For ODE work only, a BioMASS server with the required authoring/export capabilities
 
 The inline NeKo, MaBoSS, and PhysiCell commands must point to executables installed
 in the modelling environment. Typical locations are:
@@ -85,6 +90,21 @@ or `--client both` to select clients; `--dry-run` previews and `--check` diagnos
 an existing setup. See [automatic setup](docs/automatic-setup.md) for environment
 options, prerequisites, saved settings, and verification limits.
 
+## Optional ODE setup
+
+To reuse an existing compatible environment, preview then configure the selected
+client with `--environment-mode reuse --env-prefix <existing-env> --with-biomass`.
+Reuse verifies the environment without installing or changing its ownership;
+`--dry-run` writes nothing. Setup still writes selected client configuration when
+actually executed. BioMASS capability checks run before those writes because a
+package version alone does not establish the required API.
+
+[ODE workflow](docs/ode-workflow.md) describes formulation, the three input modes,
+isolation and authoring. [ODE artifact contract](docs/ode-contract.md) separates
+provisional preservation from exact-revision scientific acceptance. The original
+Boolean workflow below remains available. This integration worktree's source
+configuration is prepared for Phase 5; live ODE readiness is not yet verified.
+
 ## Manual setup
 
 1. Clone the repository and enter it:
@@ -111,9 +131,10 @@ options, prerequisites, saved settings, and verification limits.
 
 4. Start Claude Code from the repository root.
 
-5. Run `/agents` and confirm the four tracked agents are visible. Run `/mcp` to
-   check the optional PubMed connection. The three modelling servers are scoped to
-   their subagents and start only when those agents run.
+5. Run `/agents` and confirm the expected tracked agents are visible. Run `/mcp` to
+   check the optional PubMed connection. Modelling servers are scoped to their
+   subagents and start only when those agents run. Configure the optional ODE agent
+   through `--with-biomass` before using it.
 
 6. Ask the orchestrator to help populate the scientific-state files. If you have
    experimental data, place the original inputs under `inputs/` and describe their
@@ -134,7 +155,7 @@ The Codex port is additive: Claude continues to use `.claude/`, while Codex read
 process. Codex 0.153.0 is the minimum supported CLI version.
 
 This workflow requires a local Codex client, such as the Codex extension in VS
-Code, because NeKo, MaBoSS, and PhysiCell are local stdio MCP servers. A hosted
+Code, because the modelling servers are local stdio MCP servers. A hosted
 Workspace Agent cannot reach those processes or local files unless they are
 separately exposed through approved infrastructure; this repository neither
 creates nor authorizes that exposure.
@@ -526,14 +547,14 @@ artifacts. It cannot resurrect an in-memory MCP server process. After restoring 
 model, specialist agents treat recorded session IDs as provenance and reconstruct
 runtime state from the stored handoffs and artifacts when necessary.
 
-NeKo, MaBoSS, and PhysiCell each maintain their own session identifier. There is no
+NeKo, MaBoSS, PhysiCell, and BioMASS each maintain their own session identifier. There is no
 single pipeline-wide run ID. `CURRENT_STATE.md` must record which upstream session
 produced every downstream handoff.
 
 ## Safety and scientific decision boundaries
 
 - The orchestrator delegates modelling operations; it does not call NeKo, MaBoSS,
-  or PhysiCell directly.
+  PhysiCell, or BioMASS directly.
 - Specialist agents ask the orchestrator for consequential clarification rather
   than guessing or questioning the user directly.
 - Network topology changes, conclusive handoff exports, and unrequested logical-rule

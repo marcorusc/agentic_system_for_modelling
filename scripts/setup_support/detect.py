@@ -7,10 +7,55 @@ import re
 import signal
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 from scripts.codex.launcher_process import redact_text
 from .state import SetupError
+
+
+def _process_identity(pid: int) -> tuple[int, str] | None:
+    """Linux process parent and birth tick; never identify ownership by name."""
+    try:
+        fields = Path(f"/proc/{pid}/stat").read_text().rsplit(") ", 1)[1].split()
+        return int(fields[1]), fields[19]
+    except (OSError, ValueError, IndexError):
+        return None
+
+
+def _owned_descendants(parent: int) -> list[tuple[int, str]]:
+    """Snapshot only this subprocess tree, including children in new sessions."""
+    found: list[tuple[int, str]] = []
+    seen = {parent}
+    pending = [parent]
+    while pending:
+        owner = pending.pop()
+        try:
+            tasks = list(Path(f"/proc/{owner}/task").iterdir())
+        except OSError:
+            continue
+        for task in tasks:
+            try:
+                children = [int(value) for value in (task / "children").read_text().split()]
+            except (OSError, ValueError):
+                continue
+            for child in children:
+                identity = _process_identity(child)
+                if child not in seen and identity is not None and identity[0] == owner:
+                    seen.add(child)
+                    found.append((child, identity[1]))
+                    pending.append(child)
+    return found
+
+
+def _kill_owned_descendants(descendants: list[tuple[int, str]]) -> None:
+    for pid, birth_tick in reversed(descendants):
+        identity = _process_identity(pid)
+        if identity is not None and identity[1] == birth_tick:
+            try:
+                os.kill(pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
 
 
 def run(argv: list[str], *, cwd: Path | None = None, timeout: int = 30,
@@ -22,7 +67,12 @@ def run(argv: list[str], *, cwd: Path | None = None, timeout: int = 30,
         try:
             stdout, stderr = process.communicate(timeout=timeout)
         except subprocess.TimeoutExpired:
-            # Stop the entire probe/installer group, including its stdio server.
+            # MCP stdio servers use a new session. Snapshot owned descendants
+            # before stopping the parent so they cannot escape by reparenting.
+            descendants = _owned_descendants(process.pid) if sys.platform.startswith("linux") else []
+            _kill_owned_descendants(descendants)
+            # Also stop the original probe/installer group. No name-based or
+            # user-wide process matching is permitted here.
             if os.name == "posix":
                 try:
                     os.killpg(process.pid, signal.SIGKILL)
@@ -30,7 +80,16 @@ def run(argv: list[str], *, cwd: Path | None = None, timeout: int = 30,
                     pass
             else:
                 process.kill()
-            process.communicate()
+            # A transport may start a child in a separate process group that still
+            # holds these pipes. Never turn the timeout into an unbounded drain.
+            try:
+                process.communicate(timeout=2)
+            except subprocess.TimeoutExpired:
+                if process.stdout is not None:
+                    process.stdout.close()
+                if process.stderr is not None:
+                    process.stderr.close()
+                process.wait(timeout=2)
             raise
         result = subprocess.CompletedProcess(argv, process.returncode, stdout, stderr)
     except (OSError, subprocess.TimeoutExpired) as error:

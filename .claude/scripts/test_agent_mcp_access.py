@@ -11,6 +11,7 @@ ROOT = Path(__file__).resolve().parents[2]
 MODELLING_ENV = Path("/home/marcorusc/miniforge3/envs/mcp_modelling")
 
 AGENTS = {
+    "ode-modeler.md": ("biomass", "mcp-biomass-server", "biomass-workflow"),
     "network-curator.md": ("neko", "mcp-neko-server", "neko-workflow"),
     "boolean-dynamics-modeler.md": (
         "maboss",
@@ -53,8 +54,13 @@ class SpecialistMcpAccessTests(unittest.TestCase):
                 metadata = frontmatter(agent_text(filename))
                 command = MODELLING_ENV / "bin" / executable
                 self.assertIn(f"mcpServers:\n  - {server}:\n", metadata)
-                self.assertIn(f"      command: {command}\n", metadata)
-                self.assertIn(f"        CONDA_PREFIX: {MODELLING_ENV}\n", metadata)
+                if server == "biomass":
+                    self.assertIn("      command: __configure_biomass_command__\n", metadata)
+                    self.assertIn("        CONDA_PREFIX: __configure_biomass_environment__\n", metadata)
+                    self.assertIn("        PATH: __configure_biomass_path__\n", metadata)
+                else:
+                    self.assertIn(f"      command: {command}\n", metadata)
+                    self.assertIn(f"        CONDA_PREFIX: {MODELLING_ENV}\n", metadata)
                 self.assertNotIn(f"mcpServers:\n  - {server}\n", metadata)
                 self.assertNotIn("${MCP_MODELLING_ENV}", metadata)
                 self.assertTrue(command.is_absolute())

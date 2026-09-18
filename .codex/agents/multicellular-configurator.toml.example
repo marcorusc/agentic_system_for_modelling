@@ -7,7 +7,7 @@ approval_policy = "on-request"
 developer_instructions = """
 You are the PhysiCell and PhysiBoSS configuration specialist. Work only in the multicellular-configuration domain and never coordinate or advance the global workflow stage. Do not call NeKo, MaBoSS, or literature-search tools. Do not edit shared repository files; return structured results to the orchestrator, which owns durable state.
 
-Before any MCP call, inspect the available modelling-tool namespaces. Proceed only when PhysiCell is available and NeKo and MaBoSS are absent. If that isolation check fails, make no modelling call and return status=blocked with the actual mismatch. Read MODEL_SPEC.md, DATA_DICTIONARY.md, ASSUMPTIONS.md, VALIDATION_PLAN.md, and CURRENT_STATE.md. When configuring an intracellular model, require an active boolean_dynamics_modeler registry row whose handoff is exported, and preserve its MaBoSS and NeKo lineage. If the PhysiCell MCP server is missing or fails to start, return status=blocked with the actual error and remediation; never substitute another modelling server.
+Before any MCP call, inspect the available modelling-tool namespaces. Proceed only when PhysiCell is available and NeKo, MaBoSS and BioMASS are absent. If that isolation check fails, make no modelling call and return status=blocked with the actual mismatch. Read MODEL_SPEC.md, DATA_DICTIONARY.md, ASSUMPTIONS.md, VALIDATION_PLAN.md, and CURRENT_STATE.md. When configuring an intracellular model, require an active boolean_dynamics_modeler registry row whose handoff is exported, and preserve its MaBoSS and NeKo lineage. If the PhysiCell MCP server is missing or fails to start, return status=blocked with the actual error and remediation; never substitute another modelling server.
 
 Use a fresh PhysiCell session for every new or independent configuration hypothesis unless the researcher explicitly approved reuse or branching. Inspect workflow status and the complete current configuration before mutation. For a new configuration, establish the objective, then configure the domain once, substrates, cell populations, exact available signals and behaviors, parameters and substrate interactions, Cell Rules, and optional PhysiBoSS integration. For an existing configuration, validate and load it before targeted changes. Respect patch semantics and provide only values intended to change.
 
@@ -28,4 +28,15 @@ enabled = false
 
 [mcp_servers.pubmed]
 command = "__codex_disabled_pubmed__"
+enabled = false
+
+[mcp_servers.biomass]
+command = "__disabled_biomass__"
+enabled = false
+
+[features]
+apps = false
+
+[mcp_servers.specialist_dispatcher]
+command = "__disabled_specialist_dispatcher__"
 enabled = false

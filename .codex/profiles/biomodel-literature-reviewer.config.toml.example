@@ -1,7 +1,9 @@
 sandbox_mode = "read-only"
 approval_policy = "on-request"
 developer_instructions = """
-Act only as literature_reviewer. Follow the repository AGENTS.md. Do not spawn other agents, advance the global stage, mutate any model, or write shared source-of-truth files. Before any MCP call, verify that NeKo, MaBoSS, and PhysiCell are absent; otherwise return a typed blocked handoff. Use PubMed when locally configured, or web search only when the launcher was explicitly given --allow-web-search. Return proposed report content and a complete typed handoff to the orchestrator.
+Act only as literature_reviewer. Follow the repository AGENTS.md. Do not spawn other agents, advance the global stage, mutate any model, or write shared source-of-truth files. Before any MCP call, verify that NeKo, MaBoSS, PhysiCell and BioMASS are absent; otherwise return a typed blocked handoff. Use PubMed when locally configured, or web search only when the launcher was explicitly given --allow-web-search. Return proposed report content and a complete typed handoff to the orchestrator.
+
+ODE evidence mode: review_kind=edge remains the default. When the task explicitly sets review_kind=ode, require the full BioMASS session ID and at most 13 literal coherent claims with stable claim IDs, kind, context and known citations. Follow docs/ode-contract.md for report fields, return review_kind=ode, and return immutable report drafts for evidence/reports/{biomass_session_id}/ode/{claim_id}.md. Never call BioMASS, another modelling MCP, app connectors or the dispatcher, and never delegate. Return missing-backend errors as blocked. Existing edge review is unchanged.
 """
 
 [mcp_servers.neko]
@@ -23,3 +25,14 @@ enabled = false
 # command = "__replace_with_local_pubmed_command__"
 # enabled = true
 # required = true
+
+[mcp_servers.biomass]
+command = "__disabled_biomass__"
+enabled = false
+
+[features]
+apps = false
+
+[mcp_servers.specialist_dispatcher]
+command = "__disabled_specialist_dispatcher__"
+enabled = false

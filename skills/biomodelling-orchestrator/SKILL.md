@@ -11,7 +11,7 @@ Act as the sole scientific coordinator. Read `AGENTS.md` and reconstruct state f
 
 ## Enforcement boundary
 
-- The orchestrator must have no `neko`, `maboss`, or `physicell` MCP tools. The
+- The orchestrator must have no `neko`, `maboss`, `physicell`, or `biomass` MCP tools. The
   repository `.codex/config.toml` disables them for local Codex/VS Code sessions.
 - Never select `.codex/agents/*.toml.example`, spawn a same-process modelling agent,
   or call a modelling MCP directly.
@@ -73,3 +73,19 @@ Follow the domain skill when formulating NeKo, literature, MaBoSS, or PhysiCell
 work. Use `$validate-stage` before a transition and `$checkpoint-model` when a
 validated transition is ready to be recorded. See `docs/specialist-dispatcher.md`
 for execution states, recovery, and troubleshooting.
+
+
+## ODE alternative
+
+For researcher-approved ODE formulation, follow `docs/ode-workflow.md` and its
+readiness gate, then use `$biomass-workflow` and `specialist_dispatcher.start_ode_modeler`.
+Keep input kind, full lineage, proposed versus accepted assumptions and authorized
+scenarios explicit. ODE evidence uses `start_literature_reviewer` with
+`review_kind="ode"` and the BioMASS session ID; edge review remains the default.
+Write claim drafts through the existing report writer with `--claim-id`.
+
+Respect consolidated whole-model review when requested. Preserve provisional
+candidates within the already approved scope under `docs/ode-contract.md`; do not
+ask again merely to record or save them. Preservation does not approve assumptions,
+numerical values, simulation or a stage transition. Keep provisional lineage rows
+pending and require exact revision approval for conclusive export.

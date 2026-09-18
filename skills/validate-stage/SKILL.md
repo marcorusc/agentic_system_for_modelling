@@ -21,3 +21,14 @@ provider-neutral `scripts/codex/validate_handoff.py` against the recorded JSON a
 the expected specialist/session identity, then perform the scientific checks above;
 machine-valid structure is not scientific validity. Record an accepted outcome in
 `DECISIONS.md` and `CURRENT_STATE.md` only after researcher approval.
+
+
+## ODE state
+
+Apply `docs/ode-contract.md` to `ode_modeler` / `biomass_ode`. Verify source kind,
+lineage, document version, selected revision, complete captured inventory, evidence,
+actual numerical settings and scenario results. Validate ODE evidence with explicit
+`--review-kind ode`. Distinguish provisional workflow authorization from exact
+session/revision conclusive-export approval; a candidate snapshot keeps the
+scientific registry pending. Existing `runs/` and `evidence/` lifecycle scopes
+already include ODE artifacts. Successful solves are not biological validation.

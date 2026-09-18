@@ -51,3 +51,25 @@ literature_reviewer --prompt-file <task> --record-session-id <neko-session-id>`.
 Place the bounded task under `.codex-tasks/`. Add `--allow-web-search` only with
 explicit authorization; Windows-to-WSL fallback adds `--transport wsl`. Backend
 isolation, immutable report writing, and scientific approval gates are identical.
+
+
+## ODE claim mode
+
+For mechanism, kinetic-law or quantity review, pass explicit `review_kind="ode"`
+to `specialist_dispatcher.start_literature_reviewer` and provide the full BioMASS
+`record_session_id`. Require at most 13 coherent literal claims with stable IDs,
+context, known PMIDs/DOIs and originating reaction/edge/quantity IDs. Standalone ODE
+work needs no NeKo SIF. Both review modes share the two-reviewer limit and existing
+PubMed/authorized-search rules. No modelling tools, including BioMASS, are permitted.
+
+Use the evidence contract in `docs/ode-contract.md`. Review mechanisms and reported
+quantities separately; preserve source access limits and unknown units. Return
+`review_kind=ode`, the BioMASS session ID and null derived-from ID. The orchestrator
+writes each immutable draft using the same writer with `--claim-id <claim>` instead
+of `--source`/`--target`. Reports belong at
+`evidence/reports/{biomass_session_id}/ode/{claim_id}.md`; invocation records belong
+under `runs/ode-modeler/{biomass_session_id}/`. Retry missing reports only. An explicit
+re-review uses a new claim ID and identifies the superseded report.
+
+CLI fallback adds `--review-kind ode --record-session-id <biomass-session-id>`.
+Unspecified mode remains edge review; wait for all required reports before synthesis.

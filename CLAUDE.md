@@ -43,7 +43,7 @@ stage transitions, update durable state, and invoke independent review.
 
 Subagents cannot spawn other subagents. Do not ask them to coordinate directly.
 
-The orchestrator does not call NeKo, MaBoSS, or PhysiCell MCP tools directly.
+The orchestrator does not call NeKo, MaBoSS, PhysiCell, or BioMASS MCP tools directly.
 Delegate modelling operations to the relevant specialist; knowing that a server
 exists is not authorization to invoke it.
 
@@ -245,3 +245,39 @@ autonomously.
   specialist runtime state from typed handoffs and artifacts.
 - After restart or restore, instruct the user to run `/clear` so assumptions
   from the previous Claude conversation do not contaminate the loaded model state.
+
+
+## Optional mechanistic ODE branch
+
+Follow docs/ode-workflow.md and the version-2 artifact contract in docs/ode-contract.md.
+Phase 4 prepares the definitions; scientific ODE execution in the integration
+worktree waits for Phase 5 live/client isolation verification. An inline server
+entry alone does not establish that the parent has no modelling tools.
+
+Use `ode-modeler` with BioMASS only and local `biomass-workflow` references. No other
+specialist or orchestrator receives BioMASS. Choose ODE formulation with the
+researcher, using an approved exported NeKo-to-BioMASS graph or an explicitly
+requested standalone text/reaction source. Keep separate full session IDs and
+representation provenance for approved Boolean/ODE comparisons.
+
+The ODE specialist cannot delegate, search literature, edit shared scientific state
+or advance stages. The orchestrator routes at most 13 coherent literal mechanism,
+kinetic-law or quantity claims per `literature-reviewer` invocation with
+`review_kind=ode` and the BioMASS session ID. At most two independent reviews run
+concurrently across both modes. Guarded reports are immutable at
+`evidence/reports/{biomass_session_id}/ode/{claim_id}.md`; read each report back.
+Existing NeKo edge reviews retain their contract.
+
+Respect the approved drafting scope and requested consolidated model review.
+Keep proposed assumptions and numerical placeholders explicit. Preserve provisional
+candidate bundles within an already authorized workflow, recording the existing
+session-bound authorization described in the contract. This needs no repeated
+snapshot approval and does not authorize new assumptions, simulation or stage
+acceptance. Conclusive export requires the exact session/revision decision.
+
+Return common envelope version 1 with specialist `ode_modeler`, stage `biomass_ode`
+and `ode.contract_version=2`. The orchestrator validates captures, evidence,
+revision/version, numerical settings and authority before scientific acceptance.
+Keep provisional registry rows pending. Existing independent stage review remains
+required; the absent reviewer/auditor definitions remain a blocker. No calibration,
+sensitivity analysis or ODE-to-PhysiCell coupling is included.

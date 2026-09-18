@@ -33,3 +33,14 @@ worktree, or delete sessions/artifacts. The verified prompt cleanup above is the
 only cleanup exception. Report missing provenance, unresolved decisions, unmatched
 prompts, paths committed, resulting IDs, and whether it is safe to compact, clear,
 or exit.
+
+
+## ODE state
+
+Apply `docs/ode-contract.md` to `ode_modeler` / `biomass_ode`. Verify source kind,
+lineage, document version, selected revision, complete captured inventory, evidence,
+actual numerical settings and scenario results. Validate ODE evidence with explicit
+`--review-kind ode`. Distinguish provisional workflow authorization from exact
+session/revision conclusive-export approval; a candidate snapshot keeps the
+scientific registry pending. Existing `runs/` and `evidence/` lifecycle scopes
+already include ODE artifacts. Successful solves are not biological validation.

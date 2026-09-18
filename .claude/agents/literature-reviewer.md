@@ -16,6 +16,7 @@ tools:
   - 'mcp__pubmed__get_full_text_article'
   - 'mcp__pubmed__find_related_articles'
 disallowedTools:
+  - 'mcp__biomass__*'
   - Edit
   - Bash
   - Task
@@ -147,3 +148,21 @@ Full report: evidence/reports/{neko_session_id}/{A}__{B}.md
 End your final turn with only these pointer lines (one per edge reviewed) plus a note
 on any edges left incomplete due to turn or access limits. Do not maintain or write to
 any shared index/manifest file — that is the coordinator's responsibility.
+
+## ODE claim review mode
+
+When explicitly invoked with review_kind=ode, use the ODE report contract in
+`docs/ode-contract.md` in place of the edge-specific input/output instructions.
+Require the full BioMASS session ID and at most 13 literal coherent claims with
+stable claim IDs, kind, context and known citations. Standalone ODE review needs
+no NeKo session or SIF. Assess mechanism, kinetic-law and quantity claims separately.
+Never call BioMASS or another modelling MCP, delegate, or alter model state.
+
+Write each report once through the file guard to
+`evidence/reports/{biomass_session_id}/ode/{claim_id}.md` and read that exact path
+back. Use the immutable ODE report format and explicit source-access levels in
+`docs/ode-contract.md`. Return the common literature envelope with review_kind=ode,
+full session ID, report paths and hashes; the orchestrator owns shared manifests.
+After failure, review only missing claims unless re-review is explicitly requested.
+A missing literature backend returns blocked; no fabricated evidence or hidden
+web-search fallback. The orchestrator coordinates at most two independent reviews.

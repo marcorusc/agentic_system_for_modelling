@@ -2,30 +2,139 @@
 from __future__ import annotations
 
 import json
-import os
+import re
 import tomllib
 from pathlib import Path
 from typing import Any
 
-from scripts.codex.launcher_config import SPECIALISTS, toml_literal
+from scripts.codex.launcher_config import SPECIALISTS, MODELLING_SERVERS, toml_literal
 from .state import SetupError
+from .environment import transport_path
 
 
-# Setup capabilities are intentionally narrower than available runtime roles.
-# Optional ODE profiles/dependencies are integrated in the next setup phase.
+# Base setup remains independent of the optional ODE environment.
 SETUP_SPECIALISTS = (
     "network_curator", "literature_reviewer",
     "boolean_dynamics_modeler", "multicellular_configurator",
 )
 
 
-def render(root: Path, prefix: Path, codex_home: Path) -> dict[Path, str]:
+# Exact policy shipped at 1e8f9a43c4fc249e43d94c71316fc798ee7ad01d. Migrate
+# this sentence only; never replace an installed profile's full instruction text.
+LEGACY_ODE_EXPORT_RULE = (
+    "Export_model_bundle is conclusive: call only when this invocation explicitly "
+    "records researcher approval of the reviewed revision and requests final export."
+)
+ODE_EXPORT_RULE = (
+    "For ODE contract version 2, export_model_bundle may preserve an already "
+    "authorized provisional candidate. Conclusive export requires researcher "
+    "approval of the exact reviewed revision and an explicit final-export request."
+)
+
+# Replace our previously appended guidance as a unit so reruns do not accumulate
+# obsolete or conflicting setup-owned directives. Unrelated instructions survive.
+_PREVIOUS_ODE_PROFILE_GUIDANCE = {
+    "literature_reviewer": (
+        "ODE review mode: review_kind=edge (default) preserves edge review. With "
+        "review_kind=ode, require the full BioMASS session ID and at most 13 literal "
+        "coherent claims; follow docs/ode-contract.md for immutable claim reports "
+        "and return review_kind=ode. Never call a modelling MCP or delegate."
+    ),
+    "ode_modeler": (
+        "ODE contract version 2: follow skills/biomass-workflow/SKILL.md and "
+        "docs/ode-contract.md: schema_version=1, stage=biomass_ode, "
+        "ode.contract_version=2. Preserve provisional candidates within an already "
+        "authorized workflow with workflow_authorization; this grants no simulation "
+        "or scientific acceptance. Conclusive export requires exact-revision "
+        "export_approval."
+    ),
+}
+ODE_PROFILE_GUIDANCE = {
+    "literature_reviewer": (
+        "ODE review mode: review_kind=edge (default) preserves existing edge-review "
+        "rules. Only when the invocation explicitly sets review_kind=ode, apply "
+        "the claim-review contract in docs/ode-contract.md instead of edge-specific "
+        "input, report and lineage requirements. Require the full BioMASS "
+        "record_session_id and at most 13 literal coherent claims with stable IDs; "
+        "return review_kind=ode and immutable report drafts for "
+        "evidence/reports/{biomass_session_id}/ode/{claim_id}.md. Preserve all tool "
+        "isolation and search-authorization rules in both modes: never call a "
+        "modelling MCP, app connectors or the dispatcher, and never delegate. "
+        "Return blocked if an authorized evidence backend is unavailable."
+    ),
+    "ode_modeler": (
+        "ODE contract version 2 (ode_modeler only): follow "
+        "skills/biomass-workflow/SKILL.md and docs/ode-contract.md: "
+        "schema_version=1, stage=biomass_ode, ode.contract_version=2. Use only "
+        "BioMASS; never call another modelling MCP, literature-search tools, "
+        "app connectors or the dispatcher, and never delegate. An already "
+        "authorized whole-model drafting workflow may prepare proposed assumptions "
+        "for consolidated review and preserve a server-side candidate bundle; it "
+        "does not accept those assumptions, authorize simulation or advance a "
+        "scientific stage. Conclusive export requires exact-revision researcher "
+        "approval, export_approval and an explicit export request. A new-session "
+        "invocation may finish the complete authorized workflow before returning "
+        "its ID; do not force a bootstrap return merely to bind the existing "
+        "preservation authority to that ID. Before verified project capture, "
+        "return a metadata-only needs_approval result with ode.export_status=pending, "
+        "artifacts=[], simulation_paths=[], recommended_next_stage=null, and no "
+        "revision_path, bundle_path, workflow_authorization or export_approval "
+        "claim. Return the actual server revision/version, server_artifacts "
+        "inventory/hashes, actions and draft report; identify pending parent "
+        "recording separately from scientific decisions. Because needs_approval "
+        "requires nonempty decisions_required, list technical parent recording "
+        "there with the prefix Technical parent recording only; this requests no "
+        "renewed researcher approval. List actual scientific decisions separately. "
+        "The parent records the "
+        "existing workflow authority against the returned full session ID, captures "
+        "and verifies the inventory, and creates a separate validated provisional "
+        "completion with matching manifest/report, project paths/hashes and "
+        "workflow_authorization. Preserve the original specialist result. Do not "
+        "request another scientific approval merely to preserve this candidate. "
+        "Treat server-assumed mechanisms as proposed unless a researcher decision "
+        "accepts them; small-subsystem examples do not impose repeated approval "
+        "gates within authorized whole-model drafting."
+    ),
+}
+
+# Recognize only direct blanket restrictions, not arbitrary custom scientific
+# policies. A near-match to the known rule must be reviewed, not silently relaxed.
+_CUSTOM_ODE_EXPORT_RESTRICTION = re.compile(
+    r"\bexport_model_bundle\s+is\s+(?:always\s+)?conclusive\b"
+    r"|\bexport_model_bundle\s+(?:(?:may|must|can|should)\s+)?"
+    r"(?:be\s+(?:called|used)\s+)?(?:only|never)\b"
+    r"|\b(?:never|do\s+not)\s+(?:preserve|save|export)\s+(?:any\s+)?provisional\b",
+    re.IGNORECASE,
+)
+
+
+def _ode_instructions(role: str, instructions: str, target: Path) -> str:
+    if not isinstance(instructions, str):
+        raise SetupError(f"Expected text developer_instructions in {target.name}")
+    if role == "ode_modeler":
+        instructions = instructions.replace(LEGACY_ODE_EXPORT_RULE, ODE_EXPORT_RULE)
+        if _CUSTOM_ODE_EXPORT_RESTRICTION.search(instructions):
+            raise SetupError(
+                f"Unrecognized ODE export restriction in {target.name}; review its "
+                "custom developer_instructions against docs/ode-contract.md. "
+                "Setup has not overwritten the profile."
+            )
+    directive = ODE_PROFILE_GUIDANCE[role]
+    instructions = instructions.replace(_PREVIOUS_ODE_PROFILE_GUIDANCE[role], directive)
+    if directive not in instructions:
+        instructions += "\n" + directive
+    return instructions
+
+
+def render(root: Path, prefix: Path, codex_home: Path, *, with_biomass: bool = False,
+           graphviz_path: str | None = None) -> dict[Path, str]:
     parent = tomllib.loads((root/".codex/config.toml").read_text())
-    for server in ("neko", "maboss", "physicell"):
+    for server in MODELLING_SERVERS:
         if parent.get("mcp_servers", {}).get(server, {}).get("enabled") is not False:
             raise SetupError(f"Parent isolation is unsafe: {server} must remain disabled in .codex/config.toml")
     outputs = {}
-    for role in SETUP_SPECIALISTS:
+    roles = SETUP_SPECIALISTS + (("ode_modeler",) if with_biomass else ())
+    for role in roles:
         profile, server = SPECIALISTS[role]
         target = codex_home/f"{profile}.config.toml"
         if target.is_symlink():
@@ -36,14 +145,29 @@ def render(root: Path, prefix: Path, codex_home: Path) -> dict[Path, str]:
         for name, config in servers.items():
             if name not in {server, "pubmed" if server is None else server} and config.get("enabled", True):
                 raise SetupError(f"Unexpected enabled MCP in {target.name}: {name}")
+        for prohibited in MODELLING_SERVERS:
+            if prohibited != server:
+                servers.setdefault(prohibited, {"command": f"__disabled_{prohibited}__"})["enabled"] = False
+        payload.setdefault("features", {})["apps"] = False
+        servers.setdefault("specialist_dispatcher", {"command": "__disabled_specialist_dispatcher__"})["enabled"] = False
         if server:
             transport = servers.setdefault(server, {})
             transport.pop("url", None)
             transport.update(command=str(prefix/"bin"/f"mcp-{server}-server"), args=[],
                              cwd=str(root), enabled=True, required=True)
             env = transport.setdefault("env", {})
-            env.update(CONDA_PREFIX=str(prefix), PATH=str(prefix/"bin") + os.pathsep + os.environ.get("PATH", ""),
+            env.update(CONDA_PREFIX=str(prefix), PATH=transport_path(prefix, graphviz_path=graphviz_path),
                        PYTHONNOUSERSITE="1")
+        if server == "biomass":
+            env.update(NUMBA_CACHE_DIR=str(root/".setup/cache/biomass-numba"), PYTHONDONTWRITEBYTECODE="1")
+            disabled = transport.setdefault("disabled_tools", [])
+            for tool in ("delete_session", "clean_generated_files", "close_session"):
+                if tool not in disabled:
+                    disabled.append(tool)
+        if with_biomass and role in ODE_PROFILE_GUIDANCE:
+            payload["developer_instructions"] = _ode_instructions(
+                role, payload.get("developer_instructions", ""), target
+            )
         # TOML values are parsed and reserialized; arbitrary unrelated values survive.
         text = "# Generated transport paths; managed by scripts/setup.py\n"
         text += "\n".join(f"{toml_literal(key)} = {toml_literal(value)}" for key, value in payload.items()) + "\n"

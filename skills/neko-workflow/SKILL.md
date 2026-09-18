@@ -47,3 +47,14 @@ If the dispatcher is unavailable, the same bounded request may use
 <project-relative-task-file>`. Place that file in `.codex-tasks/`; add
 `--record-session-id` and exact `--approve-tool` entries as applicable. Preserve
 all scientific gates and validate the recorded result before synthesis.
+
+
+## NeKo-to-BioMASS export
+
+When ODE formulation and topology/evidence export are explicitly approved, route
+`export_biomass_handoff` through `specialist_dispatcher.start_network_curator`. Preserve references,
+biological context and stable edge IDs in the dedicated `neko-to-biomass` handoff.
+Follow `docs/ode-workflow.md`, including readiness and verified relocation capture.
+This branch does not require BNET or Boolean-specific connectivity criteria.
+Only the isolated ODE specialist receives BioMASS; the network specialist retains
+NeKo alone. Existing topology policies and conclusive-export gates still apply.

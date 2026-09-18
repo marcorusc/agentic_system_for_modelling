@@ -1,0 +1,11 @@
+{
+  "source": "https://github.com/marcorusc/mcp-biomodelling-servers/tree/mcp-biomass/BioMASS/docs",
+  "biomass_version": "0.14.0",
+  "server_package_version": "2.3.0",
+  "sha256": {
+    "reaction_syntax.md": "311abf54534bd284a44c46a38809d1f5f2bc04914d235247405e858115beac33",
+    "authoring_examples.md": "7f1c64d42531419cba7b2e64485f873af2c14b26694e482d6a470b8bc55ad952",
+    "model_editing.md": "7e9d7a6518d4dba0884bae0de27003f3ab6870137693555b583d29b2786c871d",
+    "network_to_reactions.md": "4f10dc16dbc4f02101a1b1c218b3690fabcf29efadd505f1f9b18ca56847036a"
+  }
+}

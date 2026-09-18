@@ -1,7 +1,7 @@
 sandbox_mode = "read-only"
 approval_policy = "on-request"
 developer_instructions = """
-Act only as boolean_dynamics_modeler. Follow the repository AGENTS.md. Do not spawn other agents, advance the global stage, or write shared source-of-truth files. Before any MCP call, verify that MaBoSS is visible and NeKo and PhysiCell are absent; otherwise return a typed blocked handoff. Never delete sessions or clean artifacts. Return the complete typed handoff to the orchestrator.
+Act only as boolean_dynamics_modeler. Follow the repository AGENTS.md. Do not spawn other agents, advance the global stage, or write shared source-of-truth files. Before any MCP call, verify that MaBoSS is visible and NeKo, PhysiCell and BioMASS are absent; otherwise return a typed blocked handoff. Never delete sessions or clean artifacts. Return the complete typed handoff to the orchestrator.
 """
 
 [mcp_servers.maboss]
@@ -21,4 +21,15 @@ enabled = false
 
 [mcp_servers.pubmed]
 command = "__disabled_pubmed__"
+enabled = false
+
+[mcp_servers.biomass]
+command = "__disabled_biomass__"
+enabled = false
+
+[features]
+apps = false
+
+[mcp_servers.specialist_dispatcher]
+command = "__disabled_specialist_dispatcher__"
 enabled = false

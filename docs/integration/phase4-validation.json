@@ -1,0 +1,185 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-18",
+  "phase": 4,
+  "status": "complete",
+  "branch": "codex/modelling-architecture-integration",
+  "starting_commit": "9c335b56f125e819c6fde1a4640f26f8f0f1016c",
+  "ode_source_commit": "1e8f9a43c4fc249e43d94c71316fc798ee7ad01d",
+  "canonical_ode_role": "ode_modeler",
+  "test_runs": [
+    {
+      "environment": "default",
+      "python": "3.14.4",
+      "mcp": null,
+      "anyio": null,
+      "restricted_sandbox": true,
+      "exit_code": 0,
+      "passed": 329,
+      "skipped": 6,
+      "suites": [
+        {
+          "suite": "tests/codex",
+          "discovered": 257,
+          "passed": 252,
+          "skipped": 5,
+          "seconds": 15.59
+        },
+        {
+          "suite": ".claude/scripts",
+          "discovered": 19,
+          "passed": 19,
+          "skipped": 0,
+          "seconds": 4.35
+        },
+        {
+          "suite": "tests/setup",
+          "discovered": 59,
+          "passed": 58,
+          "skipped": 1,
+          "seconds": 1.127
+        }
+      ],
+      "temporary_log": "/tmp/integration-phase4-default-final.log",
+      "log_sha256": "371222ff1540366f49227907af89a79dffbeec8b846cfc8853b0969184410a01"
+    },
+    {
+      "environment": "sdk",
+      "python": "3.14.6",
+      "mcp": "2.0.0",
+      "anyio": "4.14.2",
+      "restricted_sandbox": false,
+      "exit_code": 0,
+      "passed": 335,
+      "skipped": 0,
+      "suites": [
+        {
+          "suite": "tests/codex",
+          "discovered": 257,
+          "passed": 257,
+          "skipped": 0,
+          "seconds": 17.734
+        },
+        {
+          "suite": ".claude/scripts",
+          "discovered": 19,
+          "passed": 19,
+          "skipped": 0,
+          "seconds": 4.178
+        },
+        {
+          "suite": "tests/setup",
+          "discovered": 59,
+          "passed": 59,
+          "skipped": 0,
+          "seconds": 3.189
+        }
+      ],
+      "temporary_log": "/tmp/integration-phase4-sdk-final.log",
+      "log_sha256": "571e1e13f0b9f79a26f9adebe8c321077318adb2ccd46a12b2f94411e22b4979"
+    }
+  ],
+  "post_suite_guidance_check": {
+    "reason": "Explicitly label pending technical recording in the current needs_approval envelope",
+    "command": "python -B -m unittest tests.codex.test_ode_profiles_skills tests.setup.test_biomass_setup",
+    "passed": 18,
+    "exit_code": 0,
+    "temporary_log": "/tmp/integration-phase4-final-wording-tests.log",
+    "log_sha256": "da4bc71947ee979f7db6c27e1dec22083d4849ddbd4e7ddda23796109d296fa2"
+  },
+  "plugin_source_validation": {
+    "passed": true,
+    "marketplace": "agentic-modelling-local",
+    "version": "0.1.0+codex.20260918022344",
+    "installed": false
+  },
+  "skill_quick_validation": {
+    "passed": 11,
+    "failed": 0
+  },
+  "independent_forward_walkthrough": [
+    {
+      "case": "new approved NeKo-derived whole-model candidate",
+      "result": "Metadata-only pending result validates with technical recording entry; separate captured provisional completion validates; no forced session bootstrap."
+    },
+    {
+      "case": "existing authorized candidate snapshot",
+      "result": "Captured snapshot can be checked without simulation or live session; later reconstruction requires authorization and a new session ID."
+    },
+    {
+      "case": "ODE evidence claims without a permitted backend",
+      "result": "Fake runtime returns dispatcher succeeded with scientific blocked; no specialist process or evidence report."
+    }
+  ],
+  "review_findings_fixed": [
+    "Unsafe literature inventory now fails overall readiness; safe backendless literature remains degraded.",
+    "Optional setup reuses its pre-write capability report instead of starting every server twice.",
+    "Whole-probe deadline allows SDK teardown; Linux watchdog stops owned detached descendants with PID birth checks and bounded pipe draining.",
+    "Custom Graphviz executable and symlink entry-point paths survive planning, saved settings and client transports without copying unrelated shell PATH directories.",
+    "Exact legacy source export-only instruction migrates to version-2 provisional preservation while custom settings survive; recognizable unknown blanket restrictions fail with a diagnostic.",
+    "Capability checks require BioMASS create_session and NeKo export_biomass_handoff.",
+    "Workflow distinguishes metadata-only pending return from parent-finalized provisional capture, uses existing authority without forced bootstrap, and labels technical recording in decisions_required.",
+    "Claude ODE report guard validates exact paths, claims and content; refuses existing files and symlink aliases.",
+    "Two touched legacy Claude skill headers gained their missing explicit names after quick validation flagged them."
+  ],
+  "scientific_state_matches_preparation": true,
+  "scientific_state_sha256": {
+    "MODEL_SPEC.md": "1e537df00cb9f8ce2d1911c7dc703b1163b9ff76e78ca6aa827302786e2c2487",
+    "DATA_DICTIONARY.md": "63578b9889792484c1bc977462b7bdf61928a98d54cb26f3c6128d2a4804587b",
+    "ASSUMPTIONS.md": "f7ed5bcb3ad7d68b3d29a97613c8673cf322446e80250391f4b70a4ac7cd9696",
+    "DECISIONS.md": "1aa85d04d0494be4a56c4faf5dc8a5f1026619f8fa3f9e24afb48e26e29064bb",
+    "CURRENT_STATE.md": "bd7ccdc87283d1b100db41822098c04d8e39bb3845c036e0cca0dc24dee63852",
+    "VALIDATION_PLAN.md": "4b0228138c1aba833d0a62e7002a699012015dd9d9e9d6e92fdf3c3ae8dc1b86"
+  },
+  "pinned_reference_sha256": {
+    "skills/biomass-workflow/references/authoring_examples.md": "7f1c64d42531419cba7b2e64485f873af2c14b26694e482d6a470b8bc55ad952",
+    "skills/biomass-workflow/references/model_editing.md": "7e9d7a6518d4dba0884bae0de27003f3ab6870137693555b583d29b2786c871d",
+    "skills/biomass-workflow/references/network_to_reactions.md": "4f10dc16dbc4f02101a1b1c218b3690fabcf29efadd505f1f9b18ca56847036a",
+    "skills/biomass-workflow/references/provenance.json": "9c15d60ade25bbb72520bbdba39553ee8cd4282e3548653d76007b67ed320902",
+    "skills/biomass-workflow/references/reaction_syntax.md": "311abf54534bd284a44c46a38809d1f5f2bc04914d235247405e858115beac33",
+    ".claude/skills/biomass-workflow/references/authoring_examples.md": "7f1c64d42531419cba7b2e64485f873af2c14b26694e482d6a470b8bc55ad952",
+    ".claude/skills/biomass-workflow/references/model_editing.md": "7e9d7a6518d4dba0884bae0de27003f3ab6870137693555b583d29b2786c871d",
+    ".claude/skills/biomass-workflow/references/network_to_reactions.md": "4f10dc16dbc4f02101a1b1c218b3690fabcf29efadd505f1f9b18ca56847036a",
+    ".claude/skills/biomass-workflow/references/provenance.json": "9c15d60ade25bbb72520bbdba39553ee8cd4282e3548653d76007b67ed320902",
+    ".claude/skills/biomass-workflow/references/reaction_syntax.md": "311abf54534bd284a44c46a38809d1f5f2bc04914d235247405e858115beac33"
+  },
+  "pinned_references_match_source": true,
+  "model_directory_files": {
+    "runs": [
+      "runs/.gitkeep"
+    ],
+    "evidence": [
+      "evidence/.gitkeep"
+    ],
+    "inputs": [
+      "inputs/.gitkeep"
+    ]
+  },
+  "original_experiment_branch": "model/cell-cycle-core",
+  "original_experiment_head": "8f0e0af6efb02f363b39449f7136847611070af5",
+  "original_experiment_tracked_diff_clean": true,
+  "dependency_declarations_unchanged": true,
+  "parent_configuration_unchanged": true,
+  "plugin_version": "0.1.0+codex.20260918022344",
+  "global_profiles_modified": false,
+  "packages_installed": false,
+  "scientific_sessions_created": false,
+  "live_ode_activation": false,
+  "live_specialist_inventory_test": false,
+  "live_llm_execution_test": false,
+  "windows_wsl_execution_test": false,
+  "claude_client_isolation_test": false,
+  "remote_ci_run": false,
+  "new_native_software_agent_start_failure": "Required specialist_dispatcher MCP handshake closed; independent reviews reused existing software agents.",
+  "known_limits": [
+    "Source profiles and software fixtures do not establish live LLM tool inventory; Phase 5 verification remains required.",
+    "Current desktop dispatcher belongs to the original experiment checkout, not this integration worktree.",
+    "Claude independent scientific-reviewer/reproducibility-auditor definitions are still absent.",
+    "Claude Write preflight is not atomic with the later write; parent readback remains required and overlapping writers need a stronger design.",
+    "needs_approval currently carries technical recording work as a labelled entry; a separate finalization state is deferred.",
+    "Probe ownership cleanup is tested for still-owned Linux descendants, not orphaned daemons or an operating-system sandbox.",
+    "The watchdog retains the selected dot entry point; users must provide a stable dependency path.",
+    "No scientific validity, token savings or installed readiness is established by this phase."
+  ],
+  "phase5_started": false
+}

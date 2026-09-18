@@ -90,3 +90,14 @@ only if it fails. Costs assume seed/group sizes of a few dozen genes.
   partition, then `analyze_gene_set()` on the originally requested genes.
 - **Comparing history states before reverting** → `compare_network_states()`
   first; don't checkout blind.
+
+
+## NeKo-to-BioMASS export
+
+When ODE formulation and topology/evidence export are explicitly approved, route
+`export_biomass_handoff` through `network-curator`. Preserve references,
+biological context and stable edge IDs in the dedicated `neko-to-biomass` handoff.
+Follow `docs/ode-workflow.md`, including readiness and verified relocation capture.
+This branch does not require BNET or Boolean-specific connectivity criteria.
+Only the isolated ODE specialist receives BioMASS; the network specialist retains
+NeKo alone. Existing topology policies and conclusive-export gates still apply.

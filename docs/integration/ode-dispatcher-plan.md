@@ -8,7 +8,7 @@ The researcher approved creating a separate worktree based on `codex/specialist-
 - Base: `315cebcbc954068eafc16a26dfdfe784dc06a0a5`.
 - ODE feature source: `1e8f9a43c4fc249e43d94c71316fc798ee7ad01d`.
 - Preserved experiment: `model/cell-cycle-core`, audited at `3ce097e` and comparison committed at `8f0e0af`.
-- Current stage: **Phase 3 complete; Phase 4 skills/setup discussion next**.
+- Current stage: **Phase 4 complete; Phase 5 integration verification discussion next**.
 
 ## Evidence carried into this worktree
 
@@ -18,6 +18,7 @@ The researcher approved creating a separate worktree based on `codex/specialist-
 - [Phase 1 results and shutdown diagnosis](phase1-validation.md).
 - [Phase 2 contract and artifact validation](phase2-validation.md).
 - [Phase 3 execution and isolation validation](phase3-validation.md).
+- [Phase 4 skills, profiles and optional setup validation](phase4-validation.md).
 
 The audit packages are byte-preserved from the experiment commit, including their hashes. They are historical records. Some relative links within them identify model artifacts or ODE documents in the original audited branches; those targets have deliberately not been copied into this software checkout. Resolve them using their recorded Git revision or the original experiment worktree. The audit reports are not the active scientific state.
 
@@ -67,6 +68,18 @@ artifact round trips. Credential redaction preserves typed public ODE authorizat
 metadata, and early-failure provenance retains the requested scientific session.
 Orchestrator instructions, specialist profiles, installed configuration and
 scientific state remain unchanged. See [Phase 3 validation](phase3-validation.md).
+
+## Phase 4 outcome
+
+Completed after the researcher approved the richer ODE skills, Codex/Claude
+profiles and optional setup. BioMASS setup is opt-in; existing environments can be
+verified and reused without installation. Actual capabilities are checked before
+optional configuration writes. Candidate-saving instructions preserve complete
+workflows within one invocation and distinguish technical capture from scientific
+acceptance. Review fixes cover old profile migration, custom Graphviz paths,
+probe-child cleanup and literature isolation. SDK run: 335 passed. Default run:
+329 passed and six explicit SDK skips. Live activation remains gated on Phase 5;
+see [Phase 4 validation](phase4-validation.md).
 
 ## Contract choices
 
@@ -120,4 +133,9 @@ The desktop task that created this worktree remains attached to the original che
 
 ## Discussion checkpoint
 
-Phases 0–3 are complete. The next discussion concerns Phase 4: importing the richer ODE authoring skills and local references, reconciling Codex/Claude definitions, and adding optional BioMASS setup without making it a dependency for other workflows. Keep orchestrator ODE activation behind the applicable isolation checks. Broader telemetry, recovery and independent-review work remains separately scoped.
+Phases 0–4 are complete. The next discussion concerns Phase 5: verify this
+worktree's deployment and actual specialist/parent isolation, then exercise bounded
+software fixtures and reproduction. Decide the client scope and temporary profile
+strategy before touching installed configuration. Keep scientific ODE work gated
+until the applicable live checks pass. Broader telemetry, recovery and independent
+review work remains separately scoped.
