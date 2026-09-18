@@ -147,12 +147,21 @@ def mcp_config_arguments(
     approved_tools: list[str] | None = None,
     *,
     pubmed_transport: bool = False,
+    allow_web_search: bool = False,
 ) -> list[str]:
     _, permitted_server = SPECIALISTS[specialist]
+    if not isinstance(allow_web_search, bool):
+        raise ValueError("allow_web_search must be a boolean")
+    if allow_web_search and specialist != "literature_reviewer":
+        raise ValueError("--allow-web-search is valid only for literature_reviewer")
+    web_search = "live" if allow_web_search and not pubmed_transport else "disabled"
     # Specialists must not inherit the root's dispatcher and delegate recursively.
     arguments: list[str] = [
         # Built-in connector tools are not listed by `codex mcp list`.
         "-c", "features.apps=false",
+        # Cached web search can be enabled by default even without --search.
+        # Set the same explicit boundary for preflight and child execution.
+        "-c", f'web_search="{web_search}"',
         "-c", 'mcp_servers.specialist_dispatcher={"command"="__disabled_specialist_dispatcher__","enabled"=false}',
     ]
     if permitted_server != "biomass":
@@ -283,7 +292,7 @@ def build_command(
         raise ValueError("--allow-web-search is valid only for literature_reviewer")
 
     command = [codex]
-    if allow_web_search:
+    if allow_web_search and not pubmed_transport:
         command.append("--search")
     command.extend(
         [
@@ -307,6 +316,7 @@ def build_command(
             specialist,
             approved_tools,
             pubmed_transport=pubmed_transport,
+            allow_web_search=allow_web_search,
         )
     )
     contract_guidance = ""
@@ -343,6 +353,7 @@ def build_mcp_list_command(
     transport_arguments: list[str] | None = None,
     approved_tools: list[str] | None = None,
     pubmed_transport: bool = False,
+    allow_web_search: bool = False,
 ) -> list[str]:
     profile, _ = SPECIALISTS[specialist]
     return [
@@ -354,6 +365,7 @@ def build_mcp_list_command(
             specialist,
             approved_tools,
             pubmed_transport=pubmed_transport,
+            allow_web_search=allow_web_search,
         ),
         "mcp",
         "list",

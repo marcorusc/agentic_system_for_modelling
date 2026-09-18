@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import tempfile
+import tomllib
 import unittest
 from pathlib import Path
 
@@ -50,6 +51,54 @@ class Phase3IsolationTests(unittest.TestCase):
                 self.assertIn("--strict-config", execution)
                 self.assertEqual(execution[execution.index("--sandbox") + 1], "read-only")
                 self.assertNotIn("resume", execution)
+
+    def test_web_defaults_and_inherited_modes_are_overridden_in_both_commands(self):
+        for role in EXPECTED_ROLES:
+            for inherited in ("cached", "live"):
+                with self.subTest(role=role, inherited=inherited):
+                    # Fixed safety overrides must beat inherited configuration
+                    # and any earlier transport argument.
+                    transport = ["-c", f'web_search="{inherited}"']
+                    preflight = config.build_mcp_list_command("codex", role, transport)
+                    execution = config.build_command("codex", role, "inspect", transport_arguments=transport)
+                    self.assertEqual(overrides(preflight), overrides(execution))
+                    for command in (preflight, execution):
+                        mode = inherited
+                        for setting in overrides(command):
+                            mode = tomllib.loads(setting).get("web_search", mode)
+                        self.assertEqual(mode, "disabled")
+                        self.assertEqual([value for value in overrides(command) if value.startswith("web_search=")][-1],
+                                         'web_search="disabled"')
+                        self.assertNotIn("--search", command)
+
+    def test_authorized_literature_sets_explicit_live_in_preflight_and_execution(self):
+        for inherited in ("disabled", "cached", "live"):
+            with self.subTest(inherited=inherited):
+                kwargs = {"allow_web_search": True, "transport_arguments": ["-c", f'web_search="{inherited}"']}
+                preflight = config.build_mcp_list_command("codex", "literature_reviewer", **kwargs)
+                execution = config.build_command("codex", "literature_reviewer", "inspect", **kwargs)
+                self.assertEqual(overrides(preflight), overrides(execution))
+                for command in (preflight, execution):
+                    self.assertEqual([value for value in overrides(command) if value.startswith("web_search=")][-1],
+                                     'web_search="live"')
+                self.assertIn("--search", execution)
+
+    def test_pubmed_preference_keeps_web_disabled_even_when_fallback_authorized(self):
+        kwargs = {"allow_web_search": True, "pubmed_transport": True}
+        preflight = config.build_mcp_list_command("codex", "literature_reviewer", **kwargs)
+        execution = config.build_command("codex", "literature_reviewer", "inspect", **kwargs)
+        self.assertEqual(overrides(preflight), overrides(execution))
+        self.assertIn('web_search="disabled"', overrides(execution))
+        self.assertNotIn("--search", execution)
+
+    def test_preflight_web_authorization_is_literature_only_and_typed(self):
+        for role in EXPECTED_ROLES:
+            if role != "literature_reviewer":
+                with self.subTest(role=role), self.assertRaisesRegex(ValueError, "literature_reviewer"):
+                    config.build_mcp_list_command("codex", role, allow_web_search=True)
+        for value in ("false", 1, None):
+            with self.subTest(value=value), self.assertRaisesRegex(ValueError, "boolean"):
+                config.build_mcp_list_command("codex", "literature_reviewer", allow_web_search=value)
 
     def test_each_role_accepts_only_its_exact_server_and_rejects_aliases(self):
         for role, (_, permitted) in EXPECTED_ROLES.items():

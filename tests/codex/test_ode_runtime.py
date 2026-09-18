@@ -23,13 +23,26 @@ from scripts.codex.ode_evidence import write_ode_report
 from tests.codex.test_ode_integration import fixture as ode_fixture, refresh, evidence
 
 FAKE = r'''
-import json, pathlib, sys, time
+import json, pathlib, sys, time, tomllib
 root = pathlib.Path(__file__).parent
 with (root/'commands.jsonl').open('a') as log:
     log.write(json.dumps(sys.argv[1:])+'\n')
 settings = json.loads((root/'response.json').read_text())
 if '--version' in sys.argv:
     print('codex-cli 0.153.0'); sys.exit(0)
+mode = settings.get('inherited_web_search', 'cached')
+explicit = []
+for index, argument in enumerate(sys.argv[:-1]):
+    if argument == '-c':
+        values = tomllib.loads(sys.argv[index+1])
+        if 'web_search' in values:
+            mode = values['web_search']
+            explicit.append(mode)
+with (root/'web-modes.jsonl').open('a') as log:
+    log.write(json.dumps({'phase': 'preflight' if 'list' in sys.argv else 'execution',
+                         'web_search': mode, 'explicit': explicit})+'\n')
+if '--search' in sys.argv and mode != 'live':
+    raise SystemExit('search flag conflicts with explicit web mode')
 if 'list' in sys.argv:
     print(json.dumps(settings['inventory'])); sys.exit(0)
 output = pathlib.Path(sys.argv[sys.argv.index('--output-last-message')+1])
@@ -88,6 +101,7 @@ class ODERuntimeTests(unittest.TestCase):
         data.update(settings)
         self.settings.write_text(json.dumps(data))
         self.commands.write_text('')
+        (self.root/'web-modes.jsonl').write_text('')
 
     def finish(self, task):
         task_id = task['task_id']
@@ -159,6 +173,36 @@ class ODERuntimeTests(unittest.TestCase):
                     self.assertIn('mcp_servers.specialist_dispatcher={"command"="__disabled_specialist_dispatcher__","enabled"=false}', execution)
                 self.assertEqual(self.config_vector(calls[2]), self.config_vector(calls[5]))
                 self.assertEqual(calls[2][-1], calls[5][-1])
+
+    def test_inherited_web_isolation_matches_cli_and_dispatcher(self):
+        cases = [(role, False, None) for role in SPECIALISTS if role != 'literature_reviewer']
+        cases += [('literature_reviewer', False, None),
+                  ('literature_reviewer', False, 'pubmed'),
+                  ('literature_reviewer', True, 'pubmed'),
+                  ('literature_reviewer', True, 'web_search')]
+        for inherited in ('cached', 'live'):
+            for role, allowed, backend in cases:
+                with self.subTest(inherited=inherited, role=role, allowed=allowed, backend=backend):
+                    kind = 'edge' if role == 'literature_reviewer' else None
+                    self.configure(role, kind, backend=backend, inherited_web_search=inherited)
+                    request = Request(role, 'Inspect software fixture', 'fixture-session', allow_web_search=allowed)
+                    record = self.finish(self.manager.start(request))
+                    self.assertEqual(record['execution_state'], 'succeeded', record)
+                    args = [role, '--prompt', request.task, '--record-session-id', 'fixture-session']
+                    if allowed:
+                        args.append('--allow-web-search')
+                    with contextlib.redirect_stdout(io.StringIO()):
+                        self.assertEqual(cli.main(args), 0)
+                    rows = [json.loads(line) for line in (self.root/'web-modes.jsonl').read_text().splitlines()]
+                    expected = 'live' if backend == 'web_search' else 'disabled'
+                    backendless = role == 'literature_reviewer' and not allowed and backend is None
+                    self.assertEqual([row['phase'] for row in rows],
+                                     ['preflight'] * 2 if backendless else ['preflight', 'execution'] * 2)
+                    for row in rows:
+                        self.assertEqual(row['web_search'], expected)
+                        self.assertEqual(row['explicit'], [expected])
+                    metadata = self.provenance(record['artifact_dir'])
+                    self.assertEqual(metadata['web_search_enabled'], expected == 'live')
 
     def test_completed_ode_artifacts_pass_through_shared_runtime(self):
         handoff, _ = ode_fixture(self.root)

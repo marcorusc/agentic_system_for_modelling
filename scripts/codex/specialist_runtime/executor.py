@@ -176,6 +176,7 @@ def _run(request: SpecialistInvocationRequest, execution: SpecialistExecutionRes
                 transport_arguments,
                 approved_tools,
                 pubmed_transport=pubmed_transport,
+                allow_web_search=request.allow_web_search,
             ),
             cwd=PROJECT_ROOT,
             check=True,
