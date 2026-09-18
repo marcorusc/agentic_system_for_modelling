@@ -2,7 +2,7 @@
 
 ## Status and approved direction
 
-The researcher approved creating a separate worktree based on `codex/specialist-dispatcher` and integrating the features of `ODE-specialist`. They also requested a substantive design discussion before implementing the retrospective recommendations. Phase 0 prepared that discussion. The researcher then approved Phase 1 only: port the heartbeat synchronization fix, diagnose the SDK shutdown stall, test and commit, keeping dependency versions unchanged.
+The researcher approved creating a separate worktree based on `codex/specialist-dispatcher` and integrating the features of `ODE-specialist`. They also requested a substantive design discussion before implementing the retrospective recommendations. Phase 0 prepared that discussion. The researcher then approved Phase 1 only: port the heartbeat synchronization fix, diagnose the SDK shutdown stall, test and commit, keeping dependency versions unchanged. On 2026-09-18, they also approved automatic preservation of provisional ODE bundles within an already approved workflow; scientific acceptance and stage transitions remain approval-gated.
 
 - Working branch: `codex/modelling-architecture-integration`.
 - Base: `315cebcbc954068eafc16a26dfdfe784dc06a0a5`.
@@ -60,11 +60,11 @@ Recommendation: use the dedicated feature branch's `ode_modeler`, `biomass_ode` 
 
 Before implementation, decide whether the new validator must read the experiment's older ODE envelope immediately or whether a separate historical verifier is sufficient. Either way, do not silently treat two different version-1 payloads as interchangeable, and do not rewrite saved evidence to match the new name. Version or discriminate any changed contract explicitly.
 
-### 2. Routine snapshots versus scientific acceptance
+### 2. Routine snapshots versus scientific acceptance — approved 2026-09-18
 
-Recommendation: saving a provisional candidate, recording hashes and exporting a reproducible review snapshot should proceed within an already authorized workflow. These operations preserve work and do not imply scientific approval. Researcher approval should apply to accepting new scientific assumptions, consequential model changes, experiments outside the approved scope, and conclusive stage acceptance.
+Approved policy: saving a provisional candidate, recording hashes and exporting a reproducible review snapshot should proceed within an already authorized workflow. These operations preserve work and do not imply scientific approval. Researcher approval should apply to accepting new scientific assumptions, consequential model changes, experiments outside the approved scope, and conclusive stage acceptance.
 
-The ODE branch currently treats `export_model_bundle` as a conclusive operation requiring exact revision approval, while the experiment used exports to preserve review candidates. We need an explicit agreed distinction before changing that policy. Preserve provenance for both provisional and accepted artifacts. A candidate export must never masquerade as an accepted model.
+The ODE branch currently treats `export_model_bundle` as a conclusive operation requiring exact revision approval, while the experiment used exports to preserve review candidates. The researcher approved separating routine preservation from scientific acceptance. Preserve provenance for both provisional and accepted artifacts. A candidate export must never masquerade as an accepted model. The exact decision, implementation requirements and pending compatibility choice are recorded in [Phase 2 decisions](phase2-decisions.md). This policy is approved; the runtime and contract changes have not yet been implemented.
 
 ### 3. Completion and failure states
 
@@ -104,4 +104,4 @@ The desktop task that created this worktree remains attached to the original che
 
 ## Discussion checkpoint
 
-The researcher has accepted integration as the direction. The main unresolved scientific-policy choice is the treatment of provisional snapshots versus final acceptance. The role/contract compatibility choice and scope order are documented above for review. Implementing the proposed policy changes awaits this discussion. Preparation and the authorized baseline phase are complete; the proposed contract choices remain unapproved.
+Preparation and Phase 1 are complete. The researcher has now approved automatic provisional snapshots within an authorized workflow, with scientific acceptance still gated. The next decision is the canonical ODE contract and whether the new runtime must ingest historical experiment handoffs immediately. Other proposed contract choices remain under discussion. Phase 2 implementation and its completion commit are still pending.
