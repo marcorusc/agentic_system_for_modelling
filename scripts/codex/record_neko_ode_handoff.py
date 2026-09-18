@@ -33,6 +33,9 @@ def record_neko(project: Path, server_root: Path, manifest_path: Path, capture_i
     if not isinstance(artifact, dict) or artifact.get('server') != 'NeKo' or artifact.get('session_id') != session or artifact.get('role') != 'neko_ode_network':
         raise ValueError('NeKo network ownership mismatch')
     network = safe_file(source, Path(artifact['path']).relative_to(source).as_posix())
+    network_name = network.name
+    if network_name in {'original.handoff.json', 'import.handoff.json', 'relocation.json'}:
+        raise ValueError('NeKo network basename conflicts with capture metadata')
     expected = artifact.get('sha256')
     if not isinstance(expected, str) or not SHA.fullmatch(expected) or digest(network) != expected:
         raise ValueError('NeKo network hash mismatch')
@@ -44,13 +47,13 @@ def record_neko(project: Path, server_root: Path, manifest_path: Path, capture_i
     target = project / 'runs/network-curator' / session / 'ode-handoffs' / capture_id
     with staged_capture(project, target) as stage:
         (stage / 'original.handoff.json').write_bytes(original_bytes)
-        (stage / 'network.json').write_bytes(network_bytes)
-        if digest(stage / 'network.json') != expected:
+        (stage / network_name).write_bytes(network_bytes)
+        if digest(stage / network_name) != expected:
             raise ValueError('NeKo network changed while recording')
         if (stage / 'original.handoff.json').read_bytes() != original_bytes:
             raise ValueError('NeKo manifest changed while recording')
         imported = copy.deepcopy(manifest)
-        imported['network_file']['path'] = str(target / 'network.json')
+        imported['network_file']['path'] = str(target / network_name)
         (stage / 'import.handoff.json').write_text(json.dumps(imported, indent=2) + '\n', encoding='utf-8')
         provenance = {'original_manifest_sha256': digest(stage / 'original.handoff.json'),
                       'import_manifest_sha256': digest(stage / 'import.handoff.json'),
