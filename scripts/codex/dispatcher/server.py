@@ -20,6 +20,7 @@ START_ROLES = {
     "start_literature_reviewer": "literature_reviewer",
     "start_boolean_dynamics_modeler": "boolean_dynamics_modeler",
     "start_multicellular_configurator": "multicellular_configurator",
+    "start_ode_modeler": "ode_modeler",
 }
 INPUTS = {name: LiteratureStart if role == "literature_reviewer" else ModelStart
           for name, role in START_ROLES.items()} | {
@@ -47,7 +48,8 @@ def invoke(manager: TaskManager, name: str, arguments: dict) -> dict:
             specialist=START_ROLES[name], task=values["task"],
             record_session_id=values["record_session_id"],
             approved_tools=tuple(values.get("approved_tools", [])),
-            allow_web_search=values.get("allow_web_search", False)))
+            allow_web_search=values.get("allow_web_search", False),
+            review_kind=values.get("review_kind")))
     if name == "get_specialist_task":
         return manager.get(**values)
     if name == "get_specialist_events":

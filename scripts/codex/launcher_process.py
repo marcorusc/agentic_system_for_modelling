@@ -10,7 +10,7 @@ import subprocess
 import sys
 import threading
 import time
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, Callable, NamedTuple, TextIO
 
 
@@ -72,6 +72,28 @@ def redact_text(value: str) -> str:
     return SENSITIVE_ASSIGNMENT_RE.sub(r'\1"[REDACTED]"', value)
 
 
+def _public_ode_decision(key: str | None, value: object) -> bool:
+    """Recognize only typed public approval metadata, never credential values."""
+    if key == "standalone_authorized":
+        return type(value) is bool
+    if key != "workflow_authorization" or not isinstance(value, dict):
+        return False
+    if not {"path", "sha256", "decision_id"} <= value.keys():
+        return False
+    path, digest, decision = value["path"], value["sha256"], value["decision_id"]
+    return (
+        isinstance(path, str)
+        and path.startswith("runs/ode-modeler/")
+        and "\\" not in path
+        and ".." not in PurePosixPath(path).parts
+        and path == PurePosixPath(path).as_posix()
+        and isinstance(digest, str)
+        and re.fullmatch(r"[0-9a-fA-F]{64}", digest) is not None
+        and isinstance(decision, str)
+        and re.fullmatch(r"[A-Za-z0-9._-]+", decision) is not None
+    )
+
+
 def sanitize_json_value(value: object, *, key: str | None = None) -> object:
     """Preserve event structure while redacting values under sensitive keys."""
 
@@ -79,6 +101,7 @@ def sanitize_json_value(value: object, *, key: str | None = None) -> object:
         key is not None
         and not key.lower().replace("-", "_").endswith("_tokens")
         and SENSITIVE_FIELD_RE.search(key)
+        and not _public_ode_decision(key, value)
     ):
         return "[REDACTED]"
     if isinstance(value, dict):

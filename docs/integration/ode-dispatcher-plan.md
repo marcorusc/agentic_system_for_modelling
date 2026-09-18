@@ -8,7 +8,7 @@ The researcher approved creating a separate worktree based on `codex/specialist-
 - Base: `315cebcbc954068eafc16a26dfdfe784dc06a0a5`.
 - ODE feature source: `1e8f9a43c4fc249e43d94c71316fc798ee7ad01d`.
 - Preserved experiment: `model/cell-cycle-core`, audited at `3ce097e` and comparison committed at `8f0e0af`.
-- Current stage: **Phase 2 complete; Phase 3 routing discussion next**.
+- Current stage: **Phase 3 complete; Phase 4 skills/setup discussion next**.
 
 ## Evidence carried into this worktree
 
@@ -17,6 +17,7 @@ The researcher approved creating a separate worktree based on `codex/specialist-
 - [Preparation checks](worktree-readiness.json).
 - [Phase 1 results and shutdown diagnosis](phase1-validation.md).
 - [Phase 2 contract and artifact validation](phase2-validation.md).
+- [Phase 3 execution and isolation validation](phase3-validation.md).
 
 The audit packages are byte-preserved from the experiment commit, including their hashes. They are historical records. Some relative links within them identify model artifacts or ODE documents in the original audited branches; those targets have deliberately not been copied into this software checkout. Resolve them using their recorded Git revision or the original experiment worktree. The audit reports are not the active scientific state.
 
@@ -56,6 +57,16 @@ The SDK run passed all 176 tests. The default run passed 172 tests with four exp
 ## Phase 2 outcome
 
 Completed after approval of the two contract decisions. The richer ODE contract and evidence mode are integrated with versioned provisional-preservation semantics; capture publication is atomic for cooperating POSIX recorders. Independent software review identified five validation gaps, all fixed and regression-tested. Final SDK run: 262 passed. Default run: 258 passed and four explicit SDK skips. See [Phase 2 validation](phase2-validation.md).
+
+## Phase 3 outcome
+
+The researcher approved the canonical ODE start tool and explicit ODE evidence mode
+through the existing isolated runtime. Both dispatcher and CLI now use that route;
+software fixtures check isolation, mode/session validation, failure recording and
+artifact round trips. Credential redaction preserves typed public ODE authorization
+metadata, and early-failure provenance retains the requested scientific session.
+Orchestrator instructions, specialist profiles, installed configuration and
+scientific state remain unchanged. See [Phase 3 validation](phase3-validation.md).
 
 ## Contract choices
 
@@ -109,4 +120,4 @@ The desktop task that created this worktree remains attached to the original che
 
 ## Discussion checkpoint
 
-Preparation and Phase 1 are complete. Provisional snapshot preservation and the richer `ode_modeler` contract are approved and implemented; Phase 2 is complete. The next discussion concerns Phase 3: adding the canonical start tool and carrying ODE evidence mode through the existing isolated runtime. Broader telemetry, recovery and independent-review work remains separately scoped.
+Phases 0–3 are complete. The next discussion concerns Phase 4: importing the richer ODE authoring skills and local references, reconciling Codex/Claude definitions, and adding optional BioMASS setup without making it a dependency for other workflows. Keep orchestrator ODE activation behind the applicable isolation checks. Broader telemetry, recovery and independent-review work remains separately scoped.

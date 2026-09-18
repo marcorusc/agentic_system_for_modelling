@@ -2,7 +2,7 @@
 
 ## Availability and scope
 
-The integration branch validates the richer `ode_modeler` result and records BioMASS artifacts through filesystem-only helpers. This Phase 2 layer does not launch a specialist, call BioMASS, generate or execute a model, advance a scientific stage, or update shared scientific records. Dispatcher/CLI routing is added in Phase 3; specialist instructions and setup follow in Phase 4.
+The integration branch validates the richer `ode_modeler` result and records BioMASS artifacts through filesystem-only helpers. Phase 3 adds the shared CLI/dispatcher execution route and explicit ODE evidence mode. The artifact helpers do not call BioMASS, generate or execute a model, advance a scientific stage, or update shared scientific records. Specialist instructions, profiles and setup follow in Phase 4; orchestrator routing is not yet activated for ODE.
 
 New ODE results use the common `schema_version=1` envelope with `specialist=ode_modeler`, `stage=biomass_ode`, and **`ode.contract_version=2`**. Artifacts belong to `runs/ode-modeler/{session_id}/`. Historical unversioned ODE payloads and the experiment's `ode_dynamics_modeler` format require their original verifier. The new validator does not rewrite or alias them.
 
@@ -103,6 +103,6 @@ The orchestrator writes one immutable report with:
 python scripts/codex/write_literature_report.py --session-id SESSION --claim-id CLAIM --draft-file draft.md
 ```
 
-Reports live at `evidence/reports/{biomass_session_id}/ode/{claim_id}.md`. Existing edge-report arguments and behavior remain available. Completed ODE literature handoffs require `review_kind=ode` and explicit validation with `--review-kind ode` (or the matching validator argument). An unspecified review mode remains edge-only, including in the existing dispatcher until Phase 3 transports the mode explicitly.
+Reports live at `evidence/reports/{biomass_session_id}/ode/{claim_id}.md`. Existing edge-report arguments and behavior remain available. Completed ODE literature handoffs require `review_kind=ode` and explicit validation with `--review-kind ode` (or the matching validator argument). An unspecified review mode remains edge-only. The dispatcher and CLI transport `review_kind=ode` explicitly and require `record_session_id` for an ODE review. Invocation records are stored under `runs/ode-modeler/{biomass_session_id}/specialist-invocations/`; the expected mode and session are retained in provenance, including early failure records.
 
 Evidence schema validation checks structure and declared access; it cannot establish that a citation supports the biological claim. Literature gathering still uses a bounded isolated reviewer and the existing source/approval rules.

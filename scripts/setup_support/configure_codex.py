@@ -11,13 +11,22 @@ from scripts.codex.launcher_config import SPECIALISTS, toml_literal
 from .state import SetupError
 
 
+# Setup capabilities are intentionally narrower than available runtime roles.
+# Optional ODE profiles/dependencies are integrated in the next setup phase.
+SETUP_SPECIALISTS = (
+    "network_curator", "literature_reviewer",
+    "boolean_dynamics_modeler", "multicellular_configurator",
+)
+
+
 def render(root: Path, prefix: Path, codex_home: Path) -> dict[Path, str]:
     parent = tomllib.loads((root/".codex/config.toml").read_text())
     for server in ("neko", "maboss", "physicell"):
         if parent.get("mcp_servers", {}).get(server, {}).get("enabled") is not False:
             raise SetupError(f"Parent isolation is unsafe: {server} must remain disabled in .codex/config.toml")
     outputs = {}
-    for role, (profile, server) in SPECIALISTS.items():
+    for role in SETUP_SPECIALISTS:
+        profile, server = SPECIALISTS[role]
         target = codex_home/f"{profile}.config.toml"
         if target.is_symlink():
             raise SetupError(f"Refusing symlink profile: {target}")

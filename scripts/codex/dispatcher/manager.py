@@ -59,6 +59,7 @@ class TaskManager:
                 "finished_at": None, "invocation_id": prepared.invocation_id,
                 "record_session_id": request.record_session_id,
                 "approved_tools": list(request.approved_tools), "allow_web_search": request.allow_web_search,
+                "review_kind": request.review_kind,
                 "prompt_sha256": hashlib.sha256(request.task.encode("utf-8")).hexdigest(),
                 "artifact_dir": self._relative(prepared.artifact_dir), "event_stream": None,
                 "current_activity": None, "last_event_sequence": 0, "return_code": None,

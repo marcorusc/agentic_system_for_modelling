@@ -57,6 +57,7 @@ class RuntimeTests(unittest.TestCase):
             {"approved_tools": [5]}, {"approved_tools": "create_session"},
             {"allow_web_search": True}, {"allow_web_search": "false"},
             {"provenance_transport": "arbitrary"},
+            {"review_kind": "edge"}, {"review_kind": "ode"},
         ]
         for changes in cases:
             with self.subTest(changes=changes), self.assertRaises(ValueError):
@@ -121,3 +122,68 @@ class RuntimeTests(unittest.TestCase):
             a = executor.execute(SpecialistInvocationRequest("network_curator", "one"))
             b = executor.execute(SpecialistInvocationRequest("network_curator", "two"))
         self.assertNotEqual(a.invocation_id, b.invocation_id)
+
+    def test_review_kind_is_explicit_and_session_scoped(self):
+        self.assertEqual(SpecialistInvocationRequest("literature_reviewer", "inspect").review_kind, "edge")
+        self.assertEqual(SpecialistInvocationRequest("literature_reviewer", "inspect", "bio-session", review_kind="ode").review_kind, "ode")
+        for changes in ({"review_kind": "other"}, {"review_kind": True}, {"review_kind": []}, {"review_kind": "ode"}):
+            with self.subTest(changes=changes), self.assertRaises(ValueError):
+                SpecialistInvocationRequest("literature_reviewer", "inspect", **changes)
+        self.assertIsNone(SpecialistInvocationRequest("ode_modeler", "inspect").review_kind)
+
+    def test_early_failure_and_cancellation_preserve_ode_review_mode(self):
+        request = SpecialistInvocationRequest("literature_reviewer", "inspect", "bio-session", review_kind="ode")
+        for cancelled in (False, True):
+            with self.subTest(cancelled=cancelled), \
+                 mock.patch.object(executor, "resolve_codex_executable", return_value="codex"), \
+                 mock.patch.object(executor, "profile_path", return_value=executor.PROJECT_ROOT/"missing"), \
+                 mock.patch.object(executor, "stream_jsonl_process") as stream:
+                result = executor.execute(request, cancellation_requested=lambda: cancelled)
+            stream.assert_not_called()
+            self.assertEqual(result.return_code, 130 if cancelled else 2)
+            self.assertIsNone(result.handoff)
+            self.assertIn("runs/ode-modeler/_launcher-runs", result.artifact_dir.as_posix())
+            provenance = json.loads((result.artifact_dir/"provenance.json").read_text())
+            self.assertEqual(provenance["review_kind"], "ode")
+            self.assertEqual(provenance["record_session_id"], "bio-session")
+
+    def test_backendless_ode_review_keeps_mode_and_biomass_session(self):
+        profile = executor.PROJECT_ROOT/"profile.toml"
+        profile.write_text("[mcp_servers]\n")
+        with mock.patch.object(executor, "resolve_codex_executable", return_value=str(profile)), \
+             mock.patch.object(executor, "profile_path", return_value=profile), \
+             mock.patch.object(executor.subprocess, "run", side_effect=[
+                 mock.Mock(stdout="codex-cli 0.153.0", stderr=""), mock.Mock(stdout="[]")]), \
+             mock.patch.object(executor, "stream_jsonl_process") as stream:
+            result = executor.execute(SpecialistInvocationRequest("literature_reviewer", "inspect", "bio-session", review_kind="ode"))
+        stream.assert_not_called()
+        self.assertEqual(result.execution_state, ExecutionState.SUCCEEDED)
+        self.assertEqual(result.handoff["status"], "blocked")
+        self.assertEqual(result.handoff["review_kind"], "ode")
+        self.assertEqual(result.handoff["session_id"], "bio-session")
+        self.assertIn("runs/ode-modeler/bio-session/specialist-invocations", result.artifact_dir.as_posix())
+        provenance = json.loads((result.artifact_dir/"provenance.json").read_text())
+        self.assertEqual(provenance["review_kind"], "ode")
+        self.assertFalse(provenance["process_started"])
+        self.assertFalse(any(provenance["mcp_enabled"].values()))
+
+    def test_ode_public_authority_metadata_survives_credential_redaction(self):
+        decision = {"path": "runs/ode-modeler/bio-session/workflow.md", "sha256": "a"*64, "decision_id": "workflow-1"}
+        handoff = {"specialist": "ode_modeler", "ode": {"standalone_authorized": True, "workflow_authorization": decision},
+                   "authorization": "Bearer credential-secret", "api_key": "credential-secret"}
+        output, sanitized = executor.sanitize_final_output(json.dumps(handoff))
+        self.assertEqual(sanitized["ode"], handoff["ode"])
+        self.assertNotIn("credential-secret", output)
+        for malformed in ("credential-secret", {"path": "credential-secret"}):
+            handoff["ode"]["workflow_authorization"] = malformed
+            handoff["ode"]["standalone_authorized"] = "credential-secret"
+            output, sanitized = executor.sanitize_final_output(json.dumps(handoff))
+            self.assertNotIn("credential-secret", output)
+            self.assertEqual(sanitized["ode"]["standalone_authorized"], "[REDACTED]")
+            self.assertEqual(sanitized["ode"]["workflow_authorization"], "[REDACTED]")
+
+        handoff["ode"]["workflow_authorization"] = dict(decision, api_key="credential-secret", reviewed_by="researcher")
+        output, sanitized = executor.sanitize_final_output(json.dumps(handoff))
+        self.assertNotIn("credential-secret", output)
+        self.assertEqual(sanitized["ode"]["workflow_authorization"]["api_key"], "[REDACTED]")
+        self.assertEqual(sanitized["ode"]["workflow_authorization"]["reviewed_by"], "researcher")

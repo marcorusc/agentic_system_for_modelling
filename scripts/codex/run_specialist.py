@@ -202,6 +202,11 @@ def parser() -> argparse.ArgumentParser:
         help="Enable live web search for the literature reviewer only",
     )
     result.add_argument(
+        "--review-kind",
+        choices=("edge", "ode"),
+        help="Literature evidence mode (default: edge); ODE requires --record-session-id",
+    )
+    result.add_argument(
         "--record-session-id",
         help="Expected existing/upstream session ID used to place invocation artifacts",
     )
@@ -246,6 +251,7 @@ def run_windows_bridge(args: argparse.Namespace) -> int:
             allow_web_search=args.allow_web_search,
             record_session_id=args.record_session_id,
             approved_tools=getattr(args, "approve_tool", []),
+            review_kind=getattr(args, "review_kind", None),
         )
         process = subprocess.Popen(command, stdin=subprocess.DEVNULL)
         try:
@@ -269,6 +275,7 @@ def run_native(args: argparse.Namespace) -> int:
             approved_tools=tuple(getattr(args, "approve_tool", [])),
             allow_web_search=args.allow_web_search,
             provenance_transport=args.provenance_transport,
+            review_kind=getattr(args, "review_kind", None),
         )
     except (OSError, ValueError) as exc:
         emit_status(f"preflight failed: {exc}")

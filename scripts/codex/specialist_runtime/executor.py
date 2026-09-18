@@ -34,6 +34,7 @@ def prepare(request: SpecialistInvocationRequest) -> SpecialistExecutionResult:
     artifact_dir = create_launcher_run(
         project_root=PROJECT_ROOT, specialist=request.specialist,
         prompt=request.task, launcher_run_id=invocation_id,
+        review_kind=request.review_kind,
     )
     # Store the exact original bytes, including trailing whitespace.
     (artifact_dir / "task.txt").write_text(request.task, encoding="utf-8")
@@ -78,12 +79,15 @@ def sanitize_final_output(output: str) -> tuple[str, dict[str, Any] | None]:
     return json.dumps(sanitized, indent=2, ensure_ascii=False) + "\n", sanitized
 
 
-def unavailable_literature_handoff(session_id: str | None) -> dict[str, Any]:
+def unavailable_literature_handoff(
+    session_id: str | None, review_kind: str = "edge",
+) -> dict[str, Any]:
     """Return a valid fail-closed result without starting a backend-less agent."""
 
     return {
         "schema_version": 1,
         "specialist": "literature_reviewer",
+        "review_kind": review_kind,
         "status": "blocked",
         "stage": "literature_review",
         "session_id": session_id,
@@ -96,7 +100,7 @@ def unavailable_literature_handoff(session_id: str | None) -> dict[str, Any]:
         "artifacts": [],
         "validation": {
             "checks": [
-                "NeKo, MaBoSS, and PhysiCell were disabled",
+                "NeKo, MaBoSS, PhysiCell, and BioMASS were disabled",
                 "No PubMed MCP or explicitly enabled web-search backend was available",
             ],
             "passed": False,
@@ -223,7 +227,7 @@ def _run(request: SpecialistInvocationRequest, execution: SpecialistExecutionRes
 
     if request.specialist == "literature_reviewer" and literature_backend == "unavailable":
         transition(ExecutionState.VALIDATING)
-        handoff = unavailable_literature_handoff(request.record_session_id)
+        handoff = unavailable_literature_handoff(request.record_session_id, request.review_kind)
         final_output = json.dumps(handoff, indent=2, sort_keys=True) + "\n"
         handoff_error = None
         transition(ExecutionState.RECORDING)
@@ -233,6 +237,8 @@ def _run(request: SpecialistInvocationRequest, execution: SpecialistExecutionRes
             "invocation_id": invocation_id,
             "launcher_run_id": invocation_id,
             "specialist": request.specialist,
+            "review_kind": request.review_kind,
+            "record_session_id": request.record_session_id,
             "profile": profile,
             "transport": request.provenance_transport,
             "started_at": started_at,
@@ -266,6 +272,7 @@ def _run(request: SpecialistInvocationRequest, execution: SpecialistExecutionRes
                 project_root=PROJECT_ROOT,
                 expected_specialist=request.specialist,
                 expected_session_id=request.record_session_id,
+                expected_review_kind=request.review_kind,
             )
             artifact_dir = record_invocation(
                 project_root=PROJECT_ROOT,
@@ -277,6 +284,7 @@ def _run(request: SpecialistInvocationRequest, execution: SpecialistExecutionRes
                 provenance=provenance,
                 invocation_id=invocation_id,
                 launcher_dir=execution.artifact_dir,
+                review_kind=request.review_kind,
             )
         except (HandoffValidationError, OSError, ValueError) as error:
             emit_status(f"failed to record blocked literature invocation: {error}")
@@ -314,6 +322,7 @@ def _run(request: SpecialistInvocationRequest, execution: SpecialistExecutionRes
             transport_arguments,
             approved_tools,
             pubmed_transport=pubmed_transport,
+            review_kind=request.review_kind,
         )
         execution.artifact_dir = launcher_dir
         execution.event_stream = launcher_dir / "events.jsonl"
@@ -349,6 +358,7 @@ def _run(request: SpecialistInvocationRequest, execution: SpecialistExecutionRes
                 project_root=PROJECT_ROOT,
                 expected_specialist=request.specialist,
                 expected_session_id=request.record_session_id,
+                expected_review_kind=request.review_kind,
             )
         except HandoffValidationError as error:
             handoff_error = str(error)
@@ -365,6 +375,8 @@ def _run(request: SpecialistInvocationRequest, execution: SpecialistExecutionRes
         "invocation_id": invocation_id,
         "launcher_run_id": invocation_id,
         "specialist": request.specialist,
+        "review_kind": request.review_kind,
+        "record_session_id": request.record_session_id,
         "profile": profile,
         "transport": request.provenance_transport,
         "started_at": started_at,
@@ -404,6 +416,7 @@ def _run(request: SpecialistInvocationRequest, execution: SpecialistExecutionRes
             provenance=provenance,
             invocation_id=invocation_id,
             launcher_dir=launcher_dir,
+            review_kind=request.review_kind,
         )
         execution.artifact_dir = artifact_dir
         execution.event_stream = (
@@ -499,6 +512,8 @@ def execute(request: SpecialistInvocationRequest, *,
             write_json(execution.artifact_dir / "provenance.json", {
                 "schema_version": 1, "invocation_id": execution.invocation_id,
                 "dispatcher_task_id": dispatcher_task_id, "specialist": request.specialist,
+                "review_kind": request.review_kind,
+                "record_session_id": request.record_session_id,
                 "started_at": execution.started_at, "finished_at": execution.finished_at,
                 "launcher_exit_code": code, "cancelled": code == 130,
                 "error": execution.handoff_error,

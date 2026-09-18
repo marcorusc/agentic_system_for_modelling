@@ -6,7 +6,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
-from scripts.codex.launcher_config import SPECIALISTS, validate_approved_tools, validate_session_id
+from scripts.codex.launcher_config import SPECIALISTS, normalize_review_kind, validate_approved_tools, validate_session_id
 
 
 class ExecutionState(str, Enum):
@@ -28,6 +28,7 @@ class SpecialistInvocationRequest:
     approved_tools: tuple[str, ...] = ()
     allow_web_search: bool = False
     provenance_transport: str = "native-wsl"
+    review_kind: str | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.specialist, str) or self.specialist not in SPECIALISTS:
@@ -49,6 +50,11 @@ class SpecialistInvocationRequest:
             raise ValueError("allow_web_search must be a boolean")
         if self.allow_web_search and self.specialist != "literature_reviewer":
             raise ValueError("web search is valid only for literature_reviewer")
+        object.__setattr__(self, "review_kind", normalize_review_kind(
+            self.specialist, self.review_kind
+        ))
+        if self.review_kind == "ode" and self.record_session_id is None:
+            raise ValueError("ODE evidence review requires record_session_id")
         if self.provenance_transport not in ("native-wsl", "windows-wsl"):
             raise ValueError("unknown provenance transport")
 

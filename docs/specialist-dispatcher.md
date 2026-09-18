@@ -4,6 +4,10 @@ The dispatcher is the preferred specialist interface. Phases 0–8 are complete 
 Scientific approval gates remain unchanged; the completed live test does not
 establish biological validity. See the [tool and startup guide](../scripts/codex/dispatcher/README.md).
 
+The phases below record the original dispatcher implementation. The separate ODE
+integration has completed its shared-runtime phase; profiles, skills and live ODE
+verification remain pending. See [ODE integration Phase 3](integration/phase3-validation.md).
+
 ## Phase 0 — baseline (2026-09-15)
 
 Implementation follows the supplied **Specialist Dispatcher Architecture** plan,

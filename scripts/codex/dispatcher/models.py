@@ -1,5 +1,7 @@
 """Strict public MCP inputs. Callers cannot choose commands, profiles or paths."""
-from pydantic import BaseModel, ConfigDict, Field
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class StrictInput(BaseModel):
@@ -16,6 +18,13 @@ class LiteratureStart(StrictInput):
     task: str = Field(min_length=1, max_length=64000)
     record_session_id: str | None = None
     allow_web_search: bool = False
+    review_kind: Literal["edge", "ode"] = "edge"
+
+    @model_validator(mode="after")
+    def require_ode_session(self) -> "LiteratureStart":
+        if self.review_kind == "ode" and self.record_session_id is None:
+            raise ValueError("ODE literature review requires record_session_id")
+        return self
 
 
 class TaskQuery(StrictInput):

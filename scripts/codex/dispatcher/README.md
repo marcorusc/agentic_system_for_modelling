@@ -20,9 +20,10 @@ available; the dispatcher itself runs inside WSL.
 Tools:
 
 - `start_network_curator(task, record_session_id?, approved_tools?)`
-- `start_literature_reviewer(task, record_session_id?, allow_web_search?)`
+- `start_literature_reviewer(task, record_session_id?, allow_web_search?, review_kind="edge")`
 - `start_boolean_dynamics_modeler(task, record_session_id?, approved_tools?)`
 - `start_multicellular_configurator(task, record_session_id?, approved_tools?)`
+- `start_ode_modeler(task, record_session_id?, approved_tools?)`
 - `get_specialist_task(task_id)`
 - `get_specialist_events(task_id, after_sequence=0, limit=50)`
 - `list_specialist_tasks(limit=50)`
@@ -56,6 +57,35 @@ Phases 6–7 verified same-conversation
 progress and a real 60-gene construction in this WSL workspace. The parent verified
 and persisted its review artifacts; biological approval remains pending. See
 [troubleshooting and recovery](../../../docs/specialist-dispatcher.md#troubleshooting-and-recovery).
+
+## ODE integration route
+
+Integration Phase 3 adds `start_ode_modeler` through the same runtime as the CLI.
+It uses the fixed `biomodel-ode-modeler` profile and permits only BioMASS. The
+profile must already exist; missing configuration fails before child execution.
+The other specialists disable BioMASS, including installations without an optional
+BioMASS transport. No additional scientific workflow is activated by this endpoint.
+Profile/skill/setup integration is Phase 4 work; the original dispatcher's live
+migration checks above are historical and do not establish live ODE readiness.
+
+Literature review defaults to `review_kind="edge"`. Use `review_kind="ode"` for
+bounded mechanism, kinetic-law and quantity claims, together with the BioMASS
+`record_session_id`. Both modes use the same literature profile, no modelling
+servers, and the same shared limit of two reviewers. PubMed is preferred; web
+search requires explicit authorization. Without either backend, the runtime
+returns a recorded scientific `blocked` result without starting a child.
+A handoff with the wrong review kind or session is rejected.
+
+The CLI equivalent accepts `--review-kind ode --record-session-id <session>`
+for `literature_reviewer`; the Windows-to-WSL bridge forwards both arguments.
+Other roles reject `--review-kind`. Technical records retain the requested mode
+and session even if preflight fails. ODE review invocations use `runs/ode-modeler/`;
+edge review invocations retain `runs/network-curator/`. Evidence reports keep
+their contract-defined locations under `evidence/reports/`.
+
+See the [ODE contract](../../../docs/ode-contract.md) and
+[Phase 3 validation](../../../docs/integration/phase3-validation.md) for the
+software test coverage and remaining live-verification limits.
 
 ## Workstation startup
 

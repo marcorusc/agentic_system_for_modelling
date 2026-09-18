@@ -12,7 +12,7 @@ from scripts.codex.dispatcher.store import TaskStore
 from scripts.codex.specialist_runtime import executor
 from scripts.codex.specialist_runtime.lifecycle import TRANSITIONS, validate_transition, TERMINAL
 from scripts.codex.specialist_runtime.models import ExecutionState as State, SpecialistInvocationRequest as Request
-from scripts.codex.launcher_config import SPECIALISTS, validate_mcp_inventory
+from scripts.codex.launcher_config import MODELLING_SERVERS, SPECIALISTS, validate_mcp_inventory
 
 class DispatcherTests(unittest.TestCase):
     def setUp(self):
@@ -116,7 +116,7 @@ class DispatcherTests(unittest.TestCase):
         manager = self.manager(runner)
         task = manager.start(Request('network_curator', 'bounded input  \n'))
         self.assertTrue(started.wait(1))
-        for role in ('network_curator','boolean_dynamics_modeler','multicellular_configurator'):
+        for role in ('network_curator','boolean_dynamics_modeler','multicellular_configurator','ode_modeler'):
             with self.assertRaisesRegex(ValueError,'concurrency'): manager.start(Request(role,'inspect'))
         for _ in range(2): manager.start(Request('literature_reviewer','inspect'))
         with self.assertRaisesRegex(ValueError,'concurrency'): manager.start(Request('literature_reviewer','inspect'))
@@ -133,9 +133,9 @@ class DispatcherTests(unittest.TestCase):
 
     def test_every_specialist_hostile_inventory_rejected(self):
         for role, (_, permitted) in SPECIALISTS.items():
-            safe = [{'name':name,'enabled':name==permitted} for name in ('neko','maboss','physicell')]
+            safe = [{'name':name,'enabled':name==permitted} for name in MODELLING_SERVERS]
             validate_mcp_inventory(safe,role)
-            for name in ('neko','maboss','physicell','specialist_dispatcher','unknown'):
+            for name in (*MODELLING_SERVERS, 'specialist_dispatcher', 'unknown'):
                 if name == permitted: continue
                 inventory = [row for row in safe if row['name']!=name]+[{'name':name,'enabled':True}]
                 with self.subTest(role=role, prohibited=name), self.assertRaises(ValueError):
