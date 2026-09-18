@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-17",
+  "phase": 1,
+  "status": "complete",
+  "branch": "codex/modelling-architecture-integration",
+  "starting_commit": "9ea06e7",
+  "heartbeat_fix_source": "4583c0ce3f77b2c79f82c9b6f139e1e51602f645",
+  "test_runs": [
+    {
+      "environment": "default",
+      "python": "3.14.4",
+      "mcp": null,
+      "anyio": null,
+      "restricted_sandbox": true,
+      "exit_code": 0,
+      "passed": 172,
+      "skipped": 4,
+      "suites": [
+        {
+          "suite": "tests/codex",
+          "discovered": 131,
+          "passed": 127,
+          "skipped": 4,
+          "seconds": 5.625
+        },
+        {
+          "suite": ".claude/scripts",
+          "discovered": 19,
+          "passed": 19,
+          "skipped": 0,
+          "seconds": 4.064
+        },
+        {
+          "suite": "tests/setup",
+          "discovered": 26,
+          "passed": 26,
+          "skipped": 0,
+          "seconds": 0.261
+        }
+      ],
+      "temporary_log": "/tmp/integration-phase1-default-tests.log",
+      "log_sha256": "bb24789d393271b01ef2511b57b4da0bca02516a98907b0175c3d7623223da76"
+    },
+    {
+      "environment": "sdk",
+      "python": "3.14.6",
+      "mcp": "2.0.0",
+      "anyio": "4.14.2",
+      "restricted_sandbox": false,
+      "exit_code": 0,
+      "passed": 176,
+      "skipped": 0,
+      "suites": [
+        {
+          "suite": "tests/codex",
+          "discovered": 131,
+          "passed": 131,
+          "skipped": 0,
+          "seconds": 7.596
+        },
+        {
+          "suite": ".claude/scripts",
+          "discovered": 19,
+          "passed": 19,
+          "skipped": 0,
+          "seconds": 3.87
+        },
+        {
+          "suite": "tests/setup",
+          "discovered": 26,
+          "passed": 26,
+          "skipped": 0,
+          "seconds": 0.239
+        }
+      ],
+      "temporary_log": "/tmp/integration-phase1-sdk-tests.log",
+      "log_sha256": "2c85d800b76cdc6d4110fc97d28dd365a2029b49482044ac2bcf0cb519b29642"
+    }
+  ],
+  "shutdown_diagnosis": {
+    "minimal_reproducer_uses_mcp": false,
+    "restricted_socket_write": "PermissionError: [Errno 1] Operation not permitted",
+    "restricted_debug_reproducer_exit_code": 124,
+    "unrestricted_reproducer_exit_code": 0,
+    "unrestricted_reproducer_seconds": 0.031,
+    "sdk_protocol_tests_passed": 4,
+    "sdk_protocol_seconds": 1.971,
+    "runtime_changed": false,
+    "dependencies_changed": false
+  },
+  "suite_timeout_seconds": 120,
+  "scientific_state_matches_preparation": true,
+  "original_experiment_head": "8f0e0af6efb02f363b39449f7136847611070af5",
+  "original_experiment_tracked_diff_empty": true,
+  "modelling_sessions_created": false,
+  "remote_ci_run": false,
+  "phase2_started": false
+}

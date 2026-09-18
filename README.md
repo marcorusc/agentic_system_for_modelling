@@ -620,8 +620,10 @@ python scripts/run_tests.py
 ```
 
 From outside the repository, use the absolute path to that script. It runs all
-suites even if one fails and returns a nonzero exit status on failure. Tests use
-temporary repositories and subprocess fixtures; no modelling servers, credentials,
+suites even if one fails and returns a nonzero exit status on failure. Each suite
+has a 120-second limit; a timeout is reported as a failure and the remaining suites
+still run. On POSIX systems, timeout cleanup terminates the suite's process group,
+including fixtures that inherit that group. Tests use temporary repositories and subprocess fixtures; no modelling servers, credentials,
 or third-party Python packages are required. The GitHub Actions workflow runs the
 same command on Python 3.11 and 3.13.
 

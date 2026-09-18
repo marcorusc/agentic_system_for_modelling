@@ -43,6 +43,11 @@ artifacts but cannot authorize a downstream stage.
 Run `python scripts/run_tests.py` with the SDK installed to include real MCP client
 and stdio tests. The stdlib-only job skips protocol tests; a separate CI job
 installs the SDK and runs the full suite. Real model calls are never part of CI.
+The runner fails a suite after 120 seconds and continues the remaining suites.
+If a protocol test prints `ok` but hangs during shutdown, check whether the host
+sandbox denies Python's local asyncio wake-up socket. A minimal reproduction and
+the verified environment are in the [integration baseline report](../../../docs/integration/phase1-validation.md).
+Individual `ok` lines do not establish successful process termination.
 
 The live isolation and equivalence gate passed in Phase 4. Phase 5 routes
 specialist work through this dispatcher; `scripts/codex/run_specialist.py` remains

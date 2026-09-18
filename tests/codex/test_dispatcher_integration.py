@@ -100,9 +100,10 @@ class IntegrationTests(unittest.TestCase):
         deadline=time.monotonic()+3
         while time.monotonic()<deadline:
             events=self.manager.events(task_id,limit=200)
-            if any(e['type']=='heartbeat' for e in events['events']): break
+            if (any(e['type']=='heartbeat' for e in events['events'])
+                    and self.manager.get(task_id)['current_activity'] is not None): break
             time.sleep(.01)
-        else: self.fail('no heartbeat')
+        else: self.fail('heartbeat and active tool were not both observed')
         self.assertEqual(self.manager.get(task_id)['current_activity']['names'],['neko.inspect'])
         self.manager.cancel(task_id)
         record=self.finish(task_id)

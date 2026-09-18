@@ -2,19 +2,20 @@
 
 ## Status and approved direction
 
-The researcher approved creating a separate worktree based on `codex/specialist-dispatcher` and integrating the features of `ODE-specialist`. They also requested a substantive design discussion before implementing the retrospective recommendations. This commit prepares that discussion; it changes no runtime, scientific policy or model state.
+The researcher approved creating a separate worktree based on `codex/specialist-dispatcher` and integrating the features of `ODE-specialist`. They also requested a substantive design discussion before implementing the retrospective recommendations. Phase 0 prepared that discussion. The researcher then approved Phase 1 only: port the heartbeat synchronization fix, diagnose the SDK shutdown stall, test and commit, keeping dependency versions unchanged.
 
 - Working branch: `codex/modelling-architecture-integration`.
 - Base: `315cebcbc954068eafc16a26dfdfe784dc06a0a5`.
 - ODE feature source: `1e8f9a43c4fc249e43d94c71316fc798ee7ad01d`.
 - Preserved experiment: `model/cell-cycle-core`, audited at `3ce097e` and comparison committed at `8f0e0af`.
-- Current stage: **workspace preparation complete; integration design under discussion**.
+- Current stage: **Phase 1 complete; Phase 2 contract decisions under discussion**.
 
 ## Evidence carried into this worktree
 
 - [System retrospective](../audits/2026-09-17-system-retrospective/README.md).
 - [Three-branch comparison](../audits/2026-09-17-branch-comparison/README.md).
 - [Preparation checks](worktree-readiness.json).
+- [Phase 1 results and shutdown diagnosis](phase1-validation.md).
 
 The audit packages are byte-preserved from the experiment commit, including their hashes. They are historical records. Some relative links within them identify model artifacts or ODE documents in the original audited branches; those targets have deliberately not been copied into this software checkout. Resolve them using their recorded Git revision or the original experiment worktree. The audit reports are not the active scientific state.
 
@@ -42,6 +43,14 @@ Each implementation phase should have its own descriptive commit. Scientific dat
 | 5 — Integration verification | Exercise the combined contracts and approved software fixtures; validate reproduction and documentation | Record separate unit, protocol, inventory and execution results; retain every unresolved limitation |
 
 This first implementation sequence integrates the existing feature set and necessary correctness fixes. Larger retrospective changes follow a separately discussed sequence, rather than being hidden inside the merge.
+
+## Phase 1 outcome
+
+Completed under the researcher's explicit approval on 2026-09-17. The heartbeat test now waits for both a heartbeat and reported tool activity. The common test runner bounds each suite to 120 seconds, reports timeouts as failures, cleans up the timed-out POSIX process group and continues the remaining suites.
+
+The SDK stall reproduces with a minimal `asyncio.to_thread()` test without MCP or repository imports. Sandbox restrictions deny Python's internal wake-up socket writes (`PermissionError: [Errno 1] Operation not permitted`); the same test and all four SDK protocol tests terminate outside that sandbox. No dispatcher runtime or dependency change was needed. See the [validation report](phase1-validation.md) for reproduction and limits.
+
+The SDK run passed all 176 tests. The default run passed 172 tests with four explicitly reported SDK skips. The original experiment, scientific state, routing and dependency declarations remain unchanged. Phase 2 has not started.
 
 ## Proposed contract choices
 
@@ -95,4 +104,4 @@ The desktop task that created this worktree remains attached to the original che
 
 ## Discussion checkpoint
 
-The researcher has accepted integration as the direction. The main unresolved scientific-policy choice is the treatment of provisional snapshots versus final acceptance. The role/contract compatibility choice and scope order are documented above for review. Implementing the proposed policy changes awaits this discussion; preparation is complete.
+The researcher has accepted integration as the direction. The main unresolved scientific-policy choice is the treatment of provisional snapshots versus final acceptance. The role/contract compatibility choice and scope order are documented above for review. Implementing the proposed policy changes awaits this discussion. Preparation and the authorized baseline phase are complete; the proposed contract choices remain unapproved.
