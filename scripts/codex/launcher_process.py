@@ -10,7 +10,7 @@ import subprocess
 import sys
 import threading
 import time
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, Callable, NamedTuple, TextIO
 
 
@@ -72,6 +72,28 @@ def redact_text(value: str) -> str:
     return SENSITIVE_ASSIGNMENT_RE.sub(r'\1"[REDACTED]"', value)
 
 
+def _public_ode_decision(key: str | None, value: object) -> bool:
+    """Recognize only typed public approval metadata, never credential values."""
+    if key == "standalone_authorized":
+        return type(value) is bool
+    if key != "workflow_authorization" or not isinstance(value, dict):
+        return False
+    if not {"path", "sha256", "decision_id"} <= value.keys():
+        return False
+    path, digest, decision = value["path"], value["sha256"], value["decision_id"]
+    return (
+        isinstance(path, str)
+        and path.startswith("runs/ode-modeler/")
+        and "\\" not in path
+        and ".." not in PurePosixPath(path).parts
+        and path == PurePosixPath(path).as_posix()
+        and isinstance(digest, str)
+        and re.fullmatch(r"[0-9a-fA-F]{64}", digest) is not None
+        and isinstance(decision, str)
+        and re.fullmatch(r"[A-Za-z0-9._-]+", decision) is not None
+    )
+
+
 def sanitize_json_value(value: object, *, key: str | None = None) -> object:
     """Preserve event structure while redacting values under sensitive keys."""
 
@@ -79,6 +101,7 @@ def sanitize_json_value(value: object, *, key: str | None = None) -> object:
         key is not None
         and not key.lower().replace("-", "_").endswith("_tokens")
         and SENSITIVE_FIELD_RE.search(key)
+        and not _public_ode_decision(key, value)
     ):
         return "[REDACTED]"
     if isinstance(value, dict):
@@ -187,6 +210,7 @@ def persist_event_line(
     *,
     event_handle: TextIO,
     active_tools: dict[str, str],
+    event_callback: Callable[[dict], None] | None = None,
 ) -> tuple[str, str, bool]:
     raw_line = line.rstrip("\r\n")
     try:
@@ -208,6 +232,14 @@ def persist_event_line(
         event_type = "malformed_jsonl"
         malformed = True
     event_handle.flush()
+    if event_callback is not None:
+        if malformed:
+            event_callback({"type": "malformed_jsonl", "summary": "Malformed JSONL event received"})
+        else:
+            from scripts.codex.specialist_runtime.events import operational_event
+            observation = operational_event(stored_event, active_tools)
+            if observation is not None:
+                event_callback(observation)
     return summary, event_type, malformed
 
 
@@ -246,6 +278,7 @@ def stream_jsonl_process(
     status_stream: TextIO = sys.stderr,
     monotonic: Callable[[], float] = time.monotonic,
     cancellation_requested: Callable[[], bool] | None = None,
+    event_callback: Callable[[dict], None] | None = None,
 ) -> StreamResult:
     """Stream, sanitize, summarize, and persist one `codex exec --json` run."""
 
@@ -327,6 +360,9 @@ def stream_jsonl_process(
                     f"elapsed={now - started:.1f}s child={process_state} {observation}",
                     status_stream,
                 )
+                if event_callback is not None:
+                    event_callback({"type": "heartbeat", "summary": f"Child {process_state}",
+                                    "active_tools": list(active_tools.values())})
                 last_event_at = now
                 continue
 
@@ -349,7 +385,8 @@ def stream_jsonl_process(
             received_at = monotonic()
             last_event_at = received_at
             summary, last_event, malformed = persist_event_line(
-                line, event_handle=event_handle, active_tools=active_tools
+                line, event_handle=event_handle, active_tools=active_tools,
+                event_callback=event_callback
             )
             if malformed:
                 malformed_count += 1
@@ -382,7 +419,8 @@ def stream_jsonl_process(
                 )
             else:
                 summary, last_event, malformed = persist_event_line(
-                    line, event_handle=event_handle, active_tools=active_tools
+                    line, event_handle=event_handle, active_tools=active_tools,
+                    event_callback=event_callback,
                 )
                 event_count += 1
                 malformed_count += int(malformed)

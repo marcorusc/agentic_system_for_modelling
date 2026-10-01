@@ -1,0 +1,116 @@
+{
+  "date": "2026-10-01",
+  "scope": "Risk-based whole-system source and software diagnostic; no new scientific modelling workflow or LLM specialist run.",
+  "integration_before": "6ee42bf",
+  "integration_implementation": "ab4a9d91f4ff786009c5b8d672db877d73660c27",
+  "backend_before": "1f16e5d128ee78e6bffc0945fc961ee672ca0b38",
+  "backend_after": "f0c4a808fd28a3e4a622f64b00b53e18f44ca23e",
+  "neko": "94579ac506aeb87545ca9b709d8c5fc316a9f552",
+  "tests": {
+    "project_existing_environment": {
+      "passed": 375,
+      "failed": 0,
+      "skipped": 0,
+      "python": "3.14",
+      "suites": {
+        "codex": 280,
+        "claude": 21,
+        "setup": 74
+      }
+    },
+    "project_fresh_environment": {
+      "passed": 375,
+      "failed": 0,
+      "skipped": 0,
+      "python": "3.13.13"
+    },
+    "backend_before_fix_same_selection": {
+      "passed": 482,
+      "failed": 70
+    },
+    "backend_after_fix_existing_cases": {
+      "passed": 552,
+      "failed": 0
+    },
+    "backend_final": {
+      "passed": 580,
+      "failed": 0,
+      "warnings": 12,
+      "new_error_boundary_cases": 28
+    },
+    "neko_offline": {
+      "passed": 9,
+      "failed": 0
+    }
+  },
+  "backend_exclusions": [
+    "tests/test_biomass_workflow.py",
+    "tests/test_biomass_editing.py",
+    "tests/test_biomass_authoring_resources.py"
+  ],
+  "initial_broad_run_exception": {
+    "passed": 509,
+    "failed": 70,
+    "duration_seconds": 73.99,
+    "description": "The initial broad selection excluded only workflow/editing files and inadvertently executed real BioMASS generation/simulation documentation fixtures from test_biomass_authoring_resources.py. It had completed when inspected. No project scientific state was changed. All subsequent backend suites exclude that file too; the final scope is not the full backend suite."
+  },
+  "installation": {
+    "fresh": true,
+    "pip_check": true,
+    "receipt": true,
+    "imports": true,
+    "initialize_and_list_tools": {
+      "neko": 33,
+      "maboss": 24,
+      "physicell": 34,
+      "biomass": 22
+    },
+    "modelling_tool_calls_during_installation_verification": false
+  },
+  "checks": {
+    "scientific_state_identical_to_main": true,
+    "scientific_state_identical_to_integration_baseline_24fe3e7": true,
+    "model_artifacts_imported_from_experiments": false,
+    "shared_environment_modified": false,
+    "original_backend_checkouts_modified": false,
+    "live_codex_specialist_invocations": 0,
+    "live_claude_invocations": 0,
+    "remote_operations": false,
+    "main_updated": false,
+    "git_diff_check": true,
+    "new_backend_helper_and_test_ruff": true,
+    "task_cleanup_preview": {
+      "records_checked": 162,
+      "verified": 0,
+      "unmatched": 0,
+      "deleted": 0
+    }
+  },
+  "limitations": [
+    "Live Claude inventory, reviewers and execution remain unverified.",
+    "Source setup is verified; published-package setup does not yet contain unpublished fixes.",
+    "Scientific acceptance and full stage registry reconciliation remain orchestrator responsibilities.",
+    "Fresh specialist context is not filesystem/data isolation.",
+    "No total LLM token/cost accounting or automatic execution budget was added.",
+    "Dependency freeze records resolution but is not a portable lockfile.",
+    "CI execution and complete supported Python/client matrix were not run."
+  ],
+  "artifact_sha256": {
+    "backend-tests.log": "11bf9fc935d262c701df0070869031d966ada957fd7aada62c8ff70f409d2876",
+    "baseline-failures.txt": "f0cdda35128d104f41a235e34d3ef901d7434176238c098b01a5fffddcfaff52",
+    "fresh-project-tests.log": "5c15a5fc5566005ab94d94fba0ec091f33a88d91ff846139d6dab3715dc513f6",
+    "installation.json": "9347123851819f72acf53d23dfdadcaba85acdafddffb806c8c9033e2fb0b4c1",
+    "neko-tests.log": "9f212574022061ff374858ef1359ac1438e09ad65a4646374ad5fbaf3a91ff1c",
+    "project-tests.log": "ac9718043f01d360dc965040091028c1ecdb515b2f43ef8d1d96e378900107c3",
+    "resolved-requirements.txt": "5837b1a42359d0a5773ca4b52ca22673cb77da779fb8e453e846f5a76f16ec92",
+    "installed-source-receipt.json": "b4ab000485208dc00864b184700d0d464d243acea35c4102e44ec3ffdefb4b04"
+  },
+  "fresh_dependency_versions": {
+    "mcp": "2.2.0",
+    "nekomata": "1.10.0",
+    "mcp-biomodelling-servers": "2.3.0",
+    "maboss": "0.8.16",
+    "biomass": "0.14.0",
+    "pandas": "3.0.6"
+  }
+}

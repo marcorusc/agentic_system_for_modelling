@@ -16,6 +16,7 @@ tools:
   - ToolSearch
   - 'mcp__maboss__*'
 disallowedTools:
+  - 'mcp__biomass__*'
   - Write
   - Edit
   - Bash

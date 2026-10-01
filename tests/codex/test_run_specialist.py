@@ -678,16 +678,16 @@ for _ in range(12):
 
                 args = MODULE.parser().parse_args(["network_curator", "--prompt", "inspect"])
                 with ExitStack() as stack:
-                    stack.enter_context(mock.patch.object(MODULE, "PROJECT_ROOT", root))
-                    stack.enter_context(mock.patch.object(MODULE, "resolve_codex_executable", return_value=str(executable)))
-                    stack.enter_context(mock.patch.object(MODULE, "profile_path", return_value=profile))
-                    stack.enter_context(mock.patch.object(MODULE, "load_permitted_transport", return_value=[]))
-                    stack.enter_context(mock.patch.object(MODULE.subprocess, "run", side_effect=[
+                    stack.enter_context(mock.patch.object(MODULE.executor, "PROJECT_ROOT", root))
+                    stack.enter_context(mock.patch.object(MODULE.executor, "resolve_codex_executable", return_value=str(executable)))
+                    stack.enter_context(mock.patch.object(MODULE.executor, "profile_path", return_value=profile))
+                    stack.enter_context(mock.patch.object(MODULE.executor, "load_permitted_transport", return_value=[]))
+                    stack.enter_context(mock.patch.object(MODULE.executor.subprocess, "run", side_effect=[
                         mock.Mock(stdout="codex-cli 0.153.0", stderr=""),
                         mock.Mock(stdout='[{"name":"neko","enabled":true}]'),
                     ]))
-                    stack.enter_context(mock.patch.object(MODULE, "stream_jsonl_process", side_effect=stream))
-                    stack.enter_context(mock.patch.object(MODULE, "emit_status"))
+                    stack.enter_context(mock.patch.object(MODULE.executor, "stream_jsonl_process", side_effect=stream))
+                    stack.enter_context(mock.patch.object(MODULE.executor, "emit_status"))
                     stack.enter_context(redirect_stdout(io.StringIO()))
                     self.assertEqual(MODULE.run_native(args), expected_exit)
                 records = list(root.glob("runs/network-curator/session-1/specialist-invocations/*"))

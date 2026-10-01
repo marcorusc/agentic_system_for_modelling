@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-17",
+  "branch": "codex/modelling-architecture-integration",
+  "base_commit": "315cebcbc954068eafc16a26dfdfe784dc06a0a5",
+  "ode_source_commit": "1e8f9a43c4fc249e43d94c71316fc798ee7ad01d",
+  "audit_source_commit": "8f0e0af6efb02f363b39449f7136847611070af5",
+  "original_branch": "model/cell-cycle-core",
+  "original_worktree_head_preserved": true,
+  "scientific_state_matches_base": true,
+  "scientific_state_sha256": {
+    "MODEL_SPEC.md": "1e537df00cb9f8ce2d1911c7dc703b1163b9ff76e78ca6aa827302786e2c2487",
+    "DATA_DICTIONARY.md": "63578b9889792484c1bc977462b7bdf61928a98d54cb26f3c6128d2a4804587b",
+    "ASSUMPTIONS.md": "f7ed5bcb3ad7d68b3d29a97613c8673cf322446e80250391f4b70a4ac7cd9696",
+    "DECISIONS.md": "1aa85d04d0494be4a56c4faf5dc8a5f1026619f8fa3f9e24afb48e26e29064bb",
+    "CURRENT_STATE.md": "bd7ccdc87283d1b100db41822098c04d8e39bb3845c036e0cca0dc24dee63852",
+    "VALIDATION_PLAN.md": "4b0228138c1aba833d0a62e7002a699012015dd9d9e9d6e92fdf3c3ae8dc1b86"
+  },
+  "audit_packages_hash_verified": true,
+  "local_bootstrap_files": [
+    ".setup/local.json",
+    ".setup/dispatcher.local.json"
+  ],
+  "global_profiles_modified": false,
+  "packages_installed": false,
+  "modelling_sessions_created": false,
+  "implementation_status": "preparation only; proposed policy and contract choices await design discussion",
+  "preparation_checks": {
+    "runtime_python": "3.14.6",
+    "mcp_sdk": "2.0.0",
+    "bootstrap_resolves_this_worktree": true,
+    "parent_configuration_disables": [
+      "neko",
+      "maboss",
+      "physicell",
+      "biomass"
+    ],
+    "dispatcher_declarations": 8,
+    "inventory_check_kind": "configuration and module import only; no live specialist launch",
+    "model_directories_have_only_placeholders": true,
+    "bootstrap_files_git_ignored": true,
+    "existing_source_files_changed": false
+  }
+}

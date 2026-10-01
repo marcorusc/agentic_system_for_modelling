@@ -1,5 +1,13 @@
 # Agentic Bio-Modelling Project Architecture
 
+**ODE integration update:** The optional BioMASS route is documented in
+[ODE workflow](ode-workflow.md) and [version-2 artifact contract](ode-contract.md).
+It adds NeKo-graph, standalone-text and bounded-reaction inputs through an isolated
+specialist, with provisional preservation distinct from scientific acceptance.
+[Integration status](integration/ode-dispatcher-plan.md) records the current gates.
+The existing Boolean/PhysiCell design below remains applicable to that branch.
+
+
 **Scope:** biological project repositories using Claude Code, NeKo, MaBoSS, PhysiCell, PubMed review, and a remote Ollama/Qwen backend.
 
 ## 1. Purpose

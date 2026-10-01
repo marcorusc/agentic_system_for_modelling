@@ -5,13 +5,15 @@ description: Formulate and route governed NeKo network-construction, inspection,
 
 # NeKo workflow
 
-Never call NeKo tools from the orchestrator or this skill. Create a bounded task
-file and invoke only:
+Never call NeKo tools from the orchestrator or this skill. Send the bounded
+`task` to `specialist_dispatcher.start_network_curator`. Supply
+`record_session_id` for an existing approved session and exact `approved_tools`
+only for writes already authorized for this invocation.
 
-`python scripts/codex/run_specialist.py network_curator --prompt-file <project-relative-task-file>`
-
-Add `--record-session-id <full-id>` when inspecting or extending an existing
-approved session. The launcher records output under
+Query `get_specialist_events` with its sequence cursor and `get_specialist_task`
+until terminal. Consume only the validated handoff returned on `succeeded`, then
+check its independent scientific status and approval requirements. Do not update
+shared state while execution is active. Output remains under
 `runs/network-curator/{neko_session_id}/specialist-invocations/`.
 
 ## Task contract
@@ -37,3 +39,22 @@ The operational tool semantics correspond to `mcp-biomodelling-servers` 2.3.0 an
 must be revalidated after server upgrades. Expensive all-pairs or open-ended
 connection strategies require size inspection and a non-mutating preview; prefer a
 targeted strategy when it answers the scientific question.
+
+## CLI fallback
+
+If the dispatcher is unavailable, the same bounded request may use
+`python scripts/codex/run_specialist.py network_curator --prompt-file
+<project-relative-task-file>`. Place that file in `.codex-tasks/`; add
+`--record-session-id` and exact `--approve-tool` entries as applicable. Preserve
+all scientific gates and validate the recorded result before synthesis.
+
+
+## NeKo-to-BioMASS export
+
+When ODE formulation and topology/evidence export are explicitly approved, route
+`export_biomass_handoff` through `specialist_dispatcher.start_network_curator`. Preserve references,
+biological context and stable edge IDs in the dedicated `neko-to-biomass` handoff.
+Follow `docs/ode-workflow.md`, including readiness and verified relocation capture.
+This branch does not require BNET or Boolean-specific connectivity criteria.
+Only the isolated ODE specialist receives BioMASS; the network specialist retains
+NeKo alone. Existing topology policies and conclusive-export gates still apply.

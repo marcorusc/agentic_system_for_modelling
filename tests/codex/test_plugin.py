@@ -8,6 +8,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 EXPECTED_SKILLS = {
+    "biomass-workflow",
     "biomodelling-orchestrator",
     "checkpoint-model",
     "maboss-workflow",
@@ -21,6 +22,7 @@ EXPECTED_SKILLS = {
     "validate-stage",
 }
 SPECIALIST_SKILLS = {
+    "biomass-workflow",
     "neko-workflow",
     "maboss-workflow",
     "physicell-workflow",
@@ -69,12 +71,19 @@ class PluginTests(unittest.TestCase):
             self.assertIsInstance(frontmatter.get("description"), str)
             self.assertTrue(str(frontmatter["description"]).strip())
 
-    def test_specialist_skills_route_only_through_launcher(self) -> None:
+    def test_specialist_skills_route_through_dispatcher_with_cli_fallback(self) -> None:
         entrypoint = "scripts/codex/run_specialist.py"
         for name in SPECIALIST_SKILLS:
             text = (ROOT / "skills" / name / "SKILL.md").read_text(
                 encoding="utf-8"
             )
+            role = {"biomass-workflow":"ode_modeler", "neko-workflow":"network_curator", "maboss-workflow":"boolean_dynamics_modeler",
+                    "physicell-workflow":"multicellular_configurator",
+                    "review-literature-evidence":"literature_reviewer"}[name]
+            self.assertIn(f"specialist_dispatcher.start_{role}", text)
+            self.assertIn("get_specialist_task", text)
+            self.assertIn("get_specialist_events", text)
+            self.assertIn("## CLI fallback", text)
             self.assertIn(entrypoint, text)
             self.assertNotIn("mcp__", text)
             self.assertNotIn("spawn_agent", text)
@@ -82,7 +91,7 @@ class PluginTests(unittest.TestCase):
     def test_orchestrator_project_config_disables_modelling_servers(self) -> None:
         config = tomllib.loads((ROOT / ".codex/config.toml").read_text())
         servers = config["mcp_servers"]
-        for name in ("neko", "maboss", "physicell"):
+        for name in ("neko", "maboss", "physicell", "biomass"):
             self.assertFalse(servers[name]["enabled"])
             self.assertTrue(servers[name]["command"].startswith("__orchestrator_disabled_"))
 
@@ -90,7 +99,7 @@ class PluginTests(unittest.TestCase):
         active = list((ROOT / ".codex/agents").glob("*.toml"))
         self.assertEqual(active, [])
         examples = list((ROOT / ".codex/agents").glob("*.toml.example"))
-        self.assertEqual(len(examples), 4)
+        self.assertEqual(len(examples), 5)
         for path in examples:
             self.assertIn(
                 "INACTIVE COMPATIBILITY EXAMPLE",

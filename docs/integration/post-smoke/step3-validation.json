@@ -1,0 +1,40 @@
+{
+  "date": "2026-10-01",
+  "content_commit": "a4ee668f3e0ef69467540fdbecbbeb94f5dcd9d8",
+  "tests": {
+    "codex": 280,
+    "claude": 19,
+    "setup": 74,
+    "total": 373,
+    "skipped": 0,
+    "passed": true
+  },
+  "command": "PYTHONDONTWRITEBYTECODE=1 /home/marcorusc/miniforge3/envs/mcp_modelling/bin/python -B scripts/run_tests.py",
+  "test_log_sha256": "605b5bc855a3360708b0c0542cbe275717a95fa04a50363125fd9ea8628c924d",
+  "source_setup": {
+    "selection_manifest": "setup/backend-sources.integration.json",
+    "both_actual_checkouts_verified": true,
+    "installer_exercised_with_mock_pip": true,
+    "fresh_dependency_install_performed": false,
+    "transitive_dependencies_locked": false
+  },
+  "capture": {
+    "synthetic_focus_tests_passed": 26,
+    "historical_ode_invocation": "2026-09-21T015959-878a2d53-effd-4206-8e90-e82d9e76734b",
+    "historical_file_count_verified": 42,
+    "historical_check_read_only": true
+  },
+  "boundaries": {
+    "shared_environment_changed": false,
+    "scientific_state_changed": false,
+    "scientific_session_started": false,
+    "remote_pushed": false,
+    "main_updated": false
+  },
+  "remaining": [
+    "Whole-system code diagnostic, including the 21 reproduced backend SDK error-message failures",
+    "Fresh setup/install verification in an isolated environment before release readiness",
+    "Pin any diagnostic follow-up backend commits and choose published source/release installation before updating main",
+    "Live Claude test remains with the researcher after publication"
+  ]
+}

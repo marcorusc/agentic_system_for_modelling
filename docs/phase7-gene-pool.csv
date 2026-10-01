@@ -1,0 +1,91 @@
+reference_label,candidate_gene_symbols,mapping_status,in_proposed_first_pass,rationale
+AKT_B,AKT1,proposed_representation_choice,yes,Requires approval; preserve distinct activity/transcript meanings in later Boolean specification.
+AKT_H,AKT1,proposed_representation_choice,yes,Requires approval; preserve distinct activity/transcript meanings in later Boolean specification.
+ATR,ATR,proposed_name_mapping,yes,Candidate name mapping; cache membership verifies identifier availability only.
+A_Kinetochores,,non_gene_state_or_input,no,"Model state, process, extracellular input, or small molecule; not a gene seed. Preserve in benchmark interpretation."
+BAD,BAD,proposed_name_mapping,yes,Candidate name mapping; cache membership verifies identifier availability only.
+BAK,BAK1,proposed_name_mapping,yes,Candidate name mapping; cache membership verifies identifier availability only.
+BAX,BAX,proposed_name_mapping,yes,Candidate name mapping; cache membership verifies identifier availability only.
+BCL2,BCL2,proposed_name_mapping,yes,Candidate name mapping; cache membership verifies identifier availability only.
+BCLXL,BCL2L1,proposed_name_mapping,yes,Candidate name mapping; cache membership verifies identifier availability only.
+BID,BID,proposed_name_mapping,yes,Candidate name mapping; cache membership verifies identifier availability only.
+BIK,BIK,proposed_name_mapping,yes,Candidate name mapping; cache membership verifies identifier availability only.
+BIM,BCL2L11,proposed_name_mapping,yes,Candidate name mapping; cache membership verifies identifier availability only.
+CAD,DFFB,proposed_name_mapping,yes,"Caspase-activated DNase: propose DFFB, not the valid but unrelated CAD gene."
+CHK1,CHEK1,proposed_name_mapping,yes,Candidate name mapping; cache membership verifies identifier availability only.
+Ca2,,non_gene_state_or_input,no,"Model state, process, extracellular input, or small molecule; not a gene seed. Preserve in benchmark interpretation."
+Casp2,CASP2,proposed_name_mapping,yes,Candidate name mapping; cache membership verifies identifier availability only.
+Casp3,CASP3,proposed_name_mapping,yes,Candidate name mapping; cache membership verifies identifier availability only.
+Casp8,CASP8,proposed_name_mapping,yes,Candidate name mapping; cache membership verifies identifier availability only.
+Casp9,CASP9,proposed_name_mapping,yes,Candidate name mapping; cache membership verifies identifier availability only.
+Cdc20,CDC20,proposed_name_mapping,yes,Candidate name mapping; cache membership verifies identifier availability only.
+Cdc25A,CDC25A,proposed_name_mapping,yes,Candidate name mapping; cache membership verifies identifier availability only.
+Cdc25B,CDC25B,proposed_name_mapping,yes,Candidate name mapping; cache membership verifies identifier availability only.
+Cdc25C,CDC25C,proposed_name_mapping,yes,Candidate name mapping; cache membership verifies identifier availability only.
+Cdc6,CDC6,proposed_name_mapping,yes,Candidate name mapping; cache membership verifies identifier availability only.
+Cdh1,FZR1,proposed_name_mapping,yes,"APC/C coactivator: propose FZR1, not E-cadherin CDH1."
+Cdk1,CDK1,proposed_name_mapping,yes,Candidate name mapping; cache membership verifies identifier availability only.
+Cdt1,CDT1,proposed_name_mapping,yes,Candidate name mapping; cache membership verifies identifier availability only.
+CyclinA,CCNA2,proposed_representation_choice,yes,Requires approval; preserve distinct activity/transcript meanings in later Boolean specification.
+CyclinA_mRNA,CCNA2,proposed_representation_choice,yes,Requires approval; preserve distinct activity/transcript meanings in later Boolean specification.
+CyclinB,CCNB1,proposed_representation_choice,yes,Requires approval; preserve distinct activity/transcript meanings in later Boolean specification.
+CyclinD1,CCND1,proposed_name_mapping,yes,Candidate name mapping; cache membership verifies identifier availability only.
+CyclinE,CCNE1,proposed_representation_choice,yes,Requires approval; preserve distinct activity/transcript meanings in later Boolean specification.
+Cyto_C,CYCS,proposed_name_mapping,yes,Candidate name mapping; cache membership verifies identifier availability only.
+DAG,,non_gene_state_or_input,no,"Model state, process, extracellular input, or small molecule; not a gene seed. Preserve in benchmark interpretation."
+DR4_5,TNFRSF10A;TNFRSF10B,proposed_representation_choice,yes,Requires approval; preserve distinct activity/transcript meanings in later Boolean specification.
+E2F1,E2F1,proposed_name_mapping,yes,Candidate name mapping; cache membership verifies identifier availability only.
+ERK,MAPK1;MAPK3,unresolved_family_or_complex,no,Candidates only; composition or isoform expansion must be resolved before inclusion. Complex constituent list may be incomplete.
+Ect2,ECT2,proposed_name_mapping,yes,Candidate name mapping; cache membership verifies identifier availability only.
+Emi1,FBXO5,proposed_name_mapping,yes,Candidate name mapping; cache membership verifies identifier availability only.
+FoxM1,FOXM1,proposed_name_mapping,yes,Candidate name mapping; cache membership verifies identifier availability only.
+FoxO1,FOXO1,proposed_name_mapping,yes,Candidate name mapping; cache membership verifies identifier availability only.
+FoxO3,FOXO3,proposed_name_mapping,yes,Candidate name mapping; cache membership verifies identifier availability only.
+G0G1_entry,,non_gene_state_or_input,no,"Model state, process, extracellular input, or small molecule; not a gene seed. Preserve in benchmark interpretation."
+G2M_entry,,non_gene_state_or_input,no,"Model state, process, extracellular input, or small molecule; not a gene seed. Preserve in benchmark interpretation."
+GF,,non_gene_state_or_input,no,"Model state, process, extracellular input, or small molecule; not a gene seed. Preserve in benchmark interpretation."
+GF_High,,non_gene_state_or_input,no,"Model state, process, extracellular input, or small molecule; not a gene seed. Preserve in benchmark interpretation."
+GSK3,GSK3B,proposed_representation_choice,yes,Requires approval; preserve distinct activity/transcript meanings in later Boolean specification.
+Grb2,GRB2,proposed_name_mapping,yes,Candidate name mapping; cache membership verifies identifier availability only.
+IAPs,XIAP;BIRC2;BIRC3,unresolved_family_or_complex,no,Candidates only; composition or isoform expansion must be resolved before inclusion. Complex constituent list may be incomplete.
+IP3,,non_gene_state_or_input,no,"Model state, process, extracellular input, or small molecule; not a gene seed. Preserve in benchmark interpretation."
+MCL_1,MCL1,proposed_name_mapping,yes,Candidate name mapping; cache membership verifies identifier availability only.
+MEK,MAP2K1;MAP2K2,unresolved_family_or_complex,no,Candidates only; composition or isoform expansion must be resolved before inclusion. Complex constituent list may be incomplete.
+Mad2,MAD2L1,proposed_name_mapping,yes,Candidate name mapping; cache membership verifies identifier availability only.
+Myc,MYC,proposed_name_mapping,yes,Candidate name mapping; cache membership verifies identifier availability only.
+NeddL4,NEDD4L,proposed_name_mapping,yes,Candidate name mapping; cache membership verifies identifier availability only.
+ORC,ORC1;ORC2;ORC3;ORC4;ORC5;ORC6,unresolved_family_or_complex,no,Candidates only; composition or isoform expansion must be resolved before inclusion. Complex constituent list may be incomplete.
+PDK1,PDPK1,proposed_name_mapping,yes,"PI3K/AKT-pathway PDK1: propose PDPK1, not pyruvate dehydrogenase kinase PDK1."
+PI3K,PIK3CA,proposed_representation_choice,yes,Requires approval; preserve distinct activity/transcript meanings in later Boolean specification.
+PI3K_H,PIK3CA,proposed_representation_choice,yes,Requires approval; preserve distinct activity/transcript meanings in later Boolean specification.
+PIP3,,non_gene_state_or_input,no,"Model state, process, extracellular input, or small molecule; not a gene seed. Preserve in benchmark interpretation."
+PLCgamma,PLCG1,proposed_representation_choice,yes,Requires approval; preserve distinct activity/transcript meanings in later Boolean specification.
+PRAS40,AKT1S1,proposed_name_mapping,yes,Candidate name mapping; cache membership verifies identifier availability only.
+Plk1,PLK1,proposed_name_mapping,yes,Candidate name mapping; cache membership verifies identifier availability only.
+Plk1_H,PLK1,proposed_name_mapping,yes,Requires approval; preserve distinct activity/transcript meanings in later Boolean specification.
+Pre_RC,,unresolved_complex_or_receptor,no,No gene silently substituted; resolve components/context before inclusion.
+RAF,ARAF;BRAF;RAF1,unresolved_family_or_complex,no,Candidates only; composition or isoform expansion must be resolved before inclusion. Complex constituent list may be incomplete.
+RTK,,unresolved_complex_or_receptor,no,No gene silently substituted; resolve components/context before inclusion.
+Ras,HRAS;KRAS;NRAS,unresolved_family_or_complex,no,Candidates only; composition or isoform expansion must be resolved before inclusion. Complex constituent list may be incomplete.
+Replication,,non_gene_state_or_input,no,"Model state, process, extracellular input, or small molecule; not a gene seed. Preserve in benchmark interpretation."
+Rheb,RHEB,proposed_name_mapping,yes,Candidate name mapping; cache membership verifies identifier availability only.
+S6K,RPS6KB1,proposed_representation_choice,yes,Requires approval; preserve distinct activity/transcript meanings in later Boolean specification.
+SMAC,DIABLO,proposed_name_mapping,yes,Candidate name mapping; cache membership verifies identifier availability only.
+SOS,SOS1;SOS2,unresolved_family_or_complex,no,Candidates only; composition or isoform expansion must be resolved before inclusion. Complex constituent list may be incomplete.
+S_entry,,non_gene_state_or_input,no,"Model state, process, extracellular input, or small molecule; not a gene seed. Preserve in benchmark interpretation."
+TSC2,TSC2,proposed_name_mapping,yes,Candidate name mapping; cache membership verifies identifier availability only.
+Trail,TNFSF10,proposed_name_mapping,yes,Candidate name mapping; cache membership verifies identifier availability only.
+U_Kinetochores,,non_gene_state_or_input,no,"Model state, process, extracellular input, or small molecule; not a gene seed. Preserve in benchmark interpretation."
+UbcH10,UBE2C,proposed_name_mapping,yes,Candidate name mapping; cache membership verifies identifier availability only.
+Wee1,WEE1,proposed_name_mapping,yes,Candidate name mapping; cache membership verifies identifier availability only.
+eIF4E,EIF4E,proposed_name_mapping,yes,Candidate name mapping; cache membership verifies identifier availability only.
+f4N_DNA,,non_gene_state_or_input,no,"Model state, process, extracellular input, or small molecule; not a gene seed. Preserve in benchmark interpretation."
+geminin,GMNN,proposed_name_mapping,yes,Candidate name mapping; cache membership verifies identifier availability only.
+mTORC1,MTOR;RPTOR;MLST8,unresolved_family_or_complex,no,Candidates only; composition or isoform expansion must be resolved before inclusion. Complex constituent list may be incomplete.
+mTORC2,MTOR;RICTOR;MAPKAP1;MLST8,unresolved_family_or_complex,no,Candidates only; composition or isoform expansion must be resolved before inclusion. Complex constituent list may be incomplete.
+p110_H,PIK3CA,proposed_name_mapping,yes,Requires approval; preserve distinct activity/transcript meanings in later Boolean specification.
+p21,CDKN1A,proposed_name_mapping,yes,Candidate name mapping; cache membership verifies identifier availability only.
+p21_mRNA,CDKN1A,proposed_name_mapping,yes,Requires approval; preserve distinct activity/transcript meanings in later Boolean specification.
+p27Kip1,CDKN1B,proposed_name_mapping,yes,Candidate name mapping; cache membership verifies identifier availability only.
+pAPC,,unresolved_complex_or_receptor,no,No gene silently substituted; resolve components/context before inclusion.
+pRB,RB1,proposed_name_mapping,yes,Candidate name mapping; cache membership verifies identifier availability only.

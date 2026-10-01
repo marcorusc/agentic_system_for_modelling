@@ -1,0 +1,4 @@
+{
+  "python_executable": "/absolute/path/to/python-with-mcp-sdk-2",
+  "codex_home": "/absolute/path/to/native-codex-home"
+}

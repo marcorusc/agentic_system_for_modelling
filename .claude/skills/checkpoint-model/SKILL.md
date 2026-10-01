@@ -33,3 +33,15 @@ Do not push, pull, fetch, switch branches, rebase, amend, create tags or remotes
 rewrite history, clean the worktree, or delete sessions or artifacts. Do not create
 an empty commit. State whether it is safe to run `/compact`, `/clear`, or end the
 session.
+
+
+## ODE state
+
+Apply `docs/ode-contract.md` to `ode_modeler` / `biomass_ode`. Verify source kind,
+lineage, document version, selected revision, complete captured inventory, evidence,
+actual numerical settings and scenario results. Validate ODE evidence with explicit
+`--review-kind ode`. Distinguish provisional workflow authorization from exact
+session/revision conclusive-export approval; a candidate snapshot keeps the
+scientific registry pending. Existing `runs/` and `evidence/` lifecycle scopes
+already include ODE artifacts. Successful solves are not biological validation.
+Preserve independent reviewer/auditor requirements; missing definitions remain blockers.

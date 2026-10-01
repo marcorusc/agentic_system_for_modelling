@@ -1,0 +1,189 @@
+"""Runtime contract and CLI equivalence tests, without model calls."""
+from __future__ import annotations
+
+import json
+import tempfile
+import unittest
+from pathlib import Path
+from unittest import mock
+
+from scripts.codex.specialist_runtime import executor
+from scripts.codex.specialist_runtime.models import (
+    ExecutionState, SpecialistInvocationRequest,
+)
+from scripts.codex.launcher_config import build_command, SPECIALISTS
+
+
+class RuntimeTests(unittest.TestCase):
+    def test_final_output_redaction_preserves_nested_report_json(self):
+        handoff = {
+            "specialist": "network_curator",
+            "actions": ["inspection"],
+            "draft_report": {"content": 'Researcher authorization: "approved", then inspect.'},
+            "draft_manifest": {"specialist": "network_curator"},
+            "api_key": "secret-test-value",
+            "notes": "password=other-test-value",
+        }
+        for raw in (json.dumps(handoff), "```json\n" + json.dumps(handoff) + "\n```"):
+            with self.subTest(raw=raw):
+                output, parsed = executor.sanitize_final_output(raw)
+                self.assertEqual(json.loads(output), parsed)
+                self.assertEqual(parsed["actions"], ["inspection"])
+                self.assertEqual(executor.parse_handoff(output), parsed)
+                self.assertNotIn("secret-test-value", output)
+                self.assertNotIn("other-test-value", output)
+                self.assertIn("[REDACTED]", parsed["draft_report"]["content"])
+
+    def test_final_output_without_handoff_still_redacts(self):
+        output, parsed = executor.sanitize_final_output("failed: password=secret-test-value")
+        self.assertIsNone(parsed)
+        self.assertNotIn("secret-test-value", output)
+
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        patch = mock.patch.object(executor, "PROJECT_ROOT", Path(temporary.name))
+        patch.start()
+        self.addCleanup(patch.stop)
+
+    def test_request_rejects_unsafe_arguments(self):
+        cases = [
+            {"specialist": "shell"}, {"task": " "}, {"task": "x\x00y"},
+            {"record_session_id": "../outside"}, {"record_session_id": 5},
+            {"approved_tools": ["*"]}, {"approved_tools": ["create_*"]},
+            {"approved_tools": ["maboss.create_session"]},
+            {"approved_tools": ["delete_session"]},
+            {"approved_tools": ["clean_generated_files"]},
+            {"approved_tools": [5]}, {"approved_tools": "create_session"},
+            {"allow_web_search": True}, {"allow_web_search": "false"},
+            {"provenance_transport": "arbitrary"},
+            {"review_kind": "edge"}, {"review_kind": "ode"},
+        ]
+        for changes in cases:
+            with self.subTest(changes=changes), self.assertRaises(ValueError):
+                SpecialistInvocationRequest(**dict(
+                    {"specialist": "network_curator", "task": "inspect"}, **changes))
+
+    def test_duplicate_approvals_and_literature_search(self):
+        request = SpecialistInvocationRequest(
+            "network_curator", "inspect", approved_tools=("create_session", "create_session"))
+        self.assertEqual(request.approved_tools, ("create_session",))
+        SpecialistInvocationRequest("literature_reviewer", "inspect", allow_web_search=True)
+        with self.assertRaises(ValueError):
+            SpecialistInvocationRequest("literature_reviewer", "inspect", approved_tools=("search_articles",))
+
+    def test_context_and_command_boundary_unchanged_for_every_specialist(self):
+        for specialist in SPECIALISTS:
+            request = SpecialistInvocationRequest(specialist, "bounded task")
+            command = build_command("codex", request.specialist, request.task)
+            self.assertIn("--ephemeral", command)
+            self.assertIn("--strict-config", command)
+            self.assertEqual(command[command.index("--sandbox") + 1], "read-only")
+            self.assertNotIn("resume", command)
+            self.assertIn("Task:\nbounded task", command[-1])
+            self.assertEqual(command[command.index("--profile") + 1], SPECIALISTS[specialist][0])
+
+    def test_missing_profile_fails_without_starting_child(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            with mock.patch.object(executor, "resolve_codex_executable", return_value="codex"), \
+                 mock.patch.object(executor, "profile_path", return_value=Path(temporary)/"missing"), \
+                 mock.patch.object(executor, "stream_jsonl_process") as stream:
+                result = executor.execute(SpecialistInvocationRequest("network_curator", "inspect"))
+            stream.assert_not_called()
+            self.assertEqual(result.execution_state, ExecutionState.FAILED)
+            self.assertEqual(result.return_code, 2)
+            self.assertIsNone(result.handoff)
+            self.assertIsNotNone(result.finished_at)
+
+    def test_backendless_literature_is_technical_success_with_scientific_blocker(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            profile = root / "profile.toml"
+            profile.write_text("[mcp_servers]\n")
+            with mock.patch.object(executor, "PROJECT_ROOT", root), \
+                 mock.patch.object(executor, "resolve_codex_executable", return_value=str(profile)), \
+                 mock.patch.object(executor, "profile_path", return_value=profile), \
+                 mock.patch.object(executor.subprocess, "run", side_effect=[
+                     mock.Mock(stdout="codex-cli 0.153.0", stderr=""),
+                     mock.Mock(stdout='[]')]), \
+                 mock.patch.object(executor, "stream_jsonl_process") as stream:
+                result = executor.execute(SpecialistInvocationRequest("literature_reviewer", "inspect"))
+            stream.assert_not_called()
+            self.assertEqual(result.execution_state, ExecutionState.SUCCEEDED)
+            self.assertEqual(result.return_code, 0)
+            self.assertEqual(result.handoff["status"], "blocked")
+            self.assertTrue((result.artifact_dir / "task.txt").is_file())
+            provenance = json.loads((result.artifact_dir / "provenance.json").read_text())
+            self.assertFalse(provenance["process_started"])
+            self.assertIsNone(result.event_stream)
+
+    def test_independent_invocations_allocate_fresh_ids(self):
+        with mock.patch.object(executor, "_run", return_value=2):
+            a = executor.execute(SpecialistInvocationRequest("network_curator", "one"))
+            b = executor.execute(SpecialistInvocationRequest("network_curator", "two"))
+        self.assertNotEqual(a.invocation_id, b.invocation_id)
+
+    def test_review_kind_is_explicit_and_session_scoped(self):
+        self.assertEqual(SpecialistInvocationRequest("literature_reviewer", "inspect").review_kind, "edge")
+        self.assertEqual(SpecialistInvocationRequest("literature_reviewer", "inspect", "bio-session", review_kind="ode").review_kind, "ode")
+        for changes in ({"review_kind": "other"}, {"review_kind": True}, {"review_kind": []}, {"review_kind": "ode"}):
+            with self.subTest(changes=changes), self.assertRaises(ValueError):
+                SpecialistInvocationRequest("literature_reviewer", "inspect", **changes)
+        self.assertIsNone(SpecialistInvocationRequest("ode_modeler", "inspect").review_kind)
+
+    def test_early_failure_and_cancellation_preserve_ode_review_mode(self):
+        request = SpecialistInvocationRequest("literature_reviewer", "inspect", "bio-session", review_kind="ode")
+        for cancelled in (False, True):
+            with self.subTest(cancelled=cancelled), \
+                 mock.patch.object(executor, "resolve_codex_executable", return_value="codex"), \
+                 mock.patch.object(executor, "profile_path", return_value=executor.PROJECT_ROOT/"missing"), \
+                 mock.patch.object(executor, "stream_jsonl_process") as stream:
+                result = executor.execute(request, cancellation_requested=lambda: cancelled)
+            stream.assert_not_called()
+            self.assertEqual(result.return_code, 130 if cancelled else 2)
+            self.assertIsNone(result.handoff)
+            self.assertIn("runs/ode-modeler/_launcher-runs", result.artifact_dir.as_posix())
+            provenance = json.loads((result.artifact_dir/"provenance.json").read_text())
+            self.assertEqual(provenance["review_kind"], "ode")
+            self.assertEqual(provenance["record_session_id"], "bio-session")
+
+    def test_backendless_ode_review_keeps_mode_and_biomass_session(self):
+        profile = executor.PROJECT_ROOT/"profile.toml"
+        profile.write_text("[mcp_servers]\n")
+        with mock.patch.object(executor, "resolve_codex_executable", return_value=str(profile)), \
+             mock.patch.object(executor, "profile_path", return_value=profile), \
+             mock.patch.object(executor.subprocess, "run", side_effect=[
+                 mock.Mock(stdout="codex-cli 0.153.0", stderr=""), mock.Mock(stdout="[]")]), \
+             mock.patch.object(executor, "stream_jsonl_process") as stream:
+            result = executor.execute(SpecialistInvocationRequest("literature_reviewer", "inspect", "bio-session", review_kind="ode"))
+        stream.assert_not_called()
+        self.assertEqual(result.execution_state, ExecutionState.SUCCEEDED)
+        self.assertEqual(result.handoff["status"], "blocked")
+        self.assertEqual(result.handoff["review_kind"], "ode")
+        self.assertEqual(result.handoff["session_id"], "bio-session")
+        self.assertIn("runs/ode-modeler/bio-session/specialist-invocations", result.artifact_dir.as_posix())
+        provenance = json.loads((result.artifact_dir/"provenance.json").read_text())
+        self.assertEqual(provenance["review_kind"], "ode")
+        self.assertFalse(provenance["process_started"])
+        self.assertFalse(any(provenance["mcp_enabled"].values()))
+
+    def test_ode_public_authority_metadata_survives_credential_redaction(self):
+        decision = {"path": "runs/ode-modeler/bio-session/workflow.md", "sha256": "a"*64, "decision_id": "workflow-1"}
+        handoff = {"specialist": "ode_modeler", "ode": {"standalone_authorized": True, "workflow_authorization": decision},
+                   "authorization": "Bearer credential-secret", "api_key": "credential-secret"}
+        output, sanitized = executor.sanitize_final_output(json.dumps(handoff))
+        self.assertEqual(sanitized["ode"], handoff["ode"])
+        self.assertNotIn("credential-secret", output)
+        for malformed in ("credential-secret", {"path": "credential-secret"}):
+            handoff["ode"]["workflow_authorization"] = malformed
+            handoff["ode"]["standalone_authorized"] = "credential-secret"
+            output, sanitized = executor.sanitize_final_output(json.dumps(handoff))
+            self.assertNotIn("credential-secret", output)
+            self.assertEqual(sanitized["ode"]["standalone_authorized"], "[REDACTED]")
+            self.assertEqual(sanitized["ode"]["workflow_authorization"], "[REDACTED]")
+
+        handoff["ode"]["workflow_authorization"] = dict(decision, api_key="credential-secret", reviewed_by="researcher")
+        output, sanitized = executor.sanitize_final_output(json.dumps(handoff))
+        self.assertNotIn("credential-secret", output)
+        self.assertEqual(sanitized["ode"]["workflow_authorization"]["api_key"], "[REDACTED]")
+        self.assertEqual(sanitized["ode"]["workflow_authorization"]["reviewed_by"], "researcher")

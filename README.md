@@ -2,7 +2,7 @@
 
 A Claude Code and local Codex workspace for building one traceable biological model
 per repository. The main session acts as the scientific orchestrator and delegates
-modelling operations to restricted specialist agents for NeKo, MaBoSS, PhysiCell,
+modelling operations to restricted specialist agents for NeKo, MaBoSS, optional BioMASS ODEs, PhysiCell,
 and literature review.
 
 The repository stores scientific decisions in files rather than relying on chat
@@ -21,6 +21,8 @@ For the full design and runtime rationale, see
   contract.
 - Edge-level PubMed evidence review, separated by NeKo session.
 - MaBoSS simulation, mutation analysis, and explicitly gated rule refinement.
+- Optional mechanistic ODE authoring with BioMASS, bounded claim evidence and
+  reproducible provisional/final bundles.
 - PhysiCell and PhysiBoSS configuration from an approved MaBoSS handoff.
 - Typed, review-gated handoffs between modelling stages.
 - Durable MCP session and artifact provenance.
@@ -30,7 +32,7 @@ For the full design and runtime rationale, see
 
 ## Current implementation status
 
-Four specialist agents are currently included:
+Five specialist definitions are included; BioMASS setup is optional:
 
 | Agent | Purpose | MCP access |
 |---|---|---|
@@ -38,6 +40,7 @@ Four specialist agents are currently included:
 | `literature-reviewer` | Review evidence for edges and assumptions and write edge reports | Configured `pubmed` server |
 | `boolean-dynamics-modeler` | Import NeKo handoffs, run MaBoSS analyses, mutations, and bounded rule refinement | Inline MaBoSS server only |
 | `multicellular-configurator` | Configure PhysiCell/PhysiBoSS domains, cells, substrates, rules, and mappings | Inline PhysiCell server only |
+| `ode-modeler` | Build mechanistic ODEs from approved NeKo graphs, Text2Model or explicit reactions; preserve candidates and run approved scenarios | Optional inline BioMASS server only |
 
 The architecture also describes an independent scientific reviewer and a
 reproducibility auditor. Their agent definitions are not yet included. Claude's
@@ -47,7 +50,8 @@ orchestrator, followed by researcher approval. It does not provide independent
 review or audit. These are different existing workflows; see
 [validation responsibilities](docs/handoff-validation.md#validation-responsibilities).
 
-The three modelling specialists start isolated inline MCP servers. The literature
+The modelling specialists start isolated inline MCP servers in Claude; Codex uses
+the shared dispatcher runtime with fixed profiles. The literature
 specialist still requires a configured literature server. Availability depends on
 your local installation.
 
@@ -58,6 +62,7 @@ your local installation.
 - Claude Code with custom agents and skills enabled
 - A modelling environment containing the NeKo, MaBoSS, and PhysiCell MCP executables
 - An optional PubMed MCP server for literature review
+- For ODE work only, a BioMASS server with the required authoring/export capabilities
 
 The inline NeKo, MaBoSS, and PhysiCell commands must point to executables installed
 in the modelling environment. Typical locations are:
@@ -85,6 +90,21 @@ or `--client both` to select clients; `--dry-run` previews and `--check` diagnos
 an existing setup. See [automatic setup](docs/automatic-setup.md) for environment
 options, prerequisites, saved settings, and verification limits.
 
+## Optional ODE setup
+
+To reuse an existing compatible environment, preview then configure the selected
+client with `--environment-mode reuse --env-prefix <existing-env> --with-biomass`.
+Reuse verifies the environment without installing or changing its ownership;
+`--dry-run` writes nothing. Setup still writes selected client configuration when
+actually executed. BioMASS capability checks run before those writes because a
+package version alone does not establish the required API.
+
+[ODE workflow](docs/ode-workflow.md) describes formulation, the three input modes,
+isolation and authoring. [ODE artifact contract](docs/ode-contract.md) separates
+provisional preservation from exact-revision scientific acceptance. The original
+Boolean workflow below remains available. This integration worktree's source
+configuration is prepared for Phase 5; live ODE readiness is not yet verified.
+
 ## Manual setup
 
 1. Clone the repository and enter it:
@@ -111,9 +131,10 @@ options, prerequisites, saved settings, and verification limits.
 
 4. Start Claude Code from the repository root.
 
-5. Run `/agents` and confirm the four tracked agents are visible. Run `/mcp` to
-   check the optional PubMed connection. The three modelling servers are scoped to
-   their subagents and start only when those agents run.
+5. Run `/agents` and confirm the expected tracked agents are visible. Run `/mcp` to
+   check the optional PubMed connection. Modelling servers are scoped to their
+   subagents and start only when those agents run. Configure the optional ODE agent
+   through `--with-biomass` before using it.
 
 6. Ask the orchestrator to help populate the scientific-state files. If you have
    experimental data, place the original inputs under `inputs/` and describe their
@@ -134,7 +155,7 @@ The Codex port is additive: Claude continues to use `.claude/`, while Codex read
 process. Codex 0.153.0 is the minimum supported CLI version.
 
 This workflow requires a local Codex client, such as the Codex extension in VS
-Code, because NeKo, MaBoSS, and PhysiCell are local stdio MCP servers. A hosted
+Code, because the modelling servers are local stdio MCP servers. A hosted
 Workspace Agent cannot reach those processes or local files unless they are
 separately exposed through approved infrastructure; this repository neither
 creates nor authorizes that exposure.
@@ -175,16 +196,42 @@ stage” to invoke the orchestrator. Do not select the same-process files under
 `.codex/agents/`; they are inactive compatibility examples because Codex 0.153.0
 cannot enforce per-child MCP isolation there.
 
-For a bounded specialist task, place its text under the ignored, writable
-`.codex-tasks/` directory. Do not use `.codex/tasks/`: Codex clients may protect the
-`.codex/` configuration directory as read-only. Use the sole supported entry point:
+### Dispatcher workflow
+
+After scientific prerequisites and approvals are satisfied, send the bounded task
+through the matching `specialist_dispatcher.start_*` tool. For example, an
+inspection request uses `start_network_curator` with `task` and no approved writes.
+Add `record_session_id` for an existing session and exact `approved_tools` only for
+already-authorized mutations. The dispatcher records the task before starting a
+fresh isolated specialist and returns promptly with a task ID.
+
+Use `get_specialist_events(after_sequence=...)` for operational progress and
+`get_specialist_task` for state. Wait for `succeeded`, `failed`, or `cancelled`.
+Only `succeeded` returns a validated handoff; its scientific status can still be
+`blocked` or `needs_approval`. The orchestrator applies the existing approval gates
+and alone updates shared scientific state. Task IDs are not scientific session IDs.
+
+The project configuration starts the local dispatcher through the existing ignored
+installer settings. Its Python environment needs the official MCP SDK 2.x.
+See [dispatcher setup, recovery, and validation](docs/specialist-dispatcher.md) and
+[workstation configuration](scripts/codex/dispatcher/README.md). The root keeps
+modelling servers disabled; specialists cannot call the dispatcher recursively.
+
+### CLI fallback
+
+If dispatcher access is unavailable, place the bounded task under ignored
+`.codex-tasks/` and use the same isolated runtime through the existing CLI:
 
 ```text
 python scripts/codex/run_specialist.py network_curator --prompt-file .codex-tasks/network.txt
-python scripts/codex/run_specialist.py literature_reviewer --prompt-file .codex-tasks/literature.txt --record-session-id <neko-session-id> --allow-web-search
+python scripts/codex/run_specialist.py literature_reviewer --prompt-file .codex-tasks/literature.txt --record-session-id <neko-session-id>
 python scripts/codex/run_specialist.py boolean_dynamics_modeler --prompt-file .codex-tasks/maboss.txt
 python scripts/codex/run_specialist.py multicellular_configurator --prompt-file .codex-tasks/physicell.txt
 ```
+
+Do not use `.codex/tasks/`: configuration directories may be read-only. Dispatcher
+requests do not require disposable prompt files. Both routes preserve the same
+isolation, handoff validation, lineage, and scientific approval requirements.
 
 After an invocation is recorded, the launcher verifies the prompt digest and its
 stored `task.txt`, then removes the recognized source task. Interrupted or
@@ -206,7 +253,8 @@ local values, and add `--transport wsl` to the same command.
 
 Literature review prefers a complete `pubmed` transport in the ignored user-local
 literature profile. Otherwise it uses hosted search only when
-`--allow-web-search` is present; parent ChatGPT web access is never assumed. Search
+`allow_web_search=true` was explicitly authorized (CLI: `--allow-web-search`);
+parent ChatGPT web access is never assumed. Search
 is limited to primary biomedical sources, and reports distinguish metadata,
 abstract-only review, and retrieved full text. With neither backend, the launcher
 records a typed `blocked` handoff. The optional structured NCBI MCP is not bundled.
@@ -222,7 +270,7 @@ headings, verdict, confidence, and PMID/DOI fields and refuses overwrites. See
 | Claude implementation | Codex implementation |
 |---|---|
 | `CLAUDE.md` | `AGENTS.md` |
-| `.claude/agents/*.md` inline specialists | Separate processes through `scripts/codex/run_specialist.py`; `.codex/agents/*.toml.example` are inactive |
+| `.claude/agents/*.md` inline specialists | Dispatcher-managed separate processes; `run_specialist.py` is the CLI fallback |
 | `.claude/skills/*/SKILL.md` | Repository plugin skills under `skills/*/SKILL.md` |
 | Claude inline MCP transports | Ignored user-local profiles based on `.codex/profiles/*.example` |
 | `literature_file_guard.py` hook | Read-only specialist plus `write_literature_report.py` |
@@ -499,14 +547,14 @@ artifacts. It cannot resurrect an in-memory MCP server process. After restoring 
 model, specialist agents treat recorded session IDs as provenance and reconstruct
 runtime state from the stored handoffs and artifacts when necessary.
 
-NeKo, MaBoSS, and PhysiCell each maintain their own session identifier. There is no
+NeKo, MaBoSS, PhysiCell, and BioMASS each maintain their own session identifier. There is no
 single pipeline-wide run ID. `CURRENT_STATE.md` must record which upstream session
 produced every downstream handoff.
 
 ## Safety and scientific decision boundaries
 
 - The orchestrator delegates modelling operations; it does not call NeKo, MaBoSS,
-  or PhysiCell directly.
+  PhysiCell, or BioMASS directly.
 - Specialist agents ask the orchestrator for consequential clarification rather
   than guessing or questioning the user directly.
 - Network topology changes, conclusive handoff exports, and unrequested logical-rule
@@ -593,8 +641,10 @@ python scripts/run_tests.py
 ```
 
 From outside the repository, use the absolute path to that script. It runs all
-suites even if one fails and returns a nonzero exit status on failure. Tests use
-temporary repositories and subprocess fixtures; no modelling servers, credentials,
+suites even if one fails and returns a nonzero exit status on failure. Each suite
+has a 120-second limit; a timeout is reported as a failure and the remaining suites
+still run. On POSIX systems, timeout cleanup terminates the suite's process group,
+including fixtures that inherit that group. Tests use temporary repositories and subprocess fixtures; no modelling servers, credentials,
 or third-party Python packages are required. The GitHub Actions workflow runs the
 same command on Python 3.11 and 3.13.
 

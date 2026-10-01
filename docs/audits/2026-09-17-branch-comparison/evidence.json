@@ -1,0 +1,146 @@
+{
+  "date": "2026-09-17",
+  "refs": {
+    "main": "dfee97fd46581fbcf4561a7e089ea5ab3e62b048",
+    "ODE-specialist": "1e8f9a43c4fc249e43d94c71316fc798ee7ad01d",
+    "codex/specialist-dispatcher": "315cebcbc954068eafc16a26dfdfe784dc06a0a5",
+    "model/cell-cycle-core": "3ce097e1a01f7b7b191a9e59620aef3c8661904e"
+  },
+  "common_base": "dfee97fd46581fbcf4561a7e089ea5ab3e62b048",
+  "dispatcher_is_experiment_ancestor": true,
+  "commit_counts": {
+    "ODE_since_common_base": 4,
+    "dispatcher_since_common_base": 19,
+    "experiment_since_dispatcher": 17
+  },
+  "merge_probes": {
+    "dispatcher-plus-ode": {
+      "exit_code": 1,
+      "conflicted_paths": [
+        ".codex-plugin/plugin.json",
+        ".codex/config.example.toml",
+        ".codex/config.toml",
+        ".codex/profiles/README.md",
+        "AGENTS.md",
+        "scripts/codex/run_specialist.py",
+        "skills/biomodelling-orchestrator/SKILL.md",
+        "skills/neko-workflow/SKILL.md",
+        "skills/review-literature-evidence/SKILL.md"
+      ],
+      "conflict_count": 9,
+      "performed_in": "disposable local bare repository; current repository untouched"
+    },
+    "experiment-plus-ode": {
+      "exit_code": 1,
+      "conflicted_paths": [
+        ".codex-plugin/plugin.json",
+        ".codex/config.example.toml",
+        ".codex/config.toml",
+        ".codex/profiles/README.md",
+        "AGENTS.md",
+        "CURRENT_STATE.md",
+        "MODEL_SPEC.md",
+        "docs/handoff-validation.md",
+        "scripts/codex/launcher_config.py",
+        "scripts/codex/run_specialist.py",
+        "scripts/setup_support/verify.py",
+        "skills/biomodelling-orchestrator/SKILL.md",
+        "skills/neko-workflow/SKILL.md",
+        "skills/review-literature-evidence/SKILL.md"
+      ],
+      "conflict_count": 14,
+      "performed_in": "disposable local bare repository; current repository untouched"
+    }
+  },
+  "tracked_artifacts": {
+    "ODE-specialist": {
+      "runs/": {
+        "files": 1,
+        "bytes": 0
+      },
+      "evidence/": {
+        "files": 1,
+        "bytes": 0
+      },
+      "inputs/": {
+        "files": 1,
+        "bytes": 0
+      },
+      "docs/comparisons/": {
+        "files": 0,
+        "bytes": 0
+      }
+    },
+    "codex/specialist-dispatcher": {
+      "runs/": {
+        "files": 1,
+        "bytes": 0
+      },
+      "evidence/": {
+        "files": 1,
+        "bytes": 0
+      },
+      "inputs/": {
+        "files": 1,
+        "bytes": 0
+      },
+      "docs/comparisons/": {
+        "files": 0,
+        "bytes": 0
+      }
+    },
+    "model/cell-cycle-core": {
+      "runs/": {
+        "files": 554,
+        "bytes": 43584951
+      },
+      "evidence/": {
+        "files": 68,
+        "bytes": 168388
+      },
+      "inputs/": {
+        "files": 1,
+        "bytes": 0
+      },
+      "docs/comparisons/": {
+        "files": 11,
+        "bytes": 423586
+      }
+    }
+  },
+  "tests": {
+    "python": "3.14.4",
+    "ODE": {
+      "exit_code": 0,
+      "codex_passed": 120,
+      "claude_passed": 19,
+      "setup_passed": 32
+    },
+    "dispatcher": {
+      "exit_code": 1,
+      "codex_discovered": 129,
+      "codex_passed": 124,
+      "codex_errors": 1,
+      "codex_skipped": 4,
+      "claude_passed": 19,
+      "setup_passed": 26,
+      "error": "test_slow_child_heartbeat_query_and_cancellation: current_activity was None after an early heartbeat"
+    },
+    "real_biomass_fixture_rerun": false,
+    "scientific_modelling_performed": false
+  },
+  "ode_source_sha256": {
+    "scripts/codex/ode_artifacts.py": "7cd2b01b5de4467fb1a4762749bc5349de76b82d3644f11aa383cf51ba3476c0",
+    "scripts/codex/ode_evidence.py": "0c03cb1bec29000c94210e0d1b3e1e2fccc2cf6cddef6a80b0d42b5dc315dc17",
+    "scripts/codex/record_ode_artifacts.py": "66f527bc56885f4b06960152d397f9b8b6853bbfd541419a1a9df7004ac0624e",
+    "scripts/codex/record_neko_ode_handoff.py": "1d1699ebef9fb7db509b4e54eb618693ec996ec5d2e225ab741fa87fb3f96049",
+    "scripts/codex/run_specialist.py": "3cb1a3a31e2442d162e0302754a329d517967269182f3fb8093387e05f801ba6",
+    "scripts/codex/launcher_config.py": "5252896091598b8f5f7f394e0e00a1ab06687b917880eba72ae1ce3666f4a6de",
+    "skills/biomass-workflow/SKILL.md": "0f10455205c96f2e3a9489d7c966fc5553a5f65395ee273033beef49dc51f5a0",
+    "docs/ode-workflow.md": "c722cbd3ce7fbc4f01cb90b992b4801024c36db3172c1cc7084c868818e389aa",
+    "tests/codex/test_ode_integration.py": "e847c296662b53bb1bf11bf6f21903929e534398aec19ba81ff04865843c79ba",
+    "scripts/setup_support/verify.py": "fe677757b16ed8753ee763e6af7d92ca30fb9a8c1021f74b9c12d719eaf612fa"
+  },
+  "helper_delegation": "Native read-only helper failed at required specialist_dispatcher initialization; local audit continued",
+  "scope": "Read-only code comparison plus synthetic filesystem failure injection; temporary archives and local bare merge probe; report-only changes in active checkout"
+}

@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "status": "source_audit_only",
+  "source_repository": "https://github.com/PhysiBoSS/PhysiBoSS",
+  "commit": "7180dffc72d3ce021b2eff385ff49735de5f02d8",
+  "researcher_approved": {
+    "scaling": 37.5,
+    "instruction": "use 37.5",
+    "date": "2026-09-15"
+  },
+  "observed_source_settings": {
+    "scaling": "37.5",
+    "intracellular_dt": "2.5",
+    "time_stochasticity": "0"
+  },
+  "source_files": [
+    {
+      "source_path": "sample_projects_intracellular/boolean/tutorial/config/cell_cycle/PhysiCell_settings.xml",
+      "url": "https://raw.githubusercontent.com/PhysiBoSS/PhysiBoSS/7180dffc72d3ce021b2eff385ff49735de5f02d8/sample_projects_intracellular/boolean/tutorial/config/cell_cycle/PhysiCell_settings.xml",
+      "sha256": "bda859b4b59a1f492e6029104360520ffe65473d7f3c36764a2b16e3649d1154",
+      "bytes": 13988
+    },
+    {
+      "source_path": "sample_projects_intracellular/boolean/tutorial/config/cell_cycle/boolean_network/intracellular_model.bnd",
+      "url": "https://raw.githubusercontent.com/PhysiBoSS/PhysiBoSS/7180dffc72d3ce021b2eff385ff49735de5f02d8/sample_projects_intracellular/boolean/tutorial/config/cell_cycle/boolean_network/intracellular_model.bnd",
+      "sha256": "a275290597978b35cddb915593a56d92f6fe707c5668f6d33bb091b579424271",
+      "bytes": 25947
+    },
+    {
+      "source_path": "sample_projects_intracellular/boolean/tutorial/config/cell_cycle/boolean_network/intracellular_model.cfg",
+      "url": "https://raw.githubusercontent.com/PhysiBoSS/PhysiBoSS/7180dffc72d3ce021b2eff385ff49735de5f02d8/sample_projects_intracellular/boolean/tutorial/config/cell_cycle/boolean_network/intracellular_model.cfg",
+      "sha256": "80df04b93a9c547d083a3b1d18c725d2dd596333a8010ba21a1201ef18f18d2c",
+      "bytes": 7168
+    },
+    {
+      "source_path": "sample_projects_intracellular/boolean/tutorial/config/cell_cycle/cells.csv",
+      "url": "https://raw.githubusercontent.com/PhysiBoSS/PhysiBoSS/7180dffc72d3ce021b2eff385ff49735de5f02d8/sample_projects_intracellular/boolean/tutorial/config/cell_cycle/cells.csv",
+      "sha256": "5207d3b30e36b711e4c9f9c30f409dd34d0947e69497216ab09b1920fc434c54",
+      "bytes": 615
+    },
+    {
+      "source_path": "sample_projects_intracellular/boolean/tutorial/scripts/Cell_cycle_analysis.ipynb",
+      "url": "https://raw.githubusercontent.com/PhysiBoSS/PhysiBoSS/7180dffc72d3ce021b2eff385ff49735de5f02d8/sample_projects_intracellular/boolean/tutorial/scripts/Cell_cycle_analysis.ipynb",
+      "sha256": "eb80af1552722c5c376b99f834beda808ebc74fdf6bc6c7f5dfed301d73f6e9c",
+      "bytes": 470729
+    },
+    {
+      "source_path": "sample_projects_intracellular/boolean/tutorial/scripts/Cell_cycle_boolean_analysis.ipynb",
+      "url": "https://raw.githubusercontent.com/PhysiBoSS/PhysiBoSS/7180dffc72d3ce021b2eff385ff49735de5f02d8/sample_projects_intracellular/boolean/tutorial/scripts/Cell_cycle_boolean_analysis.ipynb",
+      "sha256": "33f01157c3290e85efc1a07a02de4e2beac6ecac45a850bb33024fe84eeda5ca",
+      "bytes": 1002218
+    }
+  ],
+  "notes": [
+    "Source files downloaded to ignored .dispatcher/phase7-reference for inspection only; no notebook or model executed.",
+    "Only scaling was explicitly approved in this instruction; other observed settings are not new researcher decisions.",
+    "Current tutorial revision is pinned; identity with the publication-time revision is not asserted.",
+    "Phase 7 scientific operation and stage transition remain pending."
+  ]
+}

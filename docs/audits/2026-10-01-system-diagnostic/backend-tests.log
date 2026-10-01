@@ -1,0 +1,60 @@
+........................................................................ [ 12%]
+........................................................................ [ 24%]
+........................................................................ [ 37%]
+........................................................................ [ 49%]
+........................................................................ [ 62%]
+........................................................................ [ 74%]
+........................................................................ [ 86%]
+........................................................................ [ 99%]
+....                                                                     [100%]
+=============================== warnings summary ===============================
+../mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/maboss/logic.py:11
+  /home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/maboss/logic.py:11: PyparsingDeprecationWarning: 'setParseAction' deprecated - use 'set_parse_action'
+    varName.setParseAction(lambda token: checkReserved(token[0]))
+
+../mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/maboss/gsparser.py:28
+  /home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/maboss/gsparser.py:28: PyparsingDeprecationWarning: 'setParseAction' deprecated - use 'set_parse_action'
+    externVar.setParseAction(lambda token: token[0])
+
+../mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/maboss/gsparser.py:47
+  /home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/maboss/gsparser.py:47: PyparsingDeprecationWarning: 'setParseAction' deprecated - use 'set_parse_action'
+    intPart.setParseAction(lambda token: int(token[0]))
+
+../mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/maboss/gsparser.py:49
+  /home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/maboss/gsparser.py:49: PyparsingDeprecationWarning: 'setParseAction' deprecated - use 'set_parse_action'
+    floatNum.setParseAction(lambda token: float(token[0]))
+
+../mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/maboss/gsparser.py:50
+  /home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/maboss/gsparser.py:50: PyparsingDeprecationWarning: 'oneOf' deprecated - use 'one_of'
+    booleanStr = (pp.oneOf('0 1')
+
+../mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/maboss/gsparser.py:64
+  /home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/maboss/gsparser.py:64: PyparsingDeprecationWarning: 'setParseAction' deprecated - use 'set_parse_action'
+    booleanStr.setParseAction(lambda token: booleanStrAction(token[0]))
+
+../mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/maboss/gsparser.py:74
+  /home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/maboss/gsparser.py:74: PyparsingDeprecationWarning: 'delimitedList' deprecated - use 'DelimitedList'
+    stateSet = (pp.Suppress('[') + pp.Group(pp.delimitedList(intPart))
+
+../mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/maboss/gsparser.py:76
+  /home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/maboss/gsparser.py:76: PyparsingDeprecationWarning: 'setParseAction' deprecated - use 'set_parse_action'
+    stateSet.setParseAction(lambda token: list(token))
+
+../mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/maboss/gsparser.py:79
+  /home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/maboss/gsparser.py:79: PyparsingDeprecationWarning: 'setParseAction' deprecated - use 'set_parse_action'
+    stateProb.setParseAction(lambda token: (token.proba, token.states))
+
+../mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/maboss/gsparser.py:81
+  /home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/maboss/gsparser.py:81: PyparsingDeprecationWarning: 'delimitedList' deprecated - use 'DelimitedList'
+    schedule = pp.Group(pp.delimitedList(floatNum + pp.Suppress(':') + (floatNum | booleanStr)))
+
+../mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/maboss/gsparser.py:83
+  /home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/maboss/gsparser.py:83: PyparsingDeprecationWarning: 'delimitedList' deprecated - use 'DelimitedList'
+    istate_decl = pp.Group(pp.Suppress('[') + pp.delimitedList(varName)("nodes")
+
+../mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/maboss/gsparser.py:85
+  /home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/maboss/gsparser.py:85: PyparsingDeprecationWarning: 'delimitedList' deprecated - use 'DelimitedList'
+    + pp.delimitedList(stateProb)('attrib') + pp.Suppress(';'))
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+580 passed, 12 warnings in 16.42s

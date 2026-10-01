@@ -22,7 +22,7 @@ def require_supported_python() -> None:
         raise ValueError("Python 3.11 or newer is required")
 
 
-MODELLING_SERVERS = ("neko", "maboss", "physicell")
+MODELLING_SERVERS = ("neko", "maboss", "physicell", "biomass")
 
 
 PUBMED_TOOLS = (
@@ -35,6 +35,7 @@ PUBMED_TOOLS = (
 
 
 SPECIALISTS = {
+    "ode_modeler": ("biomodel-ode-modeler", "biomass"),
     "network_curator": ("biomodel-network-curator", "neko"),
     "literature_reviewer": ("biomodel-literature-reviewer", None),
     "boolean_dynamics_modeler": ("biomodel-boolean-dynamics-modeler", "maboss"),
@@ -48,7 +49,7 @@ SESSION_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 MCP_TOOL_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$")
 
 
-PERMANENTLY_DISABLED_TOOLS = {"delete_session", "clean_generated_files"}
+PERMANENTLY_DISABLED_TOOLS = {"delete_session", "clean_generated_files", "close_session"}
 
 
 WINDOWS_CONFIG_FIELDS = {
@@ -97,6 +98,21 @@ def validate_session_id(session_id: str) -> str:
     return session_id
 
 
+def normalize_review_kind(specialist: str, review_kind: str | None) -> str | None:
+    """Keep evidence modes explicit without applying one to modelling roles."""
+    if not isinstance(specialist, str) or specialist not in SPECIALISTS:
+        raise ValueError("unknown specialist")
+    if specialist != "literature_reviewer":
+        if review_kind is not None:
+            raise ValueError("review_kind is valid only for literature_reviewer")
+        return None
+    if review_kind is None:
+        return "edge"
+    if not isinstance(review_kind, str) or review_kind not in {"edge", "ode"}:
+        raise ValueError("unknown literature review kind")
+    return review_kind
+
+
 def resolve_codex_executable(candidate: str | None) -> str:
     raw = candidate or setup_paths().get("codex_path") or shutil.which("codex")
     if raw is None:
@@ -131,23 +147,43 @@ def mcp_config_arguments(
     approved_tools: list[str] | None = None,
     *,
     pubmed_transport: bool = False,
+    allow_web_search: bool = False,
 ) -> list[str]:
     _, permitted_server = SPECIALISTS[specialist]
-    arguments: list[str] = []
+    if not isinstance(allow_web_search, bool):
+        raise ValueError("allow_web_search must be a boolean")
+    if allow_web_search and specialist != "literature_reviewer":
+        raise ValueError("--allow-web-search is valid only for literature_reviewer")
+    web_search = "live" if allow_web_search and not pubmed_transport else "disabled"
+    # Specialists must not inherit the root's dispatcher and delegate recursively.
+    arguments: list[str] = [
+        # Built-in connector tools are not listed by `codex mcp list`.
+        "-c", "features.apps=false",
+        # Cached web search can be enabled by default even without --search.
+        # Set the same explicit boundary for preflight and child execution.
+        "-c", f'web_search="{web_search}"',
+        "-c", 'mcp_servers.specialist_dispatcher={"command"="__disabled_specialist_dispatcher__","enabled"=false}',
+    ]
+    if permitted_server != "biomass":
+        # Existing installations may not define optional BioMASS. A complete
+        # disabled transport keeps their config valid without requiring setup.
+        arguments.extend([
+            "-c",
+            'mcp_servers.biomass={"command"="__disabled_biomass__","enabled"=false}',
+        ])
     for server in MODELLING_SERVERS:
         enabled = "true" if server == permitted_server else "false"
         arguments.extend(["-c", f"mcp_servers.{server}.enabled={enabled}"])
     if permitted_server is not None:
         arguments.extend(["-c", f"mcp_servers.{permitted_server}.required=true"])
-        arguments.extend(
-            [
-                "-c",
-                (
-                    f'mcp_servers.{permitted_server}.disabled_tools='
-                    '["delete_session","clean_generated_files"]'
-                ),
-            ]
-        )
+        disabled_tools = ["delete_session", "clean_generated_files"]
+        if permitted_server == "biomass":
+            disabled_tools.append("close_session")
+        arguments.extend([
+            "-c",
+            f"mcp_servers.{permitted_server}.disabled_tools="
+            + json.dumps(disabled_tools, separators=(",", ":")),
+        ])
         for tool in validate_approved_tools(specialist, approved_tools):
             arguments.extend(
                 [
@@ -248,13 +284,15 @@ def build_command(
     transport_arguments: list[str] | None = None,
     approved_tools: list[str] | None = None,
     pubmed_transport: bool = False,
+    review_kind: str | None = None,
 ) -> list[str]:
+    review_kind = normalize_review_kind(specialist, review_kind)
     profile, _ = SPECIALISTS[specialist]
     if allow_web_search and specialist != "literature_reviewer":
         raise ValueError("--allow-web-search is valid only for literature_reviewer")
 
     command = [codex]
-    if allow_web_search:
+    if allow_web_search and not pubmed_transport:
         command.append("--search")
     command.extend(
         [
@@ -278,8 +316,30 @@ def build_command(
             specialist,
             approved_tools,
             pubmed_transport=pubmed_transport,
+            allow_web_search=allow_web_search,
         )
     )
+    contract_guidance = ""
+    if specialist == "ode_modeler":
+        contract_guidance = (
+            " Follow docs/ode-contract.md: use specialist=ode_modeler, "
+            "stage=biomass_ode and schema_version=1. For scientific ODE results, "
+            "include complete ode metadata with ode.contract_version=2. For a "
+            "pre-session blocked or failed result with session_id=null and "
+            "derived_from_session_id=null, when no scientific input, revision or "
+            "artifacts exist, omit the entire ode object. Do not fabricate ODE "
+            "provenance or return a partial ode object. "
+            "Preserve provisional versus conclusive export authority; an artifact "
+            "capture does not authorize simulation or scientific acceptance."
+        )
+    elif specialist == "literature_reviewer":
+        contract_guidance = f" Return review_kind={review_kind} exactly."
+        if review_kind == "ode":
+            contract_guidance += (
+                " Follow the ODE claim evidence contract in docs/ode-contract.md. "
+                "Review only the bounded mechanism, kinetic-law or quantity claims "
+                "in this task and use its BioMASS session for evidence provenance."
+            )
     command.append(
         f"Act as {specialist}. Follow the active AGENTS.md and your profile's "
         f"developer instructions. Return exactly one JSON typed specialist handoff."
@@ -287,7 +347,7 @@ def build_command(
         f"hashed stage artifacts. If reports or manifests are still drafts, return "
         f"needs_approval with outstanding work in decisions_required and null "
         f"recommended_next_stage; never claim unwritten files are completed."
-        f"\n\nTask:\n{prompt}"
+        f"{contract_guidance}\n\nTask:\n{prompt}"
     )
     return command
 
@@ -298,6 +358,7 @@ def build_mcp_list_command(
     transport_arguments: list[str] | None = None,
     approved_tools: list[str] | None = None,
     pubmed_transport: bool = False,
+    allow_web_search: bool = False,
 ) -> list[str]:
     profile, _ = SPECIALISTS[specialist]
     return [
@@ -309,6 +370,7 @@ def build_mcp_list_command(
             specialist,
             approved_tools,
             pubmed_transport=pubmed_transport,
+            allow_web_search=allow_web_search,
         ),
         "mcp",
         "list",
@@ -401,7 +463,11 @@ def build_wsl_command(
     allow_web_search: bool,
     record_session_id: str | None,
     approved_tools: list[str] | None = None,
+    review_kind: str | None = None,
 ) -> list[str]:
+    review_kind = normalize_review_kind(specialist, review_kind)
+    if review_kind == "ode" and record_session_id is None:
+        raise ValueError("ODE literature review requires record_session_id")
     command = [
         config["wsl_executable"],
         "--distribution",
@@ -424,6 +490,8 @@ def build_wsl_command(
         command.extend(["--prompt-file", validate_wsl_prompt_file(prompt_file)])
     else:
         raise ValueError("provide --prompt or --prompt-file")
+    if review_kind is not None:
+        command.extend(["--review-kind", review_kind])
     if allow_web_search:
         command.append("--allow-web-search")
     if record_session_id is not None:

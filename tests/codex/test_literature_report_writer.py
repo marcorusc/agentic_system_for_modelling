@@ -1,12 +1,17 @@
 from __future__ import annotations
 
+import io
+import json
 import tempfile
+from contextlib import redirect_stderr, redirect_stdout
+from unittest import mock
 import unittest
 from pathlib import Path
 
 from scripts.codex.write_literature_report import (
     ReportValidationError,
     expected_destination,
+    main,
     validate_report,
     write_report,
 )
@@ -96,6 +101,28 @@ class LiteratureReportWriterTests(unittest.TestCase):
             self.root / "evidence/reports/session-1/GAB1__AKT1.md",
         )
         self.assertEqual(target.read_text(encoding="utf-8"), VALID_REPORT)
+
+    def test_existing_edge_cli_keeps_its_result_contract(self) -> None:
+        output = io.StringIO()
+        with mock.patch("scripts.codex.write_literature_report._project_root", return_value=self.root), redirect_stdout(output):
+            code = main(["--session-id", "session-1", "--source", "GAB1", "--target", "AKT1",
+                         "--draft-file", str(self.draft)])
+        self.assertEqual(code, 0)
+        result = json.loads(output.getvalue())
+        self.assertEqual(set(result), {"path", "sha256", "bytes", "source", "target", "verdict",
+                                       "interaction_type", "confidence", "pmids"})
+        self.assertEqual(result["path"], "evidence/reports/session-1/GAB1__AKT1.md")
+        self.assertEqual(result["pmids"], ["12345678", "87654321"])
+        self.assertEqual((self.root / result["path"]).read_text(), VALID_REPORT)
+
+    def test_cli_requires_one_complete_review_identity(self) -> None:
+        cases = ([], ["--source", "GAB1"], ["--target", "AKT1"],
+                 ["--claim-id", "binding", "--source", "GAB1", "--target", "AKT1"])
+        for identity in cases:
+            with self.subTest(identity=identity), redirect_stderr(io.StringIO()):
+                with self.assertRaises(SystemExit) as raised:
+                    main(["--session-id", "session-1", "--draft-file", str(self.draft), *identity])
+                self.assertEqual(raised.exception.code, 2)
 
     def test_path_traversal_is_rejected(self) -> None:
         for session, source, target in (

@@ -1,4 +1,5 @@
 ---
+name: review-literature-evidence
 description: Reviews PubMed evidence for biological interactions and model assumptions using an explicit evidence matrix.
 ---
 
@@ -38,3 +39,20 @@ Suggested fields:
   "confidence": ""
 }
 ```
+
+
+## ODE claim mode
+
+With explicit `review_kind=ode`, follow `docs/ode-contract.md` for ODE claims rather
+than the edge-specific shape above. Require a full BioMASS session ID and at most
+13 coherent literal claims with stable IDs, mechanism/kinetic-law/quantity kind,
+context and known citations. No NeKo SIF is needed for standalone ODEs. At most two
+reviews may run concurrently across both modes. Never call BioMASS or any other
+modelling MCP. Missing permitted literature backend yields a blocker.
+
+Write immutable reports through the literature guard at
+`evidence/reports/{biomass_session_id}/ode/{claim_id}.md` and read them back.
+Record source access, context, conflicts and reported quantities with original
+units or null. Return `review_kind=ode`, the BioMASS session ID, null upstream ID
+and exact report paths. Retry missing reports only; an explicitly requested
+re-review uses a new claim ID and identifies what it supersedes.

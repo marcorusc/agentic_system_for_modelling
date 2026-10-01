@@ -16,6 +16,7 @@ tools:
   - ToolSearch
   - 'mcp__physicell__*'
 disallowedTools:
+  - 'mcp__biomass__*'
   - Write
   - Edit
   - Bash

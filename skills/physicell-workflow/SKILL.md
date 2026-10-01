@@ -5,13 +5,15 @@ description: Formulate and route governed PhysiCell and PhysiBoSS configuration,
 
 # PhysiCell and PhysiBoSS workflow
 
-Never call PhysiCell tools from the orchestrator or this skill. Write a bounded task
-file and invoke only:
+Never call PhysiCell tools from the orchestrator or this skill. Send the bounded
+`task` to `specialist_dispatcher.start_multicellular_configurator`. Supply
+`record_session_id` for an existing approved session and exact `approved_tools`
+only for writes already authorized for this invocation.
 
-`python scripts/codex/run_specialist.py multicellular_configurator --prompt-file <project-relative-task-file>`
-
-For an existing configuration, add `--record-session-id <full-id>`. Output is
-recorded under
+Query `get_specialist_events` with its sequence cursor and `get_specialist_task`
+until terminal. Consume only the validated handoff returned on `succeeded`, then
+check its independent scientific status and approval requirements. Do not update
+shared state while execution is active. Output remains under
 `runs/multicellular-configurator/{physicell_session_id}/specialist-invocations/`.
 
 ## Task contract
@@ -36,3 +38,11 @@ exist.
 The specialist configures and validates artifacts only. Neither it nor the
 orchestrator may claim that PhysiCell simulation was executed or scientifically
 validated.
+
+## CLI fallback
+
+If the dispatcher is unavailable, the same bounded request may use
+`python scripts/codex/run_specialist.py multicellular_configurator --prompt-file
+<project-relative-task-file>`. Place that file in `.codex-tasks/`; add
+`--record-session-id` and exact `--approve-tool` entries as applicable. Preserve
+all scientific gates and validate the recorded result before synthesis.

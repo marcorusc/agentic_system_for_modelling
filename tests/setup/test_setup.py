@@ -40,6 +40,16 @@ class SetupTests(unittest.TestCase):
         target.write_text(outputs[target] + '\ncustom_setting = "retain"\n')
         self.assertEqual(tomllib.loads(configure_codex.render(self.root, self.prefix, self.home)[target])["custom_setting"], "retain")
 
+    def test_runtime_ode_route_does_not_install_or_rewrite_optional_profile(self):
+        self.home.mkdir()
+        optional = self.home/"biomodel-ode-modeler.config.toml"
+        optional.write_text('# existing optional profile\n')
+        before = optional.read_bytes()
+        outputs = configure_codex.render(self.root, self.prefix, self.home)
+        self.assertNotIn(optional, outputs)
+        self.assertEqual(optional.read_bytes(), before)
+        self.assertEqual(len(outputs), 4)
+
     def test_codex_rejects_unrelated_enabled_server(self):
         self.home.mkdir()
         profile = self.home/"biomodel-network-curator.config.toml"

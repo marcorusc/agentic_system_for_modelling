@@ -1,0 +1,119 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-18",
+  "phase": 3,
+  "status": "complete",
+  "branch": "codex/modelling-architecture-integration",
+  "starting_commit": "038dd134d50b0f191596bd2f5d3151ca98b8562f",
+  "canonical_ode_role": "ode_modeler",
+  "dispatcher_tool": "start_ode_modeler",
+  "dispatcher_tool_count": 9,
+  "evidence_modes": [
+    "edge",
+    "ode"
+  ],
+  "test_runs": [
+    {
+      "environment": "default",
+      "python": "3.14.4",
+      "mcp": null,
+      "anyio": null,
+      "restricted_sandbox": true,
+      "exit_code": 0,
+      "passed": 286,
+      "skipped": 5,
+      "suites": [
+        {
+          "suite": "tests/codex",
+          "discovered": 245,
+          "passed": 240,
+          "skipped": 5,
+          "seconds": 13.163
+        },
+        {
+          "suite": ".claude/scripts",
+          "discovered": 19,
+          "passed": 19,
+          "skipped": 0,
+          "seconds": 3.822
+        },
+        {
+          "suite": "tests/setup",
+          "discovered": 27,
+          "passed": 27,
+          "skipped": 0,
+          "seconds": 0.286
+        }
+      ],
+      "temporary_log": "/tmp/integration-phase3-default-final.log",
+      "log_sha256": "52ff3f79336a6ffef45972b01b30a26694bd3e9d0e633b427669014deeac977e"
+    },
+    {
+      "environment": "sdk",
+      "python": "3.14.6",
+      "mcp": "2.0.0",
+      "anyio": "4.14.2",
+      "restricted_sandbox": false,
+      "exit_code": 0,
+      "passed": 291,
+      "skipped": 0,
+      "suites": [
+        {
+          "suite": "tests/codex",
+          "discovered": 245,
+          "passed": 245,
+          "skipped": 0,
+          "seconds": 16.056
+        },
+        {
+          "suite": ".claude/scripts",
+          "discovered": 19,
+          "passed": 19,
+          "skipped": 0,
+          "seconds": 3.937
+        },
+        {
+          "suite": "tests/setup",
+          "discovered": 27,
+          "passed": 27,
+          "skipped": 0,
+          "seconds": 0.263
+        }
+      ],
+      "temporary_log": "/tmp/integration-phase3-sdk-final.log",
+      "log_sha256": "025faa2a6afd34680bab05a3fb8a829eb15198f9b5d87e2daf6eb94f40b1fc38"
+    }
+  ],
+  "initial_full_suite_failure": {
+    "reason": "Setup iterated all runtime roles before an ODE profile template exists",
+    "failing_tests": 3,
+    "fix": "Explicitly retain the existing four setup-supported roles until optional ODE setup is integrated"
+  },
+  "review_findings_fixed": [
+    "Credential redaction erased typed public ODE authorization fields",
+    "Early CLI failure/cancellation provenance omitted the requested scientific session",
+    "Initial sanitizer fix narrowed valid paths and public metadata; aligned with the accepted contract"
+  ],
+  "scientific_state_matches_preparation": true,
+  "scientific_state_sha256": {
+    "MODEL_SPEC.md": "1e537df00cb9f8ce2d1911c7dc703b1163b9ff76e78ca6aa827302786e2c2487",
+    "DATA_DICTIONARY.md": "63578b9889792484c1bc977462b7bdf61928a98d54cb26f3c6128d2a4804587b",
+    "ASSUMPTIONS.md": "f7ed5bcb3ad7d68b3d29a97613c8673cf322446e80250391f4b70a4ac7cd9696",
+    "DECISIONS.md": "1aa85d04d0494be4a56c4faf5dc8a5f1026619f8fa3f9e24afb48e26e29064bb",
+    "CURRENT_STATE.md": "bd7ccdc87283d1b100db41822098c04d8e39bb3845c036e0cca0dc24dee63852",
+    "VALIDATION_PLAN.md": "4b0228138c1aba833d0a62e7002a699012015dd9d9e9d6e92fdf3c3ae8dc1b86"
+  },
+  "original_experiment_head": "8f0e0af6efb02f363b39449f7136847611070af5",
+  "original_experiment_tracked_diff_clean": true,
+  "execution_route_added": true,
+  "orchestrator_routing_changed": false,
+  "global_profiles_modified": false,
+  "dependencies_changed": false,
+  "scientific_sessions_created": false,
+  "live_specialist_inventory_test": false,
+  "live_llm_execution_test": false,
+  "windows_wsl_execution_test": false,
+  "remote_ci_run": false,
+  "native_software_reviewer_start_failure": "Required specialist_dispatcher MCP handshake closed; review completed by reusing an existing software agent",
+  "phase4_started": false
+}

@@ -1,0 +1,159 @@
+{
+  "schema_version": 1,
+  "phase": 4,
+  "gate_status": "passed",
+  "blocker": null,
+  "routing_changed": false,
+  "root_inventory": {
+    "biomass": false,
+    "maboss": false,
+    "neko": false,
+    "physicell": false,
+    "specialist_dispatcher": true
+  },
+  "sdk_version": "2.0.0",
+  "codex_version": "0.154.0",
+  "regression_suites": {
+    "codex": 127,
+    "claude": 19,
+    "setup": 26,
+    "sdk_tests_skipped": 0
+  },
+  "scientific_state_unchanged": true,
+  "scientific_file_hashes": {
+    "MODEL_SPEC.md": "1e537df00cb9f8ce2d1911c7dc703b1163b9ff76e78ca6aa827302786e2c2487",
+    "DATA_DICTIONARY.md": "63578b9889792484c1bc977462b7bdf61928a98d54cb26f3c6128d2a4804587b",
+    "ASSUMPTIONS.md": "f7ed5bcb3ad7d68b3d29a97613c8673cf322446e80250391f4b70a4ac7cd9696",
+    "DECISIONS.md": "1aa85d04d0494be4a56c4faf5dc8a5f1026619f8fa3f9e24afb48e26e29064bb",
+    "CURRENT_STATE.md": "bd7ccdc87283d1b100db41822098c04d8e39bb3845c036e0cca0dc24dee63852",
+    "VALIDATION_PLAN.md": "4b0228138c1aba833d0a62e7002a699012015dd9d9e9d6e92fdf3c3ae8dc1b86"
+  },
+  "initial_smoke_failure": {
+    "reason": "Built-in codex_apps was visible despite the configured MCP inventory; fixed with features.apps=false.",
+    "artifact_dirs": [
+      "runs/network-curator/_blocked/specialist-invocations/2026-09-15T025534-66d65a9a-cee8-4165-824c-00c49519bd66",
+      "runs/boolean-dynamics-modeler/_blocked/specialist-invocations/2026-09-15T025632-0506e397-615c-4010-a66a-6dbc439428f8",
+      "runs/multicellular-configurator/_blocked/specialist-invocations/2026-09-15T025711-128ec177-0a11-44d3-b4c3-59a264b7cd11",
+      "runs/network-curator/_blocked/specialist-invocations/2026-09-15T025739-aaa95aba-e113-4ea3-b3ed-bb7b1ea58487"
+    ]
+  },
+  "live_checks": [
+    {
+      "specialist": "network_curator",
+      "task_id": "b8dc440bf373477a880ebbf8e9629d35",
+      "invocation_id": "2026-09-15T025812-dc736705-3e21-4430-a62c-5abad67d5671",
+      "artifact_dir": "runs/network-curator/_blocked/specialist-invocations/2026-09-15T025812-dc736705-3e21-4430-a62c-5abad67d5671",
+      "artifact_sha256": {
+        "task.txt": "396500c3daacfdf67f4a440a6441b4d82000e8dde7b243aeecdb25e93f7b636c",
+        "specialist-output.txt": "971ada220b6052e04944ca18d602d2f4195f5ef1348595bb9981eafd9164596e",
+        "provenance.json": "007db1f6f5ef9f9fe7d18ddbfab8d6f640d5eb525ccfe07f16c4bf917b66645b",
+        "events.jsonl": "37c63dc68ecc73081c7cda152dbf515349420ffa7432ac1e69ab1bc383ada6be",
+        "handoff.json": "d627f9db0d3f7df22b9715739597d2899b0648e3f2a8bed47338b68b91bc33e7"
+      },
+      "execution_state": "succeeded",
+      "handoff_status": "blocked",
+      "live_context_isolation": "passed",
+      "scientific_or_modelling_tools_called": false
+    },
+    {
+      "specialist": "boolean_dynamics_modeler",
+      "task_id": "6eface3bd65f468085807a02b2cf1c4a",
+      "invocation_id": "2026-09-15T025857-f405adb2-a9a7-4485-b174-de1003c58756",
+      "artifact_dir": "runs/boolean-dynamics-modeler/_blocked/specialist-invocations/2026-09-15T025857-f405adb2-a9a7-4485-b174-de1003c58756",
+      "artifact_sha256": {
+        "task.txt": "c7701c8a2640c7f557e77710b9fa05542a5b6d7c940bb4633c0feea15d8fc856",
+        "specialist-output.txt": "3ed071177a2446863070308ee955d7f300e7fd564522a8707ccbdc657953e4e3",
+        "provenance.json": "95154d4b3d64e228797205e19a0c4ab899ec6b0c79ac03b128d60735a58a91cb",
+        "events.jsonl": "64ca7a71d5c9c55341e1ca83bbe093648006e063f0e17b6a484ffcf3f2acfb1f",
+        "handoff.json": "8a5fb0e6a6da3c2df30b1394ed59961b7baf0102a9dd2fbe4090c80367a49cd6"
+      },
+      "execution_state": "succeeded",
+      "handoff_status": "blocked",
+      "live_context_isolation": "passed",
+      "scientific_or_modelling_tools_called": false
+    },
+    {
+      "specialist": "multicellular_configurator",
+      "task_id": "92d9f3544ab44982931dcbffe6f0b984",
+      "invocation_id": "2026-09-15T025929-ccd1c2f4-db5b-4095-9de2-7d931b8c3f7b",
+      "artifact_dir": "runs/multicellular-configurator/_blocked/specialist-invocations/2026-09-15T025929-ccd1c2f4-db5b-4095-9de2-7d931b8c3f7b",
+      "artifact_sha256": {
+        "task.txt": "2e28cd0bf9365e1722079e26fc7374e64c2b614762cd2451db310565f37cb6b7",
+        "specialist-output.txt": "1a66c885789341df7b933e89e379a1d1356c6acbcc99ac7a70cd80226c04607f",
+        "provenance.json": "fbbabe84070d8a4e9a2abb39bbaccdecae23e07ef923d70ba35e067fcbb5bc5e",
+        "events.jsonl": "dc5e70b04d457aa51376ce2a276e6186a5d8799c09c44c8e64e30ad305ecb708",
+        "handoff.json": "edbcc2ed6f97d8797342d78ef6de3bb885d7da010ba02ca09bb929f2420bd67d"
+      },
+      "execution_state": "succeeded",
+      "handoff_status": "blocked",
+      "live_context_isolation": "passed",
+      "scientific_or_modelling_tools_called": false
+    },
+    {
+      "specialist": "literature_reviewer",
+      "task_id": "de647cb740f34c58a59aba18b9a8049b",
+      "invocation_id": "2026-09-15T035705-8a728f9b-b5bc-45d8-a611-28a8647ba94b",
+      "artifact_dir": "runs/network-curator/_blocked/specialist-invocations/2026-09-15T035705-8a728f9b-b5bc-45d8-a611-28a8647ba94b",
+      "artifact_sha256": {
+        "task.txt": "c50590ccd8720645ae786c316b68d94cb4e32c2f76252f9e856fd2b8e5093b2c",
+        "specialist-output.txt": "e33dbea71acfc291beadb445e75a19838ad1b595dc3710bde62a191696a07d66",
+        "provenance.json": "51f8c0ebf8f0dc0f231ba475ef26bc92a6fbc5d00b1ca681fe74223a10c46c08",
+        "events.jsonl": "eaf11d1eca2c6281a4cde932178631bdab4b4f3690baf96d6aab5b3e17b4d220",
+        "handoff.json": "5cace234787a20572646e7925b0fdf85e4355f484f1e6b079490b6fe348ba9ef"
+      },
+      "execution_state": "succeeded",
+      "handoff_status": "blocked",
+      "live_context_isolation": "passed",
+      "web_search_available": true,
+      "scientific_or_modelling_tools_called": false,
+      "web_search_calls": 0
+    }
+  ],
+  "cli_equivalence": {
+    "dispatcher_artifact_dir": "runs/network-curator/_blocked/specialist-invocations/2026-09-15T025812-dc736705-3e21-4430-a62c-5abad67d5671",
+    "cli_artifact_dir": "runs/network-curator/_blocked/specialist-invocations/2026-09-15T030033-967bd695-8478-4e64-9def-81e159037457",
+    "checks": {
+      "specialist": true,
+      "profile": true,
+      "transport": true,
+      "codex_version": true,
+      "codex_executable_sha256": true,
+      "effective_mcp_inventory": true,
+      "mcp_enabled": true,
+      "apps_enabled": true,
+      "sandbox": true,
+      "ephemeral": true,
+      "approved_mcp_tools": true,
+      "web_search_enabled": true,
+      "literature_backend": true,
+      "prompt_sha256": true,
+      "process_exit_code": true,
+      "malformed_event_count": true,
+      "event_stream_credentials_redacted": true,
+      "cancelled": true,
+      "handoff_parse_error": true,
+      "fresh_invocation_ids": true,
+      "events_recorded": true,
+      "artifacts_recorded": true,
+      "scientific_state_unchanged": true
+    },
+    "passed": true
+  },
+  "literature_authorization": "Researcher explicitly approved web search solely for the inventory smoke test; no search calls authorized or performed.",
+  "prior_backendless_literature_check": {
+    "specialist": "literature_reviewer",
+    "task_id": "b202b5e955174a54849459926e39acef",
+    "invocation_id": "2026-09-15T025955-f6a7b437-16dd-4169-a536-3a68a1617834",
+    "artifact_dir": "runs/network-curator/_blocked/specialist-invocations/2026-09-15T025955-f6a7b437-16dd-4169-a536-3a68a1617834",
+    "artifact_sha256": {
+      "task.txt": "0c620e599552c2daa55278da9d321ad5e783869a9e413dd63ff6f2d568586eba",
+      "specialist-output.txt": "f373ce1efdffca9661937d1eed9d3443427961cc318454ff41fae7283361f7ee",
+      "provenance.json": "2c78bb6749780af2d8bfdbb41b9f9cecd5467c2300c43c625ed03fcbe3efadec",
+      "handoff.json": "f373ce1efdffca9661937d1eed9d3443427961cc318454ff41fae7283361f7ee"
+    },
+    "execution_state": "succeeded",
+    "handoff_status": "blocked",
+    "live_context_isolation": "not_run_no_backend",
+    "scientific_or_modelling_tools_called": false
+  }
+}

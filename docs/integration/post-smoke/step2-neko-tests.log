@@ -1,0 +1,14 @@
+test_annotated_duplicate_signs_merge_existing_evidence_semantics (test_sif_references.SIFReferenceTests.test_annotated_duplicate_signs_merge_existing_evidence_semantics) ... ok
+test_comments_blank_lines_and_crlf_before_edge (test_sif_references.SIFReferenceTests.test_comments_blank_lines_and_crlf_before_edge) ... ok
+test_dangling_reference_is_not_carried_into_another_import (test_sif_references.SIFReferenceTests.test_dangling_reference_is_not_carried_into_another_import) ... ok
+test_empty_reference_comment_cannot_reuse_previous_annotation (test_sif_references.SIFReferenceTests.test_empty_reference_comment_cannot_reuse_previous_annotation) ... ok
+test_export_import_roundtrip_preserves_each_reference_string (test_sif_references.SIFReferenceTests.test_export_import_roundtrip_preserves_each_reference_string) ... ok
+test_malformed_interaction_consumes_its_annotation (test_sif_references.SIFReferenceTests.test_malformed_interaction_consumes_its_annotation) ... ok
+test_optional_type_and_unknown_effect_are_unchanged (test_sif_references.SIFReferenceTests.test_optional_type_and_unknown_effect_are_unchanged) ... ok
+test_reference_applies_once_and_ordinary_sif_keeps_fallback (test_sif_references.SIFReferenceTests.test_reference_applies_once_and_ordinary_sif_keeps_fallback) ... ok
+test_unannotated_opposite_signs_keep_existing_fallback (test_sif_references.SIFReferenceTests.test_unannotated_opposite_signs_keep_existing_fallback) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.024s
+
+OK

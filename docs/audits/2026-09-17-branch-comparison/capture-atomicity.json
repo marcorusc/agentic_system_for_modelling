@@ -1,0 +1,10 @@
+{
+  "scope": "synthetic filesystem-only failure injection; no modelling tool",
+  "injected_error": "injected failure during publication",
+  "target_exists": true,
+  "partial_files": [
+    "capture.json"
+  ],
+  "retry_error": "capture already exists; use a new capture ID",
+  "source_files_preserved": true
+}

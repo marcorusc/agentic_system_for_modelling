@@ -43,7 +43,7 @@ def is_strictly_below(path: Path, directory: Path) -> bool:
     return True
 
 
-def load_hook_input() -> tuple[str, Path]:
+def load_hook_input() -> tuple[str, Path, object]:
     """Parse and validate the common tool-call fields used by this guard."""
 
     try:
@@ -68,10 +68,10 @@ def load_hook_input() -> tuple[str, Path]:
     candidate = Path(file_path)
     if not candidate.is_absolute():
         deny("tool_input.file_path must be absolute")
-    return tool_name, candidate
+    return tool_name, candidate, tool_input.get("content")
 
 
-def validate_write(candidate: Path) -> None:
+def validate_write(candidate: Path, content: object = None) -> None:
     """Allow report writes only and ensure their parent directory exists."""
 
     project_value = os.environ.get("CLAUDE_PROJECT_DIR")
@@ -90,10 +90,44 @@ def validate_write(candidate: Path) -> None:
             f"{project_root / 'evidence' / 'reports'}; requested {candidate}"
         )
 
+    # ODE reports add strict content, identity and immutability checks. Detect
+    # both lexical and resolved destinations so an alias cannot bypass the guard.
+    ode_path = False
+    for path in (candidate, target):
+        try:
+            parts = path.relative_to(project_root).parts
+        except ValueError:
+            continue
+        ode_path |= len(parts) >= 4 and parts[:2] == ("evidence", "reports") and parts[3] == "ode"
+    if ode_path:
+        validate_ode_write(project_root, candidate, content)
+
     try:
         target.parent.mkdir(parents=True, exist_ok=True)
     except OSError as error:
         deny(f"could not create report directory {target.parent}: {error}")
+
+
+def validate_ode_write(project_root: Path, candidate: Path, content: object) -> None:
+    """Use the shared ODE evidence contract without changing legacy edge writes."""
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+    from scripts.codex.ode_evidence import destination, validate_ode_report
+
+    try:
+        relative = candidate.relative_to(project_root)
+        if (len(relative.parts) != 5 or relative.parts[:2] != ("evidence", "reports")
+                or relative.parts[3] != "ode" or candidate.suffix != ".md"):
+            raise ValueError("invalid ODE evidence path")
+        expected = destination(project_root, relative.parts[2], candidate.stem)
+        if expected != candidate:
+            raise ValueError("ODE report path must be canonical")
+        if expected.exists():
+            raise ValueError("refusing to overwrite existing ODE report")
+        if not isinstance(content, str):
+            raise ValueError("ODE report Write requires content")
+        validate_ode_report(content, candidate.stem)
+    except (ValueError, OSError) as error:
+        deny(str(error))
 
 
 def validate_read(candidate: Path) -> None:
@@ -107,9 +141,9 @@ def validate_read(candidate: Path) -> None:
 
 
 def main() -> int:
-    tool_name, candidate = load_hook_input()
+    tool_name, candidate, content = load_hook_input()
     if tool_name == "Write":
-        validate_write(candidate)
+        validate_write(candidate, content)
     else:
         validate_read(candidate)
     return 0
