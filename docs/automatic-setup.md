@@ -219,3 +219,8 @@ proof of scientific correctness. These local backend commits are not releases an
 still have the SDK compatibility findings in `docs/integration/post-smoke/`.
 Source setup does not claim those release blockers are resolved, and does not
 install into the shared modelling environment implicitly.
+
+Setup rejects a Codex home or plugin-cache location that overlaps the plugin
+source before rendering/writing configuration or invoking plugin installation.
+This check also follows existing symlink aliases. Use a separate home/cache;
+placing a temporary home inside this repository can make plugin copying recurse.

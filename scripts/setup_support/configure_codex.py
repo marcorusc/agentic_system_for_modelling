@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import tomllib
 from pathlib import Path
@@ -253,9 +254,19 @@ def _plugin_problem(entry: dict[str, Any], *, root: Path, version: str,
     return None
 
 
+def validate_plugin_paths(root: Path, home: Path) -> None:
+    """Reject source/cache overlap before the CLI can recursively copy itself."""
+    source = root.resolve()
+    home = home.resolve()
+    cache = (home / "plugins/cache").resolve()
+    if home.is_relative_to(source) or cache.is_relative_to(source) or source.is_relative_to(cache):
+        raise SetupError("Codex home/plugin cache overlaps plugin source; choose a Codex home outside the source and a source outside its cache")
+
+
 def ensure_plugin(root: Path, executable: str, *, check: bool = False) -> None:
     from .detect import run
 
+    validate_plugin_paths(root, Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex"))))
     marketplace = "agentic-modelling-local"
     plugin = "agentic-system-for-modelling"
     plugin_id = f"{plugin}@{marketplace}"

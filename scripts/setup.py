@@ -166,6 +166,11 @@ def plan(args, root: Path, manifest: dict) -> tuple[dict, list[str]]:
                 errors.append("Local package source does not match the pinned package name/version")
         source = str(source_path)
     home = str(Path(values.get("codex_home", os.environ.get("CODEX_HOME", str(Path.home()/".codex")))).expanduser().absolute())
+    if "codex" in clients:
+        try:
+            configure_codex.validate_plugin_paths(root, Path(home))
+        except SetupError as error:
+            errors.append(str(error))
     source_manifest = values.get("backend_sources")
     pinned_sources = None
     if source_manifest:
