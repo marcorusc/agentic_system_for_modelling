@@ -15,7 +15,7 @@ from scripts.codex.launcher_config import validate_session_id
 from scripts.codex.ode_artifacts import SHA, digest, safe_file
 
 
-def record(project: Path, server_root: Path, session_id: str, capture_id: str, entries: list) -> dict:
+def record(project: Path, server_root: Path, session_id: str, capture_id: str, entries: list, *, invocation_provenance: dict | None = None) -> dict:
     validate_session_id(session_id)
     validate_session_id(capture_id)
     project = project.resolve(strict=True)
@@ -43,6 +43,8 @@ def record(project: Path, server_root: Path, session_id: str, capture_id: str, e
         expected = entry.get('sha256')
         if not isinstance(expected, str) or not SHA.fullmatch(expected) or digest(file) != expected:
             raise ValueError('server artifact hash mismatch')
+        if 'size_bytes' in entry and (type(entry['size_bytes']) is not int or file.stat().st_size != entry['size_bytes']):
+            raise ValueError('server artifact byte count mismatch')
         prepared.append((file, relative, expected))
     target = project / 'runs/ode-modeler' / session_id / 'captures' / capture_id
     with staged_capture(project, target) as stage:
@@ -59,6 +61,11 @@ def record(project: Path, server_root: Path, session_id: str, capture_id: str, e
             output.append({'path': (target / relative).relative_to(project).as_posix(), 'sha256': expected})
         provenance = {'session_id': session_id, 'capture_id': capture_id,
                       'source_artifacts': entries, 'artifacts': output}
+        if invocation_provenance is not None:
+            for reference in invocation_provenance['records']:
+                if digest(safe_file(project, reference['path'])) != reference['sha256']:
+                    raise ValueError('invocation record changed before capture publication')
+            provenance['invocation'] = invocation_provenance
         (stage / 'capture.json').write_text(json.dumps(provenance, indent=2) + '\n', encoding='utf-8')
     return provenance
 
@@ -68,12 +75,20 @@ def main() -> int:
     parser.add_argument('--server-root', required=True, type=Path)
     parser.add_argument('--session-id', required=True)
     parser.add_argument('--capture-id', required=True)
-    parser.add_argument('--inventory', required=True, type=Path)
+    source = parser.add_mutually_exclusive_group(required=True)
+    source.add_argument('--inventory', type=Path)
+    source.add_argument('--invocation', type=Path, help='Recorded successful ODE invocation; verify catalogue ownership before capture')
     arguments = parser.parse_args()
     try:
-        result = record(Path(__file__).resolve().parents[2], arguments.server_root,
-                        arguments.session_id, arguments.capture_id,
-                        json.loads(arguments.inventory.read_text(encoding='utf-8')))
+        project = Path(__file__).resolve().parents[2]
+        provenance = None
+        if arguments.invocation:
+            from scripts.codex.ode_capture_inventory import verified_inventory
+            entries, provenance = verified_inventory(project, arguments.invocation, arguments.session_id)
+        else:
+            entries = json.loads(arguments.inventory.read_text(encoding='utf-8'))
+        result = record(project, arguments.server_root, arguments.session_id, arguments.capture_id,
+                        entries, invocation_provenance=provenance)
     except (OSError, ValueError, KeyError, TypeError) as error:
         print(f'ODE artifact recording failed: {error}', file=sys.stderr)
         return 2

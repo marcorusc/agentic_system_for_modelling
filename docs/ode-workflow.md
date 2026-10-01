@@ -168,3 +168,29 @@ stage validation still requires the absent `scientific-reviewer` and
 `reproducibility-auditor` definitions; report that blocker. Codex parent validation
 is not independent scientific review. Syntax, numerical execution and biological
 validity remain separate claims.
+
+### Recover recording from a completed specialist invocation
+
+When an ODE specialist returns a full artifact list but omits redundant per-entry
+session IDs, use the same invocation's successful `list_generated_files` result
+to establish ownership. Do not insert the current session ID based on context.
+
+```sh
+python scripts/codex/record_ode_artifacts.py \
+  --server-root /absolute/BioMASS/server/root \
+  --session-id SESSION --capture-id candidate \
+  --invocation /absolute/project/runs/ode-modeler/SESSION/specialist-invocations/INVOCATION
+```
+
+This mode validates the recorded typed result and clean invocation provenance,
+requires the matching server catalogue, and compares every path, size and session.
+The ordinary recorder then verifies all hashes and copies the artifacts. Source
+handoff/event records remain unchanged, and their hashes are linked in
+`capture.json`. Missing, conflicting or failed inventory evidence blocks recording.
+`--inventory` remains available for an already explicit, fully owned inventory.
+
+Recording does not rerun any specialist or simulation and does not manufacture a
+completed scientific handoff. Existing captures are never overwritten. After an
+interruption, inspect existing receipts and artifacts; any later recording uses
+an explicit invocation/capture ID, not automatic scientific execution. The parent
+still verifies model meaning, accepted assumptions and the stage completion.

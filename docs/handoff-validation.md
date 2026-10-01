@@ -84,3 +84,23 @@ See the [ODE artifact contract](ode-contract.md) for `ode_modeler`,
 publication and ODE claim evidence. The common envelope and existing Boolean/
 PhysiCell contracts remain version 1. These Phase 2 helpers do not activate a
 new dispatcher route or change scientific stage policy.
+
+## Capture an existing NeKo Boolean export
+
+After the approved export exists, the parent can preserve it with the pure-file
+recorder. Use the modelling environment's Python for the backend's typed contract
+reader; this imports no modelling server and runs no engine:
+
+```sh
+python scripts/codex/record_neko_boolean_handoff.py \
+  --server-root /absolute/NeKo/server/root \
+  --manifest /absolute/NeKo/server/root/artifacts/SESSION/export.handoff.json \
+  --capture-id approved-export
+```
+
+The recorder verifies session ownership, safe paths, artifact hashes, the typed
+manifest and exact BNET target order. It atomically publishes original bytes,
+a separately relocated import manifest and provenance under the source session's
+`boolean-handoffs/` directory. It refuses an existing capture ID and does not
+re-export a model, modify rules, approve a stage or write shared scientific state.
+Parent approval and completed-handoff validation still apply.
