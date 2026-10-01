@@ -1,0 +1,82 @@
+{
+  "source_receipt": {
+    "passed": true,
+    "sources": [
+      {
+        "name": "mcp-biomodelling-servers",
+        "version": "2.3.0",
+        "path": "/home/marcorusc/projects/github/mcp-biomodelling-servers-integration-fixes",
+        "commit": "f0c4a808fd28a3e4a622f64b00b53e18f44ca23e"
+      },
+      {
+        "name": "nekomata",
+        "version": "1.10.0",
+        "path": "/home/marcorusc/projects/github/Neko-integration-fixes",
+        "commit": "94579ac506aeb87545ca9b709d8c5fc316a9f552"
+      }
+    ],
+    "errors": []
+  },
+  "environment": {
+    "passed": true,
+    "errors": [],
+    "versions": {
+      "version": "2.3.0",
+      "python": [
+        3,
+        13,
+        13
+      ]
+    }
+  },
+  "server_inventories": {
+    "passed": true,
+    "errors": [],
+    "mcp": {
+      "neko": {
+        "passed": true,
+        "tool_count": 33,
+        "required_capabilities": [
+          "create_network",
+          "export_biomass_handoff",
+          "export_neko_handoff"
+        ]
+      },
+      "maboss": {
+        "passed": true,
+        "tool_count": 24,
+        "required_capabilities": [
+          "get_maboss_nodes",
+          "run_simulation"
+        ]
+      },
+      "physicell": {
+        "passed": true,
+        "tool_count": 34,
+        "required_capabilities": [
+          "export_xml_configuration"
+        ]
+      },
+      "biomass": {
+        "passed": true,
+        "tool_count": 22,
+        "required_capabilities": [
+          "build_reactions",
+          "configure_model",
+          "create_session",
+          "export_model_bundle",
+          "generate_model",
+          "import_neko_handoff",
+          "import_text",
+          "import_text_file",
+          "inspect_reactions",
+          "run_simulation",
+          "set_evidence",
+          "validate_model"
+        ]
+      }
+    }
+  },
+  "scope": "Fresh environment installation, imports, dependency consistency and MCP initialize/tools-list only; no modelling tool calls or client configuration changes.",
+  "prefix": "/tmp/biomodelling-diagnostic-20261001/environment"
+}

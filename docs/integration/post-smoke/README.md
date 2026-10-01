@@ -19,10 +19,10 @@ records. Every implementation step has a descriptive commit and relevant tests.
    reusable capture checks are implemented and regression-tested. Fresh installation
    verification remains part of release diagnostics. Broader automatic stage
    finalization, telemetry and context-size redesign remain separately scoped.
-4. **Pending:** diagnose the complete system through code review and software
-   tests, including Codex/Claude setup, routing, permissions, handoffs, dependency
-   compatibility, failure recovery and provenance. Fix material findings before
-   publication. No scientific models are run in this diagnostic.
+4. **Complete:** whole-system code diagnostic, material fixes and fresh source
+   installation verification. See the [diagnostic report](../../audits/2026-10-01-system-diagnostic/README.md)
+   for findings, software-test evidence, an initial fixture-selection exception and
+   remaining live-client limits.
 5. **Pending:** publish reviewed changes and update main after integration and
    diagnostic completion; the researcher then performs the live Claude test.
 
@@ -156,3 +156,15 @@ before claiming release readiness. The source manifest must be advanced if that
 review changes backend commits. The ordinary released-package setup pin is not
 silently replaced by an unpublished dependency. Remote publication and main
 updates remain after the diagnostic; live Claude testing follows publication.
+
+## Step 4 outcome — whole-system diagnostic
+
+The [full diagnostic](../../audits/2026-10-01-system-diagnostic/README.md) supersedes
+the outstanding SDK-error and fresh-install blockers above. Backend `f0c4a80` fixes
+expected MCP tool errors; `5d82db1` supplies the mandatory Claude reviewers and
+portable transport checks; `ab4a9d9` pins the tested backend revision.
+
+Final checks: 375 repository tests, 580 selected backend tests and nine offline
+NeKo tests passed. The same 375 repository tests also pass in the fresh pinned
+environment. All four installed servers pass startup/tool-discovery checks.
+Live Claude testing and publication/main updates are still pending.
