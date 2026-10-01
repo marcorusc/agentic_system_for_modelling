@@ -6,12 +6,13 @@ import os
 import tempfile
 from pathlib import Path
 
+from . import backend_sources as source_support
 from .detect import run
 from .state import SetupError, atomic_write
 
 
 def install(prefix: Path, manager: str, manager_path: str, manifest: dict,
-            source: str | None = None) -> None:
+            source: str | None = None, *, backend_sources: list[dict] | None = None) -> None:
     if prefix.is_symlink():
         raise SetupError(f"Refusing symlink environment: {prefix}")
     marker = prefix.parent / ("." + prefix.name + ".biomodelling-setup.json")
@@ -19,6 +20,11 @@ def install(prefix: Path, manager: str, manager_path: str, manifest: dict,
         raise SetupError(f"Environment already exists and is not setup-managed: {prefix}; choose a new --env-prefix")
     desired = {"package": manifest["package"], "version": manifest["version"],
                "manager": manager, "source": source}
+    if backend_sources:
+        if source:
+            raise SetupError("Cannot mix backend sources and package source")
+        source_support.validate_sources(backend_sources)
+        desired["backend_sources"] = backend_sources
     if marker.is_file() and json.loads(marker.read_text()) != desired:
         raise SetupError("Environment specification changed; choose a new --env-prefix to upgrade")
     prefix.parent.mkdir(parents=True, exist_ok=True)
@@ -35,7 +41,13 @@ def install(prefix: Path, manager: str, manager_path: str, manifest: dict,
     requirement = source or f'{manifest["package"]}=={manifest["version"]}'
     # A completed environment is reused; verification checks for drift.
     if not (prefix/".setup-installed").exists():
-        run([python, "-m", "pip", "install", "--index-url", manifest["index_url"], requirement], timeout=1800)
+        if backend_sources:
+            with source_support.snapshots(backend_sources) as paths:
+                run([python, "-m", "pip", "install", "--index-url", manifest["index_url"],
+                     *[str(paths[e["name"]]) for e in backend_sources]], timeout=1800)
+                source_support.write_receipt(prefix, backend_sources, paths)
+        else:
+            run([python, "-m", "pip", "install", "--index-url", manifest["index_url"], requirement], timeout=1800)
         run([python, "-m", "pip", "check"], timeout=60)
         frozen = run([python, "-m", "pip", "freeze"], timeout=60).stdout
         atomic_write(prefix/"resolved-requirements.txt", frozen.encode())

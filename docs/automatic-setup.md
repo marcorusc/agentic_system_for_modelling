@@ -181,3 +181,41 @@ profiles, package environments and the active plugin untouched. Phase 5 deployme
 verification must establish actual client/process isolation before scientific ODE
 work begins; source configuration and tools/list checks alone do not establish
 what an LLM invocation can see or perform.
+
+## Pinned local backend development sources
+
+For the post-smoke integration, use `--backend-sources` with a version-1 JSON
+manifest containing exactly `nekomata` and `mcp-biomodelling-servers`. Each entry
+requires `name`, `version`, `path` and a full Git `commit`. Relative paths resolve
+from the manifest's directory. The selected checkout must be its repository root,
+clean, and at that commit. The MCP package version must also match
+`setup/dependencies.toml`. See `setup/backend-sources.integration.json` for the
+current local source revisions; adjust its paths for your checkout layout.
+
+Preview configuration for both clients, supplying an external Codex home if needed:
+
+```sh
+python scripts/setup.py --client both --with-biomass \
+  --backend-sources setup/backend-sources.integration.json \
+  --env-prefix "$PWD/.setup/integration-environment" --dry-run
+```
+
+Remove `--dry-run` to install into a new setup-managed environment and configure
+both clients. Setup installs both packages together from temporary Git archives,
+not editable checkouts; ignored files cannot become build inputs. Normal dependency
+resolution can still use the package index. The source pins do not lock every
+transitive dependency; `resolved-requirements.txt` records the actual resolution.
+
+The environment's `.setup-backend-sources.json` records selected commits, pip's
+local snapshot origin and hashes of installed distribution files (excluding pyc).
+`--check` and `--environment-mode reuse` verify that receipt and installed bytes
+before configuration writes. They do not install or repair packages. Keep the
+manifest and source checkouts available for these checks. A source change requires
+a new environment prefix. The legacy `--package-source` option cannot be combined
+with `--backend-sources`; it remains a version-only development path.
+
+The receipt detects recorded-file drift; it is not an adversarial attestation or a
+proof of scientific correctness. These local backend commits are not releases and
+still have the SDK compatibility findings in `docs/integration/post-smoke/`.
+Source setup does not claim those release blockers are resolved, and does not
+install into the shared modelling environment implicitly.

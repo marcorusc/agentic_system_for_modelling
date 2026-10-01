@@ -16,12 +16,12 @@ if sys.version_info < (3, 11):
     raise SystemExit("Setup requires Python 3.11+; on Windows run it inside WSL.")
 
 import tomllib
-from scripts.setup_support import configure_claude, configure_codex, detect, environment, verify
+from scripts.setup_support import backend_sources, configure_claude, configure_codex, detect, environment, verify
 from scripts.setup_support.state import SetupError, atomic_write, read_json, write_config
 
 
 INPUT_KEYS = {"client", "env_prefix", "manager", "codex_path", "claude_path", "codex_home",
-              "manager_path", "package_source", "environment_mode", "biomass", "graphviz_path"}
+              "manager_path", "package_source", "environment_mode", "biomass", "graphviz_path", "backend_sources"}
 
 
 def parser() -> argparse.ArgumentParser:
@@ -32,7 +32,7 @@ def parser() -> argparse.ArgumentParser:
                    help="Create a managed environment (default), or verify an existing environment without installing")
     p.add_argument("--with-biomass", dest="biomass", action="store_const", const="enabled",
                    help="Configure optional ODE profiles and require BioMASS capabilities")
-    for name in ("env-prefix", "codex-path", "claude-path", "codex-home", "manager-path", "package-source", "graphviz-path"):
+    for name in ("env-prefix", "codex-path", "claude-path", "codex-home", "manager-path", "package-source", "graphviz-path", "backend-sources"):
         p.add_argument("--" + name)
     p.add_argument("--config", type=Path, help="JSON path overrides; no credentials")
     p.add_argument("--non-interactive", action="store_true")
@@ -72,6 +72,8 @@ def settings(args, root: Path) -> dict:
         raise SetupError("biomass must be enabled or disabled")
     if values.get("environment_mode") == "reuse" and values.get("package_source"):
         raise SetupError("reuse mode cannot install --package-source; omit it")
+    if values.get("backend_sources") and values.get("package_source"):
+        raise SetupError("Select --backend-sources or --package-source, not both")
     return values
 
 
@@ -164,7 +166,15 @@ def plan(args, root: Path, manifest: dict) -> tuple[dict, list[str]]:
                 errors.append("Local package source does not match the pinned package name/version")
         source = str(source_path)
     home = str(Path(values.get("codex_home", os.environ.get("CODEX_HOME", str(Path.home()/".codex")))).expanduser().absolute())
-    resolved = {"client": selection, "clients": clients, "client_versions": versions,
+    source_manifest = values.get("backend_sources")
+    pinned_sources = None
+    if source_manifest:
+        source_manifest = str(Path(source_manifest).expanduser().resolve())
+        try:
+            pinned_sources = backend_sources.load(Path(source_manifest), manifest)
+        except (OSError, ValueError, KeyError, TypeError) as error:
+            errors.append(str(error))
+    resolved = {"backend_sources": source_manifest, "pinned_sources": pinned_sources, "client": selection, "clients": clients, "client_versions": versions,
                 "system": system, "env_prefix": str(prefix), "manager": manager,
                 "environment_mode": "reuse" if reuse else "managed",
                 "biomass": values.get("biomass", "disabled"), "graphviz_path": graphviz,
@@ -195,7 +205,8 @@ def execute(args, root: Path = ROOT) -> dict:
         return report
     if not args.check and resolved["environment_mode"] != "reuse":
         print("Preparing modelling environment…", file=sys.stderr, flush=True)
-        environment.install(prefix, resolved["manager"], resolved["manager_path"], manifest, resolved["package_source"])
+        environment.install(prefix, resolved["manager"], resolved["manager_path"], manifest, resolved["package_source"],
+                            **({"backend_sources": resolved["pinned_sources"]} if resolved["pinned_sources"] else {}))
     if with_biomass:
         manifest = {**manifest, "executables": [*manifest["executables"], "mcp-biomass-server"],
                     "imports": [*manifest["imports"], "biomass", "mcp_biomodelling_servers.BioMASS"]}
@@ -203,6 +214,11 @@ def execute(args, root: Path = ROOT) -> dict:
     if not report["environment"]["passed"]:
         report["errors"].extend(report["environment"]["errors"])
         return report
+    if resolved["pinned_sources"]:
+        report["backend_sources"] = backend_sources.verify_receipt(prefix, resolved["pinned_sources"])
+        if not report["backend_sources"]["passed"]:
+            report["errors"].extend(report["backend_sources"]["errors"])
+            return report
     if with_biomass:
         report["capabilities"] = verify.probe_servers(prefix, with_biomass=True, **environment_options)
         if not report["capabilities"]["passed"]:
