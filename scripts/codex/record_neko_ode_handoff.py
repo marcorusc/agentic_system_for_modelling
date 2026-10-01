@@ -44,6 +44,8 @@ def record_neko(project: Path, server_root: Path, manifest_path: Path, capture_i
         raise ValueError('NeKo network changed while copying')
     if json.loads(original_bytes) != manifest:
         raise ValueError('NeKo manifest changed while copying')
+    from mcp_biomodelling_servers.ode_handoff import read_ode_handoff
+    read_ode_handoff(str(original))
     target = project / 'runs/network-curator' / session / 'ode-handoffs' / capture_id
     with staged_capture(project, target) as stage:
         (stage / 'original.handoff.json').write_bytes(original_bytes)
@@ -53,6 +55,9 @@ def record_neko(project: Path, server_root: Path, manifest_path: Path, capture_i
         if (stage / 'original.handoff.json').read_bytes() != original_bytes:
             raise ValueError('NeKo manifest changed while recording')
         imported = copy.deepcopy(manifest)
+        imported['network_file']['path'] = str(stage / network_name)
+        (stage / 'import.handoff.json').write_text(json.dumps(imported, indent=2) + '\n', encoding='utf-8')
+        read_ode_handoff(str(stage / 'import.handoff.json'))
         imported['network_file']['path'] = str(target / network_name)
         (stage / 'import.handoff.json').write_text(json.dumps(imported, indent=2) + '\n', encoding='utf-8')
         provenance = {'original_manifest_sha256': digest(stage / 'original.handoff.json'),
