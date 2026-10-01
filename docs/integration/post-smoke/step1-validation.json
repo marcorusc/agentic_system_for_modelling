@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-01",
+  "branch": "codex/modelling-architecture-integration",
+  "baseline": "24fe3e7204ebc64927d8bd98c5729dc9a8986131",
+  "tested_head": "93c874ef0c7dfdb5b79a4258f6b25ade71b7ec8b",
+  "command": "PYTHONDONTWRITEBYTECODE=1 /home/marcorusc/miniforge3/envs/mcp_modelling/bin/python -B scripts/run_tests.py",
+  "exit_code": 0,
+  "suites": {
+    "codex": 271,
+    "claude": 19,
+    "setup": 59
+  },
+  "total": 349,
+  "skips": 0,
+  "modelling_sessions_started": 0,
+  "scientific_state_unchanged": true,
+  "scientific_file_sha256": {
+    "MODEL_SPEC.md": "1e537df00cb9f8ce2d1911c7dc703b1163b9ff76e78ca6aa827302786e2c2487",
+    "DATA_DICTIONARY.md": "63578b9889792484c1bc977462b7bdf61928a98d54cb26f3c6128d2a4804587b",
+    "ASSUMPTIONS.md": "f7ed5bcb3ad7d68b3d29a97613c8673cf322446e80250391f4b70a4ac7cd9696",
+    "DECISIONS.md": "1aa85d04d0494be4a56c4faf5dc8a5f1026619f8fa3f9e24afb48e26e29064bb",
+    "CURRENT_STATE.md": "bd7ccdc87283d1b100db41822098c04d8e39bb3845c036e0cca0dc24dee63852",
+    "VALIDATION_PLAN.md": "4b0228138c1aba833d0a62e7002a699012015dd9d9e9d6e92fdf3c3ae8dc1b86"
+  },
+  "test_log_sha256": "67e8f37e2e8ed99de85501e89edf05bdee05564c902af7f428ee686ef4db685a",
+  "limits": [
+    "Software fixtures and pure file readers only; no live Claude validation",
+    "Backend preservation patches remain outside this branch pending dependency decision",
+    "Whole-system diagnostic and remote publication are later steps"
+  ]
+}

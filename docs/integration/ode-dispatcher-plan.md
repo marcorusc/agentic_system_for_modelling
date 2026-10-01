@@ -8,7 +8,7 @@ The researcher approved creating a separate worktree based on `codex/specialist-
 - Base: `315cebcbc954068eafc16a26dfdfe784dc06a0a5`.
 - ODE feature source: `1e8f9a43c4fc249e43d94c71316fc798ee7ad01d`.
 - Preserved experiment: `model/cell-cycle-core`, audited at `3ce097e` and comparison committed at `8f0e0af`.
-- Current stage: **Phase 4 complete; Phase 5 integration verification discussion next**.
+- Current stage: **Reduced Codex smoke test complete on the experiment branch; post-smoke integration Step 1 complete.** See [selected fixes, validation and remaining steps](post-smoke/README.md).
 
 ## Evidence carried into this worktree
 
