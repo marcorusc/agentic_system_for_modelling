@@ -15,9 +15,10 @@ records. Every implementation step has a descriptive commit and relevant tests.
 2. **Source integration complete:** the researcher selected dedicated backend
    source branches. NeKo and MaBoSS preservation fixes are committed separately;
    setup adoption and a reproduced SDK compatibility blocker remain outstanding.
-3. **Pending:** address reusable capture/finalization and setup gaps with focused
-   contracts/tests; update installation and completion documentation. Keep broader
-   telemetry and context-size redesign separately scoped.
+3. **Complete in source:** pinned backend setup, recursive-copy protection and
+   reusable capture checks are implemented and regression-tested. Fresh installation
+   verification remains part of release diagnostics. Broader automatic stage
+   finalization, telemetry and context-size redesign remain separately scoped.
 4. **Pending:** diagnose the complete system through code review and software
    tests, including Codex/Claude setup, routing, permissions, handoffs, dependency
    compatibility, failure recovery and provenance. Fix material findings before
@@ -123,3 +124,35 @@ These are local source revisions, not releases or installed dependencies. Setup
 still pins the old package version and has not adopted the new source commits.
 The next step must make that dependency selection reproducible for both clients,
 then address capture/setup gaps. Push and main updates remain after diagnostic.
+
+## Step 3 outcome — setup and capture integration
+
+- `15b7b3b`: opt-in `--backend-sources` manifest, exact clean Git identities,
+  committed build snapshots, installation-origin and installed-file receipts.
+  Codex and Claude select the same environment; checks/reuse verify the receipt
+  before writing client configuration. Both real backend checkouts match the
+  checked-in integration manifest. Package installation was tested with fake pip,
+  not performed against the shared environment. Transitive package resolution
+  remains recorded by pip freeze, not globally locked by the two source pins.
+- `3f75f3c`: reject Codex source/home/cache overlap before rendering or installation,
+  including symlink aliases and direct plugin-installer entry points.
+- Capture implementation: preserve existing Boolean exports with typed identity,
+  exact BNET target order and atomic publication. Reconcile missing redundant ODE
+  ownership only against the same recorded invocation's successful file catalogue;
+  hash-check provenance again before publication. Scientific state/approvals and
+  the original handoff remain unchanged. No automatic simulation retry or stage
+  acceptance was added.
+
+The bounded full runner passed **373 tests** (280 Codex, 19 Claude, 74 setup),
+with no skips. Existing concurrency/interruption capture tests still pass. A
+read-only application of the new ODE reconciler to the historical smoke invocation
+verified all 42 entries; it wrote no new capture and called no modelling tool.
+See [validation and limitations](step3-validation.json) and [test log](step3-tests.log).
+
+Next is the requested whole-system **code diagnostic**, not another modelling
+session. It must address the reproduced backend SDK error-message failures,
+review both client routes and preservation contracts, and verify fresh installation
+before claiming release readiness. The source manifest must be advanced if that
+review changes backend commits. The ordinary released-package setup pin is not
+silently replaced by an unpublished dependency. Remote publication and main
+updates remain after the diagnostic; live Claude testing follows publication.

@@ -1,0 +1,1133 @@
+Running tests/codex
+test_complete_captures_preserve_originals_and_record_final_paths_and_hashes (test_artifact_capture.ArtifactCaptureTests.test_complete_captures_preserve_originals_and_record_final_paths_and_hashes) ... ok
+test_concurrent_processes_publish_exactly_one_capture (test_artifact_capture.ArtifactCaptureTests.test_concurrent_processes_publish_exactly_one_capture) ... ok
+test_dangling_destination_and_lock_symlinks_are_rejected (test_artifact_capture.ArtifactCaptureTests.test_dangling_destination_and_lock_symlinks_are_rejected) ... ok
+test_destination_ancestor_symlink_is_rejected (test_artifact_capture.ArtifactCaptureTests.test_destination_ancestor_symlink_is_rejected) ... ok
+test_existing_files_and_empty_directories_are_never_replaced (test_artifact_capture.ArtifactCaptureTests.test_existing_files_and_empty_directories_are_never_replaced) ... ok
+test_fifo_lock_is_rejected (test_artifact_capture.ArtifactCaptureTests.test_fifo_lock_is_rejected) ... ok
+test_final_metadata_write_failure_leaves_no_capture_and_can_retry (test_artifact_capture.ArtifactCaptureTests.test_final_metadata_write_failure_leaves_no_capture_and_can_retry) ... ok
+test_interruption_after_rename_leaves_a_complete_immutable_capture (test_artifact_capture.ArtifactCaptureTests.test_interruption_after_rename_leaves_a_complete_immutable_capture) ... ok
+test_invalid_inventory_identity_hash_duplicate_and_escape_are_rejected (test_artifact_capture.ArtifactCaptureTests.test_invalid_inventory_identity_hash_duplicate_and_escape_are_rejected) ... ok
+test_killed_writer_leaves_only_hidden_staging_and_allows_retry (test_artifact_capture.ArtifactCaptureTests.test_killed_writer_leaves_only_hidden_staging_and_allows_retry) ... ok
+test_neko_changed_source_read_is_rejected (test_artifact_capture.ArtifactCaptureTests.test_neko_changed_source_read_is_rejected) ... ok
+test_neko_corrupted_staged_bytes_are_rejected_before_publication (test_artifact_capture.ArtifactCaptureTests.test_neko_corrupted_staged_bytes_are_rejected_before_publication) ... ok
+test_neko_wrong_network_ownership_or_hash_is_rejected (test_artifact_capture.ArtifactCaptureTests.test_neko_wrong_network_ownership_or_hash_is_rejected) ... ok
+test_partial_ode_copy_and_copy_hash_mismatch_leave_no_capture (test_artifact_capture.ArtifactCaptureTests.test_partial_ode_copy_and_copy_hash_mismatch_leave_no_capture) ... ok
+test_rename_failure_never_exposes_partial_capture (test_artifact_capture.ArtifactCaptureTests.test_rename_failure_never_exposes_partial_capture) ... ok
+test_source_file_symlink_is_rejected (test_artifact_capture.ArtifactCaptureTests.test_source_file_symlink_is_rejected) ... ok
+test_source_session_symlink_is_rejected (test_artifact_capture.ArtifactCaptureTests.test_source_session_symlink_is_rejected) ... ok
+test_changed_bytes_and_outside_session_are_rejected (test_capture_recovery.BooleanCaptureTests.test_changed_bytes_and_outside_session_are_rejected) ... ok
+test_portable_capture_preserves_bytes_and_only_relocates_path (test_capture_recovery.BooleanCaptureTests.test_portable_capture_preserves_bytes_and_only_relocates_path) ... ok
+test_same_node_set_in_different_order_is_rejected (test_capture_recovery.BooleanCaptureTests.test_same_node_set_in_different_order_is_rejected) ... ok
+test_cancelled_nonzero_or_unsafe_invocation_fails (test_capture_recovery.ODEInventoryTests.test_cancelled_nonzero_or_unsafe_invocation_fails) ... ok
+test_changed_record_or_source_cannot_publish (test_capture_recovery.ODEInventoryTests.test_changed_record_or_source_cannot_publish) ... ok
+test_conflicting_ownership_size_or_extra_file_fails (test_capture_recovery.ODEInventoryTests.test_conflicting_ownership_size_or_extra_file_fails) ... ok
+test_explicit_recording_still_rejects_unproven_ownership_and_size (test_capture_recovery.ODEInventoryTests.test_explicit_recording_still_rejects_unproven_ownership_and_size) ... ok
+test_missing_failed_wrong_session_or_duplicate_catalogue_fails (test_capture_recovery.ODEInventoryTests.test_missing_failed_wrong_session_or_duplicate_catalogue_fails) ... ok
+test_missing_redundant_ownership_is_restored_without_editing_original (test_capture_recovery.ODEInventoryTests.test_missing_redundant_ownership_is_restored_without_editing_original) ... ok
+test_biomass_inventory_is_checked_only_when_explicitly_selected (test_check_environment.EnvironmentCheckTests.test_biomass_inventory_is_checked_only_when_explicitly_selected) ... ok
+test_explicit_web_search_is_reported_as_the_fallback (test_check_environment.EnvironmentCheckTests.test_explicit_web_search_is_reported_as_the_fallback) ... ok
+test_inventory_output_retains_names_only (test_check_environment.EnvironmentCheckTests.test_inventory_output_retains_names_only) ... ok
+test_missing_modelling_server_fails_preflight (test_check_environment.EnvironmentCheckTests.test_missing_modelling_server_fails_preflight) ... ok
+test_optional_cli_flag_defaults_off_and_is_forwarded (test_check_environment.EnvironmentCheckTests.test_optional_cli_flag_defaults_off_and_is_forwarded) ... ok
+test_parent_biomass_is_prohibited_even_when_ode_is_not_selected (test_check_environment.EnvironmentCheckTests.test_parent_biomass_is_prohibited_even_when_ode_is_not_selected) ... ok
+test_parent_with_modelling_access_fails_preflight (test_check_environment.EnvironmentCheckTests.test_parent_with_modelling_access_fails_preflight) ... ok
+test_required_paths_include_reset_templates (test_check_environment.EnvironmentCheckTests.test_required_paths_include_reset_templates) ... ok
+test_success_requires_all_modelling_specialists_but_not_pubmed (test_check_environment.EnvironmentCheckTests.test_success_requires_all_modelling_specialists_but_not_pubmed) ... ok
+test_unsafe_literature_biomass_inventory_fails_overall_readiness (test_check_environment.EnvironmentCheckTests.test_unsafe_literature_biomass_inventory_fails_overall_readiness) ... ok
+test_apply_deletes_verified_canonical_and_legacy_tasks (test_cleanup_tasks.TaskCleanupTests.test_apply_deletes_verified_canonical_and_legacy_tasks) ... ok
+test_launcher_consumes_only_after_exact_invocation_recording (test_cleanup_tasks.TaskCleanupTests.test_launcher_consumes_only_after_exact_invocation_recording) ... ok
+test_launcher_retains_task_when_invocation_does_not_match (test_cleanup_tasks.TaskCleanupTests.test_launcher_retains_task_when_invocation_does_not_match) ... ok
+test_preview_verifies_without_deleting (test_cleanup_tasks.TaskCleanupTests.test_preview_verifies_without_deleting) ... ok
+test_reachable_git_history_can_verify_after_branch_state_is_absent (test_cleanup_tasks.TaskCleanupTests.test_reachable_git_history_can_verify_after_branch_state_is_absent) ... ok
+test_symlink_and_unapproved_paths_are_never_deleted (test_cleanup_tasks.TaskCleanupTests.test_symlink_and_unapproved_paths_are_never_deleted) ... ok
+test_unmatched_and_changed_tasks_are_preserved (test_cleanup_tasks.TaskCleanupTests.test_unmatched_and_changed_tasks_are_preserved) ... ok
+test_all_lifecycle_transitions (test_dispatcher.DispatcherTests.test_all_lifecycle_transitions) ... ok
+test_atomic_failure_preserves_previous_record (test_dispatcher.DispatcherTests.test_atomic_failure_preserves_previous_record) ... ok
+test_corruption_is_isolated_and_path_traversal_rejected (test_dispatcher.DispatcherTests.test_corruption_is_isolated_and_path_traversal_rejected) ... ok
+test_events_redacted_ordered_and_paginated (test_dispatcher.DispatcherTests.test_events_redacted_ordered_and_paginated) ... ok
+test_every_specialist_hostile_inventory_rejected (test_dispatcher.DispatcherTests.test_every_specialist_hostile_inventory_rejected) ... ok
+test_exact_task_persisted_before_worker_and_concurrency_rejected (test_dispatcher.DispatcherTests.test_exact_task_persisted_before_worker_and_concurrency_rejected) ... ok
+test_partial_event_after_crash_does_not_block_other_tasks (test_dispatcher.DispatcherTests.test_partial_event_after_crash_does_not_block_other_tasks) ... ok
+test_restart_fails_active_states_without_rerun (test_dispatcher.DispatcherTests.test_restart_fails_active_states_without_rerun) ... ok
+test_runtime_exception_is_visible_failure (test_dispatcher.DispatcherTests.test_runtime_exception_is_visible_failure) ... ok
+test_second_manager_cannot_recover_live_owner (test_dispatcher.DispatcherTests.test_second_manager_cannot_recover_live_owner) ... ok
+test_symlink_roots_and_records_rejected (test_dispatcher.DispatcherTests.test_symlink_roots_and_records_rejected) ... ok
+test_explicit_workstation_settings_and_rejected_overrides (test_dispatcher_configuration.ConfigurationTests.test_explicit_workstation_settings_and_rejected_overrides) ... ok
+test_root_dispatcher_and_child_recursive_delegation_disabled (test_dispatcher_configuration.ConfigurationTests.test_root_dispatcher_and_child_recursive_delegation_disabled) ... ok
+test_malformed_handoff_process_and_recording_failures (test_dispatcher_integration.IntegrationTests.test_malformed_handoff_process_and_recording_failures) ... [specialist-launcher] launcher_run=2026-10-01T021947-76dbecf2-30b7-45f2-9cdf-ebb504becdf7 specialist=network_curator profile=biomodel-network-curator started
+[specialist-launcher] launcher_run=2026-10-01T021947-76dbecf2-30b7-45f2-9cdf-ebb504becdf7 MCP inventory preflight passed: neko=enabled, maboss=disabled, physicell=disabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021947-76dbecf2-30b7-45f2-9cdf-ebb504becdf7 event stream=runs/network-curator/_launcher-runs/2026-10-01T021947-76dbecf2-30b7-45f2-9cdf-ebb504becdf7/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021947-76dbecf2-30b7-45f2-9cdf-ebb504becdf7 specialist=network_curator profile=biomodel-network-curator Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021947-76dbecf2-30b7-45f2-9cdf-ebb504becdf7 specialist=network_curator profile=biomodel-network-curator specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021947-76dbecf2-30b7-45f2-9cdf-ebb504becdf7 specialist=network_curator profile=biomodel-network-curator MCP tool call started: neko.inspect
+[specialist-launcher] launcher_run=2026-10-01T021947-76dbecf2-30b7-45f2-9cdf-ebb504becdf7 specialist=network_curator profile=biomodel-network-curator reasoning update received
+[specialist-launcher] launcher_run=2026-10-01T021947-76dbecf2-30b7-45f2-9cdf-ebb504becdf7 specialist=network_curator profile=biomodel-network-curator malformed JSONL event received
+[specialist-launcher] launcher_run=2026-10-01T021947-76dbecf2-30b7-45f2-9cdf-ebb504becdf7 specialist=network_curator profile=biomodel-network-curator MCP tool call completed: neko.inspect
+[specialist-launcher] launcher_run=2026-10-01T021947-76dbecf2-30b7-45f2-9cdf-ebb504becdf7 specialist=network_curator profile=biomodel-network-curator specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021947-76dbecf2-30b7-45f2-9cdf-ebb504becdf7 child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/network-curator/_blocked/specialist-invocations/2026-10-01T021947-76dbecf2-30b7-45f2-9cdf-ebb504becdf7
+[specialist-launcher] specialist handoff rejected: Codex emitted 1 malformed JSONL event(s)
+[specialist-launcher] launcher_run=2026-10-01T021947-76dbecf2-30b7-45f2-9cdf-ebb504becdf7 final exit status=3 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021947-16daf7cc-5e44-4ee7-8a86-f2c0ed483436 specialist=network_curator profile=biomodel-network-curator started
+[specialist-launcher] launcher_run=2026-10-01T021947-16daf7cc-5e44-4ee7-8a86-f2c0ed483436 MCP inventory preflight passed: neko=enabled, maboss=disabled, physicell=disabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021947-16daf7cc-5e44-4ee7-8a86-f2c0ed483436 event stream=runs/network-curator/_launcher-runs/2026-10-01T021947-16daf7cc-5e44-4ee7-8a86-f2c0ed483436/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021947-16daf7cc-5e44-4ee7-8a86-f2c0ed483436 specialist=network_curator profile=biomodel-network-curator Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021947-16daf7cc-5e44-4ee7-8a86-f2c0ed483436 specialist=network_curator profile=biomodel-network-curator specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021947-16daf7cc-5e44-4ee7-8a86-f2c0ed483436 specialist=network_curator profile=biomodel-network-curator MCP tool call started: neko.inspect
+[specialist-launcher] launcher_run=2026-10-01T021947-16daf7cc-5e44-4ee7-8a86-f2c0ed483436 specialist=network_curator profile=biomodel-network-curator reasoning update received
+[specialist-launcher] launcher_run=2026-10-01T021947-16daf7cc-5e44-4ee7-8a86-f2c0ed483436 specialist=network_curator profile=biomodel-network-curator MCP tool call completed: neko.inspect
+[specialist-launcher] launcher_run=2026-10-01T021947-16daf7cc-5e44-4ee7-8a86-f2c0ed483436 specialist=network_curator profile=biomodel-network-curator specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021947-16daf7cc-5e44-4ee7-8a86-f2c0ed483436 child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/network-curator/_unresolved/specialist-invocations/2026-10-01T021947-16daf7cc-5e44-4ee7-8a86-f2c0ed483436
+[specialist-launcher] specialist handoff rejected: specialist did not return a JSON handoff
+[specialist-launcher] launcher_run=2026-10-01T021947-16daf7cc-5e44-4ee7-8a86-f2c0ed483436 final exit status=3 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021947-9fa809bb-e328-4cf9-9088-2f3e4de31f6f specialist=network_curator profile=biomodel-network-curator started
+[specialist-launcher] launcher_run=2026-10-01T021947-9fa809bb-e328-4cf9-9088-2f3e4de31f6f MCP inventory preflight passed: neko=enabled, maboss=disabled, physicell=disabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021947-9fa809bb-e328-4cf9-9088-2f3e4de31f6f event stream=runs/network-curator/_launcher-runs/2026-10-01T021947-9fa809bb-e328-4cf9-9088-2f3e4de31f6f/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021947-9fa809bb-e328-4cf9-9088-2f3e4de31f6f specialist=network_curator profile=biomodel-network-curator Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021947-9fa809bb-e328-4cf9-9088-2f3e4de31f6f specialist=network_curator profile=biomodel-network-curator specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021947-9fa809bb-e328-4cf9-9088-2f3e4de31f6f specialist=network_curator profile=biomodel-network-curator MCP tool call started: neko.inspect
+[specialist-launcher] launcher_run=2026-10-01T021947-9fa809bb-e328-4cf9-9088-2f3e4de31f6f specialist=network_curator profile=biomodel-network-curator reasoning update received
+[specialist-launcher] launcher_run=2026-10-01T021947-9fa809bb-e328-4cf9-9088-2f3e4de31f6f specialist=network_curator profile=biomodel-network-curator MCP tool call completed: neko.inspect
+[specialist-launcher] launcher_run=2026-10-01T021947-9fa809bb-e328-4cf9-9088-2f3e4de31f6f specialist=network_curator profile=biomodel-network-curator specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021947-9fa809bb-e328-4cf9-9088-2f3e4de31f6f child exit status=7 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/network-curator/_blocked/specialist-invocations/2026-10-01T021947-9fa809bb-e328-4cf9-9088-2f3e4de31f6f
+[specialist-launcher] launcher_run=2026-10-01T021947-9fa809bb-e328-4cf9-9088-2f3e4de31f6f final exit status=7 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021947-a70f36b5-45e9-4b01-a2e8-391dcddd2d72 specialist=network_curator profile=biomodel-network-curator started
+[specialist-launcher] launcher_run=2026-10-01T021947-a70f36b5-45e9-4b01-a2e8-391dcddd2d72 MCP inventory preflight passed: neko=enabled, maboss=disabled, physicell=disabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021947-a70f36b5-45e9-4b01-a2e8-391dcddd2d72 event stream=runs/network-curator/_launcher-runs/2026-10-01T021947-a70f36b5-45e9-4b01-a2e8-391dcddd2d72/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021947-a70f36b5-45e9-4b01-a2e8-391dcddd2d72 specialist=network_curator profile=biomodel-network-curator Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021947-a70f36b5-45e9-4b01-a2e8-391dcddd2d72 specialist=network_curator profile=biomodel-network-curator specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021947-a70f36b5-45e9-4b01-a2e8-391dcddd2d72 specialist=network_curator profile=biomodel-network-curator MCP tool call started: neko.inspect
+[specialist-launcher] launcher_run=2026-10-01T021947-a70f36b5-45e9-4b01-a2e8-391dcddd2d72 specialist=network_curator profile=biomodel-network-curator reasoning update received
+[specialist-launcher] launcher_run=2026-10-01T021947-a70f36b5-45e9-4b01-a2e8-391dcddd2d72 specialist=network_curator profile=biomodel-network-curator MCP tool call completed: neko.inspect
+[specialist-launcher] launcher_run=2026-10-01T021947-a70f36b5-45e9-4b01-a2e8-391dcddd2d72 specialist=network_curator profile=biomodel-network-curator specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021947-a70f36b5-45e9-4b01-a2e8-391dcddd2d72 child exit status=0 elapsed=0.0s
+[specialist-launcher] failed to record specialist invocation: recording failed
+[specialist-launcher] launcher_run=2026-10-01T021947-a70f36b5-45e9-4b01-a2e8-391dcddd2d72 final exit status=3 elapsed=0.1s
+ok
+test_slow_child_heartbeat_query_and_cancellation (test_dispatcher_integration.IntegrationTests.test_slow_child_heartbeat_query_and_cancellation) ... [specialist-launcher] launcher_run=2026-10-01T021947-64f5ddb8-7a7c-4329-9a0f-000dfd35f4c6 specialist=network_curator profile=biomodel-network-curator started
+[specialist-launcher] launcher_run=2026-10-01T021947-64f5ddb8-7a7c-4329-9a0f-000dfd35f4c6 MCP inventory preflight passed: neko=enabled, maboss=disabled, physicell=disabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021947-64f5ddb8-7a7c-4329-9a0f-000dfd35f4c6 event stream=runs/network-curator/_launcher-runs/2026-10-01T021947-64f5ddb8-7a7c-4329-9a0f-000dfd35f4c6/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021947-64f5ddb8-7a7c-4329-9a0f-000dfd35f4c6 specialist=network_curator profile=biomodel-network-curator Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021947-64f5ddb8-7a7c-4329-9a0f-000dfd35f4c6 specialist=network_curator profile=biomodel-network-curator specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021947-64f5ddb8-7a7c-4329-9a0f-000dfd35f4c6 specialist=network_curator profile=biomodel-network-curator MCP tool call started: neko.inspect
+[specialist-launcher] launcher_run=2026-10-01T021947-64f5ddb8-7a7c-4329-9a0f-000dfd35f4c6 specialist=network_curator profile=biomodel-network-curator reasoning update received
+[specialist-launcher] heartbeat launcher_run=2026-10-01T021947-64f5ddb8-7a7c-4329-9a0f-000dfd35f4c6 elapsed=0.1s child=running active tool=neko.inspect
+[specialist-launcher] launcher_run=2026-10-01T021947-64f5ddb8-7a7c-4329-9a0f-000dfd35f4c6 cancellation requested; stopping child
+[specialist-launcher] heartbeat launcher_run=2026-10-01T021947-64f5ddb8-7a7c-4329-9a0f-000dfd35f4c6 elapsed=0.1s child=exited(-15) active tool=neko.inspect
+[specialist-launcher] launcher_run=2026-10-01T021947-64f5ddb8-7a7c-4329-9a0f-000dfd35f4c6 child exit status=-15 elapsed=0.1s
+[specialist-launcher] Recorded specialist invocation: runs/network-curator/_unresolved/specialist-invocations/2026-10-01T021947-64f5ddb8-7a7c-4329-9a0f-000dfd35f4c6
+[specialist-launcher] launcher_run=2026-10-01T021947-64f5ddb8-7a7c-4329-9a0f-000dfd35f4c6 final exit status=130 elapsed=0.1s
+ok
+test_success_artifacts_and_operational_events (test_dispatcher_integration.IntegrationTests.test_success_artifacts_and_operational_events) ... [specialist-launcher] launcher_run=2026-10-01T021947-35ecdf1f-fbfa-464f-b548-0ab7405ec7ef specialist=network_curator profile=biomodel-network-curator started
+[specialist-launcher] launcher_run=2026-10-01T021947-35ecdf1f-fbfa-464f-b548-0ab7405ec7ef MCP inventory preflight passed: neko=enabled, maboss=disabled, physicell=disabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021947-35ecdf1f-fbfa-464f-b548-0ab7405ec7ef event stream=runs/network-curator/_launcher-runs/2026-10-01T021947-35ecdf1f-fbfa-464f-b548-0ab7405ec7ef/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021947-35ecdf1f-fbfa-464f-b548-0ab7405ec7ef specialist=network_curator profile=biomodel-network-curator Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021947-35ecdf1f-fbfa-464f-b548-0ab7405ec7ef specialist=network_curator profile=biomodel-network-curator specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021947-35ecdf1f-fbfa-464f-b548-0ab7405ec7ef specialist=network_curator profile=biomodel-network-curator MCP tool call started: neko.inspect
+[specialist-launcher] launcher_run=2026-10-01T021947-35ecdf1f-fbfa-464f-b548-0ab7405ec7ef specialist=network_curator profile=biomodel-network-curator reasoning update received
+[specialist-launcher] launcher_run=2026-10-01T021947-35ecdf1f-fbfa-464f-b548-0ab7405ec7ef specialist=network_curator profile=biomodel-network-curator MCP tool call completed: neko.inspect
+[specialist-launcher] launcher_run=2026-10-01T021947-35ecdf1f-fbfa-464f-b548-0ab7405ec7ef specialist=network_curator profile=biomodel-network-curator specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021947-35ecdf1f-fbfa-464f-b548-0ab7405ec7ef child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/network-curator/_blocked/specialist-invocations/2026-10-01T021947-35ecdf1f-fbfa-464f-b548-0ab7405ec7ef
+[specialist-launcher] launcher_run=2026-10-01T021947-35ecdf1f-fbfa-464f-b548-0ab7405ec7ef final exit status=0 elapsed=0.1s
+ok
+test_unsafe_inventory_never_starts_child (test_dispatcher_integration.IntegrationTests.test_unsafe_inventory_never_starts_child) ... [specialist-launcher] launcher_run=2026-10-01T021947-cb3a2d24-b516-4595-87d4-3c22aa7dbc8a specialist=network_curator profile=biomodel-network-curator started
+[specialist-launcher] MCP inventory preflight failed: prohibited MCP servers are enabled: maboss
+ok
+test_ode_and_both_literature_modes_share_existing_concurrency_limits (test_dispatcher_ode.OdeDispatcherTests.test_ode_and_both_literature_modes_share_existing_concurrency_limits) ... ok
+test_restart_preserves_ode_review_identity_and_partial_artifacts (test_dispatcher_ode.OdeDispatcherTests.test_restart_preserves_ode_review_identity_and_partial_artifacts) ... ok
+test_calls_and_validation_errors (test_dispatcher_server.ServerTests.test_calls_and_validation_errors) ... ok
+test_nine_explicit_tools_and_no_escape_arguments (test_dispatcher_server.ServerTests.test_nine_explicit_tools_and_no_escape_arguments) ... ok
+test_ode_and_literature_modes_forwarded_and_queryable (test_dispatcher_server.ServerTests.test_ode_and_literature_modes_forwarded_and_queryable) ... ok
+test_start_returns_id_and_failure_is_queryable (test_dispatcher_server.ServerTests.test_start_returns_id_and_failure_is_queryable) ... [specialist-launcher] launcher_run=2026-10-01T021947-be652ac2-ef53-43f6-9717-239147be2aed specialist=network_curator profile=biomodel-network-curator started
+[specialist-launcher] preflight failed: missing user-local Codex profile missing
+ok
+test_stdio_transport_and_clean_disconnect (test_dispatcher_server.ServerTests.test_stdio_transport_and_clean_disconnect) ... [specialist-launcher] launcher_run=2026-10-01T021948-a10cd64e-63b1-4317-88d4-9898bb2f6e06 specialist=network_curator profile=biomodel-network-curator started
+[specialist-launcher] preflight failed: missing user-local Codex profile biomodel-network-curator.config.toml
+ok
+test_malformed_reports_are_rejected (test_literature_report_writer.LiteratureReportValidationTests.test_malformed_reports_are_rejected) ... ok
+test_parenthesized_doi_markdown_link_is_accepted (test_literature_report_writer.LiteratureReportValidationTests.test_parenthesized_doi_markdown_link_is_accepted) ... ok
+test_valid_report_is_parsed (test_literature_report_writer.LiteratureReportValidationTests.test_valid_report_is_parsed) ... ok
+test_cli_requires_one_complete_review_identity (test_literature_report_writer.LiteratureReportWriterTests.test_cli_requires_one_complete_review_identity) ... ok
+test_dangling_file_symlink_cannot_redirect_to_another_session (test_literature_report_writer.LiteratureReportWriterTests.test_dangling_file_symlink_cannot_redirect_to_another_session) ... ok
+test_existing_edge_cli_keeps_its_result_contract (test_literature_report_writer.LiteratureReportWriterTests.test_existing_edge_cli_keeps_its_result_contract) ... ok
+test_existing_report_is_never_overwritten (test_literature_report_writer.LiteratureReportWriterTests.test_existing_report_is_never_overwritten) ... ok
+test_outside_and_unexpected_output_names_are_rejected (test_literature_report_writer.LiteratureReportWriterTests.test_outside_and_unexpected_output_names_are_rejected) ... ok
+test_path_traversal_is_rejected (test_literature_report_writer.LiteratureReportWriterTests.test_path_traversal_is_rejected) ... ok
+test_symlink_escape_is_rejected (test_literature_report_writer.LiteratureReportWriterTests.test_symlink_escape_is_rejected) ... ok
+test_writes_only_the_derived_session_scoped_filename (test_literature_report_writer.LiteratureReportWriterTests.test_writes_only_the_derived_session_scoped_filename) ... ok
+test_capture_preserves_exported_basename_and_only_relocates_manifest_path (test_neko_ode_handoff.NeKoODEHandoffTests.test_capture_preserves_exported_basename_and_only_relocates_manifest_path) ... ok
+test_capture_rejects_basename_collisions_before_publishing (test_neko_ode_handoff.NeKoODEHandoffTests.test_capture_rejects_basename_collisions_before_publishing) ... ok
+test_relocated_capture_is_accepted_by_actual_server_reader (test_neko_ode_handoff.NeKoODEHandoffTests.test_relocated_capture_is_accepted_by_actual_server_reader) ... ok
+test_all_claim_kinds_are_distinct (test_ode_evidence.ODEReportValidationTests.test_all_claim_kinds_are_distinct) ... ok
+test_every_source_field_is_required (test_ode_evidence.ODEReportValidationTests.test_every_source_field_is_required) ... ok
+test_insufficient_evidence_may_have_no_sources (test_ode_evidence.ODEReportValidationTests.test_insufficient_evidence_may_have_no_sources) ... ok
+test_quantity_fields_units_and_source_links_are_required (test_ode_evidence.ODEReportValidationTests.test_quantity_fields_units_and_source_links_are_required) ... ok
+test_quantity_text_and_unknown_units_are_preserved_without_inference (test_ode_evidence.ODEReportValidationTests.test_quantity_text_and_unknown_units_are_preserved_without_inference) ... ok
+test_required_fields_and_sections_are_enforced (test_ode_evidence.ODEReportValidationTests.test_required_fields_and_sections_are_enforced) ... ok
+test_source_identifiers_and_details_are_validated (test_ode_evidence.ODEReportValidationTests.test_source_identifiers_and_details_are_validated) ... ok
+test_sources_and_quantities_require_unambiguous_json_arrays (test_ode_evidence.ODEReportValidationTests.test_sources_and_quantities_require_unambiguous_json_arrays) ... ok
+test_supported_claim_requires_accessible_supporting_evidence (test_ode_evidence.ODEReportValidationTests.test_supported_claim_requires_accessible_supporting_evidence) ... ok
+test_direct_cli_reports_validation_errors_without_traceback (test_ode_evidence.ODEReportWriterTests.test_direct_cli_reports_validation_errors_without_traceback) ... ok
+test_exact_destination_and_readback_digest (test_ode_evidence.ODEReportWriterTests.test_exact_destination_and_readback_digest) ... ok
+test_existing_report_remains_unchanged (test_ode_evidence.ODEReportWriterTests.test_existing_report_remains_unchanged) ... ok
+test_invalid_draft_creates_no_report (test_ode_evidence.ODEReportWriterTests.test_invalid_draft_creates_no_report) ... ok
+test_symlinks_at_every_component_are_rejected (test_ode_evidence.ODEReportWriterTests.test_symlinks_at_every_component_are_rejected) ... ok
+test_traversal_and_wrong_output_are_rejected (test_ode_evidence.ODEReportWriterTests.test_traversal_and_wrong_output_are_rejected) ... ok
+test_unreadable_and_non_utf8_drafts_raise_typed_errors (test_ode_evidence.ODEReportWriterTests.test_unreadable_and_non_utf8_drafts_raise_typed_errors) ... ok
+test_altered_revision_even_if_envelope_rehashed (test_ode_integration.ODEContractTests.test_altered_revision_even_if_envelope_rehashed) ... ok
+test_conversational_reactions_source (test_ode_integration.ODEContractTests.test_conversational_reactions_source) ... ok
+test_export_requires_matching_revision_approval_and_bundle (test_ode_integration.ODEContractTests.test_export_requires_matching_revision_approval_and_bundle) ... ok
+test_failed_validation_cannot_complete (test_ode_integration.ODEContractTests.test_failed_validation_cannot_complete) ... ok
+test_malformed_upstream_objects_are_typed_rejections (test_ode_integration.ODEContractTests.test_malformed_upstream_objects_are_typed_rejections) ... ok
+test_missing_file_and_unlisted_file (test_ode_integration.ODEContractTests.test_missing_file_and_unlisted_file) ... ok
+test_missing_lineage_and_wrong_type (test_ode_integration.ODEContractTests.test_missing_lineage_and_wrong_type) ... ok
+test_missing_metadata_and_stale_document (test_ode_integration.ODEContractTests.test_missing_metadata_and_stale_document) ... ok
+test_recorded_neko_import_cannot_drop_preservation_provenance (test_ode_integration.ODEContractTests.test_recorded_neko_import_cannot_drop_preservation_provenance) ... ok
+test_simulation_missing_results (test_ode_integration.ODEContractTests.test_simulation_missing_results) ... ok
+test_simulation_requires_successful_report_and_named_trajectories (test_ode_integration.ODEContractTests.test_simulation_requires_successful_report_and_named_trajectories) ... ok
+test_standalone_completed_model (test_ode_integration.ODEContractTests.test_standalone_completed_model) ... ok
+test_standalone_requires_authorization_and_source_hash (test_ode_integration.ODEContractTests.test_standalone_requires_authorization_and_source_hash) ... ok
+test_verified_neko_import_preserves_original_and_relocation (test_ode_integration.ODEContractTests.test_verified_neko_import_preserves_original_and_relocation) ... ok
+test_wrong_revision_and_other_session (test_ode_integration.ODEContractTests.test_wrong_revision_and_other_session) ... ok
+test_evidence_content (test_ode_integration.ODEEvidenceTests.test_evidence_content) ... ok
+test_immutable_write_traversal_symlinks_and_review_kind (test_ode_integration.ODEEvidenceTests.test_immutable_write_traversal_symlinks_and_review_kind) ... ok
+test_quantities_require_source_links_and_units_field (test_ode_integration.ODEEvidenceTests.test_quantities_require_source_links_and_units_field) ... ok
+test_bundle_file_and_directory_prefixes_cannot_collide (test_ode_integration.ODEProvisionalTests.test_bundle_file_and_directory_prefixes_cannot_collide) ... ok
+test_draft_cannot_claim_nonexistent_project_artifacts (test_ode_integration.ODEProvisionalTests.test_draft_cannot_claim_nonexistent_project_artifacts) ... ok
+test_duplicate_fields_and_nonfinite_json_are_rejected (test_ode_integration.ODEProvisionalTests.test_duplicate_fields_and_nonfinite_json_are_rejected) ... ok
+test_generated_python_syntax_is_checked_without_execution (test_ode_integration.ODEProvisionalTests.test_generated_python_syntax_is_checked_without_execution) ... ok
+test_invalid_bundle_contents_rejected_even_after_envelope_rehash (test_ode_integration.ODEProvisionalTests.test_invalid_bundle_contents_rejected_even_after_envelope_rehash) ... ok
+test_malformed_snapshot_fields_are_typed_rejections (test_ode_integration.ODEProvisionalTests.test_malformed_snapshot_fields_are_typed_rejections) ... ok
+test_needs_approval_still_checks_bundle_and_revision (test_ode_integration.ODEProvisionalTests.test_needs_approval_still_checks_bundle_and_revision) ... ok
+test_nested_integrity_file_must_be_in_inventory (test_ode_integration.ODEProvisionalTests.test_nested_integrity_file_must_be_in_inventory) ... ok
+test_new_version_required_without_reinterpreting_history (test_ode_integration.ODEProvisionalTests.test_new_version_required_without_reinterpreting_history) ... ok
+test_no_ode_transition_can_skip_researcher_review (test_ode_integration.ODEProvisionalTests.test_no_ode_transition_can_skip_researcher_review) ... ok
+test_one_workflow_authorizes_preservation_of_later_candidate (test_ode_integration.ODEProvisionalTests.test_one_workflow_authorizes_preservation_of_later_candidate) ... ok
+test_pending_status_cannot_hide_bundle_or_approval (test_ode_integration.ODEProvisionalTests.test_pending_status_cannot_hide_bundle_or_approval) ... ok
+test_provisional_preservation_does_not_grant_acceptance (test_ode_integration.ODEProvisionalTests.test_provisional_preservation_does_not_grant_acceptance) ... ok
+test_provisional_requires_existing_workflow_authorization (test_ode_integration.ODEProvisionalTests.test_provisional_requires_existing_workflow_authorization) ... ok
+test_symlink_bundle_member_is_rejected (test_ode_integration.ODEProvisionalTests.test_symlink_bundle_member_is_rejected) ... ok
+test_unpersisted_authoring_draft_remains_possible (test_ode_integration.ODEProvisionalTests.test_unpersisted_authoring_draft_remains_possible) ... ok
+test_workflow_authorization_action_must_match_exactly (test_ode_integration.ODEProvisionalTests.test_workflow_authorization_action_must_match_exactly) ... ok
+test_copy_integrity_scope_and_no_overwrite (test_ode_integration.ODERecordingTests.test_copy_integrity_scope_and_no_overwrite) ... ok
+test_canonical_clients_and_setup_output_agree (test_ode_presession.ODEPreSessionTests.test_canonical_clients_and_setup_output_agree) ... ok
+test_existing_validator_accepts_blocked_and_failed_without_ode (test_ode_presession.ODEPreSessionTests.test_existing_validator_accepts_blocked_and_failed_without_ode) ... ok
+test_existing_validator_rejects_partial_ode_even_when_presession (test_ode_presession.ODEPreSessionTests.test_existing_validator_rejects_partial_ode_even_when_presession) ... ok
+test_ode_wrapper_clarifies_exact_presession_case (test_ode_presession.ODEPreSessionTests.test_ode_wrapper_clarifies_exact_presession_case) ... ok
+test_presession_exception_does_not_allow_completed_or_needs_approval (test_ode_presession.ODEPreSessionTests.test_presession_exception_does_not_allow_completed_or_needs_approval) ... ok
+test_setup_migrates_exact_old_guidance_without_duplicate_or_custom_loss (test_ode_presession.ODEPreSessionTests.test_setup_migrates_exact_old_guidance_without_duplicate_or_custom_loss) ... ok
+test_alias_to_ode_and_symlinked_session_cannot_bypass_content_check (test_ode_profiles_skills.ClaudeOdeReportHookTests.test_alias_to_ode_and_symlinked_session_cannot_bypass_content_check) ... ok
+test_invalid_ode_content_or_identity_never_creates_directory (test_ode_profiles_skills.ClaudeOdeReportHookTests.test_invalid_ode_content_or_identity_never_creates_directory) ... ok
+test_legacy_edge_and_read_controls_remain (test_ode_profiles_skills.ClaudeOdeReportHookTests.test_legacy_edge_and_read_controls_remain) ... ok
+test_project_environment_alias_does_not_disable_ode_validation (test_ode_profiles_skills.ClaudeOdeReportHookTests.test_project_environment_alias_does_not_disable_ode_validation) ... ok
+test_valid_ode_report_is_checked_without_writing_it (test_ode_profiles_skills.ClaudeOdeReportHookTests.test_valid_ode_report_is_checked_without_writing_it) ... ok
+test_local_reference_hashes_and_client_copies_match (test_ode_profiles_skills.OdeProfileSkillTests.test_local_reference_hashes_and_client_copies_match) ... ok
+test_ode_instructions_match_across_client_definitions (test_ode_profiles_skills.OdeProfileSkillTests.test_ode_instructions_match_across_client_definitions) ... ok
+test_real_profile_templates_expose_only_the_role_transport (test_ode_profiles_skills.OdeProfileSkillTests.test_real_profile_templates_expose_only_the_role_transport) ... ok
+test_cli_dispatcher_equivalence_for_every_role_and_evidence_mode (test_ode_runtime.ODERuntimeTests.test_cli_dispatcher_equivalence_for_every_role_and_evidence_mode) ... [specialist-launcher] launcher_run=2026-10-01T021949-de9acdae-7e42-4229-a0fb-e070de6f821f specialist=ode_modeler profile=biomodel-ode-modeler started
+[specialist-launcher] launcher_run=2026-10-01T021949-de9acdae-7e42-4229-a0fb-e070de6f821f MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=disabled, biomass=enabled
+[specialist-launcher] launcher_run=2026-10-01T021949-de9acdae-7e42-4229-a0fb-e070de6f821f event stream=runs/ode-modeler/_launcher-runs/2026-10-01T021949-de9acdae-7e42-4229-a0fb-e070de6f821f/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021949-de9acdae-7e42-4229-a0fb-e070de6f821f specialist=ode_modeler profile=biomodel-ode-modeler Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021949-de9acdae-7e42-4229-a0fb-e070de6f821f specialist=ode_modeler profile=biomodel-ode-modeler specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021949-de9acdae-7e42-4229-a0fb-e070de6f821f specialist=ode_modeler profile=biomodel-ode-modeler specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021949-de9acdae-7e42-4229-a0fb-e070de6f821f child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/ode-modeler/fixture-session/specialist-invocations/2026-10-01T021949-de9acdae-7e42-4229-a0fb-e070de6f821f
+[specialist-launcher] launcher_run=2026-10-01T021949-de9acdae-7e42-4229-a0fb-e070de6f821f final exit status=0 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021949-ef05844d-7c6a-42e0-932e-cc92eb779534 specialist=ode_modeler profile=biomodel-ode-modeler started
+[specialist-launcher] launcher_run=2026-10-01T021949-ef05844d-7c6a-42e0-932e-cc92eb779534 MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=disabled, biomass=enabled
+[specialist-launcher] launcher_run=2026-10-01T021949-ef05844d-7c6a-42e0-932e-cc92eb779534 event stream=runs/ode-modeler/_launcher-runs/2026-10-01T021949-ef05844d-7c6a-42e0-932e-cc92eb779534/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021949-ef05844d-7c6a-42e0-932e-cc92eb779534 specialist=ode_modeler profile=biomodel-ode-modeler Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021949-ef05844d-7c6a-42e0-932e-cc92eb779534 specialist=ode_modeler profile=biomodel-ode-modeler specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021949-ef05844d-7c6a-42e0-932e-cc92eb779534 specialist=ode_modeler profile=biomodel-ode-modeler specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021949-ef05844d-7c6a-42e0-932e-cc92eb779534 child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/ode-modeler/fixture-session/specialist-invocations/2026-10-01T021949-ef05844d-7c6a-42e0-932e-cc92eb779534
+[specialist-launcher] launcher_run=2026-10-01T021949-ef05844d-7c6a-42e0-932e-cc92eb779534 final exit status=0 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021949-86d7dd20-1ff3-4213-be91-af75964a8c48 specialist=network_curator profile=biomodel-network-curator started
+[specialist-launcher] launcher_run=2026-10-01T021949-86d7dd20-1ff3-4213-be91-af75964a8c48 MCP inventory preflight passed: neko=enabled, maboss=disabled, physicell=disabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021949-86d7dd20-1ff3-4213-be91-af75964a8c48 event stream=runs/network-curator/_launcher-runs/2026-10-01T021949-86d7dd20-1ff3-4213-be91-af75964a8c48/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021949-86d7dd20-1ff3-4213-be91-af75964a8c48 specialist=network_curator profile=biomodel-network-curator Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021949-86d7dd20-1ff3-4213-be91-af75964a8c48 specialist=network_curator profile=biomodel-network-curator specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021949-86d7dd20-1ff3-4213-be91-af75964a8c48 specialist=network_curator profile=biomodel-network-curator specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021949-86d7dd20-1ff3-4213-be91-af75964a8c48 child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/network-curator/fixture-session/specialist-invocations/2026-10-01T021949-86d7dd20-1ff3-4213-be91-af75964a8c48
+[specialist-launcher] launcher_run=2026-10-01T021949-86d7dd20-1ff3-4213-be91-af75964a8c48 final exit status=0 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021949-a4e154a7-725f-4b04-8a78-21bb2f77d116 specialist=network_curator profile=biomodel-network-curator started
+[specialist-launcher] launcher_run=2026-10-01T021949-a4e154a7-725f-4b04-8a78-21bb2f77d116 MCP inventory preflight passed: neko=enabled, maboss=disabled, physicell=disabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021949-a4e154a7-725f-4b04-8a78-21bb2f77d116 event stream=runs/network-curator/_launcher-runs/2026-10-01T021949-a4e154a7-725f-4b04-8a78-21bb2f77d116/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021949-a4e154a7-725f-4b04-8a78-21bb2f77d116 specialist=network_curator profile=biomodel-network-curator Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021949-a4e154a7-725f-4b04-8a78-21bb2f77d116 specialist=network_curator profile=biomodel-network-curator specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021949-a4e154a7-725f-4b04-8a78-21bb2f77d116 specialist=network_curator profile=biomodel-network-curator specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021949-a4e154a7-725f-4b04-8a78-21bb2f77d116 child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/network-curator/fixture-session/specialist-invocations/2026-10-01T021949-a4e154a7-725f-4b04-8a78-21bb2f77d116
+[specialist-launcher] launcher_run=2026-10-01T021949-a4e154a7-725f-4b04-8a78-21bb2f77d116 final exit status=0 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021949-d29bf9af-960d-4171-b846-8815e0d838b5 specialist=boolean_dynamics_modeler profile=biomodel-boolean-dynamics-modeler started
+[specialist-launcher] launcher_run=2026-10-01T021949-d29bf9af-960d-4171-b846-8815e0d838b5 MCP inventory preflight passed: neko=disabled, maboss=enabled, physicell=disabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021949-d29bf9af-960d-4171-b846-8815e0d838b5 event stream=runs/boolean-dynamics-modeler/_launcher-runs/2026-10-01T021949-d29bf9af-960d-4171-b846-8815e0d838b5/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021949-d29bf9af-960d-4171-b846-8815e0d838b5 specialist=boolean_dynamics_modeler profile=biomodel-boolean-dynamics-modeler Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021949-d29bf9af-960d-4171-b846-8815e0d838b5 specialist=boolean_dynamics_modeler profile=biomodel-boolean-dynamics-modeler specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021949-d29bf9af-960d-4171-b846-8815e0d838b5 specialist=boolean_dynamics_modeler profile=biomodel-boolean-dynamics-modeler specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021949-d29bf9af-960d-4171-b846-8815e0d838b5 child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/boolean-dynamics-modeler/fixture-session/specialist-invocations/2026-10-01T021949-d29bf9af-960d-4171-b846-8815e0d838b5
+[specialist-launcher] launcher_run=2026-10-01T021949-d29bf9af-960d-4171-b846-8815e0d838b5 final exit status=0 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021949-ebeccbe0-0fc5-4b2c-b64c-1dd9a96b5139 specialist=boolean_dynamics_modeler profile=biomodel-boolean-dynamics-modeler started
+[specialist-launcher] launcher_run=2026-10-01T021949-ebeccbe0-0fc5-4b2c-b64c-1dd9a96b5139 MCP inventory preflight passed: neko=disabled, maboss=enabled, physicell=disabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021949-ebeccbe0-0fc5-4b2c-b64c-1dd9a96b5139 event stream=runs/boolean-dynamics-modeler/_launcher-runs/2026-10-01T021949-ebeccbe0-0fc5-4b2c-b64c-1dd9a96b5139/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021949-ebeccbe0-0fc5-4b2c-b64c-1dd9a96b5139 specialist=boolean_dynamics_modeler profile=biomodel-boolean-dynamics-modeler Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021949-ebeccbe0-0fc5-4b2c-b64c-1dd9a96b5139 specialist=boolean_dynamics_modeler profile=biomodel-boolean-dynamics-modeler specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021949-ebeccbe0-0fc5-4b2c-b64c-1dd9a96b5139 specialist=boolean_dynamics_modeler profile=biomodel-boolean-dynamics-modeler specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021949-ebeccbe0-0fc5-4b2c-b64c-1dd9a96b5139 child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/boolean-dynamics-modeler/fixture-session/specialist-invocations/2026-10-01T021949-ebeccbe0-0fc5-4b2c-b64c-1dd9a96b5139
+[specialist-launcher] launcher_run=2026-10-01T021949-ebeccbe0-0fc5-4b2c-b64c-1dd9a96b5139 final exit status=0 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021949-6f86905d-4562-412f-9e8d-b89653ecbf63 specialist=multicellular_configurator profile=biomodel-multicellular-configurator started
+[specialist-launcher] launcher_run=2026-10-01T021949-6f86905d-4562-412f-9e8d-b89653ecbf63 MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=enabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021949-6f86905d-4562-412f-9e8d-b89653ecbf63 event stream=runs/multicellular-configurator/_launcher-runs/2026-10-01T021949-6f86905d-4562-412f-9e8d-b89653ecbf63/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021949-6f86905d-4562-412f-9e8d-b89653ecbf63 specialist=multicellular_configurator profile=biomodel-multicellular-configurator Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021949-6f86905d-4562-412f-9e8d-b89653ecbf63 specialist=multicellular_configurator profile=biomodel-multicellular-configurator specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021949-6f86905d-4562-412f-9e8d-b89653ecbf63 specialist=multicellular_configurator profile=biomodel-multicellular-configurator specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021949-6f86905d-4562-412f-9e8d-b89653ecbf63 child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/multicellular-configurator/fixture-session/specialist-invocations/2026-10-01T021949-6f86905d-4562-412f-9e8d-b89653ecbf63
+[specialist-launcher] launcher_run=2026-10-01T021949-6f86905d-4562-412f-9e8d-b89653ecbf63 final exit status=0 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021949-d2848ad2-b31e-487d-80ec-b223088511d9 specialist=multicellular_configurator profile=biomodel-multicellular-configurator started
+[specialist-launcher] launcher_run=2026-10-01T021949-d2848ad2-b31e-487d-80ec-b223088511d9 MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=enabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021949-d2848ad2-b31e-487d-80ec-b223088511d9 event stream=runs/multicellular-configurator/_launcher-runs/2026-10-01T021949-d2848ad2-b31e-487d-80ec-b223088511d9/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021949-d2848ad2-b31e-487d-80ec-b223088511d9 specialist=multicellular_configurator profile=biomodel-multicellular-configurator Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021949-d2848ad2-b31e-487d-80ec-b223088511d9 specialist=multicellular_configurator profile=biomodel-multicellular-configurator specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021949-d2848ad2-b31e-487d-80ec-b223088511d9 specialist=multicellular_configurator profile=biomodel-multicellular-configurator specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021949-d2848ad2-b31e-487d-80ec-b223088511d9 child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/multicellular-configurator/fixture-session/specialist-invocations/2026-10-01T021949-d2848ad2-b31e-487d-80ec-b223088511d9
+[specialist-launcher] launcher_run=2026-10-01T021949-d2848ad2-b31e-487d-80ec-b223088511d9 final exit status=0 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021949-42700bf6-e0c6-4b0b-a031-7034760c7f0a specialist=literature_reviewer profile=biomodel-literature-reviewer started
+[specialist-launcher] launcher_run=2026-10-01T021949-42700bf6-e0c6-4b0b-a031-7034760c7f0a MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=disabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021949-42700bf6-e0c6-4b0b-a031-7034760c7f0a literature backend=pubmed
+[specialist-launcher] launcher_run=2026-10-01T021949-42700bf6-e0c6-4b0b-a031-7034760c7f0a event stream=runs/network-curator/_launcher-runs/2026-10-01T021949-42700bf6-e0c6-4b0b-a031-7034760c7f0a/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021949-42700bf6-e0c6-4b0b-a031-7034760c7f0a specialist=literature_reviewer profile=biomodel-literature-reviewer Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021949-42700bf6-e0c6-4b0b-a031-7034760c7f0a specialist=literature_reviewer profile=biomodel-literature-reviewer specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021949-42700bf6-e0c6-4b0b-a031-7034760c7f0a specialist=literature_reviewer profile=biomodel-literature-reviewer specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021949-42700bf6-e0c6-4b0b-a031-7034760c7f0a child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/network-curator/fixture-session/specialist-invocations/2026-10-01T021949-42700bf6-e0c6-4b0b-a031-7034760c7f0a
+[specialist-launcher] launcher_run=2026-10-01T021949-42700bf6-e0c6-4b0b-a031-7034760c7f0a final exit status=0 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021949-b349838b-fb7d-4cb9-89d1-3f451168096f specialist=literature_reviewer profile=biomodel-literature-reviewer started
+[specialist-launcher] launcher_run=2026-10-01T021949-b349838b-fb7d-4cb9-89d1-3f451168096f MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=disabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021949-b349838b-fb7d-4cb9-89d1-3f451168096f literature backend=pubmed
+[specialist-launcher] launcher_run=2026-10-01T021949-b349838b-fb7d-4cb9-89d1-3f451168096f event stream=runs/network-curator/_launcher-runs/2026-10-01T021949-b349838b-fb7d-4cb9-89d1-3f451168096f/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021949-b349838b-fb7d-4cb9-89d1-3f451168096f specialist=literature_reviewer profile=biomodel-literature-reviewer Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021949-b349838b-fb7d-4cb9-89d1-3f451168096f specialist=literature_reviewer profile=biomodel-literature-reviewer specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021949-b349838b-fb7d-4cb9-89d1-3f451168096f specialist=literature_reviewer profile=biomodel-literature-reviewer specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021949-b349838b-fb7d-4cb9-89d1-3f451168096f child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/network-curator/fixture-session/specialist-invocations/2026-10-01T021949-b349838b-fb7d-4cb9-89d1-3f451168096f
+[specialist-launcher] launcher_run=2026-10-01T021949-b349838b-fb7d-4cb9-89d1-3f451168096f final exit status=0 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021950-c3ff2e72-bb4d-4953-b074-b77a91f274f4 specialist=literature_reviewer profile=biomodel-literature-reviewer started
+[specialist-launcher] launcher_run=2026-10-01T021950-c3ff2e72-bb4d-4953-b074-b77a91f274f4 MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=disabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021950-c3ff2e72-bb4d-4953-b074-b77a91f274f4 literature backend=pubmed
+[specialist-launcher] launcher_run=2026-10-01T021950-c3ff2e72-bb4d-4953-b074-b77a91f274f4 event stream=runs/ode-modeler/_launcher-runs/2026-10-01T021950-c3ff2e72-bb4d-4953-b074-b77a91f274f4/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021950-c3ff2e72-bb4d-4953-b074-b77a91f274f4 specialist=literature_reviewer profile=biomodel-literature-reviewer Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021950-c3ff2e72-bb4d-4953-b074-b77a91f274f4 specialist=literature_reviewer profile=biomodel-literature-reviewer specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021950-c3ff2e72-bb4d-4953-b074-b77a91f274f4 specialist=literature_reviewer profile=biomodel-literature-reviewer specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021950-c3ff2e72-bb4d-4953-b074-b77a91f274f4 child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/ode-modeler/fixture-session/specialist-invocations/2026-10-01T021950-c3ff2e72-bb4d-4953-b074-b77a91f274f4
+[specialist-launcher] launcher_run=2026-10-01T021950-c3ff2e72-bb4d-4953-b074-b77a91f274f4 final exit status=0 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021950-0daf9a64-d17d-4b1f-a6b2-b8e5d9ae4445 specialist=literature_reviewer profile=biomodel-literature-reviewer started
+[specialist-launcher] launcher_run=2026-10-01T021950-0daf9a64-d17d-4b1f-a6b2-b8e5d9ae4445 MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=disabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021950-0daf9a64-d17d-4b1f-a6b2-b8e5d9ae4445 literature backend=pubmed
+[specialist-launcher] launcher_run=2026-10-01T021950-0daf9a64-d17d-4b1f-a6b2-b8e5d9ae4445 event stream=runs/ode-modeler/_launcher-runs/2026-10-01T021950-0daf9a64-d17d-4b1f-a6b2-b8e5d9ae4445/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021950-0daf9a64-d17d-4b1f-a6b2-b8e5d9ae4445 specialist=literature_reviewer profile=biomodel-literature-reviewer Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021950-0daf9a64-d17d-4b1f-a6b2-b8e5d9ae4445 specialist=literature_reviewer profile=biomodel-literature-reviewer specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021950-0daf9a64-d17d-4b1f-a6b2-b8e5d9ae4445 specialist=literature_reviewer profile=biomodel-literature-reviewer specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021950-0daf9a64-d17d-4b1f-a6b2-b8e5d9ae4445 child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/ode-modeler/fixture-session/specialist-invocations/2026-10-01T021950-0daf9a64-d17d-4b1f-a6b2-b8e5d9ae4445
+[specialist-launcher] launcher_run=2026-10-01T021950-0daf9a64-d17d-4b1f-a6b2-b8e5d9ae4445 final exit status=0 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021950-acfb8bd7-7570-42e0-b1d7-ddb678537e72 specialist=literature_reviewer profile=biomodel-literature-reviewer started
+[specialist-launcher] launcher_run=2026-10-01T021950-acfb8bd7-7570-42e0-b1d7-ddb678537e72 MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=disabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021950-acfb8bd7-7570-42e0-b1d7-ddb678537e72 literature backend=web_search
+[specialist-launcher] launcher_run=2026-10-01T021950-acfb8bd7-7570-42e0-b1d7-ddb678537e72 event stream=runs/ode-modeler/_launcher-runs/2026-10-01T021950-acfb8bd7-7570-42e0-b1d7-ddb678537e72/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021950-acfb8bd7-7570-42e0-b1d7-ddb678537e72 specialist=literature_reviewer profile=biomodel-literature-reviewer Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021950-acfb8bd7-7570-42e0-b1d7-ddb678537e72 specialist=literature_reviewer profile=biomodel-literature-reviewer specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021950-acfb8bd7-7570-42e0-b1d7-ddb678537e72 specialist=literature_reviewer profile=biomodel-literature-reviewer specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021950-acfb8bd7-7570-42e0-b1d7-ddb678537e72 child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/ode-modeler/fixture-session/specialist-invocations/2026-10-01T021950-acfb8bd7-7570-42e0-b1d7-ddb678537e72
+[specialist-launcher] launcher_run=2026-10-01T021950-acfb8bd7-7570-42e0-b1d7-ddb678537e72 final exit status=0 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021950-05bc9d01-a5fe-4584-a6d5-45d9e432939e specialist=literature_reviewer profile=biomodel-literature-reviewer started
+[specialist-launcher] launcher_run=2026-10-01T021950-05bc9d01-a5fe-4584-a6d5-45d9e432939e MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=disabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021950-05bc9d01-a5fe-4584-a6d5-45d9e432939e literature backend=web_search
+[specialist-launcher] launcher_run=2026-10-01T021950-05bc9d01-a5fe-4584-a6d5-45d9e432939e event stream=runs/ode-modeler/_launcher-runs/2026-10-01T021950-05bc9d01-a5fe-4584-a6d5-45d9e432939e/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021950-05bc9d01-a5fe-4584-a6d5-45d9e432939e specialist=literature_reviewer profile=biomodel-literature-reviewer Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021950-05bc9d01-a5fe-4584-a6d5-45d9e432939e specialist=literature_reviewer profile=biomodel-literature-reviewer specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021950-05bc9d01-a5fe-4584-a6d5-45d9e432939e specialist=literature_reviewer profile=biomodel-literature-reviewer specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021950-05bc9d01-a5fe-4584-a6d5-45d9e432939e child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/ode-modeler/fixture-session/specialist-invocations/2026-10-01T021950-05bc9d01-a5fe-4584-a6d5-45d9e432939e
+[specialist-launcher] launcher_run=2026-10-01T021950-05bc9d01-a5fe-4584-a6d5-45d9e432939e final exit status=0 elapsed=0.1s
+ok
+test_cli_windows_bridge_forwards_review_mode_and_rejects_invalid_scope (test_ode_runtime.ODERuntimeTests.test_cli_windows_bridge_forwards_review_mode_and_rejects_invalid_scope) ... [specialist-launcher] preflight failed: review_kind is valid only for literature_reviewer
+[specialist-launcher] preflight failed: ODE evidence review requires record_session_id
+ok
+test_completed_ode_artifacts_pass_through_shared_runtime (test_ode_runtime.ODERuntimeTests.test_completed_ode_artifacts_pass_through_shared_runtime) ... [specialist-launcher] launcher_run=2026-10-01T021950-5067cb06-7770-4535-ad5e-e0d6317062cd specialist=ode_modeler profile=biomodel-ode-modeler started
+[specialist-launcher] launcher_run=2026-10-01T021950-5067cb06-7770-4535-ad5e-e0d6317062cd MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=disabled, biomass=enabled
+[specialist-launcher] launcher_run=2026-10-01T021950-5067cb06-7770-4535-ad5e-e0d6317062cd event stream=runs/ode-modeler/_launcher-runs/2026-10-01T021950-5067cb06-7770-4535-ad5e-e0d6317062cd/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021950-5067cb06-7770-4535-ad5e-e0d6317062cd specialist=ode_modeler profile=biomodel-ode-modeler Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021950-5067cb06-7770-4535-ad5e-e0d6317062cd specialist=ode_modeler profile=biomodel-ode-modeler specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021950-5067cb06-7770-4535-ad5e-e0d6317062cd specialist=ode_modeler profile=biomodel-ode-modeler specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021950-5067cb06-7770-4535-ad5e-e0d6317062cd child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/ode-modeler/bio-session/specialist-invocations/2026-10-01T021950-5067cb06-7770-4535-ad5e-e0d6317062cd
+[specialist-launcher] launcher_run=2026-10-01T021950-5067cb06-7770-4535-ad5e-e0d6317062cd final exit status=0 elapsed=0.1s
+ok
+test_completed_ode_evidence_uses_claim_contract_and_session_root (test_ode_runtime.ODERuntimeTests.test_completed_ode_evidence_uses_claim_contract_and_session_root) ... [specialist-launcher] launcher_run=2026-10-01T021950-8833d108-7dc4-4449-9c9d-71ef5e67638e specialist=literature_reviewer profile=biomodel-literature-reviewer started
+[specialist-launcher] launcher_run=2026-10-01T021950-8833d108-7dc4-4449-9c9d-71ef5e67638e MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=disabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021950-8833d108-7dc4-4449-9c9d-71ef5e67638e literature backend=pubmed
+[specialist-launcher] launcher_run=2026-10-01T021950-8833d108-7dc4-4449-9c9d-71ef5e67638e event stream=runs/ode-modeler/_launcher-runs/2026-10-01T021950-8833d108-7dc4-4449-9c9d-71ef5e67638e/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021950-8833d108-7dc4-4449-9c9d-71ef5e67638e specialist=literature_reviewer profile=biomodel-literature-reviewer Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021950-8833d108-7dc4-4449-9c9d-71ef5e67638e specialist=literature_reviewer profile=biomodel-literature-reviewer specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021950-8833d108-7dc4-4449-9c9d-71ef5e67638e specialist=literature_reviewer profile=biomodel-literature-reviewer specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021950-8833d108-7dc4-4449-9c9d-71ef5e67638e child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/ode-modeler/bio-session/specialist-invocations/2026-10-01T021950-8833d108-7dc4-4449-9c9d-71ef5e67638e
+[specialist-launcher] launcher_run=2026-10-01T021950-8833d108-7dc4-4449-9c9d-71ef5e67638e final exit status=0 elapsed=0.1s
+ok
+test_handoff_mode_identity_contract_and_integrity_mismatches_fail_closed (test_ode_runtime.ODERuntimeTests.test_handoff_mode_identity_contract_and_integrity_mismatches_fail_closed) ... [specialist-launcher] launcher_run=2026-10-01T021950-75d4bd6b-2189-49df-83e0-3c85f8c1cc87 specialist=ode_modeler profile=biomodel-ode-modeler started
+[specialist-launcher] launcher_run=2026-10-01T021950-75d4bd6b-2189-49df-83e0-3c85f8c1cc87 MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=disabled, biomass=enabled
+[specialist-launcher] launcher_run=2026-10-01T021950-75d4bd6b-2189-49df-83e0-3c85f8c1cc87 event stream=runs/ode-modeler/_launcher-runs/2026-10-01T021950-75d4bd6b-2189-49df-83e0-3c85f8c1cc87/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021950-75d4bd6b-2189-49df-83e0-3c85f8c1cc87 specialist=ode_modeler profile=biomodel-ode-modeler Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021950-75d4bd6b-2189-49df-83e0-3c85f8c1cc87 specialist=ode_modeler profile=biomodel-ode-modeler specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021950-75d4bd6b-2189-49df-83e0-3c85f8c1cc87 specialist=ode_modeler profile=biomodel-ode-modeler specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021950-75d4bd6b-2189-49df-83e0-3c85f8c1cc87 child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/ode-modeler/bio-session/specialist-invocations/2026-10-01T021950-75d4bd6b-2189-49df-83e0-3c85f8c1cc87
+[specialist-launcher] specialist handoff rejected: specialist 'network_curator' does not match requested role 'ode_modeler'
+[specialist-launcher] launcher_run=2026-10-01T021950-75d4bd6b-2189-49df-83e0-3c85f8c1cc87 final exit status=3 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021950-3e972bbd-a0c7-43b7-8cf6-1f5047748707 specialist=ode_modeler profile=biomodel-ode-modeler started
+[specialist-launcher] launcher_run=2026-10-01T021950-3e972bbd-a0c7-43b7-8cf6-1f5047748707 MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=disabled, biomass=enabled
+[specialist-launcher] launcher_run=2026-10-01T021950-3e972bbd-a0c7-43b7-8cf6-1f5047748707 event stream=runs/ode-modeler/_launcher-runs/2026-10-01T021950-3e972bbd-a0c7-43b7-8cf6-1f5047748707/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021950-3e972bbd-a0c7-43b7-8cf6-1f5047748707 specialist=ode_modeler profile=biomodel-ode-modeler Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021950-3e972bbd-a0c7-43b7-8cf6-1f5047748707 specialist=ode_modeler profile=biomodel-ode-modeler specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021950-3e972bbd-a0c7-43b7-8cf6-1f5047748707 specialist=ode_modeler profile=biomodel-ode-modeler specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021950-3e972bbd-a0c7-43b7-8cf6-1f5047748707 child exit status=0 elapsed=0.0s
+[specialist-launcher] failed to record specialist invocation: handoff session_id does not match --record-session-id
+[specialist-launcher] launcher_run=2026-10-01T021950-3e972bbd-a0c7-43b7-8cf6-1f5047748707 final exit status=3 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021950-d7153d39-ed5f-44ed-806e-614c208f0137 specialist=ode_modeler profile=biomodel-ode-modeler started
+[specialist-launcher] launcher_run=2026-10-01T021950-d7153d39-ed5f-44ed-806e-614c208f0137 MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=disabled, biomass=enabled
+[specialist-launcher] launcher_run=2026-10-01T021950-d7153d39-ed5f-44ed-806e-614c208f0137 event stream=runs/ode-modeler/_launcher-runs/2026-10-01T021950-d7153d39-ed5f-44ed-806e-614c208f0137/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021950-d7153d39-ed5f-44ed-806e-614c208f0137 specialist=ode_modeler profile=biomodel-ode-modeler Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021950-d7153d39-ed5f-44ed-806e-614c208f0137 specialist=ode_modeler profile=biomodel-ode-modeler specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021950-d7153d39-ed5f-44ed-806e-614c208f0137 specialist=ode_modeler profile=biomodel-ode-modeler specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021950-d7153d39-ed5f-44ed-806e-614c208f0137 child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/ode-modeler/bio-session/specialist-invocations/2026-10-01T021950-d7153d39-ed5f-44ed-806e-614c208f0137
+[specialist-launcher] specialist handoff rejected: unsupported ODE contract_version; historical contracts require their original verifier
+[specialist-launcher] launcher_run=2026-10-01T021950-d7153d39-ed5f-44ed-806e-614c208f0137 final exit status=3 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021950-0e653240-8dac-4651-a364-a116a893c833 specialist=literature_reviewer profile=biomodel-literature-reviewer started
+[specialist-launcher] launcher_run=2026-10-01T021950-0e653240-8dac-4651-a364-a116a893c833 MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=disabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021950-0e653240-8dac-4651-a364-a116a893c833 literature backend=web_search
+[specialist-launcher] launcher_run=2026-10-01T021950-0e653240-8dac-4651-a364-a116a893c833 event stream=runs/network-curator/_launcher-runs/2026-10-01T021950-0e653240-8dac-4651-a364-a116a893c833/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021950-0e653240-8dac-4651-a364-a116a893c833 specialist=literature_reviewer profile=biomodel-literature-reviewer Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021950-0e653240-8dac-4651-a364-a116a893c833 specialist=literature_reviewer profile=biomodel-literature-reviewer specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021950-0e653240-8dac-4651-a364-a116a893c833 specialist=literature_reviewer profile=biomodel-literature-reviewer specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021950-0e653240-8dac-4651-a364-a116a893c833 child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/network-curator/bio-session/specialist-invocations/2026-10-01T021950-0e653240-8dac-4651-a364-a116a893c833
+[specialist-launcher] specialist handoff rejected: literature review kind mismatch
+[specialist-launcher] launcher_run=2026-10-01T021950-0e653240-8dac-4651-a364-a116a893c833 final exit status=3 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021950-9f3a36de-7389-447e-9b5a-b8818ddf780d specialist=literature_reviewer profile=biomodel-literature-reviewer started
+[specialist-launcher] launcher_run=2026-10-01T021950-9f3a36de-7389-447e-9b5a-b8818ddf780d MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=disabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021950-9f3a36de-7389-447e-9b5a-b8818ddf780d literature backend=web_search
+[specialist-launcher] launcher_run=2026-10-01T021950-9f3a36de-7389-447e-9b5a-b8818ddf780d event stream=runs/ode-modeler/_launcher-runs/2026-10-01T021950-9f3a36de-7389-447e-9b5a-b8818ddf780d/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021950-9f3a36de-7389-447e-9b5a-b8818ddf780d specialist=literature_reviewer profile=biomodel-literature-reviewer Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021950-9f3a36de-7389-447e-9b5a-b8818ddf780d specialist=literature_reviewer profile=biomodel-literature-reviewer specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021950-9f3a36de-7389-447e-9b5a-b8818ddf780d specialist=literature_reviewer profile=biomodel-literature-reviewer specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021950-9f3a36de-7389-447e-9b5a-b8818ddf780d child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/ode-modeler/bio-session/specialist-invocations/2026-10-01T021950-9f3a36de-7389-447e-9b5a-b8818ddf780d
+[specialist-launcher] specialist handoff rejected: literature review kind mismatch
+[specialist-launcher] launcher_run=2026-10-01T021950-9f3a36de-7389-447e-9b5a-b8818ddf780d final exit status=3 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021950-b0f3dc34-3fa8-4b89-80fd-4c8bc821c08b specialist=ode_modeler profile=biomodel-ode-modeler started
+[specialist-launcher] launcher_run=2026-10-01T021950-b0f3dc34-3fa8-4b89-80fd-4c8bc821c08b MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=disabled, biomass=enabled
+[specialist-launcher] launcher_run=2026-10-01T021950-b0f3dc34-3fa8-4b89-80fd-4c8bc821c08b event stream=runs/ode-modeler/_launcher-runs/2026-10-01T021950-b0f3dc34-3fa8-4b89-80fd-4c8bc821c08b/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021950-b0f3dc34-3fa8-4b89-80fd-4c8bc821c08b specialist=ode_modeler profile=biomodel-ode-modeler Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021950-b0f3dc34-3fa8-4b89-80fd-4c8bc821c08b specialist=ode_modeler profile=biomodel-ode-modeler specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021950-b0f3dc34-3fa8-4b89-80fd-4c8bc821c08b specialist=ode_modeler profile=biomodel-ode-modeler specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021950-b0f3dc34-3fa8-4b89-80fd-4c8bc821c08b child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/ode-modeler/bio-session/specialist-invocations/2026-10-01T021950-b0f3dc34-3fa8-4b89-80fd-4c8bc821c08b
+[specialist-launcher] specialist handoff rejected: artifact sha256 mismatch: runs/ode-modeler/bio-session/captures/test/rev_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/model.txt
+[specialist-launcher] launcher_run=2026-10-01T021950-b0f3dc34-3fa8-4b89-80fd-4c8bc821c08b final exit status=3 elapsed=0.1s
+ok
+test_inherited_web_isolation_matches_cli_and_dispatcher (test_ode_runtime.ODERuntimeTests.test_inherited_web_isolation_matches_cli_and_dispatcher) ... [specialist-launcher] launcher_run=2026-10-01T021950-b76c5692-af3a-468d-87f6-c1ef691e19be specialist=ode_modeler profile=biomodel-ode-modeler started
+[specialist-launcher] launcher_run=2026-10-01T021950-b76c5692-af3a-468d-87f6-c1ef691e19be MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=disabled, biomass=enabled
+[specialist-launcher] launcher_run=2026-10-01T021950-b76c5692-af3a-468d-87f6-c1ef691e19be event stream=runs/ode-modeler/_launcher-runs/2026-10-01T021950-b76c5692-af3a-468d-87f6-c1ef691e19be/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021950-b76c5692-af3a-468d-87f6-c1ef691e19be specialist=ode_modeler profile=biomodel-ode-modeler Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021950-b76c5692-af3a-468d-87f6-c1ef691e19be specialist=ode_modeler profile=biomodel-ode-modeler specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021950-b76c5692-af3a-468d-87f6-c1ef691e19be specialist=ode_modeler profile=biomodel-ode-modeler specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021950-b76c5692-af3a-468d-87f6-c1ef691e19be child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/ode-modeler/fixture-session/specialist-invocations/2026-10-01T021950-b76c5692-af3a-468d-87f6-c1ef691e19be
+[specialist-launcher] launcher_run=2026-10-01T021950-b76c5692-af3a-468d-87f6-c1ef691e19be final exit status=0 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021950-024d127c-dc7d-4a36-b60e-504deb8b962d specialist=ode_modeler profile=biomodel-ode-modeler started
+[specialist-launcher] launcher_run=2026-10-01T021950-024d127c-dc7d-4a36-b60e-504deb8b962d MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=disabled, biomass=enabled
+[specialist-launcher] launcher_run=2026-10-01T021950-024d127c-dc7d-4a36-b60e-504deb8b962d event stream=runs/ode-modeler/_launcher-runs/2026-10-01T021950-024d127c-dc7d-4a36-b60e-504deb8b962d/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021950-024d127c-dc7d-4a36-b60e-504deb8b962d specialist=ode_modeler profile=biomodel-ode-modeler Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021950-024d127c-dc7d-4a36-b60e-504deb8b962d specialist=ode_modeler profile=biomodel-ode-modeler specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021950-024d127c-dc7d-4a36-b60e-504deb8b962d specialist=ode_modeler profile=biomodel-ode-modeler specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021950-024d127c-dc7d-4a36-b60e-504deb8b962d child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/ode-modeler/fixture-session/specialist-invocations/2026-10-01T021950-024d127c-dc7d-4a36-b60e-504deb8b962d
+[specialist-launcher] launcher_run=2026-10-01T021950-024d127c-dc7d-4a36-b60e-504deb8b962d final exit status=0 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021950-e500d2e4-32d7-4d4e-8bda-e65e63801b34 specialist=network_curator profile=biomodel-network-curator started
+[specialist-launcher] launcher_run=2026-10-01T021950-e500d2e4-32d7-4d4e-8bda-e65e63801b34 MCP inventory preflight passed: neko=enabled, maboss=disabled, physicell=disabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021950-e500d2e4-32d7-4d4e-8bda-e65e63801b34 event stream=runs/network-curator/_launcher-runs/2026-10-01T021950-e500d2e4-32d7-4d4e-8bda-e65e63801b34/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021950-e500d2e4-32d7-4d4e-8bda-e65e63801b34 specialist=network_curator profile=biomodel-network-curator Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021950-e500d2e4-32d7-4d4e-8bda-e65e63801b34 specialist=network_curator profile=biomodel-network-curator specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021950-e500d2e4-32d7-4d4e-8bda-e65e63801b34 specialist=network_curator profile=biomodel-network-curator specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021950-e500d2e4-32d7-4d4e-8bda-e65e63801b34 child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/network-curator/fixture-session/specialist-invocations/2026-10-01T021950-e500d2e4-32d7-4d4e-8bda-e65e63801b34
+[specialist-launcher] launcher_run=2026-10-01T021950-e500d2e4-32d7-4d4e-8bda-e65e63801b34 final exit status=0 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021951-45fbc65d-ce20-440a-8152-82dd362713fd specialist=network_curator profile=biomodel-network-curator started
+[specialist-launcher] launcher_run=2026-10-01T021951-45fbc65d-ce20-440a-8152-82dd362713fd MCP inventory preflight passed: neko=enabled, maboss=disabled, physicell=disabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021951-45fbc65d-ce20-440a-8152-82dd362713fd event stream=runs/network-curator/_launcher-runs/2026-10-01T021951-45fbc65d-ce20-440a-8152-82dd362713fd/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021951-45fbc65d-ce20-440a-8152-82dd362713fd specialist=network_curator profile=biomodel-network-curator Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021951-45fbc65d-ce20-440a-8152-82dd362713fd specialist=network_curator profile=biomodel-network-curator specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021951-45fbc65d-ce20-440a-8152-82dd362713fd specialist=network_curator profile=biomodel-network-curator specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021951-45fbc65d-ce20-440a-8152-82dd362713fd child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/network-curator/fixture-session/specialist-invocations/2026-10-01T021951-45fbc65d-ce20-440a-8152-82dd362713fd
+[specialist-launcher] launcher_run=2026-10-01T021951-45fbc65d-ce20-440a-8152-82dd362713fd final exit status=0 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021951-6a80d767-02f4-46df-9834-85337e98fc88 specialist=boolean_dynamics_modeler profile=biomodel-boolean-dynamics-modeler started
+[specialist-launcher] launcher_run=2026-10-01T021951-6a80d767-02f4-46df-9834-85337e98fc88 MCP inventory preflight passed: neko=disabled, maboss=enabled, physicell=disabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021951-6a80d767-02f4-46df-9834-85337e98fc88 event stream=runs/boolean-dynamics-modeler/_launcher-runs/2026-10-01T021951-6a80d767-02f4-46df-9834-85337e98fc88/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021951-6a80d767-02f4-46df-9834-85337e98fc88 specialist=boolean_dynamics_modeler profile=biomodel-boolean-dynamics-modeler Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021951-6a80d767-02f4-46df-9834-85337e98fc88 specialist=boolean_dynamics_modeler profile=biomodel-boolean-dynamics-modeler specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021951-6a80d767-02f4-46df-9834-85337e98fc88 specialist=boolean_dynamics_modeler profile=biomodel-boolean-dynamics-modeler specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021951-6a80d767-02f4-46df-9834-85337e98fc88 child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/boolean-dynamics-modeler/fixture-session/specialist-invocations/2026-10-01T021951-6a80d767-02f4-46df-9834-85337e98fc88
+[specialist-launcher] launcher_run=2026-10-01T021951-6a80d767-02f4-46df-9834-85337e98fc88 final exit status=0 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021951-3c30b5c1-1d31-498c-927b-b923c239433e specialist=boolean_dynamics_modeler profile=biomodel-boolean-dynamics-modeler started
+[specialist-launcher] launcher_run=2026-10-01T021951-3c30b5c1-1d31-498c-927b-b923c239433e MCP inventory preflight passed: neko=disabled, maboss=enabled, physicell=disabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021951-3c30b5c1-1d31-498c-927b-b923c239433e event stream=runs/boolean-dynamics-modeler/_launcher-runs/2026-10-01T021951-3c30b5c1-1d31-498c-927b-b923c239433e/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021951-3c30b5c1-1d31-498c-927b-b923c239433e specialist=boolean_dynamics_modeler profile=biomodel-boolean-dynamics-modeler Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021951-3c30b5c1-1d31-498c-927b-b923c239433e specialist=boolean_dynamics_modeler profile=biomodel-boolean-dynamics-modeler specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021951-3c30b5c1-1d31-498c-927b-b923c239433e specialist=boolean_dynamics_modeler profile=biomodel-boolean-dynamics-modeler specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021951-3c30b5c1-1d31-498c-927b-b923c239433e child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/boolean-dynamics-modeler/fixture-session/specialist-invocations/2026-10-01T021951-3c30b5c1-1d31-498c-927b-b923c239433e
+[specialist-launcher] launcher_run=2026-10-01T021951-3c30b5c1-1d31-498c-927b-b923c239433e final exit status=0 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021951-2bb7e094-7843-4201-abf1-b3ffa997471f specialist=multicellular_configurator profile=biomodel-multicellular-configurator started
+[specialist-launcher] launcher_run=2026-10-01T021951-2bb7e094-7843-4201-abf1-b3ffa997471f MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=enabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021951-2bb7e094-7843-4201-abf1-b3ffa997471f event stream=runs/multicellular-configurator/_launcher-runs/2026-10-01T021951-2bb7e094-7843-4201-abf1-b3ffa997471f/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021951-2bb7e094-7843-4201-abf1-b3ffa997471f specialist=multicellular_configurator profile=biomodel-multicellular-configurator Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021951-2bb7e094-7843-4201-abf1-b3ffa997471f specialist=multicellular_configurator profile=biomodel-multicellular-configurator specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021951-2bb7e094-7843-4201-abf1-b3ffa997471f specialist=multicellular_configurator profile=biomodel-multicellular-configurator specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021951-2bb7e094-7843-4201-abf1-b3ffa997471f child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/multicellular-configurator/fixture-session/specialist-invocations/2026-10-01T021951-2bb7e094-7843-4201-abf1-b3ffa997471f
+[specialist-launcher] launcher_run=2026-10-01T021951-2bb7e094-7843-4201-abf1-b3ffa997471f final exit status=0 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021951-de7c3660-6872-446e-bcb4-5249d3d0f259 specialist=multicellular_configurator profile=biomodel-multicellular-configurator started
+[specialist-launcher] launcher_run=2026-10-01T021951-de7c3660-6872-446e-bcb4-5249d3d0f259 MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=enabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021951-de7c3660-6872-446e-bcb4-5249d3d0f259 event stream=runs/multicellular-configurator/_launcher-runs/2026-10-01T021951-de7c3660-6872-446e-bcb4-5249d3d0f259/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021951-de7c3660-6872-446e-bcb4-5249d3d0f259 specialist=multicellular_configurator profile=biomodel-multicellular-configurator Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021951-de7c3660-6872-446e-bcb4-5249d3d0f259 specialist=multicellular_configurator profile=biomodel-multicellular-configurator specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021951-de7c3660-6872-446e-bcb4-5249d3d0f259 specialist=multicellular_configurator profile=biomodel-multicellular-configurator specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021951-de7c3660-6872-446e-bcb4-5249d3d0f259 child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/multicellular-configurator/fixture-session/specialist-invocations/2026-10-01T021951-de7c3660-6872-446e-bcb4-5249d3d0f259
+[specialist-launcher] launcher_run=2026-10-01T021951-de7c3660-6872-446e-bcb4-5249d3d0f259 final exit status=0 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021951-b76990d5-7333-4c0b-a95b-bdb4244818e5 specialist=literature_reviewer profile=biomodel-literature-reviewer started
+[specialist-launcher] launcher_run=2026-10-01T021951-b76990d5-7333-4c0b-a95b-bdb4244818e5 MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=disabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021951-b76990d5-7333-4c0b-a95b-bdb4244818e5 literature backend=unavailable
+[specialist-launcher] Recorded specialist invocation: runs/network-curator/fixture-session/specialist-invocations/2026-10-01T021951-b76990d5-7333-4c0b-a95b-bdb4244818e5
+[specialist-launcher] launcher_run=2026-10-01T021951-b76990d5-7333-4c0b-a95b-bdb4244818e5 final exit status=0 elapsed=0.0s
+[specialist-launcher] launcher_run=2026-10-01T021951-93b23391-5392-4b53-a3ba-62c4056f8c4f specialist=literature_reviewer profile=biomodel-literature-reviewer started
+[specialist-launcher] launcher_run=2026-10-01T021951-93b23391-5392-4b53-a3ba-62c4056f8c4f MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=disabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021951-93b23391-5392-4b53-a3ba-62c4056f8c4f literature backend=unavailable
+[specialist-launcher] Recorded specialist invocation: runs/network-curator/fixture-session/specialist-invocations/2026-10-01T021951-93b23391-5392-4b53-a3ba-62c4056f8c4f
+[specialist-launcher] launcher_run=2026-10-01T021951-93b23391-5392-4b53-a3ba-62c4056f8c4f final exit status=0 elapsed=0.0s
+[specialist-launcher] launcher_run=2026-10-01T021951-50311505-ffc2-40bd-a3f3-72a5327eb4eb specialist=literature_reviewer profile=biomodel-literature-reviewer started
+[specialist-launcher] launcher_run=2026-10-01T021951-50311505-ffc2-40bd-a3f3-72a5327eb4eb MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=disabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021951-50311505-ffc2-40bd-a3f3-72a5327eb4eb literature backend=pubmed
+[specialist-launcher] launcher_run=2026-10-01T021951-50311505-ffc2-40bd-a3f3-72a5327eb4eb event stream=runs/network-curator/_launcher-runs/2026-10-01T021951-50311505-ffc2-40bd-a3f3-72a5327eb4eb/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021951-50311505-ffc2-40bd-a3f3-72a5327eb4eb specialist=literature_reviewer profile=biomodel-literature-reviewer Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021951-50311505-ffc2-40bd-a3f3-72a5327eb4eb specialist=literature_reviewer profile=biomodel-literature-reviewer specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021951-50311505-ffc2-40bd-a3f3-72a5327eb4eb specialist=literature_reviewer profile=biomodel-literature-reviewer specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021951-50311505-ffc2-40bd-a3f3-72a5327eb4eb child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/network-curator/fixture-session/specialist-invocations/2026-10-01T021951-50311505-ffc2-40bd-a3f3-72a5327eb4eb
+[specialist-launcher] launcher_run=2026-10-01T021951-50311505-ffc2-40bd-a3f3-72a5327eb4eb final exit status=0 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021951-ffe60e86-85f6-49e1-8a2b-26c8de2a2438 specialist=literature_reviewer profile=biomodel-literature-reviewer started
+[specialist-launcher] launcher_run=2026-10-01T021951-ffe60e86-85f6-49e1-8a2b-26c8de2a2438 MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=disabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021951-ffe60e86-85f6-49e1-8a2b-26c8de2a2438 literature backend=pubmed
+[specialist-launcher] launcher_run=2026-10-01T021951-ffe60e86-85f6-49e1-8a2b-26c8de2a2438 event stream=runs/network-curator/_launcher-runs/2026-10-01T021951-ffe60e86-85f6-49e1-8a2b-26c8de2a2438/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021951-ffe60e86-85f6-49e1-8a2b-26c8de2a2438 specialist=literature_reviewer profile=biomodel-literature-reviewer Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021951-ffe60e86-85f6-49e1-8a2b-26c8de2a2438 specialist=literature_reviewer profile=biomodel-literature-reviewer specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021951-ffe60e86-85f6-49e1-8a2b-26c8de2a2438 specialist=literature_reviewer profile=biomodel-literature-reviewer specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021951-ffe60e86-85f6-49e1-8a2b-26c8de2a2438 child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/network-curator/fixture-session/specialist-invocations/2026-10-01T021951-ffe60e86-85f6-49e1-8a2b-26c8de2a2438
+[specialist-launcher] launcher_run=2026-10-01T021951-ffe60e86-85f6-49e1-8a2b-26c8de2a2438 final exit status=0 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021951-3ad09549-07e1-42b9-b749-bee55cdd6ecd specialist=literature_reviewer profile=biomodel-literature-reviewer started
+[specialist-launcher] launcher_run=2026-10-01T021951-3ad09549-07e1-42b9-b749-bee55cdd6ecd MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=disabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021951-3ad09549-07e1-42b9-b749-bee55cdd6ecd literature backend=pubmed
+[specialist-launcher] launcher_run=2026-10-01T021951-3ad09549-07e1-42b9-b749-bee55cdd6ecd event stream=runs/network-curator/_launcher-runs/2026-10-01T021951-3ad09549-07e1-42b9-b749-bee55cdd6ecd/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021951-3ad09549-07e1-42b9-b749-bee55cdd6ecd specialist=literature_reviewer profile=biomodel-literature-reviewer Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021951-3ad09549-07e1-42b9-b749-bee55cdd6ecd specialist=literature_reviewer profile=biomodel-literature-reviewer specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021951-3ad09549-07e1-42b9-b749-bee55cdd6ecd specialist=literature_reviewer profile=biomodel-literature-reviewer specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021951-3ad09549-07e1-42b9-b749-bee55cdd6ecd child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/network-curator/fixture-session/specialist-invocations/2026-10-01T021951-3ad09549-07e1-42b9-b749-bee55cdd6ecd
+[specialist-launcher] launcher_run=2026-10-01T021951-3ad09549-07e1-42b9-b749-bee55cdd6ecd final exit status=0 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021951-94f40435-d894-4ff5-8b5b-9a18a2cca8ba specialist=literature_reviewer profile=biomodel-literature-reviewer started
+[specialist-launcher] launcher_run=2026-10-01T021951-94f40435-d894-4ff5-8b5b-9a18a2cca8ba MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=disabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021951-94f40435-d894-4ff5-8b5b-9a18a2cca8ba literature backend=pubmed
+[specialist-launcher] launcher_run=2026-10-01T021951-94f40435-d894-4ff5-8b5b-9a18a2cca8ba event stream=runs/network-curator/_launcher-runs/2026-10-01T021951-94f40435-d894-4ff5-8b5b-9a18a2cca8ba/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021951-94f40435-d894-4ff5-8b5b-9a18a2cca8ba specialist=literature_reviewer profile=biomodel-literature-reviewer Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021951-94f40435-d894-4ff5-8b5b-9a18a2cca8ba specialist=literature_reviewer profile=biomodel-literature-reviewer specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021951-94f40435-d894-4ff5-8b5b-9a18a2cca8ba specialist=literature_reviewer profile=biomodel-literature-reviewer specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021951-94f40435-d894-4ff5-8b5b-9a18a2cca8ba child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/network-curator/fixture-session/specialist-invocations/2026-10-01T021951-94f40435-d894-4ff5-8b5b-9a18a2cca8ba
+[specialist-launcher] launcher_run=2026-10-01T021951-94f40435-d894-4ff5-8b5b-9a18a2cca8ba final exit status=0 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021951-a17d6143-8fac-425f-9fb7-c5b14c9059d3 specialist=literature_reviewer profile=biomodel-literature-reviewer started
+[specialist-launcher] launcher_run=2026-10-01T021951-a17d6143-8fac-425f-9fb7-c5b14c9059d3 MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=disabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021951-a17d6143-8fac-425f-9fb7-c5b14c9059d3 literature backend=web_search
+[specialist-launcher] launcher_run=2026-10-01T021951-a17d6143-8fac-425f-9fb7-c5b14c9059d3 event stream=runs/network-curator/_launcher-runs/2026-10-01T021951-a17d6143-8fac-425f-9fb7-c5b14c9059d3/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021951-a17d6143-8fac-425f-9fb7-c5b14c9059d3 specialist=literature_reviewer profile=biomodel-literature-reviewer Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021951-a17d6143-8fac-425f-9fb7-c5b14c9059d3 specialist=literature_reviewer profile=biomodel-literature-reviewer specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021951-a17d6143-8fac-425f-9fb7-c5b14c9059d3 specialist=literature_reviewer profile=biomodel-literature-reviewer specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021951-a17d6143-8fac-425f-9fb7-c5b14c9059d3 child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/network-curator/fixture-session/specialist-invocations/2026-10-01T021951-a17d6143-8fac-425f-9fb7-c5b14c9059d3
+[specialist-launcher] launcher_run=2026-10-01T021951-a17d6143-8fac-425f-9fb7-c5b14c9059d3 final exit status=0 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021951-bce6b236-a4e4-466e-a369-884f22efd1ee specialist=literature_reviewer profile=biomodel-literature-reviewer started
+[specialist-launcher] launcher_run=2026-10-01T021951-bce6b236-a4e4-466e-a369-884f22efd1ee MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=disabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021951-bce6b236-a4e4-466e-a369-884f22efd1ee literature backend=web_search
+[specialist-launcher] launcher_run=2026-10-01T021951-bce6b236-a4e4-466e-a369-884f22efd1ee event stream=runs/network-curator/_launcher-runs/2026-10-01T021951-bce6b236-a4e4-466e-a369-884f22efd1ee/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021951-bce6b236-a4e4-466e-a369-884f22efd1ee specialist=literature_reviewer profile=biomodel-literature-reviewer Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021951-bce6b236-a4e4-466e-a369-884f22efd1ee specialist=literature_reviewer profile=biomodel-literature-reviewer specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021951-bce6b236-a4e4-466e-a369-884f22efd1ee specialist=literature_reviewer profile=biomodel-literature-reviewer specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021951-bce6b236-a4e4-466e-a369-884f22efd1ee child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/network-curator/fixture-session/specialist-invocations/2026-10-01T021951-bce6b236-a4e4-466e-a369-884f22efd1ee
+[specialist-launcher] launcher_run=2026-10-01T021951-bce6b236-a4e4-466e-a369-884f22efd1ee final exit status=0 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021951-0535ff58-8ca8-489c-a951-10ea7ff7567c specialist=ode_modeler profile=biomodel-ode-modeler started
+[specialist-launcher] launcher_run=2026-10-01T021951-0535ff58-8ca8-489c-a951-10ea7ff7567c MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=disabled, biomass=enabled
+[specialist-launcher] launcher_run=2026-10-01T021951-0535ff58-8ca8-489c-a951-10ea7ff7567c event stream=runs/ode-modeler/_launcher-runs/2026-10-01T021951-0535ff58-8ca8-489c-a951-10ea7ff7567c/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021951-0535ff58-8ca8-489c-a951-10ea7ff7567c specialist=ode_modeler profile=biomodel-ode-modeler Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021951-0535ff58-8ca8-489c-a951-10ea7ff7567c specialist=ode_modeler profile=biomodel-ode-modeler specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021951-0535ff58-8ca8-489c-a951-10ea7ff7567c specialist=ode_modeler profile=biomodel-ode-modeler specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021951-0535ff58-8ca8-489c-a951-10ea7ff7567c child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/ode-modeler/fixture-session/specialist-invocations/2026-10-01T021951-0535ff58-8ca8-489c-a951-10ea7ff7567c
+[specialist-launcher] launcher_run=2026-10-01T021951-0535ff58-8ca8-489c-a951-10ea7ff7567c final exit status=0 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021951-58e1bfe8-7261-4b20-b8a1-02b976e9e7e8 specialist=ode_modeler profile=biomodel-ode-modeler started
+[specialist-launcher] launcher_run=2026-10-01T021951-58e1bfe8-7261-4b20-b8a1-02b976e9e7e8 MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=disabled, biomass=enabled
+[specialist-launcher] launcher_run=2026-10-01T021951-58e1bfe8-7261-4b20-b8a1-02b976e9e7e8 event stream=runs/ode-modeler/_launcher-runs/2026-10-01T021951-58e1bfe8-7261-4b20-b8a1-02b976e9e7e8/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021951-58e1bfe8-7261-4b20-b8a1-02b976e9e7e8 specialist=ode_modeler profile=biomodel-ode-modeler Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021951-58e1bfe8-7261-4b20-b8a1-02b976e9e7e8 specialist=ode_modeler profile=biomodel-ode-modeler specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021951-58e1bfe8-7261-4b20-b8a1-02b976e9e7e8 specialist=ode_modeler profile=biomodel-ode-modeler specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021951-58e1bfe8-7261-4b20-b8a1-02b976e9e7e8 child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/ode-modeler/fixture-session/specialist-invocations/2026-10-01T021951-58e1bfe8-7261-4b20-b8a1-02b976e9e7e8
+[specialist-launcher] launcher_run=2026-10-01T021951-58e1bfe8-7261-4b20-b8a1-02b976e9e7e8 final exit status=0 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021951-145f522e-d3a5-4b5f-98ad-7639e170fa0e specialist=network_curator profile=biomodel-network-curator started
+[specialist-launcher] launcher_run=2026-10-01T021951-145f522e-d3a5-4b5f-98ad-7639e170fa0e MCP inventory preflight passed: neko=enabled, maboss=disabled, physicell=disabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021951-145f522e-d3a5-4b5f-98ad-7639e170fa0e event stream=runs/network-curator/_launcher-runs/2026-10-01T021951-145f522e-d3a5-4b5f-98ad-7639e170fa0e/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021951-145f522e-d3a5-4b5f-98ad-7639e170fa0e specialist=network_curator profile=biomodel-network-curator Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021951-145f522e-d3a5-4b5f-98ad-7639e170fa0e specialist=network_curator profile=biomodel-network-curator specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021951-145f522e-d3a5-4b5f-98ad-7639e170fa0e specialist=network_curator profile=biomodel-network-curator specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021951-145f522e-d3a5-4b5f-98ad-7639e170fa0e child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/network-curator/fixture-session/specialist-invocations/2026-10-01T021951-145f522e-d3a5-4b5f-98ad-7639e170fa0e
+[specialist-launcher] launcher_run=2026-10-01T021951-145f522e-d3a5-4b5f-98ad-7639e170fa0e final exit status=0 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021952-9864c26e-44f4-4295-9f1f-0908e97a6cd2 specialist=network_curator profile=biomodel-network-curator started
+[specialist-launcher] launcher_run=2026-10-01T021952-9864c26e-44f4-4295-9f1f-0908e97a6cd2 MCP inventory preflight passed: neko=enabled, maboss=disabled, physicell=disabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021952-9864c26e-44f4-4295-9f1f-0908e97a6cd2 event stream=runs/network-curator/_launcher-runs/2026-10-01T021952-9864c26e-44f4-4295-9f1f-0908e97a6cd2/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021952-9864c26e-44f4-4295-9f1f-0908e97a6cd2 specialist=network_curator profile=biomodel-network-curator Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021952-9864c26e-44f4-4295-9f1f-0908e97a6cd2 specialist=network_curator profile=biomodel-network-curator specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021952-9864c26e-44f4-4295-9f1f-0908e97a6cd2 specialist=network_curator profile=biomodel-network-curator specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021952-9864c26e-44f4-4295-9f1f-0908e97a6cd2 child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/network-curator/fixture-session/specialist-invocations/2026-10-01T021952-9864c26e-44f4-4295-9f1f-0908e97a6cd2
+[specialist-launcher] launcher_run=2026-10-01T021952-9864c26e-44f4-4295-9f1f-0908e97a6cd2 final exit status=0 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021952-e4c13535-7a62-4556-8292-8a210c2ad38c specialist=boolean_dynamics_modeler profile=biomodel-boolean-dynamics-modeler started
+[specialist-launcher] launcher_run=2026-10-01T021952-e4c13535-7a62-4556-8292-8a210c2ad38c MCP inventory preflight passed: neko=disabled, maboss=enabled, physicell=disabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021952-e4c13535-7a62-4556-8292-8a210c2ad38c event stream=runs/boolean-dynamics-modeler/_launcher-runs/2026-10-01T021952-e4c13535-7a62-4556-8292-8a210c2ad38c/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021952-e4c13535-7a62-4556-8292-8a210c2ad38c specialist=boolean_dynamics_modeler profile=biomodel-boolean-dynamics-modeler Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021952-e4c13535-7a62-4556-8292-8a210c2ad38c specialist=boolean_dynamics_modeler profile=biomodel-boolean-dynamics-modeler specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021952-e4c13535-7a62-4556-8292-8a210c2ad38c specialist=boolean_dynamics_modeler profile=biomodel-boolean-dynamics-modeler specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021952-e4c13535-7a62-4556-8292-8a210c2ad38c child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/boolean-dynamics-modeler/fixture-session/specialist-invocations/2026-10-01T021952-e4c13535-7a62-4556-8292-8a210c2ad38c
+[specialist-launcher] launcher_run=2026-10-01T021952-e4c13535-7a62-4556-8292-8a210c2ad38c final exit status=0 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021952-5d9f9b05-e23b-4ccd-9eb6-cb77dffcfb64 specialist=boolean_dynamics_modeler profile=biomodel-boolean-dynamics-modeler started
+[specialist-launcher] launcher_run=2026-10-01T021952-5d9f9b05-e23b-4ccd-9eb6-cb77dffcfb64 MCP inventory preflight passed: neko=disabled, maboss=enabled, physicell=disabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021952-5d9f9b05-e23b-4ccd-9eb6-cb77dffcfb64 event stream=runs/boolean-dynamics-modeler/_launcher-runs/2026-10-01T021952-5d9f9b05-e23b-4ccd-9eb6-cb77dffcfb64/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021952-5d9f9b05-e23b-4ccd-9eb6-cb77dffcfb64 specialist=boolean_dynamics_modeler profile=biomodel-boolean-dynamics-modeler Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021952-5d9f9b05-e23b-4ccd-9eb6-cb77dffcfb64 specialist=boolean_dynamics_modeler profile=biomodel-boolean-dynamics-modeler specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021952-5d9f9b05-e23b-4ccd-9eb6-cb77dffcfb64 specialist=boolean_dynamics_modeler profile=biomodel-boolean-dynamics-modeler specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021952-5d9f9b05-e23b-4ccd-9eb6-cb77dffcfb64 child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/boolean-dynamics-modeler/fixture-session/specialist-invocations/2026-10-01T021952-5d9f9b05-e23b-4ccd-9eb6-cb77dffcfb64
+[specialist-launcher] launcher_run=2026-10-01T021952-5d9f9b05-e23b-4ccd-9eb6-cb77dffcfb64 final exit status=0 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021952-ceef2482-4542-4e4f-86d4-4336d1786151 specialist=multicellular_configurator profile=biomodel-multicellular-configurator started
+[specialist-launcher] launcher_run=2026-10-01T021952-ceef2482-4542-4e4f-86d4-4336d1786151 MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=enabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021952-ceef2482-4542-4e4f-86d4-4336d1786151 event stream=runs/multicellular-configurator/_launcher-runs/2026-10-01T021952-ceef2482-4542-4e4f-86d4-4336d1786151/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021952-ceef2482-4542-4e4f-86d4-4336d1786151 specialist=multicellular_configurator profile=biomodel-multicellular-configurator Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021952-ceef2482-4542-4e4f-86d4-4336d1786151 specialist=multicellular_configurator profile=biomodel-multicellular-configurator specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021952-ceef2482-4542-4e4f-86d4-4336d1786151 specialist=multicellular_configurator profile=biomodel-multicellular-configurator specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021952-ceef2482-4542-4e4f-86d4-4336d1786151 child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/multicellular-configurator/fixture-session/specialist-invocations/2026-10-01T021952-ceef2482-4542-4e4f-86d4-4336d1786151
+[specialist-launcher] launcher_run=2026-10-01T021952-ceef2482-4542-4e4f-86d4-4336d1786151 final exit status=0 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021952-7564fbc6-bb50-4f7c-b469-f64389e18d69 specialist=multicellular_configurator profile=biomodel-multicellular-configurator started
+[specialist-launcher] launcher_run=2026-10-01T021952-7564fbc6-bb50-4f7c-b469-f64389e18d69 MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=enabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021952-7564fbc6-bb50-4f7c-b469-f64389e18d69 event stream=runs/multicellular-configurator/_launcher-runs/2026-10-01T021952-7564fbc6-bb50-4f7c-b469-f64389e18d69/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021952-7564fbc6-bb50-4f7c-b469-f64389e18d69 specialist=multicellular_configurator profile=biomodel-multicellular-configurator Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021952-7564fbc6-bb50-4f7c-b469-f64389e18d69 specialist=multicellular_configurator profile=biomodel-multicellular-configurator specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021952-7564fbc6-bb50-4f7c-b469-f64389e18d69 specialist=multicellular_configurator profile=biomodel-multicellular-configurator specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021952-7564fbc6-bb50-4f7c-b469-f64389e18d69 child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/multicellular-configurator/fixture-session/specialist-invocations/2026-10-01T021952-7564fbc6-bb50-4f7c-b469-f64389e18d69
+[specialist-launcher] launcher_run=2026-10-01T021952-7564fbc6-bb50-4f7c-b469-f64389e18d69 final exit status=0 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021952-84925325-434b-4e79-a44b-5de11ff8e0aa specialist=literature_reviewer profile=biomodel-literature-reviewer started
+[specialist-launcher] launcher_run=2026-10-01T021952-84925325-434b-4e79-a44b-5de11ff8e0aa MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=disabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021952-84925325-434b-4e79-a44b-5de11ff8e0aa literature backend=unavailable
+[specialist-launcher] Recorded specialist invocation: runs/network-curator/fixture-session/specialist-invocations/2026-10-01T021952-84925325-434b-4e79-a44b-5de11ff8e0aa
+[specialist-launcher] launcher_run=2026-10-01T021952-84925325-434b-4e79-a44b-5de11ff8e0aa final exit status=0 elapsed=0.0s
+[specialist-launcher] launcher_run=2026-10-01T021952-1067ad00-3fca-4bfd-90ed-1fe26ddcc7e9 specialist=literature_reviewer profile=biomodel-literature-reviewer started
+[specialist-launcher] launcher_run=2026-10-01T021952-1067ad00-3fca-4bfd-90ed-1fe26ddcc7e9 MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=disabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021952-1067ad00-3fca-4bfd-90ed-1fe26ddcc7e9 literature backend=unavailable
+[specialist-launcher] Recorded specialist invocation: runs/network-curator/fixture-session/specialist-invocations/2026-10-01T021952-1067ad00-3fca-4bfd-90ed-1fe26ddcc7e9
+[specialist-launcher] launcher_run=2026-10-01T021952-1067ad00-3fca-4bfd-90ed-1fe26ddcc7e9 final exit status=0 elapsed=0.0s
+[specialist-launcher] launcher_run=2026-10-01T021952-8df69d64-3557-467e-845f-2b3def614f27 specialist=literature_reviewer profile=biomodel-literature-reviewer started
+[specialist-launcher] launcher_run=2026-10-01T021952-8df69d64-3557-467e-845f-2b3def614f27 MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=disabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021952-8df69d64-3557-467e-845f-2b3def614f27 literature backend=pubmed
+[specialist-launcher] launcher_run=2026-10-01T021952-8df69d64-3557-467e-845f-2b3def614f27 event stream=runs/network-curator/_launcher-runs/2026-10-01T021952-8df69d64-3557-467e-845f-2b3def614f27/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021952-8df69d64-3557-467e-845f-2b3def614f27 specialist=literature_reviewer profile=biomodel-literature-reviewer Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021952-8df69d64-3557-467e-845f-2b3def614f27 specialist=literature_reviewer profile=biomodel-literature-reviewer specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021952-8df69d64-3557-467e-845f-2b3def614f27 specialist=literature_reviewer profile=biomodel-literature-reviewer specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021952-8df69d64-3557-467e-845f-2b3def614f27 child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/network-curator/fixture-session/specialist-invocations/2026-10-01T021952-8df69d64-3557-467e-845f-2b3def614f27
+[specialist-launcher] launcher_run=2026-10-01T021952-8df69d64-3557-467e-845f-2b3def614f27 final exit status=0 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021952-5be38136-ee74-40c0-a7f1-506fa582ef40 specialist=literature_reviewer profile=biomodel-literature-reviewer started
+[specialist-launcher] launcher_run=2026-10-01T021952-5be38136-ee74-40c0-a7f1-506fa582ef40 MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=disabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021952-5be38136-ee74-40c0-a7f1-506fa582ef40 literature backend=pubmed
+[specialist-launcher] launcher_run=2026-10-01T021952-5be38136-ee74-40c0-a7f1-506fa582ef40 event stream=runs/network-curator/_launcher-runs/2026-10-01T021952-5be38136-ee74-40c0-a7f1-506fa582ef40/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021952-5be38136-ee74-40c0-a7f1-506fa582ef40 specialist=literature_reviewer profile=biomodel-literature-reviewer Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021952-5be38136-ee74-40c0-a7f1-506fa582ef40 specialist=literature_reviewer profile=biomodel-literature-reviewer specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021952-5be38136-ee74-40c0-a7f1-506fa582ef40 specialist=literature_reviewer profile=biomodel-literature-reviewer specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021952-5be38136-ee74-40c0-a7f1-506fa582ef40 child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/network-curator/fixture-session/specialist-invocations/2026-10-01T021952-5be38136-ee74-40c0-a7f1-506fa582ef40
+[specialist-launcher] launcher_run=2026-10-01T021952-5be38136-ee74-40c0-a7f1-506fa582ef40 final exit status=0 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021952-ab84cbd1-2c5b-49f5-a760-d7cce76ead0b specialist=literature_reviewer profile=biomodel-literature-reviewer started
+[specialist-launcher] launcher_run=2026-10-01T021952-ab84cbd1-2c5b-49f5-a760-d7cce76ead0b MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=disabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021952-ab84cbd1-2c5b-49f5-a760-d7cce76ead0b literature backend=pubmed
+[specialist-launcher] launcher_run=2026-10-01T021952-ab84cbd1-2c5b-49f5-a760-d7cce76ead0b event stream=runs/network-curator/_launcher-runs/2026-10-01T021952-ab84cbd1-2c5b-49f5-a760-d7cce76ead0b/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021952-ab84cbd1-2c5b-49f5-a760-d7cce76ead0b specialist=literature_reviewer profile=biomodel-literature-reviewer Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021952-ab84cbd1-2c5b-49f5-a760-d7cce76ead0b specialist=literature_reviewer profile=biomodel-literature-reviewer specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021952-ab84cbd1-2c5b-49f5-a760-d7cce76ead0b specialist=literature_reviewer profile=biomodel-literature-reviewer specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021952-ab84cbd1-2c5b-49f5-a760-d7cce76ead0b child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/network-curator/fixture-session/specialist-invocations/2026-10-01T021952-ab84cbd1-2c5b-49f5-a760-d7cce76ead0b
+[specialist-launcher] launcher_run=2026-10-01T021952-ab84cbd1-2c5b-49f5-a760-d7cce76ead0b final exit status=0 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021952-0cfc9a69-7c79-43db-a2a3-6448be60a3ca specialist=literature_reviewer profile=biomodel-literature-reviewer started
+[specialist-launcher] launcher_run=2026-10-01T021952-0cfc9a69-7c79-43db-a2a3-6448be60a3ca MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=disabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021952-0cfc9a69-7c79-43db-a2a3-6448be60a3ca literature backend=pubmed
+[specialist-launcher] launcher_run=2026-10-01T021952-0cfc9a69-7c79-43db-a2a3-6448be60a3ca event stream=runs/network-curator/_launcher-runs/2026-10-01T021952-0cfc9a69-7c79-43db-a2a3-6448be60a3ca/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021952-0cfc9a69-7c79-43db-a2a3-6448be60a3ca specialist=literature_reviewer profile=biomodel-literature-reviewer Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021952-0cfc9a69-7c79-43db-a2a3-6448be60a3ca specialist=literature_reviewer profile=biomodel-literature-reviewer specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021952-0cfc9a69-7c79-43db-a2a3-6448be60a3ca specialist=literature_reviewer profile=biomodel-literature-reviewer specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021952-0cfc9a69-7c79-43db-a2a3-6448be60a3ca child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/network-curator/fixture-session/specialist-invocations/2026-10-01T021952-0cfc9a69-7c79-43db-a2a3-6448be60a3ca
+[specialist-launcher] launcher_run=2026-10-01T021952-0cfc9a69-7c79-43db-a2a3-6448be60a3ca final exit status=0 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021952-b1b6d092-3177-4bb7-aced-a034e95bd0eb specialist=literature_reviewer profile=biomodel-literature-reviewer started
+[specialist-launcher] launcher_run=2026-10-01T021952-b1b6d092-3177-4bb7-aced-a034e95bd0eb MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=disabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021952-b1b6d092-3177-4bb7-aced-a034e95bd0eb literature backend=web_search
+[specialist-launcher] launcher_run=2026-10-01T021952-b1b6d092-3177-4bb7-aced-a034e95bd0eb event stream=runs/network-curator/_launcher-runs/2026-10-01T021952-b1b6d092-3177-4bb7-aced-a034e95bd0eb/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021952-b1b6d092-3177-4bb7-aced-a034e95bd0eb specialist=literature_reviewer profile=biomodel-literature-reviewer Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021952-b1b6d092-3177-4bb7-aced-a034e95bd0eb specialist=literature_reviewer profile=biomodel-literature-reviewer specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021952-b1b6d092-3177-4bb7-aced-a034e95bd0eb specialist=literature_reviewer profile=biomodel-literature-reviewer specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021952-b1b6d092-3177-4bb7-aced-a034e95bd0eb child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/network-curator/fixture-session/specialist-invocations/2026-10-01T021952-b1b6d092-3177-4bb7-aced-a034e95bd0eb
+[specialist-launcher] launcher_run=2026-10-01T021952-b1b6d092-3177-4bb7-aced-a034e95bd0eb final exit status=0 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021952-1dbcd03c-de78-4371-b3d1-bff03de8d6a1 specialist=literature_reviewer profile=biomodel-literature-reviewer started
+[specialist-launcher] launcher_run=2026-10-01T021952-1dbcd03c-de78-4371-b3d1-bff03de8d6a1 MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=disabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021952-1dbcd03c-de78-4371-b3d1-bff03de8d6a1 literature backend=web_search
+[specialist-launcher] launcher_run=2026-10-01T021952-1dbcd03c-de78-4371-b3d1-bff03de8d6a1 event stream=runs/network-curator/_launcher-runs/2026-10-01T021952-1dbcd03c-de78-4371-b3d1-bff03de8d6a1/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021952-1dbcd03c-de78-4371-b3d1-bff03de8d6a1 specialist=literature_reviewer profile=biomodel-literature-reviewer Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021952-1dbcd03c-de78-4371-b3d1-bff03de8d6a1 specialist=literature_reviewer profile=biomodel-literature-reviewer specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021952-1dbcd03c-de78-4371-b3d1-bff03de8d6a1 specialist=literature_reviewer profile=biomodel-literature-reviewer specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021952-1dbcd03c-de78-4371-b3d1-bff03de8d6a1 child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/network-curator/fixture-session/specialist-invocations/2026-10-01T021952-1dbcd03c-de78-4371-b3d1-bff03de8d6a1
+[specialist-launcher] launcher_run=2026-10-01T021952-1dbcd03c-de78-4371-b3d1-bff03de8d6a1 final exit status=0 elapsed=0.1s
+ok
+test_ode_and_ode_evidence_children_can_be_cancelled_without_resumption (test_ode_runtime.ODERuntimeTests.test_ode_and_ode_evidence_children_can_be_cancelled_without_resumption) ... [specialist-launcher] launcher_run=2026-10-01T021952-67d1fc64-c3f4-4e03-8e73-ea6490cbd3a6 specialist=ode_modeler profile=biomodel-ode-modeler started
+[specialist-launcher] launcher_run=2026-10-01T021952-67d1fc64-c3f4-4e03-8e73-ea6490cbd3a6 MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=disabled, biomass=enabled
+[specialist-launcher] launcher_run=2026-10-01T021952-67d1fc64-c3f4-4e03-8e73-ea6490cbd3a6 event stream=runs/ode-modeler/_launcher-runs/2026-10-01T021952-67d1fc64-c3f4-4e03-8e73-ea6490cbd3a6/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021952-67d1fc64-c3f4-4e03-8e73-ea6490cbd3a6 specialist=ode_modeler profile=biomodel-ode-modeler Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021952-67d1fc64-c3f4-4e03-8e73-ea6490cbd3a6 specialist=ode_modeler profile=biomodel-ode-modeler specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021952-67d1fc64-c3f4-4e03-8e73-ea6490cbd3a6 cancellation requested; stopping child
+[specialist-launcher] launcher_run=2026-10-01T021952-67d1fc64-c3f4-4e03-8e73-ea6490cbd3a6 child exit status=-15 elapsed=0.5s
+[specialist-launcher] Recorded specialist invocation: runs/ode-modeler/fixture-session/specialist-invocations/2026-10-01T021952-67d1fc64-c3f4-4e03-8e73-ea6490cbd3a6
+[specialist-launcher] launcher_run=2026-10-01T021952-67d1fc64-c3f4-4e03-8e73-ea6490cbd3a6 final exit status=130 elapsed=0.6s
+[specialist-launcher] launcher_run=2026-10-01T021953-ae05a915-d817-4be5-8c44-9edb5838eb8c specialist=literature_reviewer profile=biomodel-literature-reviewer started
+[specialist-launcher] launcher_run=2026-10-01T021953-ae05a915-d817-4be5-8c44-9edb5838eb8c MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=disabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021953-ae05a915-d817-4be5-8c44-9edb5838eb8c literature backend=web_search
+[specialist-launcher] launcher_run=2026-10-01T021953-ae05a915-d817-4be5-8c44-9edb5838eb8c event stream=runs/ode-modeler/_launcher-runs/2026-10-01T021953-ae05a915-d817-4be5-8c44-9edb5838eb8c/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021953-ae05a915-d817-4be5-8c44-9edb5838eb8c specialist=literature_reviewer profile=biomodel-literature-reviewer Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021953-ae05a915-d817-4be5-8c44-9edb5838eb8c specialist=literature_reviewer profile=biomodel-literature-reviewer specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021953-ae05a915-d817-4be5-8c44-9edb5838eb8c cancellation requested; stopping child
+[specialist-launcher] launcher_run=2026-10-01T021953-ae05a915-d817-4be5-8c44-9edb5838eb8c child exit status=-15 elapsed=0.5s
+[specialist-launcher] Recorded specialist invocation: runs/ode-modeler/fixture-session/specialist-invocations/2026-10-01T021953-ae05a915-d817-4be5-8c44-9edb5838eb8c
+[specialist-launcher] launcher_run=2026-10-01T021953-ae05a915-d817-4be5-8c44-9edb5838eb8c final exit status=130 elapsed=0.6s
+ok
+test_ode_process_and_recording_failures_do_not_publish_handoffs (test_ode_runtime.ODERuntimeTests.test_ode_process_and_recording_failures_do_not_publish_handoffs) ... [specialist-launcher] launcher_run=2026-10-01T021953-7b1b5181-d0a5-4036-9310-3f826ad18180 specialist=ode_modeler profile=biomodel-ode-modeler started
+[specialist-launcher] launcher_run=2026-10-01T021953-7b1b5181-d0a5-4036-9310-3f826ad18180 MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=disabled, biomass=enabled
+[specialist-launcher] launcher_run=2026-10-01T021953-7b1b5181-d0a5-4036-9310-3f826ad18180 event stream=runs/ode-modeler/_launcher-runs/2026-10-01T021953-7b1b5181-d0a5-4036-9310-3f826ad18180/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021953-7b1b5181-d0a5-4036-9310-3f826ad18180 specialist=ode_modeler profile=biomodel-ode-modeler Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021953-7b1b5181-d0a5-4036-9310-3f826ad18180 specialist=ode_modeler profile=biomodel-ode-modeler specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021953-7b1b5181-d0a5-4036-9310-3f826ad18180 specialist=ode_modeler profile=biomodel-ode-modeler specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021953-7b1b5181-d0a5-4036-9310-3f826ad18180 child exit status=7 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/ode-modeler/fixture-session/specialist-invocations/2026-10-01T021953-7b1b5181-d0a5-4036-9310-3f826ad18180
+[specialist-launcher] launcher_run=2026-10-01T021953-7b1b5181-d0a5-4036-9310-3f826ad18180 final exit status=7 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021954-f2804c12-353b-45c0-85ec-85398e1ee933 specialist=ode_modeler profile=biomodel-ode-modeler started
+[specialist-launcher] launcher_run=2026-10-01T021954-f2804c12-353b-45c0-85ec-85398e1ee933 MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=disabled, biomass=enabled
+[specialist-launcher] launcher_run=2026-10-01T021954-f2804c12-353b-45c0-85ec-85398e1ee933 event stream=runs/ode-modeler/_launcher-runs/2026-10-01T021954-f2804c12-353b-45c0-85ec-85398e1ee933/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021954-f2804c12-353b-45c0-85ec-85398e1ee933 specialist=ode_modeler profile=biomodel-ode-modeler Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021954-f2804c12-353b-45c0-85ec-85398e1ee933 specialist=ode_modeler profile=biomodel-ode-modeler specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021954-f2804c12-353b-45c0-85ec-85398e1ee933 specialist=ode_modeler profile=biomodel-ode-modeler malformed JSONL event received
+[specialist-launcher] launcher_run=2026-10-01T021954-f2804c12-353b-45c0-85ec-85398e1ee933 specialist=ode_modeler profile=biomodel-ode-modeler specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021954-f2804c12-353b-45c0-85ec-85398e1ee933 child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/ode-modeler/fixture-session/specialist-invocations/2026-10-01T021954-f2804c12-353b-45c0-85ec-85398e1ee933
+[specialist-launcher] specialist handoff rejected: Codex emitted 1 malformed JSONL event(s)
+[specialist-launcher] launcher_run=2026-10-01T021954-f2804c12-353b-45c0-85ec-85398e1ee933 final exit status=3 elapsed=0.1s
+[specialist-launcher] launcher_run=2026-10-01T021954-b719e90e-19f0-4172-a325-859611deb76f specialist=ode_modeler profile=biomodel-ode-modeler started
+[specialist-launcher] launcher_run=2026-10-01T021954-b719e90e-19f0-4172-a325-859611deb76f MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=disabled, biomass=enabled
+[specialist-launcher] launcher_run=2026-10-01T021954-b719e90e-19f0-4172-a325-859611deb76f event stream=runs/ode-modeler/_launcher-runs/2026-10-01T021954-b719e90e-19f0-4172-a325-859611deb76f/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021954-b719e90e-19f0-4172-a325-859611deb76f specialist=ode_modeler profile=biomodel-ode-modeler Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021954-b719e90e-19f0-4172-a325-859611deb76f specialist=ode_modeler profile=biomodel-ode-modeler specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021954-b719e90e-19f0-4172-a325-859611deb76f specialist=ode_modeler profile=biomodel-ode-modeler specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021954-b719e90e-19f0-4172-a325-859611deb76f child exit status=0 elapsed=0.0s
+[specialist-launcher] failed to record specialist invocation: fixture disk failure
+[specialist-launcher] launcher_run=2026-10-01T021954-b719e90e-19f0-4172-a325-859611deb76f final exit status=3 elapsed=0.1s
+ok
+test_provisional_review_bundle_preserves_authority_without_stage_acceptance (test_ode_runtime.ODERuntimeTests.test_provisional_review_bundle_preserves_authority_without_stage_acceptance) ... [specialist-launcher] launcher_run=2026-10-01T021954-cadddb2c-1685-4aed-be0c-852ab51a2a8b specialist=ode_modeler profile=biomodel-ode-modeler started
+[specialist-launcher] launcher_run=2026-10-01T021954-cadddb2c-1685-4aed-be0c-852ab51a2a8b MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=disabled, biomass=enabled
+[specialist-launcher] launcher_run=2026-10-01T021954-cadddb2c-1685-4aed-be0c-852ab51a2a8b event stream=runs/ode-modeler/_launcher-runs/2026-10-01T021954-cadddb2c-1685-4aed-be0c-852ab51a2a8b/events.jsonl
+[specialist-launcher] launcher_run=2026-10-01T021954-cadddb2c-1685-4aed-be0c-852ab51a2a8b specialist=ode_modeler profile=biomodel-ode-modeler Codex thread started
+[specialist-launcher] launcher_run=2026-10-01T021954-cadddb2c-1685-4aed-be0c-852ab51a2a8b specialist=ode_modeler profile=biomodel-ode-modeler specialist turn started
+[specialist-launcher] launcher_run=2026-10-01T021954-cadddb2c-1685-4aed-be0c-852ab51a2a8b specialist=ode_modeler profile=biomodel-ode-modeler specialist turn completed
+[specialist-launcher] launcher_run=2026-10-01T021954-cadddb2c-1685-4aed-be0c-852ab51a2a8b child exit status=0 elapsed=0.0s
+[specialist-launcher] Recorded specialist invocation: runs/ode-modeler/bio-session/specialist-invocations/2026-10-01T021954-cadddb2c-1685-4aed-be0c-852ab51a2a8b
+[specialist-launcher] launcher_run=2026-10-01T021954-cadddb2c-1685-4aed-be0c-852ab51a2a8b final exit status=0 elapsed=0.1s
+ok
+test_unsafe_ode_inventory_never_executes_child (test_ode_runtime.ODERuntimeTests.test_unsafe_ode_inventory_never_executes_child) ... [specialist-launcher] launcher_run=2026-10-01T021954-2775c10b-5262-41b6-b0af-3c8e63c99014 specialist=ode_modeler profile=biomodel-ode-modeler started
+[specialist-launcher] MCP inventory preflight failed: prohibited MCP servers are enabled: neko
+[specialist-launcher] launcher_run=2026-10-01T021954-e691c338-8d9f-4289-9a91-790c0f0c6cc6 specialist=ode_modeler profile=biomodel-ode-modeler started
+[specialist-launcher] MCP inventory preflight failed: prohibited MCP servers are enabled: maboss
+[specialist-launcher] launcher_run=2026-10-01T021954-5381acfe-bc59-45e9-bb48-b7475966f1e0 specialist=ode_modeler profile=biomodel-ode-modeler started
+[specialist-launcher] MCP inventory preflight failed: prohibited MCP servers are enabled: physicell
+[specialist-launcher] launcher_run=2026-10-01T021954-655902a9-6256-415a-b9e3-b016e1af3558 specialist=ode_modeler profile=biomodel-ode-modeler started
+[specialist-launcher] MCP inventory preflight failed: prohibited MCP servers are enabled: specialist_dispatcher
+[specialist-launcher] launcher_run=2026-10-01T021954-58566a63-dc8a-4091-97da-cb4ff4d21862 specialist=ode_modeler profile=biomodel-ode-modeler started
+[specialist-launcher] MCP inventory preflight failed: prohibited MCP servers are enabled: codex_apps
+ok
+test_actual_condition_quantities_must_be_numerical_when_present (test_ode_simulation_artifacts.ODESimulationArtifactTests.test_actual_condition_quantities_must_be_numerical_when_present) ... ok
+test_backend_condition_records_and_distinct_observables (test_ode_simulation_artifacts.ODESimulationArtifactTests.test_backend_condition_records_and_distinct_observables) ... ok
+test_conditions_require_unique_named_objects (test_ode_simulation_artifacts.ODESimulationArtifactTests.test_conditions_require_unique_named_objects) ... ok
+test_csv_conditions_must_match_every_reported_condition (test_ode_simulation_artifacts.ODESimulationArtifactTests.test_csv_conditions_must_match_every_reported_condition) ... ok
+test_csv_rejects_bad_rows_and_nonfinite_numeric_values (test_ode_simulation_artifacts.ODESimulationArtifactTests.test_csv_rejects_bad_rows_and_nonfinite_numeric_values) ... ok
+test_csv_requires_condition_time_and_real_data_columns (test_ode_simulation_artifacts.ODESimulationArtifactTests.test_csv_requires_condition_time_and_real_data_columns) ... ok
+test_duplicate_or_malformed_simulation_paths_are_rejected (test_ode_simulation_artifacts.ODESimulationArtifactTests.test_duplicate_or_malformed_simulation_paths_are_rejected) ... ok
+test_each_trajectory_must_cover_bounds_with_increasing_times (test_ode_simulation_artifacts.ODESimulationArtifactTests.test_each_trajectory_must_cover_bounds_with_increasing_times) ... ok
+test_existing_minimal_fixture_remains_valid (test_ode_simulation_artifacts.ODESimulationArtifactTests.test_existing_minimal_fixture_remains_valid) ... ok
+test_no_simulation_claim_requires_no_files (test_ode_simulation_artifacts.ODESimulationArtifactTests.test_no_simulation_claim_requires_no_files) ... ok
+test_report_must_claim_actual_success (test_ode_simulation_artifacts.ODESimulationArtifactTests.test_report_must_claim_actual_success) ... ok
+test_request_revision_and_report_session_must_match (test_ode_simulation_artifacts.ODESimulationArtifactTests.test_request_revision_and_report_session_must_match) ... ok
+test_simulation_report_and_request_must_be_listed (test_ode_simulation_artifacts.ODESimulationArtifactTests.test_simulation_report_and_request_must_be_listed) ... ok
+test_species_and_observable_time_grids_must_match (test_ode_simulation_artifacts.ODESimulationArtifactTests.test_species_and_observable_time_grids_must_match) ... ok
+test_time_span_requires_finite_increasing_numeric_bounds (test_ode_simulation_artifacts.ODESimulationArtifactTests.test_time_span_requires_finite_increasing_numeric_bounds) ... ok
+test_authorized_literature_sets_explicit_live_in_preflight_and_execution (test_phase3_isolation.Phase3IsolationTests.test_authorized_literature_sets_explicit_live_in_preflight_and_execution) ... ok
+test_command_declares_canonical_ode_contract_and_exact_review_mode (test_phase3_isolation.Phase3IsolationTests.test_command_declares_canonical_ode_contract_and_exact_review_mode) ... ok
+test_complete_profile_transport_is_role_scoped_and_identical_in_both_commands (test_phase3_isolation.Phase3IsolationTests.test_complete_profile_transport_is_role_scoped_and_identical_in_both_commands) ... ok
+test_each_role_accepts_only_its_exact_server_and_rejects_aliases (test_phase3_isolation.Phase3IsolationTests.test_each_role_accepts_only_its_exact_server_and_rejects_aliases) ... ok
+test_every_role_uses_the_same_restricted_inventory_and_execution_config (test_phase3_isolation.Phase3IsolationTests.test_every_role_uses_the_same_restricted_inventory_and_execution_config) ... ok
+test_ode_approval_is_exact_and_destructive_tools_remain_disabled (test_phase3_isolation.Phase3IsolationTests.test_ode_approval_is_exact_and_destructive_tools_remain_disabled) ... ok
+test_ode_cannot_load_a_substitute_transport (test_phase3_isolation.Phase3IsolationTests.test_ode_cannot_load_a_substitute_transport) ... ok
+test_ode_requires_canonical_role_and_unambiguous_inventory (test_phase3_isolation.Phase3IsolationTests.test_ode_requires_canonical_role_and_unambiguous_inventory) ... ok
+test_preflight_web_authorization_is_literature_only_and_typed (test_phase3_isolation.Phase3IsolationTests.test_preflight_web_authorization_is_literature_only_and_typed) ... ok
+test_pubmed_preference_keeps_web_disabled_even_when_fallback_authorized (test_phase3_isolation.Phase3IsolationTests.test_pubmed_preference_keeps_web_disabled_even_when_fallback_authorized) ... ok
+test_review_mode_rejects_invalid_values_and_nonliterature_roles (test_phase3_isolation.Phase3IsolationTests.test_review_mode_rejects_invalid_values_and_nonliterature_roles) ... ok
+test_web_defaults_and_inherited_modes_are_overridden_in_both_commands (test_phase3_isolation.Phase3IsolationTests.test_web_defaults_and_inherited_modes_are_overridden_in_both_commands) ... ok
+test_windows_bridge_preserves_explicit_mode_and_session_without_shell (test_phase3_isolation.Phase3IsolationTests.test_windows_bridge_preserves_explicit_mode_and_session_without_shell) ... ok
+test_each_mode_moves_all_launcher_artifacts_to_its_session_root (test_phase3_isolation.Phase3ProvenanceTests.test_each_mode_moves_all_launcher_artifacts_to_its_session_root) ... ok
+test_ode_run_root_rejects_symlink_escape_and_unknown_role_or_mode (test_phase3_isolation.Phase3ProvenanceTests.test_ode_run_root_rejects_symlink_escape_and_unknown_role_or_mode) ... ok
+test_review_mode_cannot_move_launcher_artifacts_between_roots (test_phase3_isolation.Phase3ProvenanceTests.test_review_mode_cannot_move_launcher_artifacts_between_roots) ... ok
+test_all_expected_skills_are_discoverable (test_plugin.PluginTests.test_all_expected_skills_are_discoverable) ... ok
+test_manifest_is_discoverable_and_contains_skills_only (test_plugin.PluginTests.test_manifest_is_discoverable_and_contains_skills_only) ... ok
+test_orchestrator_project_config_disables_modelling_servers (test_plugin.PluginTests.test_orchestrator_project_config_disables_modelling_servers) ... ok
+test_same_process_agents_are_compatibility_only (test_plugin.PluginTests.test_same_process_agents_are_compatibility_only) ... ok
+test_specialist_skills_route_through_dispatcher_with_cli_fallback (test_plugin.PluginTests.test_specialist_skills_route_through_dispatcher_with_cli_fallback) ... ok
+test_tracked_phase3_files_have_no_personal_machine_values (test_plugin.PluginTests.test_tracked_phase3_files_have_no_personal_machine_values) ... ok
+test_child_stderr_does_not_suppress_no_event_heartbeat (test_run_specialist.RunSpecialistTests.test_child_stderr_does_not_suppress_no_event_heartbeat) ... ok
+test_command_web_and_secret_values_are_safely_summarized (test_run_specialist.RunSpecialistTests.test_command_web_and_secret_values_are_safely_summarized) ... ok
+test_destructive_tools_are_disabled_for_modelling_roles (test_run_specialist.RunSpecialistTests.test_destructive_tools_are_disabled_for_modelling_roles) ... ok
+test_destructive_tools_cannot_be_approved (test_run_specialist.RunSpecialistTests.test_destructive_tools_cannot_be_approved) ... ok
+test_each_modelling_role_enables_only_its_server (test_run_specialist.RunSpecialistTests.test_each_modelling_role_enables_only_its_server) ... ok
+test_execution_command_requests_jsonl_and_separate_last_message (test_run_specialist.RunSpecialistTests.test_execution_command_requests_jsonl_and_separate_last_message) ... ok
+test_expected_pubmed_inventory_must_be_enabled (test_run_specialist.RunSpecialistTests.test_expected_pubmed_inventory_must_be_enabled) ... ok
+test_explicit_tool_approvals_are_scoped_to_permitted_server (test_run_specialist.RunSpecialistTests.test_explicit_tool_approvals_are_scoped_to_permitted_server) ... ok
+test_failed_mcp_call_is_reported_without_result_payload (test_run_specialist.RunSpecialistTests.test_failed_mcp_call_is_reported_without_result_payload) ... ok
+test_inventory_accepts_only_permitted_modelling_server (test_run_specialist.RunSpecialistTests.test_inventory_accepts_only_permitted_modelling_server) ... ok
+test_inventory_allows_disabled_unrelated_servers (test_run_specialist.RunSpecialistTests.test_inventory_allows_disabled_unrelated_servers) ... ok
+test_inventory_rejects_missing_permitted_server (test_run_specialist.RunSpecialistTests.test_inventory_rejects_missing_permitted_server) ... ok
+test_inventory_rejects_prohibited_modelling_server (test_run_specialist.RunSpecialistTests.test_inventory_rejects_prohibited_modelling_server) ... ok
+test_inventory_rejects_unexpected_enabled_servers_for_every_role (test_run_specialist.RunSpecialistTests.test_inventory_rejects_unexpected_enabled_servers_for_every_role) ... ok
+test_jsonl_events_are_streamed_and_flushed_as_they_arrive (test_run_specialist.RunSpecialistTests.test_jsonl_events_are_streamed_and_flushed_as_they_arrive) ... ok
+test_launcher_event_stream_moves_to_resolved_session_directory (test_run_specialist.RunSpecialistTests.test_launcher_event_stream_moves_to_resolved_session_directory) ... ok
+test_literature_inventory_accepts_no_modelling_servers (test_run_specialist.RunSpecialistTests.test_literature_inventory_accepts_no_modelling_servers) ... ok
+test_literature_pubmed_transport_is_allowlisted_for_both_commands (test_run_specialist.RunSpecialistTests.test_literature_pubmed_transport_is_allowlisted_for_both_commands) ... ok
+test_literature_role_disables_all_modelling_servers (test_run_specialist.RunSpecialistTests.test_literature_role_disables_all_modelling_servers) ... ok
+test_long_running_mcp_call_reports_heartbeats_and_completion (test_run_specialist.RunSpecialistTests.test_long_running_mcp_call_reports_heartbeats_and_completion) ... ok
+test_malformed_jsonl_is_preserved_as_a_sanitized_envelope (test_run_specialist.RunSpecialistTests.test_malformed_jsonl_is_preserved_as_a_sanitized_envelope) ... ok
+test_mcp_list_command_has_fixed_isolation_overrides (test_run_specialist.RunSpecialistTests.test_mcp_list_command_has_fixed_isolation_overrides) ... ok
+test_missing_optional_pubmed_transport_uses_no_override (test_run_specialist.RunSpecialistTests.test_missing_optional_pubmed_transport_uses_no_override) ... ok
+test_modelling_roles_always_disable_pubmed (test_run_specialist.RunSpecialistTests.test_modelling_roles_always_disable_pubmed) ... ok
+test_native_launcher_records_and_rejects_unbacked_completion (test_run_specialist.RunSpecialistTests.test_native_launcher_records_and_rejects_unbacked_completion) ... ok
+test_no_event_timeout_emits_non_speculative_heartbeat (test_run_specialist.RunSpecialistTests.test_no_event_timeout_emits_non_speculative_heartbeat) ... ok
+test_no_literature_backend_returns_typed_blocked_handoff (test_run_specialist.RunSpecialistTests.test_no_literature_backend_returns_typed_blocked_handoff) ... ok
+test_optional_pubmed_transport_is_loaded_from_literature_profile (test_run_specialist.RunSpecialistTests.test_optional_pubmed_transport_is_loaded_from_literature_profile) ... ok
+test_output_handoff_and_provenance_use_session_directory (test_run_specialist.RunSpecialistTests.test_output_handoff_and_provenance_use_session_directory) ... ok
+test_output_rejects_session_path_traversal (test_run_specialist.RunSpecialistTests.test_output_rejects_session_path_traversal) ... ok
+test_permitted_transport_is_identical_in_preflight_and_execution (test_run_specialist.RunSpecialistTests.test_permitted_transport_is_identical_in_preflight_and_execution) ... ok
+test_process_stop_kills_child_after_termination_timeout (test_run_specialist.RunSpecialistTests.test_process_stop_kills_child_after_termination_timeout) ... ok
+test_profile_transport_is_loaded_without_exposing_it_in_repo_config (test_run_specialist.RunSpecialistTests.test_profile_transport_is_loaded_without_exposing_it_in_repo_config) ... ok
+test_prompt_file_cannot_escape_project (test_run_specialist.RunSpecialistTests.test_prompt_file_cannot_escape_project) ... ok
+test_prompt_is_one_argument_without_shell_interpolation (test_run_specialist.RunSpecialistTests.test_prompt_is_one_argument_without_shell_interpolation) ... ok
+test_streaming_cancellation_stops_child (test_run_specialist.RunSpecialistTests.test_streaming_cancellation_stops_child) ... ok
+test_streaming_preserves_nonzero_exit_code (test_run_specialist.RunSpecialistTests.test_streaming_preserves_nonzero_exit_code) ... ok
+test_toml_transport_credentials_are_redacted_from_errors (test_run_specialist.RunSpecialistTests.test_toml_transport_credentials_are_redacted_from_errors) ... ok
+test_version_parser (test_run_specialist.RunSpecialistTests.test_version_parser) ... ok
+test_web_search_is_literature_only (test_run_specialist.RunSpecialistTests.test_web_search_is_literature_only) ... ok
+test_windows_bridge_propagates_nonzero_exit (test_run_specialist.RunSpecialistTests.test_windows_bridge_propagates_nonzero_exit) ... ok
+test_windows_prompt_path_traversal_is_rejected (test_run_specialist.RunSpecialistTests.test_windows_prompt_path_traversal_is_rejected) ... ok
+test_windows_wsl_command_is_an_argument_vector (test_run_specialist.RunSpecialistTests.test_windows_wsl_command_is_an_argument_vector) ... ok
+test_backendless_literature_is_technical_success_with_scientific_blocker (test_specialist_runtime.RuntimeTests.test_backendless_literature_is_technical_success_with_scientific_blocker) ... [specialist-launcher] launcher_run=2026-10-01T021955-3723fa91-b372-495b-b873-0c595a04035f specialist=literature_reviewer profile=biomodel-literature-reviewer started
+[specialist-launcher] launcher_run=2026-10-01T021955-3723fa91-b372-495b-b873-0c595a04035f MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=disabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021955-3723fa91-b372-495b-b873-0c595a04035f literature backend=unavailable
+[specialist-launcher] Recorded specialist invocation: runs/network-curator/_blocked/specialist-invocations/2026-10-01T021955-3723fa91-b372-495b-b873-0c595a04035f
+[specialist-launcher] launcher_run=2026-10-01T021955-3723fa91-b372-495b-b873-0c595a04035f final exit status=0 elapsed=0.0s
+ok
+test_backendless_ode_review_keeps_mode_and_biomass_session (test_specialist_runtime.RuntimeTests.test_backendless_ode_review_keeps_mode_and_biomass_session) ... [specialist-launcher] launcher_run=2026-10-01T021955-57b97a4e-ec4a-441f-99d2-44c62029f55e specialist=literature_reviewer profile=biomodel-literature-reviewer started
+[specialist-launcher] launcher_run=2026-10-01T021955-57b97a4e-ec4a-441f-99d2-44c62029f55e MCP inventory preflight passed: neko=disabled, maboss=disabled, physicell=disabled, biomass=disabled
+[specialist-launcher] launcher_run=2026-10-01T021955-57b97a4e-ec4a-441f-99d2-44c62029f55e literature backend=unavailable
+[specialist-launcher] Recorded specialist invocation: runs/ode-modeler/bio-session/specialist-invocations/2026-10-01T021955-57b97a4e-ec4a-441f-99d2-44c62029f55e
+[specialist-launcher] launcher_run=2026-10-01T021955-57b97a4e-ec4a-441f-99d2-44c62029f55e final exit status=0 elapsed=0.0s
+ok
+test_context_and_command_boundary_unchanged_for_every_specialist (test_specialist_runtime.RuntimeTests.test_context_and_command_boundary_unchanged_for_every_specialist) ... ok
+test_duplicate_approvals_and_literature_search (test_specialist_runtime.RuntimeTests.test_duplicate_approvals_and_literature_search) ... ok
+test_early_failure_and_cancellation_preserve_ode_review_mode (test_specialist_runtime.RuntimeTests.test_early_failure_and_cancellation_preserve_ode_review_mode) ... [specialist-launcher] launcher_run=2026-10-01T021955-e96f096a-b7dd-4b71-9fa2-f0028b21262d specialist=literature_reviewer profile=biomodel-literature-reviewer started
+[specialist-launcher] preflight failed: missing user-local Codex profile missing
+ok
+test_final_output_redaction_preserves_nested_report_json (test_specialist_runtime.RuntimeTests.test_final_output_redaction_preserves_nested_report_json) ... ok
+test_final_output_without_handoff_still_redacts (test_specialist_runtime.RuntimeTests.test_final_output_without_handoff_still_redacts) ... ok
+test_independent_invocations_allocate_fresh_ids (test_specialist_runtime.RuntimeTests.test_independent_invocations_allocate_fresh_ids) ... ok
+test_missing_profile_fails_without_starting_child (test_specialist_runtime.RuntimeTests.test_missing_profile_fails_without_starting_child) ... [specialist-launcher] launcher_run=2026-10-01T021955-05b8ed03-1d40-44ed-ab7a-8ff88006f228 specialist=network_curator profile=biomodel-network-curator started
+[specialist-launcher] preflight failed: missing user-local Codex profile missing
+ok
+test_ode_public_authority_metadata_survives_credential_redaction (test_specialist_runtime.RuntimeTests.test_ode_public_authority_metadata_survives_credential_redaction) ... ok
+test_request_rejects_unsafe_arguments (test_specialist_runtime.RuntimeTests.test_request_rejects_unsafe_arguments) ... ok
+test_review_kind_is_explicit_and_session_scoped (test_specialist_runtime.RuntimeTests.test_review_kind_is_explicit_and_session_scoped) ... ok
+test_checkpoint_cleans_only_verified_task_prompts (test_static_governance.GovernanceConfigurationTests.test_checkpoint_cleans_only_verified_task_prompts) ... ok
+test_fresh_sessions_and_durable_reconstruction_are_required (test_static_governance.GovernanceConfigurationTests.test_fresh_sessions_and_durable_reconstruction_are_required) ... ok
+test_lifecycle_mutations_require_explicit_intent_and_fresh_confirmation (test_static_governance.GovernanceConfigurationTests.test_lifecycle_mutations_require_explicit_intent_and_fresh_confirmation) ... ok
+test_orchestrator_owns_transitions_and_shared_state (test_static_governance.GovernanceConfigurationTests.test_orchestrator_owns_transitions_and_shared_state) ... ok
+test_parameter_invention_and_conclusive_handoffs_require_approval (test_static_governance.GovernanceConfigurationTests.test_parameter_invention_and_conclusive_handoffs_require_approval) ... ok
+test_codex_sources_have_no_claude_interpolation_or_personal_paths (test_static_governance.StaticConfigurationTests.test_codex_sources_have_no_claude_interpolation_or_personal_paths) ... ok
+test_every_compatibility_agent_is_valid_toml (test_static_governance.StaticConfigurationTests.test_every_compatibility_agent_is_valid_toml) ... ok
+test_marketplace_and_plugin_manifests_are_local_and_valid (test_static_governance.StaticConfigurationTests.test_marketplace_and_plugin_manifests_are_local_and_valid) ... ok
+test_no_local_launcher_configuration_is_committed_as_source (test_static_governance.StaticConfigurationTests.test_no_local_launcher_configuration_is_committed_as_source) ... ok
+test_failure_is_propagated_and_both_suites_run (test_test_runner.TestRunnerTests.test_failure_is_propagated_and_both_suites_run) ... Running tests/codex
+Running .claude/scripts
+Running tests/setup
+ok
+test_real_stalled_suite_fails_and_next_suite_runs (test_test_runner.TestRunnerTests.test_real_stalled_suite_fails_and_next_suite_runs) ... test_stall (test_stall.Stalled.test_stall) ... test_runs (test_healthy.Healthy.test_runs) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK
+ok
+test_timeout_signals_only_the_suite_process_group (test_test_runner.TestRunnerTests.test_timeout_signals_only_the_suite_process_group) ... ok
+test_transport_loading_reports_the_minimum_python_version (test_test_runner.TestRunnerTests.test_transport_loading_reports_the_minimum_python_version) ... ok
+test_unsupported_python_is_rejected_before_running_tests (test_test_runner.TestRunnerTests.test_unsupported_python_is_rejected_before_running_tests) ... Python 3.11 or newer is required.
+ok
+test_artifacts_outside_allowed_project_locations_are_rejected (test_validate_handoff.HandoffValidationTests.test_artifacts_outside_allowed_project_locations_are_rejected) ... ok
+test_blocked_handoff_may_have_no_session_or_artifacts (test_validate_handoff.HandoffValidationTests.test_blocked_handoff_may_have_no_session_or_artifacts) ... ok
+test_completed_requires_existing_hashed_stage_artifacts (test_validate_handoff.HandoffValidationTests.test_completed_requires_existing_hashed_stage_artifacts) ... ok
+test_completed_with_failed_validation_is_rejected (test_validate_handoff.HandoffValidationTests.test_completed_with_failed_validation_is_rejected) ... ok
+test_cross_stage_specialist_mismatch_is_rejected (test_validate_handoff.HandoffValidationTests.test_cross_stage_specialist_mismatch_is_rejected) ... ok
+test_direct_transition_across_approval_gate_is_rejected (test_validate_handoff.HandoffValidationTests.test_direct_transition_across_approval_gate_is_rejected) ... ok
+test_drafts_can_reference_not_yet_written_reports (test_validate_handoff.HandoffValidationTests.test_drafts_can_reference_not_yet_written_reports) ... ok
+test_in_project_artifact_symlink_is_rejected (test_validate_handoff.HandoffValidationTests.test_in_project_artifact_symlink_is_rejected) ... ok
+test_invalid_export_json_and_xml_are_rejected_even_with_correct_hashes (test_validate_handoff.HandoffValidationTests.test_invalid_export_json_and_xml_are_rejected_even_with_correct_hashes) ... ok
+test_malformed_enum_types_are_rejected_cleanly (test_validate_handoff.HandoffValidationTests.test_malformed_enum_types_are_rejected_cleanly) ... ok
+test_missing_exports_are_rejected_for_downstream_stages (test_validate_handoff.HandoffValidationTests.test_missing_exports_are_rejected_for_downstream_stages) ... ok
+test_missing_lineage_is_rejected_where_required (test_validate_handoff.HandoffValidationTests.test_missing_lineage_is_rejected_where_required) ... ok
+test_needs_approval_cannot_recommend_a_next_stage (test_validate_handoff.HandoffValidationTests.test_needs_approval_cannot_recommend_a_next_stage) ... ok
+test_needs_approval_requires_a_concrete_decision (test_validate_handoff.HandoffValidationTests.test_needs_approval_requires_a_concrete_decision) ... ok
+test_required_fields_are_enforced (test_validate_handoff.HandoffValidationTests.test_required_fields_are_enforced) ... ok
+test_unknown_specialist_and_stage_are_rejected (test_validate_handoff.HandoffValidationTests.test_unknown_specialist_and_stage_are_rejected) ... ok
+test_valid_examples_for_all_specialists (test_validate_handoff.HandoffValidationTests.test_valid_examples_for_all_specialists) ... ok
+
+----------------------------------------------------------------------
+Ran 280 tests in 11.184s
+
+OK
+Running .claude/scripts
+test_agents_define_isolated_inline_servers (test_agent_mcp_access.SpecialistMcpAccessTests.test_agents_define_isolated_inline_servers) ... ok
+test_agents_keep_tool_search_and_server_tools (test_agent_mcp_access.SpecialistMcpAccessTests.test_agents_keep_tool_search_and_server_tools) ... ok
+test_agents_preload_matching_workflow_skills (test_agent_mcp_access.SpecialistMcpAccessTests.test_agents_preload_matching_workflow_skills) ... ok
+test_resource_bridge_dependency_is_removed (test_agent_mcp_access.SpecialistMcpAccessTests.test_resource_bridge_dependency_is_removed) ... ok
+test_lookalike_report_directory_is_blocked (test_literature_file_guard.LiteratureFileGuardTests.test_lookalike_report_directory_is_blocked) ... ok
+test_malformed_json_is_blocked (test_literature_file_guard.LiteratureFileGuardTests.test_malformed_json_is_blocked) ... ok
+test_missing_or_invalid_fields_are_blocked (test_literature_file_guard.LiteratureFileGuardTests.test_missing_or_invalid_fields_are_blocked) ... ok
+test_missing_project_environment_is_blocked_for_writes (test_literature_file_guard.LiteratureFileGuardTests.test_missing_project_environment_is_blocked_for_writes) ... ok
+test_ordinary_reads_are_allowed (test_literature_file_guard.LiteratureFileGuardTests.test_ordinary_reads_are_allowed) ... ok
+test_parent_traversal_out_of_reports_is_blocked (test_literature_file_guard.LiteratureFileGuardTests.test_parent_traversal_out_of_reports_is_blocked) ... ok
+test_queue_and_sif_full_reads_are_blocked (test_literature_file_guard.LiteratureFileGuardTests.test_queue_and_sif_full_reads_are_blocked) ... ok
+test_report_write_and_read_back_smoke (test_literature_file_guard.LiteratureFileGuardTests.test_report_write_and_read_back_smoke) ... ok
+test_symlink_escape_below_reports_is_blocked (test_literature_file_guard.LiteratureFileGuardTests.test_symlink_escape_below_reports_is_blocked) ... ok
+test_symlinked_report_root_is_blocked (test_literature_file_guard.LiteratureFileGuardTests.test_symlinked_report_root_is_blocked) ... ok
+test_write_below_reports_is_allowed_and_creates_parent (test_literature_file_guard.LiteratureFileGuardTests.test_write_below_reports_is_allowed_and_creates_parent) ... ok
+test_write_outside_reports_is_blocked (test_literature_file_guard.LiteratureFileGuardTests.test_write_outside_reports_is_blocked) ... ok
+test_agent_uses_repository_guard_without_jq (test_literature_file_guard.LiteratureReviewerDefinitionTests.test_agent_uses_repository_guard_without_jq) ... ok
+test_archive_restart_restore_round_trip (test_model_lifecycle.ModelLifecycleTest.test_archive_restart_restore_round_trip) ... ok
+test_mutating_commands_require_a_named_model_branch (test_model_lifecycle.ModelLifecycleTest.test_mutating_commands_require_a_named_model_branch) ... ok
+
+----------------------------------------------------------------------
+Ran 19 tests in 1.386s
+
+OK
+Running tests/setup
+test_archive_rejects_links_and_traversal (test_backend_sources.BackendSourcesTests.test_archive_rejects_links_and_traversal) ... ok
+test_both_backends_installed_together_from_snapshots_and_reused (test_backend_sources.BackendSourcesTests.test_both_backends_installed_together_from_snapshots_and_reused) ... ok
+test_check_and_reuse_verify_before_writes (test_backend_sources.BackendSourcesTests.test_check_and_reuse_verify_before_writes) ... ok
+test_distribution_inspection_reads_bytes_without_imports (test_backend_sources.BackendSourcesTests.test_distribution_inspection_reads_bytes_without_imports) ... ok
+test_exact_sources_and_relative_paths (test_backend_sources.BackendSourcesTests.test_exact_sources_and_relative_paths) ... ok
+test_manifest_rejects_duplicate_missing_and_nonexact_pins (test_backend_sources.BackendSourcesTests.test_manifest_rejects_duplicate_missing_and_nonexact_pins) ... ok
+test_receipt_checks_origin_revision_and_installed_bytes (test_backend_sources.BackendSourcesTests.test_receipt_checks_origin_revision_and_installed_bytes) ... ok
+test_snapshot_contains_only_committed_content_and_cleans_up (test_backend_sources.BackendSourcesTests.test_snapshot_contains_only_committed_content_and_cleans_up) ... ok
+test_wrong_origin_or_editable_install_cannot_create_receipt (test_backend_sources.BackendSourcesTests.test_wrong_origin_or_editable_install_cannot_create_receipt) ... ok
+test_wrong_revision_dirty_and_untracked_sources_fail (test_backend_sources.BackendSourcesTests.test_wrong_revision_dirty_and_untracked_sources_fail) ... ok
+test_capability_checks_allow_shared_simulation_name_and_require_ode_exporter (test_biomass_setup.BioMASSSetupTests.test_capability_checks_allow_shared_simulation_name_and_require_ode_exporter) ... Checking neko MCP startup and tool inventory…
+Checking maboss MCP startup and tool inventory…
+Checking physicell MCP startup and tool inventory…
+Checking biomass MCP startup and tool inventory…
+Checking neko MCP startup and tool inventory…
+Checking maboss MCP startup and tool inventory…
+Checking physicell MCP startup and tool inventory…
+Checking biomass MCP startup and tool inventory…
+ok
+test_generated_transport_paths_survive_a_new_ide_session (test_biomass_setup.BioMASSSetupTests.test_generated_transport_paths_survive_a_new_ide_session) ... ok
+test_legacy_migration_preserves_custom_settings_and_instructions (test_biomass_setup.BioMASSSetupTests.test_legacy_migration_preserves_custom_settings_and_instructions) ... ok
+test_missing_capabilities_prevent_configuration_changes (test_biomass_setup.BioMASSSetupTests.test_missing_capabilities_prevent_configuration_changes) ... ok
+test_new_profiles_are_idempotent_and_scope_modes_and_parent_capture (test_biomass_setup.BioMASSSetupTests.test_new_profiles_are_idempotent_and_scope_modes_and_parent_capture) ... ok
+test_ode_profile_is_optional_and_excludes_every_other_server (test_biomass_setup.BioMASSSetupTests.test_ode_profile_is_optional_and_excludes_every_other_server) ... ok
+test_previous_setup_owned_guidance_is_updated_without_duplicate_directives (test_biomass_setup.BioMASSSetupTests.test_previous_setup_owned_guidance_is_updated_without_duplicate_directives) ... ok
+test_real_pinned_legacy_profile_migrates_only_known_export_rule (test_biomass_setup.BioMASSSetupTests.test_real_pinned_legacy_profile_migrates_only_known_export_rule) ... ok
+test_reuse_does_not_install_or_own_environment_and_is_idempotent (test_biomass_setup.BioMASSSetupTests.test_reuse_does_not_install_or_own_environment_and_is_idempotent) ... Checking MCP startup and client inventories…
+Checking MCP startup and client inventories…
+ok
+test_unfamiliar_export_restrictions_fail_without_overwriting_profile (test_biomass_setup.BioMASSSetupTests.test_unfamiliar_export_restrictions_fail_without_overwriting_profile) ... ok
+test_chosen_dot_symlink_entrypoint_is_preserved_during_planning (test_graphviz_path.GraphvizPathTests.test_chosen_dot_symlink_entrypoint_is_preserved_during_planning) ... ok
+test_discovered_graphviz_survives_runtime_and_both_generated_clients (test_graphviz_path.GraphvizPathTests.test_discovered_graphviz_survives_runtime_and_both_generated_clients) ... ok
+test_setup_persists_resolved_dot_for_a_later_shell (test_graphviz_path.GraphvizPathTests.test_setup_persists_resolved_dot_for_a_later_shell) ... Preparing modelling environment…
+Checking MCP startup and client inventories…
+Preparing modelling environment…
+Checking MCP startup and client inventories…
+ok
+test_stable_dot_alias_is_retained_when_underlying_binary_has_another_name (test_graphviz_path.GraphvizPathTests.test_stable_dot_alias_is_retained_when_underlying_binary_has_another_name) ... ok
+test_biomass_capability_check_requires_session_creation (test_optional_environment.OptionalEnvironmentTests.test_biomass_capability_check_requires_session_creation) ... Checking neko MCP startup and tool inventory…
+Checking maboss MCP startup and tool inventory…
+Checking physicell MCP startup and tool inventory…
+Checking biomass MCP startup and tool inventory…
+ok
+test_capabilities_reject_complete_inventories_with_cross_domain_tools (test_optional_environment.OptionalEnvironmentTests.test_capabilities_reject_complete_inventories_with_cross_domain_tools) ... Checking neko MCP startup and tool inventory…
+Checking maboss MCP startup and tool inventory…
+Checking physicell MCP startup and tool inventory…
+Checking biomass MCP startup and tool inventory…
+Checking neko MCP startup and tool inventory…
+Checking maboss MCP startup and tool inventory…
+Checking physicell MCP startup and tool inventory…
+Checking biomass MCP startup and tool inventory…
+ok
+test_capability_inventory_rejects_invalid_shapes_duplicates_and_cross_domain_tools (test_optional_environment.OptionalEnvironmentTests.test_capability_inventory_rejects_invalid_shapes_duplicates_and_cross_domain_tools) ... Checking neko MCP startup and tool inventory…
+Checking maboss MCP startup and tool inventory…
+Checking physicell MCP startup and tool inventory…
+Checking biomass MCP startup and tool inventory…
+Checking neko MCP startup and tool inventory…
+Checking maboss MCP startup and tool inventory…
+Checking physicell MCP startup and tool inventory…
+Checking biomass MCP startup and tool inventory…
+Checking neko MCP startup and tool inventory…
+Checking maboss MCP startup and tool inventory…
+Checking physicell MCP startup and tool inventory…
+Checking biomass MCP startup and tool inventory…
+Checking neko MCP startup and tool inventory…
+Checking maboss MCP startup and tool inventory…
+Checking physicell MCP startup and tool inventory…
+Checking biomass MCP startup and tool inventory…
+Checking neko MCP startup and tool inventory…
+Checking maboss MCP startup and tool inventory…
+Checking physicell MCP startup and tool inventory…
+Checking biomass MCP startup and tool inventory…
+Checking neko MCP startup and tool inventory…
+Checking maboss MCP startup and tool inventory…
+Checking physicell MCP startup and tool inventory…
+Checking biomass MCP startup and tool inventory…
+Checking neko MCP startup and tool inventory…
+Checking maboss MCP startup and tool inventory…
+Checking physicell MCP startup and tool inventory…
+Checking biomass MCP startup and tool inventory…
+ok
+test_capability_probe_is_optional_and_uses_temporary_cache (test_optional_environment.OptionalEnvironmentTests.test_capability_probe_is_optional_and_uses_temporary_cache) ... Checking neko MCP startup and tool inventory…
+Checking maboss MCP startup and tool inventory…
+Checking physicell MCP startup and tool inventory…
+ok
+test_default_dependency_requirements_stay_unchanged_and_ode_is_explicit (test_optional_environment.OptionalEnvironmentTests.test_default_dependency_requirements_stay_unchanged_and_ode_is_explicit) ... ok
+test_default_profiles_disable_biomass_without_optional_executable (test_optional_environment.OptionalEnvironmentTests.test_default_profiles_disable_biomass_without_optional_executable) ... ok
+test_enabled_biomass_parent_or_cross_domain_profile_is_rejected (test_optional_environment.OptionalEnvironmentTests.test_enabled_biomass_parent_or_cross_domain_profile_is_rejected) ... ok
+test_external_environment_python_version_and_imports_are_checked_without_install (test_optional_environment.OptionalEnvironmentTests.test_external_environment_python_version_and_imports_are_checked_without_install) ... ok
+test_installed_profiles_get_idempotent_scoped_contract_guidance (test_optional_environment.OptionalEnvironmentTests.test_installed_profiles_get_idempotent_scoped_contract_guidance) ... ok
+test_optional_missing_capability_prevents_plugin_and_all_config_writes (test_optional_environment.OptionalEnvironmentTests.test_optional_missing_capability_prevents_plugin_and_all_config_writes) ... ok
+test_reuse_plan_needs_no_environment_manager_or_global_graphviz (test_optional_environment.OptionalEnvironmentTests.test_reuse_plan_needs_no_environment_manager_or_global_graphviz) ... ok
+test_reuse_rejects_install_sources_and_invalid_settings (test_optional_environment.OptionalEnvironmentTests.test_reuse_rejects_install_sources_and_invalid_settings) ... ok
+test_saved_reuse_selection_remains_read_only_on_next_run (test_optional_environment.OptionalEnvironmentTests.test_saved_reuse_selection_remains_read_only_on_next_run) ... Checking MCP startup and client inventories…
+Checking MCP startup and client inventories…
+ok
+test_setup_starts_each_selected_server_once_and_still_checks_client_inventory (test_optional_environment.OptionalEnvironmentTests.test_setup_starts_each_selected_server_once_and_still_checks_client_inventory) ... Checking MCP startup and client inventories…
+Checking neko MCP startup and tool inventory…
+Checking maboss MCP startup and tool inventory…
+Checking physicell MCP startup and tool inventory…
+Checking neko MCP startup and tool inventory…
+Checking maboss MCP startup and tool inventory…
+Checking physicell MCP startup and tool inventory…
+Checking biomass MCP startup and tool inventory…
+Checking MCP startup and client inventories…
+ok
+test_setup_verification_requires_safe_literature_inventory_but_allows_no_backend (test_optional_environment.OptionalEnvironmentTests.test_setup_verification_requires_safe_literature_inventory_but_allows_no_backend) ... ok
+test_direct_plugin_install_fails_before_cli_calls (test_plugin_paths.PluginPathTests.test_direct_plugin_install_fails_before_cli_calls) ... ok
+test_nested_equal_and_cache_containing_source_are_rejected (test_plugin_paths.PluginPathTests.test_nested_equal_and_cache_containing_source_are_rejected) ... ok
+test_plan_rejects_layout_before_rendering_or_installation (test_plugin_paths.PluginPathTests.test_plan_rejects_layout_before_rendering_or_installation) ... ok
+test_separate_home_or_noncache_sibling_source_is_allowed (test_plugin_paths.PluginPathTests.test_separate_home_or_noncache_sibling_source_is_allowed) ... ok
+test_symlink_alias_cannot_hide_overlap (test_plugin_paths.PluginPathTests.test_symlink_alias_cannot_hide_overlap) ... ok
+test_reused_pid_is_never_signalled (test_probe_cleanup.ProbeCleanupTests.test_reused_pid_is_never_signalled) ... ok
+test_watchdog_stops_detached_owned_server_and_preserves_unrelated_process (test_probe_cleanup.ProbeCleanupTests.test_watchdog_stops_detached_owned_server_and_preserves_unrelated_process) ... ok
+test_whole_probe_deadline_reaps_sdk_detached_server_before_watchdog (test_probe_cleanup.ProbeCleanupTests.test_whole_probe_deadline_reaps_sdk_detached_server_before_watchdog) ... ok
+test_backups_idempotency_and_symlinks (test_setup.SetupTests.test_backups_idempotency_and_symlinks) ... ok
+test_changing_manager_does_not_reuse_the_old_manager_executable (test_setup.SetupTests.test_changing_manager_does_not_reuse_the_old_manager_executable) ... ok
+test_check_does_not_repair_missing_configurations (test_setup.SetupTests.test_check_does_not_repair_missing_configurations) ... ok
+test_claude_only_changes_transports_and_hook (test_setup.SetupTests.test_claude_only_changes_transports_and_hook) ... ok
+test_codex_home_is_respected_by_launcher (test_setup.SetupTests.test_codex_home_is_respected_by_launcher) ... ok
+test_codex_profiles_preserve_unrelated_settings_and_disabled_parent (test_setup.SetupTests.test_codex_profiles_preserve_unrelated_settings_and_disabled_parent) ... ok
+test_codex_rejects_unrelated_enabled_server (test_setup.SetupTests.test_codex_rejects_unrelated_enabled_server) ... ok
+test_conda_installs_native_dependencies_in_the_selected_prefix (test_setup.SetupTests.test_conda_installs_native_dependencies_in_the_selected_prefix) ... ok
+test_diagnostic_timeout_stops_a_process (test_setup.SetupTests.test_diagnostic_timeout_stops_a_process) ... ok
+test_dry_run_creates_no_files_and_missing_requirements_are_aggregated (test_setup.SetupTests.test_dry_run_creates_no_files_and_missing_requirements_are_aggregated) ... ok
+test_explicit_invalid_executable_does_not_fall_back (test_setup.SetupTests.test_explicit_invalid_executable_does_not_fall_back) ... ok
+test_external_environment_is_never_modified (test_setup.SetupTests.test_external_environment_is_never_modified) ... ok
+test_failed_command_diagnostics_redact_credentials (test_setup.SetupTests.test_failed_command_diagnostics_redact_credentials) ... ok
+test_failed_install_does_not_change_client_configuration (test_setup.SetupTests.test_failed_install_does_not_change_client_configuration) ... Preparing modelling environment…
+ok
+test_install_failure_can_resume_using_owned_prefix (test_setup.SetupTests.test_install_failure_can_resume_using_owned_prefix) ... ok
+test_mcp_probe_only_lists_tools (test_setup.SetupTests.test_mcp_probe_only_lists_tools) ... ok
+test_missing_explicit_configuration_is_an_error (test_setup.SetupTests.test_missing_explicit_configuration_is_an_error) ... ok
+test_plugin_check_rejects_missing_stale_or_disabled_installations (test_setup.SetupTests.test_plugin_check_rejects_missing_stale_or_disabled_installations) ... ok
+test_plugin_install_uses_structured_state_and_verifies_the_result (test_setup.SetupTests.test_plugin_install_uses_structured_state_and_verifies_the_result) ... ok
+test_plugin_registers_missing_marketplace_and_verifies_the_result (test_setup.SetupTests.test_plugin_registers_missing_marketplace_and_verifies_the_result) ... ok
+test_plugin_rejects_marketplace_name_bound_to_another_root (test_setup.SetupTests.test_plugin_rejects_marketplace_name_bound_to_another_root) ... ok
+test_runtime_ode_route_does_not_install_or_rewrite_optional_profile (test_setup.SetupTests.test_runtime_ode_route_does_not_install_or_rewrite_optional_profile) ... ok
+test_setup_override_paths_are_used_by_launcher (test_setup.SetupTests.test_setup_override_paths_are_used_by_launcher) ... ok
+test_successful_plan_never_installs_or_writes (test_setup.SetupTests.test_successful_plan_never_installs_or_writes) ... ok
+test_successful_setup_saves_paths_hashes_and_report (test_setup.SetupTests.test_successful_setup_saves_paths_hashes_and_report) ... Preparing modelling environment…
+Checking MCP startup and client inventories…
+ok
+test_unknown_input_keys_fail (test_setup.SetupTests.test_unknown_input_keys_fail) ... ok
+test_venv_install_is_argument_safe_and_resumable (test_setup.SetupTests.test_venv_install_is_argument_safe_and_resumable) ... ok
+
+----------------------------------------------------------------------
+Ran 74 tests in 2.087s
+
+OK
