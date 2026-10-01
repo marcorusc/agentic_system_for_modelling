@@ -99,4 +99,4 @@ def verify(root: Path, prefix: Path, clients: dict, *, with_biomass: bool = Fals
                             "Desktop parent tool isolation requires external enforcement.",
                             "Literature requires configured PubMed or explicitly authorized Codex web search.",
                             "Claude inline isolation requires a client-level inspection; CLI server listing alone cannot prove it.",
-                            "Claude independent validation reviewer definitions remain unavailable."]}
+                            "Claude independent reviewers require client-level execution verification."]}

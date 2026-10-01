@@ -3,12 +3,15 @@
 
 from __future__ import annotations
 
+import json
+import re
+import shutil
+import tempfile
 import unittest
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
-MODELLING_ENV = Path("/home/marcorusc/miniforge3/envs/mcp_modelling")
 
 AGENTS = {
     "ode-modeler.md": ("biomass", "mcp-biomass-server", "biomass-workflow"),
@@ -48,22 +51,51 @@ def frontmatter(text: str) -> str:
 
 
 class SpecialistMcpAccessTests(unittest.TestCase):
+    def check_transport(self, metadata: str, server: str, executable: str) -> None:
+        self.assertIn(f"mcpServers:\n  - {server}:\n", metadata)
+        block = metadata.split("mcpServers:\n", 1)[1].split("\ntools:", 1)[0]
+        self.assertEqual(re.findall(r"^  - (\w+):$", block, re.MULTILINE), [server])
+        values = {}
+        for key in ("command", "CONDA_PREFIX", "PATH"):
+            matches = re.findall(rf"^ +{key}: (.+)$", block, re.MULTILINE)
+            self.assertEqual(len(matches), 1)
+            value = matches[0]
+            values[key] = json.loads(value) if value.startswith('"') else value
+        if server == "biomass" and values["command"] == "__configure_biomass_command__":
+            self.assertEqual(values["CONDA_PREFIX"], "__configure_biomass_environment__")
+            self.assertEqual(values["PATH"], "__configure_biomass_path__")
+        else:
+            prefix = Path(values["CONDA_PREFIX"])
+            self.assertTrue(prefix.is_absolute())
+            self.assertEqual(values["command"], str(prefix / "bin" / executable))
+            self.assertEqual(values["PATH"].split(":")[0], str(prefix / "bin"))
+        self.assertNotIn("${MCP_MODELLING_ENV}", metadata)
+
     def test_agents_define_isolated_inline_servers(self) -> None:
         for filename, (server, executable, _) in AGENTS.items():
             with self.subTest(agent=filename):
-                metadata = frontmatter(agent_text(filename))
-                command = MODELLING_ENV / "bin" / executable
-                self.assertIn(f"mcpServers:\n  - {server}:\n", metadata)
-                if server == "biomass":
-                    self.assertIn("      command: __configure_biomass_command__\n", metadata)
-                    self.assertIn("        CONDA_PREFIX: __configure_biomass_environment__\n", metadata)
-                    self.assertIn("        PATH: __configure_biomass_path__\n", metadata)
-                else:
-                    self.assertIn(f"      command: {command}\n", metadata)
-                    self.assertIn(f"        CONDA_PREFIX: {MODELLING_ENV}\n", metadata)
-                self.assertNotIn(f"mcpServers:\n  - {server}\n", metadata)
-                self.assertNotIn("${MCP_MODELLING_ENV}", metadata)
-                self.assertTrue(command.is_absolute())
+                self.check_transport(frontmatter(agent_text(filename)), server, executable)
+
+    def test_generated_transports_support_other_environment_paths(self) -> None:
+        from scripts.setup_support import configure_claude
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            shutil.copytree(ROOT / ".claude/agents", root / ".claude/agents")
+            rendered = configure_claude.render(root, root / "another environment", with_biomass=True)
+            for filename, (server, executable, _) in AGENTS.items():
+                self.check_transport(frontmatter(rendered[root / ".claude/agents" / filename]), server, executable)
+
+    def test_required_validation_reviewers_exist_and_are_read_only(self) -> None:
+        workflow = (ROOT / ".claude/skills/validate-stage/SKILL.md").read_text()
+        for role in ("scientific-reviewer", "reproducibility-auditor"):
+            self.assertIn(f"`{role}`", workflow)
+            text = agent_text(role + ".md")
+            metadata = frontmatter(text)
+            allowed = metadata.split("\ntools:\n", 1)[1].split("\ndisallowedTools:", 1)[0]
+            self.assertEqual(allowed.splitlines(), ["  - Read", "  - Grep", "  - Glob"])
+            self.assertIn("  - 'mcp__*'", metadata)
+            self.assertNotIn("mcpServers:", metadata)
+            self.assertIn("does\nnot authorize a stage transition", text)
 
     def test_agents_preload_matching_workflow_skills(self) -> None:
         for filename, (_, _, skill) in AGENTS.items():

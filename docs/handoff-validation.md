@@ -61,7 +61,7 @@ requesting a stage transition.
 
 | Workflow | Current validator | Limitation |
 |---|---|---|
-| Claude `.claude/skills/validate-stage` | Requires `scientific-reviewer` and `reproducibility-auditor` | Agent definitions are missing, so the required independent review cannot complete |
+| Claude `.claude/skills/validate-stage` | Requires `scientific-reviewer` and `reproducibility-auditor` | Read-only definitions are present; live Claude invocation and review completion still require verification |
 | Codex `skills/validate-stage` | Main orchestrator runs machine checks, then scientific and reproducibility checks, followed by researcher approval | Review is not independent of the orchestrator |
 
 This documents current behavior without changing either workflow. Implementing

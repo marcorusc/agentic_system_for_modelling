@@ -164,8 +164,9 @@ integrity checks. The registry remains `pending` during review; a provisional
 snapshot never sets `Handoff=exported` or advances the global stage.
 
 The existing lifecycle allowlist already includes `runs/` and `evidence/`. Claude's
-stage validation still requires the absent `scientific-reviewer` and
-`reproducibility-auditor` definitions; report that blocker. Codex parent validation
+stage validation requires the read-only `scientific-reviewer` and
+`reproducibility-auditor` agents in `.claude/agents/`. Their source definitions
+are present; actual deployment and execution must still be verified in Claude. Codex parent validation
 is not independent scientific review. Syntax, numerical execution and biological
 validity remain separate claims.
 
