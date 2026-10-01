@@ -279,5 +279,5 @@ Return common envelope version 1 with specialist `ode_modeler`, stage `biomass_o
 and `ode.contract_version=2`. The orchestrator validates captures, evidence,
 revision/version, numerical settings and authority before scientific acceptance.
 Keep provisional registry rows pending. Existing independent stage review remains
-required; the absent reviewer/auditor definitions remain a blocker. No calibration,
+required; reviewer/auditor definitions are present, but live invocation and review completion still require verification. No calibration,
 sensitivity analysis or ODE-to-PhysiCell coupling is included.
