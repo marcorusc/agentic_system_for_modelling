@@ -5,7 +5,7 @@
       "name": "mcp-biomodelling-servers",
       "version": "2.3.0",
       "path": "../../mcp-biomodelling-servers-integration-fixes",
-      "commit": "1f16e5d128ee78e6bffc0945fc961ee672ca0b38"
+      "commit": "f0c4a808fd28a3e4a622f64b00b53e18f44ca23e"
     },
     {
       "name": "nekomata",
