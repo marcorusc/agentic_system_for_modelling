@@ -46,8 +46,14 @@ def install(prefix: Path, manager: str, manager_path: str, manifest: dict,
     if not (prefix/".setup-installed").exists():
         if backend_sources:
             with source_support.snapshots(backend_sources) as paths:
+                source_names = {entry["name"] for entry in backend_sources}
+                source_dependencies = [
+                    f"{name}=={version}"
+                    for name, version in sorted(manifest.get("dependency_pins", {}).items())
+                    if name not in source_names
+                ]
                 run([python, "-m", "pip", "install", "--index-url", manifest["index_url"],
-                     *dependencies, *[str(paths[e["name"]]) for e in backend_sources]], timeout=1800)
+                     *source_dependencies, *[str(paths[e["name"]]) for e in backend_sources]], timeout=1800)
                 source_support.write_receipt(prefix, backend_sources, paths)
         else:
             run([python, "-m", "pip", "install", "--index-url", manifest["index_url"], *dependencies, requirement], timeout=1800)

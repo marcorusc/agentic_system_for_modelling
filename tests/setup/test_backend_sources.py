@@ -126,21 +126,25 @@ class BackendSourcesTests(unittest.TestCase):
                 self.assertFalse((self.prefix / sources.RECEIPT).exists())
 
     def test_both_backends_installed_together_from_snapshots_and_reused(self):
+        manifest = {**self.manifest, "dependency_pins": {
+            **self.manifest["dependency_pins"], "unrelated-package": "3.2.1"}}
+
         def run(argv, **kwargs):
             if 'venv' in argv:
                 (self.prefix / 'bin').mkdir(parents=True)
                 (self.prefix / 'bin/python').touch()
             if 'install' in argv:
-                self.assertIn('nekomata==1.10.1', argv)
+                self.assertNotIn('nekomata==1.10.1', argv)
+                self.assertIn('unrelated-package==3.2.1', argv)
                 selected = [Path(p) for p in argv[-2:]]
                 self.assertEqual({p.name for p in selected}, sources.NAMES)
                 self.assertTrue(all((p/'pyproject.toml').is_file() for p in selected))
                 self.assertFalse(any(str(p) in {e['path'] for e in self.entries} for p in selected))
             return mock.Mock(stdout='fixture freeze\n')
         with mock.patch.object(environment, 'run', side_effect=run) as commands, mock.patch.object(sources, 'write_receipt') as receipt:
-            environment.install(self.prefix, 'venv', 'python', self.manifest, backend_sources=self.entries)
+            environment.install(self.prefix, 'venv', 'python', manifest, backend_sources=self.entries)
             count = commands.call_count
-            environment.install(self.prefix, 'venv', 'python', self.manifest, backend_sources=self.entries)
+            environment.install(self.prefix, 'venv', 'python', manifest, backend_sources=self.entries)
             self.assertEqual(commands.call_count, count)
             receipt.assert_called_once()
         self.assertTrue((self.prefix / '.setup-installed').exists())
