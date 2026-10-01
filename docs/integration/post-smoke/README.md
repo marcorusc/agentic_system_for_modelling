@@ -12,9 +12,9 @@ branches. Select reusable changes rather than merging their active scientific
 records. Every implementation step has a descriptive commit and relevant tests.
 
 1. **Complete:** transfer the three reusable repository fixes below.
-2. **Pending dependency decision:** integrate NeKo/MaBoSS preservation in dedicated
-   backend source branches, or choose maintained project-local overlays. Dedicated
-   source branches are recommended so both clients share the same implementation.
+2. **Source integration complete:** the researcher selected dedicated backend
+   source branches. NeKo and MaBoSS preservation fixes are committed separately;
+   setup adoption and a reproduced SDK compatibility blocker remain outstanding.
 3. **Pending:** address reusable capture/finalization and setup gaps with focused
    contracts/tests; update installation and completion documentation. Keep broader
    telemetry and context-size redesign separately scoped.
@@ -89,3 +89,37 @@ an explicit maintained overlay before claiming ordinary setup reproduces the
 smoke environment. No dependency source or shared installation has been changed
 as part of Step 1. Source-repository status here is local, not a fetched upstream
 release check.
+
+## Step 2 outcome — dedicated backend source branches
+
+Researcher choice: “Use dedicated backend source branches (Recommended)”. Separate
+worktrees preserve the existing NeKo main and MCP `mcp-biomass` checkouts.
+
+| Repository | Branch | Content commit | Validation |
+|---|---|---|---|
+| NeKo | `codex/preserve-sif-references` | `94579ac506aeb87545ca9b709d8c5fc316a9f552` | Nine offline reference round-trip regressions passed; tests retain Python 3.10 compatibility |
+| MCP servers | `codex/preserve-maboss-runs` | `1f16e5d128ee78e6bffc0945fc961ee672ca0b38` | Seven new preservation tests pass; updated protocol success/concurrency fixtures pass; changed Python passes Ruff |
+
+The MCP patch adds immutable exact inputs/raw outputs/full tables and a manifest
+published last. Legacy final-snapshot behavior is preserved. Its tests cover
+multiple runs, failed copy, missing input, path rejection, namespace collision and
+partial-publication rollback. No engine or biological model was run.
+
+**Release blocker:** the wider MCP checks report 98 passes and 21 failures. The
+same 21 cases fail on the unchanged source baseline (91 passes). All involve
+expected actionable error text being replaced by generic tool-error messages with
+installed MCP SDK 2.2.0. No new failing case was introduced. Do not characterize
+these backend checks as all passing; resolve the error contract during the later
+whole-system diagnostic before publication. The setup and final source revision
+selection must incorporate any resulting follow-up commit.
+
+See [Step 2 validation](step2-validation.json), [baseline protocol log](step2-mcp-baseline.log),
+[patched protocol log](step2-mcp-preservation.log) and [NeKo log](step2-neko-tests.log).
+The first broader run aborted in a GUI plotting backend; the completed comparisons
+use `MPLBACKEND=Agg`. The modelling environment had no pytest, so backend tests used
+its existing development environment. No shared environment was installed into.
+
+These are local source revisions, not releases or installed dependencies. Setup
+still pins the old package version and has not adopted the new source commits.
+The next step must make that dependency selection reproducible for both clients,
+then address capture/setup gaps. Push and main updates remain after diagnostic.

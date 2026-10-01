@@ -1,0 +1,1935 @@
+..................FFF...FFFFFF.FFFFF...F..................FFFFF......... [ 64%]
+......F.................................                                 [100%]
+=================================== FAILURES ===================================
+____ test_import_neko_handoff_failure_preserves_previous_session_and_files _____
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7b805b665550>
+tmp_path = PosixPath('/tmp/pytest-of-marcorusc/pytest-3/test_import_neko_handoff_failu0')
+
+    def test_import_neko_handoff_failure_preserves_previous_session_and_files(
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        manifest_path, _manifest = _create_neko_handoff(tmp_path)
+        previous_simulation = object()
+        session_id = _create_simulation_session(previous_simulation)
+        monkeypatch.setattr(maboss_server, "_SERVER_ROOT", tmp_path)
+    
+        def convert(_input: str, bnd_path: str, cfg_path: str) -> None:
+            Path(bnd_path).write_text("node A\nnode B\n", encoding="utf-8")
+            Path(cfg_path).write_text("max_time = 100;\n", encoding="utf-8")
+    
+        monkeypatch.setattr(
+            maboss_server.maboss,
+            "bnet_to_bnd_and_cfg",
+            convert,
+        )
+        monkeypatch.setattr(
+            maboss_server.maboss,
+            "load",
+            lambda _bnd, _cfg: (_ for _ in ()).throw(
+                RuntimeError("load failed")
+            ),
+        )
+    
+        result = _run(
+            _call_tool(
+                "import_neko_handoff",
+                {
+                    "manifest_path": str(manifest_path),
+                    "artifact_prefix": "failed",
+                    "session_id": session_id,
+                },
+            )
+        )
+    
+        session = session_manager.get_session(session_id)
+        artifact_dir = tmp_path / "artifacts" / session_id
+        assert session is not None
+        assert result.is_error is True
+>       assert "load failed" in result.content[0].text
+E       AssertionError: assert 'load failed' in 'Error executing tool import_neko_handoff'
+E        +  where 'Error executing tool import_neko_handoff' = TextContent(type='text', text='Error executing tool import_neko_handoff', annotations=None, meta=None).text
+
+tests/test_maboss_mcp_errors.py:951: AssertionError
+------------------------------ Captured log call -------------------------------
+ERROR    mcp.server.mcpserver.server:server.py:446 Tool 'import_neko_handoff' raised an unexpected exception
+Traceback (most recent call last):
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/server.py", line 437, in import_neko_handoff
+    candidate_simulation = maboss.load(
+        str(temporary_bnd),
+        str(temporary_cfg),
+    )
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/tests/test_maboss_mcp_errors.py", line 931, in <lambda>
+    lambda _bnd, _cfg: (_ for _ in ()).throw(
+                       ~~~~~~~~~~~~~~~~~~~~~^
+        RuntimeError("load failed")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ),
+    ^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/tests/test_maboss_mcp_errors.py", line 931, in <genexpr>
+    lambda _bnd, _cfg: (_ for _ in ()).throw(
+RuntimeError: load failed
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/base.py", line 176, in run
+    result = await self.fn_metadata.call_fn(self.fn, self.is_async, validated, pass_directly)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/utilities/func_metadata.py", line 164, in call_fn
+    return await anyio.to_thread.run_sync(functools.partial(fn, **kwargs))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/to_thread.py", line 65, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 2706, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 1100, in run
+    result = context.run(func, *args)
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/locking.py", line 19, in locked_handler
+    return handler(*args, **kwargs)
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/server.py", line 442, in import_neko_handoff
+    raise RuntimeError(
+        f"Error loading the converted MaBoSS simulation: {exc}"
+    ) from exc
+RuntimeError: Error loading the converted MaBoSS simulation: load failed
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/server.py", line 433, in _handle_call_tool
+    return await self.call_tool(params.name, params.arguments or {}, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/server.py", line 539, in call_tool
+    return await self._tool_manager.call_tool(name, arguments, context, convert_result=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/tool_manager.py", line 87, in call_tool
+    return await tool.run(arguments, context, convert_result=convert_result)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/base.py", line 210, in run
+    raise UnexpectedToolError(f"Error executing tool {self.name}") from exc
+mcp.server.mcpserver.exceptions.UnexpectedToolError: Error executing tool import_neko_handoff
+_____ test_import_neko_handoff_rejects_modified_bnet_before_session_change _____
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7b805b664c50>
+tmp_path = PosixPath('/tmp/pytest-of-marcorusc/pytest-3/test_import_neko_handoff_rejec0')
+
+    def test_import_neko_handoff_rejects_modified_bnet_before_session_change(
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        manifest_path, source_manifest = _create_neko_handoff(tmp_path)
+        Path(source_manifest.bnet_file.path).write_text(
+            "A, A\nB, B\n",
+            encoding="utf-8",
+        )
+        previous_simulation = object()
+        session_id = _create_simulation_session(previous_simulation)
+        monkeypatch.setattr(maboss_server, "_SERVER_ROOT", tmp_path)
+    
+        result = _run(
+            _call_tool(
+                "import_neko_handoff",
+                {
+                    "manifest_path": str(manifest_path),
+                    "session_id": session_id,
+                },
+            )
+        )
+    
+        session = session_manager.get_session(session_id)
+        assert session is not None
+        assert result.is_error is True
+>       assert "changed" in result.content[0].text
+E       AssertionError: assert 'changed' in 'Error executing tool import_neko_handoff'
+E        +  where 'Error executing tool import_neko_handoff' = TextContent(type='text', text='Error executing tool import_neko_handoff', annotations=None, meta=None).text
+
+tests/test_maboss_mcp_errors.py:983: AssertionError
+------------------------------ Captured log call -------------------------------
+ERROR    mcp.server.mcpserver.server:server.py:446 Tool 'import_neko_handoff' raised an unexpected exception
+Traceback (most recent call last):
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/base.py", line 176, in run
+    result = await self.fn_metadata.call_fn(self.fn, self.is_async, validated, pass_directly)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/utilities/func_metadata.py", line 164, in call_fn
+    return await anyio.to_thread.run_sync(functools.partial(fn, **kwargs))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/to_thread.py", line 65, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 2706, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 1100, in run
+    result = context.run(func, *args)
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/locking.py", line 19, in locked_handler
+    return handler(*args, **kwargs)
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/server.py", line 378, in import_neko_handoff
+    loaded_manifest = load_handoff_manifest(
+        manifest_path,
+        expected_handoff_type="neko-to-maboss",
+        verify_artifacts=True,
+    )
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/mcp_biomodelling_servers/handoff.py", line 936, in load_handoff_manifest
+    verify_handoff_manifest(manifest)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/mcp_biomodelling_servers/handoff.py", line 889, in verify_handoff_manifest
+    verify_handoff_artifact(artifact)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/mcp_biomodelling_servers/handoff.py", line 863, in verify_handoff_artifact
+    raise ValueError(
+        f"Handoff artifact digest changed for {artifact_path}."
+    )
+ValueError: Handoff artifact digest changed for /tmp/pytest-of-marcorusc/pytest-3/test_import_neko_handoff_rejec0/neko-source/network.bnet.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/server.py", line 433, in _handle_call_tool
+    return await self.call_tool(params.name, params.arguments or {}, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/server.py", line 539, in call_tool
+    return await self._tool_manager.call_tool(name, arguments, context, convert_result=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/tool_manager.py", line 87, in call_tool
+    return await tool.run(arguments, context, convert_result=convert_result)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/base.py", line 210, in run
+    raise UnexpectedToolError(f"Error executing tool {self.name}") from exc
+mcp.server.mcpserver.exceptions.UnexpectedToolError: Error executing tool import_neko_handoff
+______________ test_import_neko_handoff_refuses_existing_artifact ______________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7b806102a4e0>
+tmp_path = PosixPath('/tmp/pytest-of-marcorusc/pytest-3/test_import_neko_handoff_refus0')
+
+    def test_import_neko_handoff_refuses_existing_artifact(
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        manifest_path, _manifest = _create_neko_handoff(tmp_path)
+        previous_simulation = object()
+        session_id = _create_simulation_session(previous_simulation)
+        artifact_dir = tmp_path / "artifacts" / session_id
+        artifact_dir.mkdir(parents=True)
+        existing_cfg = artifact_dir / "retained.cfg"
+        existing_cfg.write_text("original\n", encoding="utf-8")
+        monkeypatch.setattr(maboss_server, "_SERVER_ROOT", tmp_path)
+    
+        result = _run(
+            _call_tool(
+                "import_neko_handoff",
+                {
+                    "manifest_path": str(manifest_path),
+                    "artifact_prefix": "retained",
+                    "session_id": session_id,
+                },
+            )
+        )
+    
+        session = session_manager.get_session(session_id)
+        assert session is not None
+        assert result.is_error is True
+>       assert "Refusing to overwrite" in result.content[0].text
+E       AssertionError: assert 'Refusing to overwrite' in 'Error executing tool import_neko_handoff'
+E        +  where 'Error executing tool import_neko_handoff' = TextContent(type='text', text='Error executing tool import_neko_handoff', annotations=None, meta=None).text
+
+tests/test_maboss_mcp_errors.py:1015: AssertionError
+------------------------------ Captured log call -------------------------------
+ERROR    mcp.server.mcpserver.server:server.py:446 Tool 'import_neko_handoff' raised an unexpected exception
+Traceback (most recent call last):
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/base.py", line 176, in run
+    result = await self.fn_metadata.call_fn(self.fn, self.is_async, validated, pass_directly)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/utilities/func_metadata.py", line 164, in call_fn
+    return await anyio.to_thread.run_sync(functools.partial(fn, **kwargs))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/to_thread.py", line 65, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 2706, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 1100, in run
+    result = context.run(func, *args)
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/locking.py", line 19, in locked_handler
+    return handler(*args, **kwargs)
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/server.py", line 405, in import_neko_handoff
+    _require_unused_artifact_paths([bnd_path, cfg_path])
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/services/artifacts.py", line 14, in require_unused_artifact_paths
+    raise FileExistsError(
+    ...<3 lines>...
+    )
+FileExistsError: Refusing to overwrite existing MaBoSS handoff artifacts: /tmp/pytest-of-marcorusc/pytest-3/test_import_neko_handoff_refus0/artifacts/c4cd23ee-3711-4655-82e3-0e01c650d6f1/retained.cfg. Choose a different artifact_prefix.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/server.py", line 433, in _handle_call_tool
+    return await self.call_tool(params.name, params.arguments or {}, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/server.py", line 539, in call_tool
+    return await self._tool_manager.call_tool(name, arguments, context, convert_result=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/tool_manager.py", line 87, in call_tool
+    return await tool.run(arguments, context, convert_result=convert_result)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/base.py", line 210, in run
+    raise UnexpectedToolError(f"Error executing tool {self.name}") from exc
+mcp.server.mcpserver.exceptions.UnexpectedToolError: Error executing tool import_neko_handoff
+_ test_export_maboss_handoff_rejects_incomplete_scientific_context[simulation0-Context.-No MaBoSS output nodes] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7b805b48c6d0>
+tmp_path = PosixPath('/tmp/pytest-of-marcorusc/pytest-3/test_export_maboss_handoff_rej0')
+simulation = <tests.test_maboss_mcp_errors.HandoffSimulationStub object at 0x7b8061404c20>
+context = 'Context.', message = 'No MaBoSS output nodes'
+
+    @pytest.mark.parametrize(
+        ("simulation", "context", "message"),
+        [
+            (
+                HandoffSimulationStub(outputs=[]),
+                "Context.",
+                "No MaBoSS output nodes",
+            ),
+            (
+                HandoffSimulationStub(
+                    outputs=["A"],
+                    parameters={"max_time": float("inf")},
+                ),
+                "Context.",
+                "must be finite",
+            ),
+            (
+                HandoffSimulationStub(outputs=["A"]),
+                None,
+                "biological_context is required",
+            ),
+        ],
+    )
+    def test_export_maboss_handoff_rejects_incomplete_scientific_context(
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+        simulation: HandoffSimulationStub,
+        context: str | None,
+        message: str,
+    ) -> None:
+        session_id = _create_simulation_session(simulation)
+        monkeypatch.setattr(maboss_server, "_SERVER_ROOT", tmp_path)
+        arguments: dict[str, object] = {
+            "target_cell_type": "epithelial",
+            "artifact_prefix": "invalid",
+            "session_id": session_id,
+        }
+        if context is not None:
+            arguments["biological_context"] = context
+    
+        result = _run(_call_tool("export_maboss_handoff", arguments))
+    
+        assert result.is_error is True
+>       assert message in result.content[0].text
+E       AssertionError: assert 'No MaBoSS output nodes' in 'Error executing tool export_maboss_handoff'
+E        +  where 'Error executing tool export_maboss_handoff' = TextContent(type='text', text='Error executing tool export_maboss_handoff', annotations=None, meta=None).text
+
+tests/test_maboss_mcp_errors.py:1216: AssertionError
+------------------------------ Captured log call -------------------------------
+ERROR    mcp.server.mcpserver.server:server.py:446 Tool 'export_maboss_handoff' raised an unexpected exception
+Traceback (most recent call last):
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/base.py", line 176, in run
+    result = await self.fn_metadata.call_fn(self.fn, self.is_async, validated, pass_directly)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/utilities/func_metadata.py", line 164, in call_fn
+    return await anyio.to_thread.run_sync(functools.partial(fn, **kwargs))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/to_thread.py", line 65, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 2706, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 1100, in run
+    result = context.run(func, *args)
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/locking.py", line 19, in locked_handler
+    return handler(*args, **kwargs)
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/server.py", line 962, in export_maboss_handoff
+    raise RuntimeError(
+    ...<3 lines>...
+    )
+RuntimeError: No MaBoSS output nodes are selected. Call set_maboss_output_nodes() with a small biologically meaningful set before exporting a PhysiCell handoff.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/server.py", line 433, in _handle_call_tool
+    return await self.call_tool(params.name, params.arguments or {}, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/server.py", line 539, in call_tool
+    return await self._tool_manager.call_tool(name, arguments, context, convert_result=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/tool_manager.py", line 87, in call_tool
+    return await tool.run(arguments, context, convert_result=convert_result)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/base.py", line 210, in run
+    raise UnexpectedToolError(f"Error executing tool {self.name}") from exc
+mcp.server.mcpserver.exceptions.UnexpectedToolError: Error executing tool export_maboss_handoff
+_ test_export_maboss_handoff_rejects_incomplete_scientific_context[simulation1-Context.-must be finite] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7b805b637710>
+tmp_path = PosixPath('/tmp/pytest-of-marcorusc/pytest-3/test_export_maboss_handoff_rej1')
+simulation = <tests.test_maboss_mcp_errors.HandoffSimulationStub object at 0x7b80614d7b10>
+context = 'Context.', message = 'must be finite'
+
+    @pytest.mark.parametrize(
+        ("simulation", "context", "message"),
+        [
+            (
+                HandoffSimulationStub(outputs=[]),
+                "Context.",
+                "No MaBoSS output nodes",
+            ),
+            (
+                HandoffSimulationStub(
+                    outputs=["A"],
+                    parameters={"max_time": float("inf")},
+                ),
+                "Context.",
+                "must be finite",
+            ),
+            (
+                HandoffSimulationStub(outputs=["A"]),
+                None,
+                "biological_context is required",
+            ),
+        ],
+    )
+    def test_export_maboss_handoff_rejects_incomplete_scientific_context(
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+        simulation: HandoffSimulationStub,
+        context: str | None,
+        message: str,
+    ) -> None:
+        session_id = _create_simulation_session(simulation)
+        monkeypatch.setattr(maboss_server, "_SERVER_ROOT", tmp_path)
+        arguments: dict[str, object] = {
+            "target_cell_type": "epithelial",
+            "artifact_prefix": "invalid",
+            "session_id": session_id,
+        }
+        if context is not None:
+            arguments["biological_context"] = context
+    
+        result = _run(_call_tool("export_maboss_handoff", arguments))
+    
+        assert result.is_error is True
+>       assert message in result.content[0].text
+E       AssertionError: assert 'must be finite' in 'Error executing tool export_maboss_handoff'
+E        +  where 'Error executing tool export_maboss_handoff' = TextContent(type='text', text='Error executing tool export_maboss_handoff', annotations=None, meta=None).text
+
+tests/test_maboss_mcp_errors.py:1216: AssertionError
+------------------------------ Captured log call -------------------------------
+ERROR    mcp.server.mcpserver.server:server.py:446 Tool 'export_maboss_handoff' raised an unexpected exception
+Traceback (most recent call last):
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/base.py", line 176, in run
+    result = await self.fn_metadata.call_fn(self.fn, self.is_async, validated, pass_directly)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/utilities/func_metadata.py", line 164, in call_fn
+    return await anyio.to_thread.run_sync(functools.partial(fn, **kwargs))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/to_thread.py", line 65, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 2706, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 1100, in run
+    result = context.run(func, *args)
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/locking.py", line 19, in locked_handler
+    return handler(*args, **kwargs)
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/server.py", line 1019, in export_maboss_handoff
+    parameters = _handoff_parameters(sess.sim.param)
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/services/handoff.py", line 45, in handoff_parameters
+    raise ValueError(
+        f"MaBoSS parameter {name!r} must be finite for handoff."
+    )
+ValueError: MaBoSS parameter 'max_time' must be finite for handoff.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/server.py", line 433, in _handle_call_tool
+    return await self.call_tool(params.name, params.arguments or {}, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/server.py", line 539, in call_tool
+    return await self._tool_manager.call_tool(name, arguments, context, convert_result=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/tool_manager.py", line 87, in call_tool
+    return await tool.run(arguments, context, convert_result=convert_result)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/base.py", line 210, in run
+    raise UnexpectedToolError(f"Error executing tool {self.name}") from exc
+mcp.server.mcpserver.exceptions.UnexpectedToolError: Error executing tool export_maboss_handoff
+_ test_export_maboss_handoff_rejects_incomplete_scientific_context[simulation2-None-biological_context is required] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7b805b2010d0>
+tmp_path = PosixPath('/tmp/pytest-of-marcorusc/pytest-3/test_export_maboss_handoff_rej2')
+simulation = <tests.test_maboss_mcp_errors.HandoffSimulationStub object at 0x7b8061330190>
+context = None, message = 'biological_context is required'
+
+    @pytest.mark.parametrize(
+        ("simulation", "context", "message"),
+        [
+            (
+                HandoffSimulationStub(outputs=[]),
+                "Context.",
+                "No MaBoSS output nodes",
+            ),
+            (
+                HandoffSimulationStub(
+                    outputs=["A"],
+                    parameters={"max_time": float("inf")},
+                ),
+                "Context.",
+                "must be finite",
+            ),
+            (
+                HandoffSimulationStub(outputs=["A"]),
+                None,
+                "biological_context is required",
+            ),
+        ],
+    )
+    def test_export_maboss_handoff_rejects_incomplete_scientific_context(
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+        simulation: HandoffSimulationStub,
+        context: str | None,
+        message: str,
+    ) -> None:
+        session_id = _create_simulation_session(simulation)
+        monkeypatch.setattr(maboss_server, "_SERVER_ROOT", tmp_path)
+        arguments: dict[str, object] = {
+            "target_cell_type": "epithelial",
+            "artifact_prefix": "invalid",
+            "session_id": session_id,
+        }
+        if context is not None:
+            arguments["biological_context"] = context
+    
+        result = _run(_call_tool("export_maboss_handoff", arguments))
+    
+        assert result.is_error is True
+>       assert message in result.content[0].text
+E       AssertionError: assert 'biological_context is required' in 'Error executing tool export_maboss_handoff'
+E        +  where 'Error executing tool export_maboss_handoff' = TextContent(type='text', text='Error executing tool export_maboss_handoff', annotations=None, meta=None).text
+
+tests/test_maboss_mcp_errors.py:1216: AssertionError
+------------------------------ Captured log call -------------------------------
+ERROR    mcp.server.mcpserver.server:server.py:446 Tool 'export_maboss_handoff' raised an unexpected exception
+Traceback (most recent call last):
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/base.py", line 176, in run
+    result = await self.fn_metadata.call_fn(self.fn, self.is_async, validated, pass_directly)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/utilities/func_metadata.py", line 164, in call_fn
+    return await anyio.to_thread.run_sync(functools.partial(fn, **kwargs))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/to_thread.py", line 65, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 2706, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 1100, in run
+    result = context.run(func, *args)
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/locking.py", line 19, in locked_handler
+    return handler(*args, **kwargs)
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/server.py", line 1014, in export_maboss_handoff
+    raise ValueError(
+    ...<2 lines>...
+    )
+ValueError: biological_context is required for a standalone MaBoSS model because no NeKo context is available to inherit.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/server.py", line 433, in _handle_call_tool
+    return await self.call_tool(params.name, params.arguments or {}, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/server.py", line 539, in call_tool
+    return await self._tool_manager.call_tool(name, arguments, context, convert_result=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/tool_manager.py", line 87, in call_tool
+    return await tool.run(arguments, context, convert_result=convert_result)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/base.py", line 210, in run
+    raise UnexpectedToolError(f"Error executing tool {self.name}") from exc
+mcp.server.mcpserver.exceptions.UnexpectedToolError: Error executing tool export_maboss_handoff
+_____________ test_export_maboss_handoff_refuses_existing_artifact _____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7b805b20bcd0>
+tmp_path = PosixPath('/tmp/pytest-of-marcorusc/pytest-3/test_export_maboss_handoff_ref0')
+
+    def test_export_maboss_handoff_refuses_existing_artifact(
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        session_id = _create_simulation_session(
+            HandoffSimulationStub(outputs=["A"])
+        )
+        artifact_dir = tmp_path / "artifacts" / session_id
+        artifact_dir.mkdir(parents=True)
+        existing_bnd = artifact_dir / "retained.bnd"
+        existing_bnd.write_text("original\n", encoding="utf-8")
+        monkeypatch.setattr(maboss_server, "_SERVER_ROOT", tmp_path)
+    
+        result = _run(
+            _call_tool(
+                "export_maboss_handoff",
+                {
+                    "target_cell_type": "epithelial",
+                    "biological_context": "Context.",
+                    "artifact_prefix": "retained",
+                    "session_id": session_id,
+                },
+            )
+        )
+    
+        assert result.is_error is True
+>       assert "Refusing to overwrite" in result.content[0].text
+E       AssertionError: assert 'Refusing to overwrite' in 'Error executing tool export_maboss_handoff'
+E        +  where 'Error executing tool export_maboss_handoff' = TextContent(type='text', text='Error executing tool export_maboss_handoff', annotations=None, meta=None).text
+
+tests/test_maboss_mcp_errors.py:1248: AssertionError
+------------------------------ Captured log call -------------------------------
+ERROR    mcp.server.mcpserver.server:server.py:446 Tool 'export_maboss_handoff' raised an unexpected exception
+Traceback (most recent call last):
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/base.py", line 176, in run
+    result = await self.fn_metadata.call_fn(self.fn, self.is_async, validated, pass_directly)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/utilities/func_metadata.py", line 164, in call_fn
+    return await anyio.to_thread.run_sync(functools.partial(fn, **kwargs))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/to_thread.py", line 65, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 2706, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 1100, in run
+    result = context.run(func, *args)
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/locking.py", line 19, in locked_handler
+    return handler(*args, **kwargs)
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/server.py", line 1067, in export_maboss_handoff
+    _require_unused_artifact_paths(destinations)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/services/artifacts.py", line 14, in require_unused_artifact_paths
+    raise FileExistsError(
+    ...<3 lines>...
+    )
+FileExistsError: Refusing to overwrite existing MaBoSS handoff artifacts: /tmp/pytest-of-marcorusc/pytest-3/test_export_maboss_handoff_ref0/artifacts/b60f3174-4309-49c4-b082-1dd0d3df169c/retained.bnd. Choose a different artifact_prefix.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/server.py", line 433, in _handle_call_tool
+    return await self.call_tool(params.name, params.arguments or {}, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/server.py", line 539, in call_tool
+    return await self._tool_manager.call_tool(name, arguments, context, convert_result=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/tool_manager.py", line 87, in call_tool
+    return await tool.run(arguments, context, convert_result=convert_result)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/base.py", line 210, in run
+    raise UnexpectedToolError(f"Error executing tool {self.name}") from exc
+mcp.server.mcpserver.exceptions.UnexpectedToolError: Error executing tool export_maboss_handoff
+____________ test_export_maboss_handoff_rejects_stale_neko_lineage _____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7b805b690470>
+tmp_path = PosixPath('/tmp/pytest-of-marcorusc/pytest-3/test_export_maboss_handoff_rej3')
+
+    def test_export_maboss_handoff_rejects_stale_neko_lineage(
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        manifest_path, parent_manifest = _create_neko_handoff(tmp_path)
+        Path(parent_manifest.bnet_file.path).write_text(
+            "A, A\nB, B\n",
+            encoding="utf-8",
+        )
+        session_id = session_manager.create_session()
+        session = session_manager.get_session(session_id)
+        assert session is not None
+        session.set_simulation(
+            HandoffSimulationStub(outputs=["B"]),
+            "/source/model.bnd",
+            "/source/model.cfg",
+            upstream_neko_manifest_path=str(manifest_path),
+        )
+        monkeypatch.setattr(maboss_server, "_SERVER_ROOT", tmp_path)
+    
+        result = _run(
+            _call_tool(
+                "export_maboss_handoff",
+                {
+                    "target_cell_type": "epithelial",
+                    "artifact_prefix": "stale",
+                    "session_id": session_id,
+                },
+            )
+        )
+    
+        assert result.is_error is True
+>       assert "changed" in result.content[0].text
+E       AssertionError: assert 'changed' in 'Error executing tool export_maboss_handoff'
+E        +  where 'Error executing tool export_maboss_handoff' = TextContent(type='text', text='Error executing tool export_maboss_handoff', annotations=None, meta=None).text
+
+tests/test_maboss_mcp_errors.py:1285: AssertionError
+------------------------------ Captured log call -------------------------------
+ERROR    mcp.server.mcpserver.server:server.py:446 Tool 'export_maboss_handoff' raised an unexpected exception
+Traceback (most recent call last):
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/base.py", line 176, in run
+    result = await self.fn_metadata.call_fn(self.fn, self.is_async, validated, pass_directly)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/utilities/func_metadata.py", line 164, in call_fn
+    return await anyio.to_thread.run_sync(functools.partial(fn, **kwargs))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/to_thread.py", line 65, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 2706, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 1100, in run
+    result = context.run(func, *args)
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/locking.py", line 19, in locked_handler
+    return handler(*args, **kwargs)
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/server.py", line 984, in export_maboss_handoff
+    loaded_parent = load_handoff_manifest(
+        sess.upstream_neko_manifest_path,
+        expected_handoff_type="neko-to-maboss",
+        verify_artifacts=True,
+    )
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/mcp_biomodelling_servers/handoff.py", line 936, in load_handoff_manifest
+    verify_handoff_manifest(manifest)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/mcp_biomodelling_servers/handoff.py", line 889, in verify_handoff_manifest
+    verify_handoff_artifact(artifact)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/mcp_biomodelling_servers/handoff.py", line 863, in verify_handoff_artifact
+    raise ValueError(
+        f"Handoff artifact digest changed for {artifact_path}."
+    )
+ValueError: Handoff artifact digest changed for /tmp/pytest-of-marcorusc/pytest-3/test_export_maboss_handoff_rej3/neko-source/network.bnet.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/server.py", line 433, in _handle_call_tool
+    return await self.call_tool(params.name, params.arguments or {}, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/server.py", line 539, in call_tool
+    return await self._tool_manager.call_tool(name, arguments, context, convert_result=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/tool_manager.py", line 87, in call_tool
+    return await tool.run(arguments, context, convert_result=convert_result)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/base.py", line 210, in run
+    raise UnexpectedToolError(f"Error executing tool {self.name}") from exc
+mcp.server.mcpserver.exceptions.UnexpectedToolError: Error executing tool export_maboss_handoff
+_________ test_export_maboss_handoff_rolls_back_partial_artifact_pair __________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7b805b2114f0>
+tmp_path = PosixPath('/tmp/pytest-of-marcorusc/pytest-3/test_export_maboss_handoff_rol0')
+
+    def test_export_maboss_handoff_rolls_back_partial_artifact_pair(
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        session_id = _create_simulation_session(
+            HandoffSimulationStub(outputs=["A"])
+        )
+        monkeypatch.setattr(maboss_server, "_SERVER_ROOT", tmp_path)
+        real_link = maboss_server._link_artifact_without_overwrite
+    
+        def fail_cfg_link(source: Path, destination: Path) -> None:
+            if destination.suffix == ".cfg":
+                raise RuntimeError("simulated CFG finalization failure")
+            real_link(source, destination)
+    
+        monkeypatch.setattr(
+            maboss_server,
+            "_link_artifact_without_overwrite",
+            fail_cfg_link,
+        )
+    
+        result = _run(
+            _call_tool(
+                "export_maboss_handoff",
+                {
+                    "target_cell_type": "epithelial",
+                    "biological_context": "Context.",
+                    "artifact_prefix": "partial",
+                    "session_id": session_id,
+                },
+            )
+        )
+    
+        artifact_dir = tmp_path / "artifacts" / session_id
+        assert result.is_error is True
+>       assert "CFG finalization failure" in result.content[0].text
+E       AssertionError: assert 'CFG finalization failure' in 'Error executing tool export_maboss_handoff'
+E        +  where 'Error executing tool export_maboss_handoff' = TextContent(type='text', text='Error executing tool export_maboss_handoff', annotations=None, meta=None).text
+
+tests/test_maboss_mcp_errors.py:1324: AssertionError
+------------------------------ Captured log call -------------------------------
+ERROR    mcp.server.mcpserver.server:server.py:446 Tool 'export_maboss_handoff' raised an unexpected exception
+Traceback (most recent call last):
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/base.py", line 176, in run
+    result = await self.fn_metadata.call_fn(self.fn, self.is_async, validated, pass_directly)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/utilities/func_metadata.py", line 164, in call_fn
+    return await anyio.to_thread.run_sync(functools.partial(fn, **kwargs))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/to_thread.py", line 65, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 2706, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 1100, in run
+    result = context.run(func, *args)
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/locking.py", line 19, in locked_handler
+    return handler(*args, **kwargs)
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/server.py", line 1099, in export_maboss_handoff
+    _link_artifact_without_overwrite(temporary_cfg, cfg_path)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/tests/test_maboss_mcp_errors.py", line 1301, in fail_cfg_link
+    raise RuntimeError("simulated CFG finalization failure")
+RuntimeError: simulated CFG finalization failure
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/server.py", line 433, in _handle_call_tool
+    return await self.call_tool(params.name, params.arguments or {}, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/server.py", line 539, in call_tool
+    return await self._tool_manager.call_tool(name, arguments, context, convert_result=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/tool_manager.py", line 87, in call_tool
+    return await tool.run(arguments, context, convert_result=convert_result)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/base.py", line 210, in run
+    raise UnexpectedToolError(f"Error executing tool {self.name}") from exc
+mcp.server.mcpserver.exceptions.UnexpectedToolError: Error executing tool export_maboss_handoff
+__________________ test_unknown_default_session_is_tool_error __________________
+
+    def test_unknown_default_session_is_tool_error() -> None:
+        result = _run(_call_tool("set_default_session", {"session_id": "missing-session"}))
+    
+        assert result.is_error is True
+>       assert "Session not found: missing-session" in result.content[0].text
+E       AssertionError: assert 'Session not found: missing-session' in 'Error executing tool set_default_session'
+E        +  where 'Error executing tool set_default_session' = TextContent(type='text', text='Error executing tool set_default_session', annotations=None, meta=None).text
+
+tests/test_maboss_mcp_errors.py:1376: AssertionError
+------------------------------ Captured log call -------------------------------
+ERROR    mcp.server.mcpserver.server:server.py:446 Tool 'set_default_session' raised an unexpected exception
+Traceback (most recent call last):
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/base.py", line 176, in run
+    result = await self.fn_metadata.call_fn(self.fn, self.is_async, validated, pass_directly)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/utilities/func_metadata.py", line 164, in call_fn
+    return await anyio.to_thread.run_sync(functools.partial(fn, **kwargs))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/to_thread.py", line 65, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 2706, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 1100, in run
+    result = context.run(func, *args)
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/server.py", line 308, in set_default_session
+    raise ValueError(f"Session not found: {session_id}")
+ValueError: Session not found: missing-session
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/server.py", line 433, in _handle_call_tool
+    return await self.call_tool(params.name, params.arguments or {}, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/server.py", line 539, in call_tool
+    return await self._tool_manager.call_tool(name, arguments, context, convert_result=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/tool_manager.py", line 87, in call_tool
+    return await tool.run(arguments, context, convert_result=convert_result)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/base.py", line 210, in run
+    raise UnexpectedToolError(f"Error executing tool {self.name}") from exc
+mcp.server.mcpserver.exceptions.UnexpectedToolError: Error executing tool set_default_session
+_________ test_unknown_explicit_tool_session_does_not_create_fallback __________
+
+    def test_unknown_explicit_tool_session_does_not_create_fallback() -> None:
+        result = _run(
+            _call_tool(
+                "get_maboss_nodes",
+                {"session_id": "missing-session"},
+            )
+        )
+    
+        assert result.is_error is True
+>       assert "Unknown MaBoSS session: missing-session" in result.content[0].text
+E       AssertionError: assert 'Unknown MaBoSS session: missing-session' in 'Error executing tool get_maboss_nodes'
+E        +  where 'Error executing tool get_maboss_nodes' = TextContent(type='text', text='Error executing tool get_maboss_nodes', annotations=None, meta=None).text
+
+tests/test_maboss_mcp_errors.py:1388: AssertionError
+------------------------------ Captured log call -------------------------------
+ERROR    mcp.server.mcpserver.server:server.py:446 Tool 'get_maboss_nodes' raised an unexpected exception
+Traceback (most recent call last):
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/base.py", line 176, in run
+    result = await self.fn_metadata.call_fn(self.fn, self.is_async, validated, pass_directly)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/utilities/func_metadata.py", line 164, in call_fn
+    return await anyio.to_thread.run_sync(functools.partial(fn, **kwargs))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/to_thread.py", line 65, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 2706, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 1100, in run
+    result = context.run(func, *args)
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/locking.py", line 18, in locked_handler
+    with session_manager.session_scope(arguments.get("session_id")):
+         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/miniforge3/lib/python3.13/contextlib.py", line 141, in __enter__
+    return next(self.gen)
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/session_manager.py", line 292, in session_scope
+    session = self.ensure_session(session_id)
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/session_manager.py", line 215, in ensure_session
+    raise KeyError(f"Unknown MaBoSS session: {session_id}")
+KeyError: 'Unknown MaBoSS session: missing-session'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/server.py", line 433, in _handle_call_tool
+    return await self.call_tool(params.name, params.arguments or {}, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/server.py", line 539, in call_tool
+    return await self._tool_manager.call_tool(name, arguments, context, convert_result=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/tool_manager.py", line 87, in call_tool
+    return await tool.run(arguments, context, convert_result=convert_result)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/base.py", line 210, in run
+    raise UnexpectedToolError(f"Error executing tool {self.name}") from exc
+mcp.server.mcpserver.exceptions.UnexpectedToolError: Error executing tool get_maboss_nodes
+__________________ test_run_without_simulation_is_tool_error ___________________
+
+    def test_run_without_simulation_is_tool_error() -> None:
+        result = _run(_call_tool("run_simulation"))
+    
+        assert result.is_error is True
+>       assert "No MaBoSS simulation has been built yet" in result.content[0].text
+E       AssertionError: assert 'No MaBoSS simulation has been built yet' in 'Error executing tool run_simulation'
+E        +  where 'Error executing tool run_simulation' = TextContent(type='text', text='Error executing tool run_simulation', annotations=None, meta=None).text
+
+tests/test_maboss_mcp_errors.py:1396: AssertionError
+------------------------------ Captured log call -------------------------------
+ERROR    mcp.server.mcpserver.server:server.py:446 Tool 'run_simulation' raised an unexpected exception
+Traceback (most recent call last):
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/base.py", line 176, in run
+    result = await self.fn_metadata.call_fn(self.fn, self.is_async, validated, pass_directly)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/utilities/func_metadata.py", line 163, in call_fn
+    return await fn(**kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/server.py", line 763, in run_simulation
+    await anyio.to_thread.run_sync(run_locked)
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/to_thread.py", line 65, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 2706, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 1100, in run
+    result = context.run(func, *args)
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/server.py", line 692, in run_locked
+    raise RuntimeError(
+    ...<2 lines>...
+    )
+RuntimeError: No MaBoSS simulation has been built yet. Call bnet_to_bnd_and_cfg then build_simulation first.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/server.py", line 433, in _handle_call_tool
+    return await self.call_tool(params.name, params.arguments or {}, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/server.py", line 539, in call_tool
+    return await self._tool_manager.call_tool(name, arguments, context, convert_result=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/tool_manager.py", line 87, in call_tool
+    return await tool.run(arguments, context, convert_result=convert_result)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/base.py", line 210, in run
+    raise UnexpectedToolError(f"Error executing tool {self.name}") from exc
+mcp.server.mcpserver.exceptions.UnexpectedToolError: Error executing tool run_simulation
+_____________ test_run_requires_at_least_one_selected_output_node ______________
+
+    def test_run_requires_at_least_one_selected_output_node() -> None:
+        session_id = _create_simulation_session(
+            HandoffSimulationStub(outputs=[])
+        )
+    
+        result = _run(
+            _call_tool("run_simulation", {"session_id": session_id})
+        )
+    
+        assert result.is_error is True
+>       assert "No MaBoSS output nodes are selected" in result.content[0].text
+E       AssertionError: assert 'No MaBoSS output nodes are selected' in 'Error executing tool run_simulation'
+E        +  where 'Error executing tool run_simulation' = TextContent(type='text', text='Error executing tool run_simulation', annotations=None, meta=None).text
+
+tests/test_maboss_mcp_errors.py:1409: AssertionError
+------------------------------ Captured log call -------------------------------
+ERROR    mcp.server.mcpserver.server:server.py:446 Tool 'run_simulation' raised an unexpected exception
+Traceback (most recent call last):
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/base.py", line 176, in run
+    result = await self.fn_metadata.call_fn(self.fn, self.is_async, validated, pass_directly)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/utilities/func_metadata.py", line 163, in call_fn
+    return await fn(**kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/server.py", line 763, in run_simulation
+    await anyio.to_thread.run_sync(run_locked)
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/to_thread.py", line 65, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 2706, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 1100, in run
+    result = context.run(func, *args)
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/server.py", line 699, in run_locked
+    raise RuntimeError(
+    ...<3 lines>...
+    )
+RuntimeError: No MaBoSS output nodes are selected. Call set_maboss_output_nodes() with a small biologically meaningful set before run_simulation().
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/server.py", line 433, in _handle_call_tool
+    return await self.call_tool(params.name, params.arguments or {}, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/server.py", line 539, in call_tool
+    return await self._tool_manager.call_tool(name, arguments, context, convert_result=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/tool_manager.py", line 87, in call_tool
+    return await tool.run(arguments, context, convert_result=convert_result)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/base.py", line 210, in run
+    raise UnexpectedToolError(f"Error executing tool {self.name}") from exc
+mcp.server.mcpserver.exceptions.UnexpectedToolError: Error executing tool run_simulation
+_________________ test_visualize_without_result_is_tool_error __________________
+
+    def test_visualize_without_result_is_tool_error() -> None:
+        result = _run(_call_tool("visualize_network_trajectories"))
+    
+        assert result.is_error is True
+>       assert "No simulation has been run yet" in result.content[0].text
+E       AssertionError: assert 'No simulation has been run yet' in 'Error executing tool visualize_network_trajectories'
+E        +  where 'Error executing tool visualize_network_trajectories' = TextContent(type='text', text='Error executing tool visualize_network_trajectories', annotations=None, meta=None).text
+
+tests/test_maboss_mcp_errors.py:1417: AssertionError
+------------------------------ Captured log call -------------------------------
+ERROR    mcp.server.mcpserver.server:server.py:446 Tool 'visualize_network_trajectories' raised an unexpected exception
+Traceback (most recent call last):
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/base.py", line 176, in run
+    result = await self.fn_metadata.call_fn(self.fn, self.is_async, validated, pass_directly)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/utilities/func_metadata.py", line 164, in call_fn
+    return await anyio.to_thread.run_sync(functools.partial(fn, **kwargs))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/to_thread.py", line 65, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 2706, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 1100, in run
+    result = context.run(func, *args)
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/locking.py", line 19, in locked_handler
+    return handler(*args, **kwargs)
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/server.py", line 1845, in visualize_network_trajectories
+    raise RuntimeError(
+        "No simulation has been run yet. Call run_simulation first."
+    )
+RuntimeError: No simulation has been run yet. Call run_simulation first.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/server.py", line 433, in _handle_call_tool
+    return await self.call_tool(params.name, params.arguments or {}, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/server.py", line 539, in call_tool
+    return await self._tool_manager.call_tool(name, arguments, context, convert_result=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/tool_manager.py", line 87, in call_tool
+    return await tool.run(arguments, context, convert_result=convert_result)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/base.py", line 210, in run
+    raise UnexpectedToolError(f"Error executing tool {self.name}") from exc
+mcp.server.mcpserver.exceptions.UnexpectedToolError: Error executing tool visualize_network_trajectories
+_______________ test_visualize_closes_figure_when_plotting_fails _______________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7b805b327050>
+tmp_path = PosixPath('/tmp/pytest-of-marcorusc/pytest-3/test_visualize_closes_figure_w0')
+
+    def test_visualize_closes_figure_when_plotting_fails(
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        fake_result = FakeTrajectoryResult(fail=True)
+        session_id = _create_result_session(fake_result)
+        monkeypatch.setattr(maboss_server, "_SERVER_ROOT", tmp_path)
+        figures_before = set(plt.get_fignums())
+    
+        result = _run(
+            _call_tool(
+                "visualize_network_trajectories",
+                {"session_id": session_id},
+            )
+        )
+    
+        assert result.is_error is True
+>       assert "plot failed" in result.content[0].text
+E       AssertionError: assert 'plot failed' in 'Error executing tool visualize_network_trajectories'
+E        +  where 'Error executing tool visualize_network_trajectories' = TextContent(type='text', text='Error executing tool visualize_network_trajectories', annotations=None, meta=None).text
+
+tests/test_maboss_mcp_errors.py:1520: AssertionError
+------------------------------ Captured log call -------------------------------
+ERROR    MaBoSS.server:server.py:1907 Error saving trajectory plot
+Traceback (most recent call last):
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/server.py", line 1854, in visualize_network_trajectories
+    sess.result.plot_trajectory(until=until, axes=axes)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/tests/test_maboss_mcp_errors.py", line 64, in plot_trajectory
+    raise RuntimeError("plot failed")
+RuntimeError: plot failed
+ERROR    mcp.server.mcpserver.server:server.py:446 Tool 'visualize_network_trajectories' raised an unexpected exception
+Traceback (most recent call last):
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/server.py", line 1854, in visualize_network_trajectories
+    sess.result.plot_trajectory(until=until, axes=axes)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/tests/test_maboss_mcp_errors.py", line 64, in plot_trajectory
+    raise RuntimeError("plot failed")
+RuntimeError: plot failed
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/base.py", line 176, in run
+    result = await self.fn_metadata.call_fn(self.fn, self.is_async, validated, pass_directly)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/utilities/func_metadata.py", line 164, in call_fn
+    return await anyio.to_thread.run_sync(functools.partial(fn, **kwargs))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/to_thread.py", line 65, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 2706, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 1100, in run
+    result = context.run(func, *args)
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/locking.py", line 19, in locked_handler
+    return handler(*args, **kwargs)
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/server.py", line 1908, in visualize_network_trajectories
+    raise RuntimeError(f"Error saving trajectory plot: {e}") from e
+RuntimeError: Error saving trajectory plot: plot failed
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/server.py", line 433, in _handle_call_tool
+    return await self.call_tool(params.name, params.arguments or {}, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/server.py", line 539, in call_tool
+    return await self._tool_manager.call_tool(name, arguments, context, convert_result=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/tool_manager.py", line 87, in call_tool
+    return await tool.run(arguments, context, convert_result=convert_result)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/base.py", line 210, in run
+    raise UnexpectedToolError(f"Error executing tool {self.name}") from exc
+mcp.server.mcpserver.exceptions.UnexpectedToolError: Error executing tool visualize_network_trajectories
+_ test_invalid_joint_initial_state_does_not_reach_pymaboss[nodes0-probabilities0-2 nodes were requested] _
+
+nodes = ['A', 'B'], probabilities = [{'state': [0], 'probability': 1.0}]
+message = '2 nodes were requested'
+
+    @pytest.mark.parametrize(
+        ("nodes", "probabilities", "message"),
+        [
+            (
+                ["A", "B"],
+                [{"state": [0], "probability": 1.0}],
+                "2 nodes were requested",
+            ),
+            (
+                ["A", "B"],
+                [
+                    {"state": [0, 0], "probability": 0.4},
+                    {"state": [0, 0], "probability": 0.6},
+                ],
+                "specified more than once",
+            ),
+            (
+                ["A", "B"],
+                [{"state": [0, 0], "probability": 0.9}],
+                "must sum to 1",
+            ),
+            (
+                ["A", "A"],
+                [{"state": [0, 0], "probability": 1.0}],
+                "must be unique",
+            ),
+            (
+                ["A", "unknown"],
+                [{"state": [0, 0], "probability": 1.0}],
+                "Unknown MaBoSS initial-state node",
+            ),
+        ],
+    )
+    def test_invalid_joint_initial_state_does_not_reach_pymaboss(
+        nodes: list[str],
+        probabilities: list[dict[str, object]],
+        message: str,
+    ) -> None:
+        network = InitialStateNetworkStub()
+        session_id = _create_simulation_session(
+            SimpleNamespace(network=network),
+        )
+    
+        result = _run(
+            _call_tool(
+                "set_maboss_initial_state",
+                {
+                    "nodes": nodes,
+                    "probDict": probabilities,
+                    "session_id": session_id,
+                },
+            )
+        )
+    
+        assert result.is_error is True
+>       assert message in result.content[0].text
+E       AssertionError: assert '2 nodes were requested' in 'Error executing tool set_maboss_initial_state'
+E        +  where 'Error executing tool set_maboss_initial_state' = TextContent(type='text', text='Error executing tool set_maboss_initial_state', annotations=None, meta=None).text
+
+tests/test_maboss_mcp_errors.py:1721: AssertionError
+------------------------------ Captured log call -------------------------------
+ERROR    mcp.server.mcpserver.server:server.py:446 Tool 'set_maboss_initial_state' raised an unexpected exception
+Traceback (most recent call last):
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/base.py", line 176, in run
+    result = await self.fn_metadata.call_fn(self.fn, self.is_async, validated, pass_directly)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/utilities/func_metadata.py", line 164, in call_fn
+    return await anyio.to_thread.run_sync(functools.partial(fn, **kwargs))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/to_thread.py", line 65, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 2706, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 1100, in run
+    result = context.run(func, *args)
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/locking.py", line 19, in locked_handler
+    return handler(*args, **kwargs)
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/server.py", line 1638, in set_maboss_initial_state
+    _normalize_initial_state_probabilities(nodes, probDict)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/services/normalization.py", line 157, in normalize_initial_state_probabilities
+    normalized_state = initial_state_key(
+        state,
+        node_count=node_count,
+    )
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/services/normalization.py", line 62, in initial_state_key
+    raise ValueError(
+    ...<2 lines>...
+    )
+ValueError: Initial state [0] has 1 values, but 2 nodes were requested.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/server.py", line 433, in _handle_call_tool
+    return await self.call_tool(params.name, params.arguments or {}, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/server.py", line 539, in call_tool
+    return await self._tool_manager.call_tool(name, arguments, context, convert_result=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/tool_manager.py", line 87, in call_tool
+    return await tool.run(arguments, context, convert_result=convert_result)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/base.py", line 210, in run
+    raise UnexpectedToolError(f"Error executing tool {self.name}") from exc
+mcp.server.mcpserver.exceptions.UnexpectedToolError: Error executing tool set_maboss_initial_state
+_ test_invalid_joint_initial_state_does_not_reach_pymaboss[nodes1-probabilities1-specified more than once] _
+
+nodes = ['A', 'B']
+probabilities = [{'state': [0, 0], 'probability': 0.4}, {'state': [0, 0], 'probability': 0.6}]
+message = 'specified more than once'
+
+    @pytest.mark.parametrize(
+        ("nodes", "probabilities", "message"),
+        [
+            (
+                ["A", "B"],
+                [{"state": [0], "probability": 1.0}],
+                "2 nodes were requested",
+            ),
+            (
+                ["A", "B"],
+                [
+                    {"state": [0, 0], "probability": 0.4},
+                    {"state": [0, 0], "probability": 0.6},
+                ],
+                "specified more than once",
+            ),
+            (
+                ["A", "B"],
+                [{"state": [0, 0], "probability": 0.9}],
+                "must sum to 1",
+            ),
+            (
+                ["A", "A"],
+                [{"state": [0, 0], "probability": 1.0}],
+                "must be unique",
+            ),
+            (
+                ["A", "unknown"],
+                [{"state": [0, 0], "probability": 1.0}],
+                "Unknown MaBoSS initial-state node",
+            ),
+        ],
+    )
+    def test_invalid_joint_initial_state_does_not_reach_pymaboss(
+        nodes: list[str],
+        probabilities: list[dict[str, object]],
+        message: str,
+    ) -> None:
+        network = InitialStateNetworkStub()
+        session_id = _create_simulation_session(
+            SimpleNamespace(network=network),
+        )
+    
+        result = _run(
+            _call_tool(
+                "set_maboss_initial_state",
+                {
+                    "nodes": nodes,
+                    "probDict": probabilities,
+                    "session_id": session_id,
+                },
+            )
+        )
+    
+        assert result.is_error is True
+>       assert message in result.content[0].text
+E       AssertionError: assert 'specified more than once' in 'Error executing tool set_maboss_initial_state'
+E        +  where 'Error executing tool set_maboss_initial_state' = TextContent(type='text', text='Error executing tool set_maboss_initial_state', annotations=None, meta=None).text
+
+tests/test_maboss_mcp_errors.py:1721: AssertionError
+------------------------------ Captured log call -------------------------------
+ERROR    mcp.server.mcpserver.server:server.py:446 Tool 'set_maboss_initial_state' raised an unexpected exception
+Traceback (most recent call last):
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/base.py", line 176, in run
+    result = await self.fn_metadata.call_fn(self.fn, self.is_async, validated, pass_directly)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/utilities/func_metadata.py", line 164, in call_fn
+    return await anyio.to_thread.run_sync(functools.partial(fn, **kwargs))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/to_thread.py", line 65, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 2706, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 1100, in run
+    result = context.run(func, *args)
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/locking.py", line 19, in locked_handler
+    return handler(*args, **kwargs)
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/server.py", line 1638, in set_maboss_initial_state
+    _normalize_initial_state_probabilities(nodes, probDict)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/services/normalization.py", line 162, in normalize_initial_state_probabilities
+    raise ValueError(
+        f"Initial state {state!r} is specified more than once."
+    )
+ValueError: Initial state [0, 0] is specified more than once.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/server.py", line 433, in _handle_call_tool
+    return await self.call_tool(params.name, params.arguments or {}, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/server.py", line 539, in call_tool
+    return await self._tool_manager.call_tool(name, arguments, context, convert_result=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/tool_manager.py", line 87, in call_tool
+    return await tool.run(arguments, context, convert_result=convert_result)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/base.py", line 210, in run
+    raise UnexpectedToolError(f"Error executing tool {self.name}") from exc
+mcp.server.mcpserver.exceptions.UnexpectedToolError: Error executing tool set_maboss_initial_state
+_ test_invalid_joint_initial_state_does_not_reach_pymaboss[nodes2-probabilities2-must sum to 1] _
+
+nodes = ['A', 'B'], probabilities = [{'state': [0, 0], 'probability': 0.9}]
+message = 'must sum to 1'
+
+    @pytest.mark.parametrize(
+        ("nodes", "probabilities", "message"),
+        [
+            (
+                ["A", "B"],
+                [{"state": [0], "probability": 1.0}],
+                "2 nodes were requested",
+            ),
+            (
+                ["A", "B"],
+                [
+                    {"state": [0, 0], "probability": 0.4},
+                    {"state": [0, 0], "probability": 0.6},
+                ],
+                "specified more than once",
+            ),
+            (
+                ["A", "B"],
+                [{"state": [0, 0], "probability": 0.9}],
+                "must sum to 1",
+            ),
+            (
+                ["A", "A"],
+                [{"state": [0, 0], "probability": 1.0}],
+                "must be unique",
+            ),
+            (
+                ["A", "unknown"],
+                [{"state": [0, 0], "probability": 1.0}],
+                "Unknown MaBoSS initial-state node",
+            ),
+        ],
+    )
+    def test_invalid_joint_initial_state_does_not_reach_pymaboss(
+        nodes: list[str],
+        probabilities: list[dict[str, object]],
+        message: str,
+    ) -> None:
+        network = InitialStateNetworkStub()
+        session_id = _create_simulation_session(
+            SimpleNamespace(network=network),
+        )
+    
+        result = _run(
+            _call_tool(
+                "set_maboss_initial_state",
+                {
+                    "nodes": nodes,
+                    "probDict": probabilities,
+                    "session_id": session_id,
+                },
+            )
+        )
+    
+        assert result.is_error is True
+>       assert message in result.content[0].text
+E       AssertionError: assert 'must sum to 1' in 'Error executing tool set_maboss_initial_state'
+E        +  where 'Error executing tool set_maboss_initial_state' = TextContent(type='text', text='Error executing tool set_maboss_initial_state', annotations=None, meta=None).text
+
+tests/test_maboss_mcp_errors.py:1721: AssertionError
+------------------------------ Captured log call -------------------------------
+ERROR    mcp.server.mcpserver.server:server.py:446 Tool 'set_maboss_initial_state' raised an unexpected exception
+Traceback (most recent call last):
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/base.py", line 176, in run
+    result = await self.fn_metadata.call_fn(self.fn, self.is_async, validated, pass_directly)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/utilities/func_metadata.py", line 164, in call_fn
+    return await anyio.to_thread.run_sync(functools.partial(fn, **kwargs))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/to_thread.py", line 65, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 2706, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 1100, in run
+    result = context.run(func, *args)
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/locking.py", line 19, in locked_handler
+    return handler(*args, **kwargs)
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/server.py", line 1638, in set_maboss_initial_state
+    _normalize_initial_state_probabilities(nodes, probDict)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/services/normalization.py", line 176, in normalize_initial_state_probabilities
+    raise ValueError("Initial-state probabilities must sum to 1.")
+ValueError: Initial-state probabilities must sum to 1.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/server.py", line 433, in _handle_call_tool
+    return await self.call_tool(params.name, params.arguments or {}, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/server.py", line 539, in call_tool
+    return await self._tool_manager.call_tool(name, arguments, context, convert_result=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/tool_manager.py", line 87, in call_tool
+    return await tool.run(arguments, context, convert_result=convert_result)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/base.py", line 210, in run
+    raise UnexpectedToolError(f"Error executing tool {self.name}") from exc
+mcp.server.mcpserver.exceptions.UnexpectedToolError: Error executing tool set_maboss_initial_state
+_ test_invalid_joint_initial_state_does_not_reach_pymaboss[nodes3-probabilities3-must be unique] _
+
+nodes = ['A', 'A'], probabilities = [{'state': [0, 0], 'probability': 1.0}]
+message = 'must be unique'
+
+    @pytest.mark.parametrize(
+        ("nodes", "probabilities", "message"),
+        [
+            (
+                ["A", "B"],
+                [{"state": [0], "probability": 1.0}],
+                "2 nodes were requested",
+            ),
+            (
+                ["A", "B"],
+                [
+                    {"state": [0, 0], "probability": 0.4},
+                    {"state": [0, 0], "probability": 0.6},
+                ],
+                "specified more than once",
+            ),
+            (
+                ["A", "B"],
+                [{"state": [0, 0], "probability": 0.9}],
+                "must sum to 1",
+            ),
+            (
+                ["A", "A"],
+                [{"state": [0, 0], "probability": 1.0}],
+                "must be unique",
+            ),
+            (
+                ["A", "unknown"],
+                [{"state": [0, 0], "probability": 1.0}],
+                "Unknown MaBoSS initial-state node",
+            ),
+        ],
+    )
+    def test_invalid_joint_initial_state_does_not_reach_pymaboss(
+        nodes: list[str],
+        probabilities: list[dict[str, object]],
+        message: str,
+    ) -> None:
+        network = InitialStateNetworkStub()
+        session_id = _create_simulation_session(
+            SimpleNamespace(network=network),
+        )
+    
+        result = _run(
+            _call_tool(
+                "set_maboss_initial_state",
+                {
+                    "nodes": nodes,
+                    "probDict": probabilities,
+                    "session_id": session_id,
+                },
+            )
+        )
+    
+        assert result.is_error is True
+>       assert message in result.content[0].text
+E       AssertionError: assert 'must be unique' in 'Error executing tool set_maboss_initial_state'
+E        +  where 'Error executing tool set_maboss_initial_state' = TextContent(type='text', text='Error executing tool set_maboss_initial_state', annotations=None, meta=None).text
+
+tests/test_maboss_mcp_errors.py:1721: AssertionError
+------------------------------ Captured log call -------------------------------
+ERROR    mcp.server.mcpserver.server:server.py:446 Tool 'set_maboss_initial_state' raised an unexpected exception
+Traceback (most recent call last):
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/base.py", line 176, in run
+    result = await self.fn_metadata.call_fn(self.fn, self.is_async, validated, pass_directly)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/utilities/func_metadata.py", line 164, in call_fn
+    return await anyio.to_thread.run_sync(functools.partial(fn, **kwargs))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/to_thread.py", line 65, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 2706, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 1100, in run
+    result = context.run(func, *args)
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/locking.py", line 19, in locked_handler
+    return handler(*args, **kwargs)
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/server.py", line 1638, in set_maboss_initial_state
+    _normalize_initial_state_probabilities(nodes, probDict)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/services/normalization.py", line 87, in normalize_initial_state_probabilities
+    raise ValueError("Initial-state node names must be unique.")
+ValueError: Initial-state node names must be unique.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/server.py", line 433, in _handle_call_tool
+    return await self.call_tool(params.name, params.arguments or {}, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/server.py", line 539, in call_tool
+    return await self._tool_manager.call_tool(name, arguments, context, convert_result=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/tool_manager.py", line 87, in call_tool
+    return await tool.run(arguments, context, convert_result=convert_result)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/base.py", line 210, in run
+    raise UnexpectedToolError(f"Error executing tool {self.name}") from exc
+mcp.server.mcpserver.exceptions.UnexpectedToolError: Error executing tool set_maboss_initial_state
+_ test_invalid_joint_initial_state_does_not_reach_pymaboss[nodes4-probabilities4-Unknown MaBoSS initial-state node] _
+
+nodes = ['A', 'unknown']
+probabilities = [{'state': [0, 0], 'probability': 1.0}]
+message = 'Unknown MaBoSS initial-state node'
+
+    @pytest.mark.parametrize(
+        ("nodes", "probabilities", "message"),
+        [
+            (
+                ["A", "B"],
+                [{"state": [0], "probability": 1.0}],
+                "2 nodes were requested",
+            ),
+            (
+                ["A", "B"],
+                [
+                    {"state": [0, 0], "probability": 0.4},
+                    {"state": [0, 0], "probability": 0.6},
+                ],
+                "specified more than once",
+            ),
+            (
+                ["A", "B"],
+                [{"state": [0, 0], "probability": 0.9}],
+                "must sum to 1",
+            ),
+            (
+                ["A", "A"],
+                [{"state": [0, 0], "probability": 1.0}],
+                "must be unique",
+            ),
+            (
+                ["A", "unknown"],
+                [{"state": [0, 0], "probability": 1.0}],
+                "Unknown MaBoSS initial-state node",
+            ),
+        ],
+    )
+    def test_invalid_joint_initial_state_does_not_reach_pymaboss(
+        nodes: list[str],
+        probabilities: list[dict[str, object]],
+        message: str,
+    ) -> None:
+        network = InitialStateNetworkStub()
+        session_id = _create_simulation_session(
+            SimpleNamespace(network=network),
+        )
+    
+        result = _run(
+            _call_tool(
+                "set_maboss_initial_state",
+                {
+                    "nodes": nodes,
+                    "probDict": probabilities,
+                    "session_id": session_id,
+                },
+            )
+        )
+    
+        assert result.is_error is True
+>       assert message in result.content[0].text
+E       AssertionError: assert 'Unknown MaBoSS initial-state node' in 'Error executing tool set_maboss_initial_state'
+E        +  where 'Error executing tool set_maboss_initial_state' = TextContent(type='text', text='Error executing tool set_maboss_initial_state', annotations=None, meta=None).text
+
+tests/test_maboss_mcp_errors.py:1721: AssertionError
+------------------------------ Captured log call -------------------------------
+ERROR    mcp.server.mcpserver.server:server.py:446 Tool 'set_maboss_initial_state' raised an unexpected exception
+Traceback (most recent call last):
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/base.py", line 176, in run
+    result = await self.fn_metadata.call_fn(self.fn, self.is_async, validated, pass_directly)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/utilities/func_metadata.py", line 164, in call_fn
+    return await anyio.to_thread.run_sync(functools.partial(fn, **kwargs))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/to_thread.py", line 65, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 2706, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 1100, in run
+    result = context.run(func, *args)
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/locking.py", line 19, in locked_handler
+    return handler(*args, **kwargs)
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/server.py", line 1655, in set_maboss_initial_state
+    raise ValueError(
+    ...<2 lines>...
+    )
+ValueError: Unknown MaBoSS initial-state node(s): unknown. Call get_maboss_nodes() first.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/server.py", line 433, in _handle_call_tool
+    return await self.call_tool(params.name, params.arguments or {}, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/server.py", line 539, in call_tool
+    return await self._tool_manager.call_tool(name, arguments, context, convert_result=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/tool_manager.py", line 87, in call_tool
+    return await tool.run(arguments, context, convert_result=convert_result)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/base.py", line 210, in run
+    raise UnexpectedToolError(f"Error executing tool {self.name}") from exc
+mcp.server.mcpserver.exceptions.UnexpectedToolError: Error executing tool set_maboss_initial_state
+___ test_parameter_schema_allows_backend_extensions_but_runtime_checks_keys ____
+
+    def test_parameter_schema_allows_backend_extensions_but_runtime_checks_keys() -> None:
+        simulation = SimpleNamespace(param={"sample_count": 100})
+        session_id = _create_simulation_session(simulation)
+    
+        result = _run(
+            _call_tool(
+                "update_maboss_parameters",
+                {
+                    "session_id": session_id,
+                    "parameters": {"future_parameter": 2},
+                },
+            )
+        )
+    
+        assert result.is_error is True
+>       assert "Unsupported parameter(s): future_parameter" in result.content[0].text
+E       AssertionError: assert 'Unsupported parameter(s): future_parameter' in 'Error executing tool update_maboss_parameters'
+E        +  where 'Error executing tool update_maboss_parameters' = TextContent(type='text', text='Error executing tool update_maboss_parameters', annotations=None, meta=None).text
+
+tests/test_maboss_mcp_errors.py:1899: AssertionError
+------------------------------ Captured log call -------------------------------
+ERROR    mcp.server.mcpserver.server:server.py:446 Tool 'update_maboss_parameters' raised an unexpected exception
+Traceback (most recent call last):
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/base.py", line 176, in run
+    result = await self.fn_metadata.call_fn(self.fn, self.is_async, validated, pass_directly)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/utilities/func_metadata.py", line 164, in call_fn
+    return await anyio.to_thread.run_sync(functools.partial(fn, **kwargs))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/to_thread.py", line 65, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 2706, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 1100, in run
+    result = context.run(func, *args)
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/locking.py", line 19, in locked_handler
+    return handler(*args, **kwargs)
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/MaBoSS/server.py", line 1518, in update_maboss_parameters
+    raise ValueError(
+    ...<2 lines>...
+    )
+ValueError: Unsupported parameter(s): future_parameter
+Call update_maboss_parameters with no arguments to list valid keys.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/server.py", line 433, in _handle_call_tool
+    return await self.call_tool(params.name, params.arguments or {}, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/server.py", line 539, in call_tool
+    return await self._tool_manager.call_tool(name, arguments, context, convert_result=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/tool_manager.py", line 87, in call_tool
+    return await tool.run(arguments, context, convert_result=convert_result)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/mcp/server/mcpserver/tools/base.py", line 210, in run
+    raise UnexpectedToolError(f"Error executing tool {self.name}") from exc
+mcp.server.mcpserver.exceptions.UnexpectedToolError: Error executing tool update_maboss_parameters
+=============================== warnings summary ===============================
+.venv/lib/python3.13/site-packages/maboss/logic.py:11
+  /home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/maboss/logic.py:11: PyparsingDeprecationWarning: 'setParseAction' deprecated - use 'set_parse_action'
+    varName.setParseAction(lambda token: checkReserved(token[0]))
+
+.venv/lib/python3.13/site-packages/maboss/gsparser.py:28
+  /home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/maboss/gsparser.py:28: PyparsingDeprecationWarning: 'setParseAction' deprecated - use 'set_parse_action'
+    externVar.setParseAction(lambda token: token[0])
+
+.venv/lib/python3.13/site-packages/maboss/gsparser.py:47
+  /home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/maboss/gsparser.py:47: PyparsingDeprecationWarning: 'setParseAction' deprecated - use 'set_parse_action'
+    intPart.setParseAction(lambda token: int(token[0]))
+
+.venv/lib/python3.13/site-packages/maboss/gsparser.py:49
+  /home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/maboss/gsparser.py:49: PyparsingDeprecationWarning: 'setParseAction' deprecated - use 'set_parse_action'
+    floatNum.setParseAction(lambda token: float(token[0]))
+
+.venv/lib/python3.13/site-packages/maboss/gsparser.py:50
+  /home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/maboss/gsparser.py:50: PyparsingDeprecationWarning: 'oneOf' deprecated - use 'one_of'
+    booleanStr = (pp.oneOf('0 1')
+
+.venv/lib/python3.13/site-packages/maboss/gsparser.py:64
+  /home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/maboss/gsparser.py:64: PyparsingDeprecationWarning: 'setParseAction' deprecated - use 'set_parse_action'
+    booleanStr.setParseAction(lambda token: booleanStrAction(token[0]))
+
+.venv/lib/python3.13/site-packages/maboss/gsparser.py:74
+  /home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/maboss/gsparser.py:74: PyparsingDeprecationWarning: 'delimitedList' deprecated - use 'DelimitedList'
+    stateSet = (pp.Suppress('[') + pp.Group(pp.delimitedList(intPart))
+
+.venv/lib/python3.13/site-packages/maboss/gsparser.py:76
+  /home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/maboss/gsparser.py:76: PyparsingDeprecationWarning: 'setParseAction' deprecated - use 'set_parse_action'
+    stateSet.setParseAction(lambda token: list(token))
+
+.venv/lib/python3.13/site-packages/maboss/gsparser.py:79
+  /home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/maboss/gsparser.py:79: PyparsingDeprecationWarning: 'setParseAction' deprecated - use 'set_parse_action'
+    stateProb.setParseAction(lambda token: (token.proba, token.states))
+
+.venv/lib/python3.13/site-packages/maboss/gsparser.py:81
+  /home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/maboss/gsparser.py:81: PyparsingDeprecationWarning: 'delimitedList' deprecated - use 'DelimitedList'
+    schedule = pp.Group(pp.delimitedList(floatNum + pp.Suppress(':') + (floatNum | booleanStr)))
+
+.venv/lib/python3.13/site-packages/maboss/gsparser.py:83
+  /home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/maboss/gsparser.py:83: PyparsingDeprecationWarning: 'delimitedList' deprecated - use 'DelimitedList'
+    istate_decl = pp.Group(pp.Suppress('[') + pp.delimitedList(varName)("nodes")
+
+.venv/lib/python3.13/site-packages/maboss/gsparser.py:85
+  /home/marcorusc/projects/github/mcp-biomodelling-servers/.venv/lib/python3.13/site-packages/maboss/gsparser.py:85: PyparsingDeprecationWarning: 'delimitedList' deprecated - use 'DelimitedList'
+    + pp.delimitedList(stateProb)('attrib') + pp.Suppress(';'))
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_maboss_mcp_errors.py::test_import_neko_handoff_failure_preserves_previous_session_and_files
+FAILED tests/test_maboss_mcp_errors.py::test_import_neko_handoff_rejects_modified_bnet_before_session_change
+FAILED tests/test_maboss_mcp_errors.py::test_import_neko_handoff_refuses_existing_artifact
+FAILED tests/test_maboss_mcp_errors.py::test_export_maboss_handoff_rejects_incomplete_scientific_context[simulation0-Context.-No MaBoSS output nodes]
+FAILED tests/test_maboss_mcp_errors.py::test_export_maboss_handoff_rejects_incomplete_scientific_context[simulation1-Context.-must be finite]
+FAILED tests/test_maboss_mcp_errors.py::test_export_maboss_handoff_rejects_incomplete_scientific_context[simulation2-None-biological_context is required]
+FAILED tests/test_maboss_mcp_errors.py::test_export_maboss_handoff_refuses_existing_artifact
+FAILED tests/test_maboss_mcp_errors.py::test_export_maboss_handoff_rejects_stale_neko_lineage
+FAILED tests/test_maboss_mcp_errors.py::test_export_maboss_handoff_rolls_back_partial_artifact_pair
+FAILED tests/test_maboss_mcp_errors.py::test_unknown_default_session_is_tool_error
+FAILED tests/test_maboss_mcp_errors.py::test_unknown_explicit_tool_session_does_not_create_fallback
+FAILED tests/test_maboss_mcp_errors.py::test_run_without_simulation_is_tool_error
+FAILED tests/test_maboss_mcp_errors.py::test_run_requires_at_least_one_selected_output_node
+FAILED tests/test_maboss_mcp_errors.py::test_visualize_without_result_is_tool_error
+FAILED tests/test_maboss_mcp_errors.py::test_visualize_closes_figure_when_plotting_fails
+FAILED tests/test_maboss_mcp_errors.py::test_invalid_joint_initial_state_does_not_reach_pymaboss[nodes0-probabilities0-2 nodes were requested]
+FAILED tests/test_maboss_mcp_errors.py::test_invalid_joint_initial_state_does_not_reach_pymaboss[nodes1-probabilities1-specified more than once]
+FAILED tests/test_maboss_mcp_errors.py::test_invalid_joint_initial_state_does_not_reach_pymaboss[nodes2-probabilities2-must sum to 1]
+FAILED tests/test_maboss_mcp_errors.py::test_invalid_joint_initial_state_does_not_reach_pymaboss[nodes3-probabilities3-must be unique]
+FAILED tests/test_maboss_mcp_errors.py::test_invalid_joint_initial_state_does_not_reach_pymaboss[nodes4-probabilities4-Unknown MaBoSS initial-state node]
+FAILED tests/test_maboss_mcp_errors.py::test_parameter_schema_allows_backend_extensions_but_runtime_checks_keys
+21 failed, 91 passed, 12 warnings in 3.93s

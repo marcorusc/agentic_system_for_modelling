@@ -1,0 +1,88 @@
+{
+  "date": "2026-10-01",
+  "researcher_choice": "Use dedicated backend source branches (Recommended)",
+  "dependency_sources": [
+    {
+      "repository": "Neko",
+      "worktree": "/home/marcorusc/projects/github/Neko-integration-fixes",
+      "branch": "codex/preserve-sif-references",
+      "base": "f9b8d8cb7b5ca82f6111b8d96610596c2193574a",
+      "commit": "94579ac506aeb87545ca9b709d8c5fc316a9f552",
+      "offline_regressions_passed": 9
+    },
+    {
+      "repository": "mcp-biomodelling-servers",
+      "worktree": "/home/marcorusc/projects/github/mcp-biomodelling-servers-integration-fixes",
+      "branch": "codex/preserve-maboss-runs",
+      "base": "57f1ba5740dd0c3e1efd219b8788878ae578a842",
+      "commit": "1f16e5d128ee78e6bffc0945fc961ee672ca0b38",
+      "new_preservation_regressions_passed": 7
+    }
+  ],
+  "mcp_test_environment": {
+    "python": "3.13.13",
+    "mcp": "2.2.0",
+    "pytest": "9.1.1",
+    "ruff": "0.16.0",
+    "maboss": "0.8.16",
+    "pandas": "3.0.5",
+    "MPLBACKEND": "Agg"
+  },
+  "broader_protocol_checks": {
+    "baseline": {
+      "passed": 91,
+      "failed": 21
+    },
+    "patched": {
+      "passed": 98,
+      "failed": 21
+    },
+    "new_failed_cases": [],
+    "same_failed_cases": [
+      "tests/test_maboss_mcp_errors.py::test_export_maboss_handoff_refuses_existing_artifact",
+      "tests/test_maboss_mcp_errors.py::test_export_maboss_handoff_rejects_incomplete_scientific_context[simulation0-Context.-No MaBoSS output nodes]",
+      "tests/test_maboss_mcp_errors.py::test_export_maboss_handoff_rejects_incomplete_scientific_context[simulation1-Context.-must be finite]",
+      "tests/test_maboss_mcp_errors.py::test_export_maboss_handoff_rejects_incomplete_scientific_context[simulation2-None-biological_context is required]",
+      "tests/test_maboss_mcp_errors.py::test_export_maboss_handoff_rejects_stale_neko_lineage",
+      "tests/test_maboss_mcp_errors.py::test_export_maboss_handoff_rolls_back_partial_artifact_pair",
+      "tests/test_maboss_mcp_errors.py::test_import_neko_handoff_failure_preserves_previous_session_and_files",
+      "tests/test_maboss_mcp_errors.py::test_import_neko_handoff_refuses_existing_artifact",
+      "tests/test_maboss_mcp_errors.py::test_import_neko_handoff_rejects_modified_bnet_before_session_change",
+      "tests/test_maboss_mcp_errors.py::test_invalid_joint_initial_state_does_not_reach_pymaboss[nodes0-probabilities0-2 nodes were requested]",
+      "tests/test_maboss_mcp_errors.py::test_invalid_joint_initial_state_does_not_reach_pymaboss[nodes1-probabilities1-specified more than once]",
+      "tests/test_maboss_mcp_errors.py::test_invalid_joint_initial_state_does_not_reach_pymaboss[nodes2-probabilities2-must sum to 1]",
+      "tests/test_maboss_mcp_errors.py::test_invalid_joint_initial_state_does_not_reach_pymaboss[nodes3-probabilities3-must be unique]",
+      "tests/test_maboss_mcp_errors.py::test_invalid_joint_initial_state_does_not_reach_pymaboss[nodes4-probabilities4-Unknown MaBoSS initial-state node]",
+      "tests/test_maboss_mcp_errors.py::test_parameter_schema_allows_backend_extensions_but_runtime_checks_keys",
+      "tests/test_maboss_mcp_errors.py::test_run_requires_at_least_one_selected_output_node",
+      "tests/test_maboss_mcp_errors.py::test_run_without_simulation_is_tool_error",
+      "tests/test_maboss_mcp_errors.py::test_unknown_default_session_is_tool_error",
+      "tests/test_maboss_mcp_errors.py::test_unknown_explicit_tool_session_does_not_create_fallback",
+      "tests/test_maboss_mcp_errors.py::test_visualize_closes_figure_when_plotting_fails",
+      "tests/test_maboss_mcp_errors.py::test_visualize_without_result_is_tool_error"
+    ],
+    "overall_passed": false,
+    "observed_failure": "Expected actionable tool-error text is replaced with generic Error executing tool messages by the installed MCP SDK; reproduced on the unchanged baseline.",
+    "release_blocker": true
+  },
+  "test_preparation_failures": [
+    "The modelling environment lacks pytest; used the existing backend development environment without installation.",
+    "Initial backend run aborted in GUI matplotlib; reran with MPLBACKEND=Agg.",
+    "Two legacy success/concurrency fixtures lacked the file-backed result interface; updated fixtures and verified their successful results."
+  ],
+  "checks": {
+    "mcp_changed_python_ruff": "passed",
+    "git_diff_check": "passed",
+    "scientific_engines_executed": false,
+    "shared_dependencies_modified": false,
+    "original_source_checkouts_modified": false,
+    "pushed": false,
+    "main_updated": false
+  },
+  "next_step": "Reproducible dependency setup and reusable capture/setup gaps; then whole-system diagnostic, resolve release blockers, and only then publish.",
+  "log_sha256": {
+    "step2-neko-tests.log": "9f212574022061ff374858ef1359ac1438e09ad65a4646374ad5fbaf3a91ff1c",
+    "step2-mcp-baseline.log": "26120b1cbd7be0b714a03506f61b9ba33672b7847ba6779f1c69816d4b756827",
+    "step2-mcp-preservation.log": "8c8de8c010553abf053e3498633e72aa1836171479401777f7e71703ce9ede16"
+  }
+}
