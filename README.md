@@ -88,7 +88,10 @@ The guided installer detects Codex/Claude, creates a dedicated modelling environ
 updates managed paths, and runs diagnostics. Use `--client codex`, `--client claude`,
 or `--client both` to select clients; `--dry-run` previews and `--check` diagnoses
 an existing setup. See [automatic setup](docs/automatic-setup.md) for environment
-options, prerequisites, saved settings, and verification limits.
+options, prerequisites, saved settings, and verification limits. Setup installs and
+verifies `mcp-biomodelling-servers==2.4.0` with `nekomata==1.10.1`. When upgrading
+an older managed installation, select a new `--env-prefix`; reuse mode only checks
+an existing environment.
 
 ## Optional ODE setup
 

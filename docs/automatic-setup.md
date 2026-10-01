@@ -45,9 +45,13 @@ environment's `bin/dot`, and persists its directory in server PATH alongside sta
 system directories. It does not copy the calling IDE's full PATH. Setup does not
 run sudo or alter system packages.
 
-`setup/dependencies.toml` pins `mcp-biomodelling-servers==2.3.0`, matching the
-repository's workflow snapshots. The upstream package installs its modelling
-libraries; `dot` is a separate native requirement. The package's installation
+`setup/dependencies.toml` pins the released pair
+`mcp-biomodelling-servers==2.4.0` and `nekomata==1.10.1`. The MCP release includes
+BioMASS support; the NeKo release preserves SIF evidence references. Setup passes
+both pins to pip and checks both installed versions before any client configuration
+writes, including in reuse mode and `--check`. Historical workflow snapshots retain
+their original versions. Other modelling libraries are resolved from the upstream
+package dependencies; `dot` is a separate native requirement. The package's installation
 instructions and declared dependencies are maintained at
 [the upstream repository](https://github.com/marcorusc/mcp-biomodelling-servers).
 
@@ -55,7 +59,10 @@ The first install resolves transitive dependencies from PyPI and saves the actua
 versions to `resolved-requirements.txt` inside the environment. This is an installed
 version snapshot, not a committed cross-platform lock with artifact hashes. Later
 runs reuse the environment and validate it; they do not silently upgrade it.
-To upgrade, select a new environment prefix. If the pinned release is unavailable,
+To upgrade from an older setup, select a new environment prefix, for example
+`--env-prefix "$PWD/.setup/environment-mcp-2.4.0-neko-1.10.1"`. An old ownership
+marker or changed dependency pins require a new prefix; reuse mode verifies an
+existing environment and cannot upgrade it. If the pinned release is unavailable,
 setup fails rather than substituting another release. A local source checkout of
 that same version can be supplied with `--package-source /path/to/source`.
 
@@ -184,13 +191,17 @@ what an LLM invocation can see or perform.
 
 ## Pinned local backend development sources
 
-For the post-smoke integration, use `--backend-sources` with a version-1 JSON
+Ordinary setup uses the released PyPI packages. For reproducible source builds or
+backend development, use `--backend-sources` with a version-1 JSON
 manifest containing exactly `nekomata` and `mcp-biomodelling-servers`. Each entry
 requires `name`, `version`, `path` and a full Git `commit`. Relative paths resolve
 from the manifest's directory. The selected checkout must be its repository root,
-clean, and at that commit. The MCP package version must also match
-`setup/dependencies.toml`. See `setup/backend-sources.integration.json` for the
-current local source revisions; adjust its paths for your checkout layout.
+clean, and at that commit. Both package versions must also match
+`setup/dependencies.toml`. The example `setup/backend-sources.integration.json`
+now pins the released MCP 2.4.0 and NeKo 1.10.1 source revisions. Adjust its paths
+to clean checkouts at those exact commits; a newer checkout is not interchangeable.
+The NeKo revision comes from [sysbio-curie/Neko](https://github.com/sysbio-curie/Neko),
+so an older personal fork may need that upstream revision fetched first.
 
 Preview configuration for both clients, supplying an external Codex home if needed:
 
@@ -215,10 +226,10 @@ a new environment prefix. The legacy `--package-source` option cannot be combine
 with `--backend-sources`; it remains a version-only development path.
 
 The receipt detects recorded-file drift; it is not an adversarial attestation or a
-proof of scientific correctness. These local backend commits are not releases and
-still have the SDK compatibility findings in `docs/integration/post-smoke/`.
-Source setup does not claim those release blockers are resolved, and does not
-install into the shared modelling environment implicitly.
+proof of scientific correctness. The audits in `docs/integration/post-smoke/`
+describe earlier source snapshots and retain their historical findings. The current
+release pair still requires environment and capability checks; source setup does
+not install into the shared modelling environment implicitly.
 
 Setup rejects a Codex home or plugin-cache location that overlaps the plugin
 source before rendering/writing configuration or invoking plugin installation.

@@ -174,7 +174,7 @@ class SetupTests(unittest.TestCase):
             if "venv" in argv:
                 (self.prefix/'bin').mkdir(parents=True, exist_ok=True)
                 (self.prefix/'bin/python').touch()
-            return mock.Mock(stdout='mcp-biomodelling-servers==2.3.0\n')
+            return mock.Mock(stdout=f'mcp-biomodelling-servers=={self.manifest["version"]}\n')
         with mock.patch.object(environment, 'run', side_effect=command) as run:
             environment.install(self.prefix, "venv", "python", self.manifest)
             self.assertIn(str(self.prefix), run.call_args_list[0].args[0])
@@ -298,7 +298,7 @@ class SetupTests(unittest.TestCase):
             if 'create' in argv:
                 (self.prefix/'bin').mkdir(parents=True)
                 (self.prefix/'bin/python').touch()
-            return mock.Mock(stdout='mcp-biomodelling-servers==2.3.0\n')
+            return mock.Mock(stdout=f'mcp-biomodelling-servers=={self.manifest["version"]}\n')
         with mock.patch.object(environment, 'run', side_effect=command) as run:
             environment.install(self.prefix, 'conda', '/tools/conda', self.manifest)
         first = run.call_args_list[0].args[0]
