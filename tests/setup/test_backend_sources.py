@@ -20,9 +20,9 @@ class BackendSourcesTests(unittest.TestCase):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
-        self.manifest = {"package": "mcp-biomodelling-servers", "version": "2.3.0", "index_url": "https://pypi.org/simple"}
+        self.manifest = {"package": "mcp-biomodelling-servers", "version": "2.4.0", "index_url": "https://pypi.org/simple", "dependency_pins": {"nekomata": "1.10.1"}}
         self.entries = []
-        for name, version in (("nekomata", "1.10.0"), ("mcp-biomodelling-servers", "2.3.0")):
+        for name, version in (("nekomata", "1.10.1"), ("mcp-biomodelling-servers", "2.4.0")):
             repo = self.root / name
             repo.mkdir()
             metadata = '[tool.poetry]' if name == 'nekomata' else '[project]'
@@ -69,6 +69,18 @@ class BackendSourcesTests(unittest.TestCase):
             self.lock.write_text(json.dumps({'schema_version': 1, 'packages': entries}))
             with self.subTest(entries=entries), self.assertRaises(SetupError): sources.load(self.lock, self.manifest)
 
+    def test_stale_neko_source_rejected_before_install(self):
+        entries = [{**entry, 'version': '1.10.0'} if entry['name'] == 'nekomata'
+                   else entry for entry in self.entries]
+        self.lock.write_text(json.dumps({'schema_version': 1, 'packages': entries}))
+        with self.assertRaisesRegex(SetupError, 'nekomata version must match'):
+            sources.load(self.lock, self.manifest)
+        with mock.patch.object(environment, 'run') as run:
+            with self.assertRaisesRegex(SetupError, 'nekomata version must match'):
+                environment.install(self.prefix, 'venv', 'python', self.manifest, backend_sources=entries)
+        run.assert_not_called()
+        self.assertFalse(self.prefix.exists())
+
     def test_snapshot_contains_only_committed_content_and_cleans_up(self):
         for entry in self.entries: (Path(entry['path']) / 'ignored.py').write_text('not a build input')
         with sources.snapshots(self.entries) as paths:
@@ -114,20 +126,25 @@ class BackendSourcesTests(unittest.TestCase):
                 self.assertFalse((self.prefix / sources.RECEIPT).exists())
 
     def test_both_backends_installed_together_from_snapshots_and_reused(self):
+        manifest = {**self.manifest, "dependency_pins": {
+            **self.manifest["dependency_pins"], "unrelated-package": "3.2.1"}}
+
         def run(argv, **kwargs):
             if 'venv' in argv:
                 (self.prefix / 'bin').mkdir(parents=True)
                 (self.prefix / 'bin/python').touch()
             if 'install' in argv:
+                self.assertNotIn('nekomata==1.10.1', argv)
+                self.assertIn('unrelated-package==3.2.1', argv)
                 selected = [Path(p) for p in argv[-2:]]
                 self.assertEqual({p.name for p in selected}, sources.NAMES)
                 self.assertTrue(all((p/'pyproject.toml').is_file() for p in selected))
                 self.assertFalse(any(str(p) in {e['path'] for e in self.entries} for p in selected))
             return mock.Mock(stdout='fixture freeze\n')
         with mock.patch.object(environment, 'run', side_effect=run) as commands, mock.patch.object(sources, 'write_receipt') as receipt:
-            environment.install(self.prefix, 'venv', 'python', self.manifest, backend_sources=self.entries)
+            environment.install(self.prefix, 'venv', 'python', manifest, backend_sources=self.entries)
             count = commands.call_count
-            environment.install(self.prefix, 'venv', 'python', self.manifest, backend_sources=self.entries)
+            environment.install(self.prefix, 'venv', 'python', manifest, backend_sources=self.entries)
             self.assertEqual(commands.call_count, count)
             receipt.assert_called_once()
         self.assertTrue((self.prefix / '.setup-installed').exists())
@@ -139,7 +156,7 @@ class BackendSourcesTests(unittest.TestCase):
                         'manager':'venv', 'manager_path':'python', 'biomass':'disabled', 'graphviz_path':None,
                         'codex_home':str(self.root/'codex'), 'environment_mode':'reuse', 'pinned_sources':self.entries}
             (self.root/'setup').mkdir(exist_ok=True)
-            (self.root/'setup/dependencies.toml').write_text('package="mcp-biomodelling-servers"\nversion="2.3.0"\n')
+            (self.root/'setup/dependencies.toml').write_text('package="mcp-biomodelling-servers"\nversion="2.4.0"\n')
             with ExitStack() as stack:
                 stack.enter_context(mock.patch.object(setup, 'plan', return_value=(resolved, [])))
                 for module in (setup.configure_codex, setup.configure_claude): stack.enter_context(mock.patch.object(module,'render',return_value={}))

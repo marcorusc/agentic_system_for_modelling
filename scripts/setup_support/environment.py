@@ -19,10 +19,12 @@ def install(prefix: Path, manager: str, manager_path: str, manifest: dict,
     if prefix.exists() and not marker.is_file():
         raise SetupError(f"Environment already exists and is not setup-managed: {prefix}; choose a new --env-prefix")
     desired = {"package": manifest["package"], "version": manifest["version"],
-               "manager": manager, "source": source}
+               "manager": manager, "source": source,
+               "dependency_pins": manifest.get("dependency_pins", {})}
     if backend_sources:
         if source:
             raise SetupError("Cannot mix backend sources and package source")
+        source_support.validate_versions(backend_sources, manifest)
         source_support.validate_sources(backend_sources)
         desired["backend_sources"] = backend_sources
     if marker.is_file() and json.loads(marker.read_text()) != desired:
@@ -39,15 +41,22 @@ def install(prefix: Path, manager: str, manager_path: str, manifest: dict,
             run([manager_path, "-m", "venv", str(prefix)], timeout=180)
     python = str(prefix/"bin/python")
     requirement = source or f'{manifest["package"]}=={manifest["version"]}'
+    dependencies = [f"{name}=={version}" for name, version in sorted(manifest.get("dependency_pins", {}).items())]
     # A completed environment is reused; verification checks for drift.
     if not (prefix/".setup-installed").exists():
         if backend_sources:
             with source_support.snapshots(backend_sources) as paths:
+                source_names = {entry["name"] for entry in backend_sources}
+                source_dependencies = [
+                    f"{name}=={version}"
+                    for name, version in sorted(manifest.get("dependency_pins", {}).items())
+                    if name not in source_names
+                ]
                 run([python, "-m", "pip", "install", "--index-url", manifest["index_url"],
-                     *[str(paths[e["name"]]) for e in backend_sources]], timeout=1800)
+                     *source_dependencies, *[str(paths[e["name"]]) for e in backend_sources]], timeout=1800)
                 source_support.write_receipt(prefix, backend_sources, paths)
         else:
-            run([python, "-m", "pip", "install", "--index-url", manifest["index_url"], requirement], timeout=1800)
+            run([python, "-m", "pip", "install", "--index-url", manifest["index_url"], *dependencies, requirement], timeout=1800)
         run([python, "-m", "pip", "check"], timeout=60)
         frozen = run([python, "-m", "pip", "freeze"], timeout=60).stdout
         atomic_write(prefix/"resolved-requirements.txt", frozen.encode())
@@ -75,7 +84,8 @@ def verify_environment(prefix: Path, manifest: dict, *, graphviz_path: str | Non
         return {"passed": False, "errors": [f"Missing environment Python: {python}"]}
     program = "import importlib, importlib.metadata as m, json, sys; "
     program += f"[importlib.import_module(n) for n in {manifest['imports']!r}]; "
-    program += f"print(json.dumps({{'version':m.version({manifest['package']!r}), 'python':list(sys.version_info[:3])}}))"
+    program += f"dependencies = {{name:m.version(name) for name in {list(manifest.get('dependency_pins', {}))!r}}}; "
+    program += f"print(json.dumps({{'version':m.version({manifest['package']!r}), 'python':list(sys.version_info[:3]), 'dependencies':dependencies}}))"
     try:
         with tempfile.TemporaryDirectory(prefix="biomodelling-imports-") as temporary:
             versions = json.loads(run([str(python), "-I", "-B", "-c", program], cwd=Path(temporary), env={**runtime_env(prefix, graphviz_path=graphviz_path), "NUMBA_CACHE_DIR": str(Path(temporary)/"numba-cache")}, timeout=120).stdout)
@@ -83,6 +93,10 @@ def verify_environment(prefix: Path, manifest: dict, *, graphviz_path: str | Non
             errors.append("The modelling environment Python must be 3.11 or newer")
         if versions["version"] != manifest["version"]:
             errors.append(f"Expected {manifest['package']} {manifest['version']}, found {versions['version']}")
+        for name, expected in manifest.get("dependency_pins", {}).items():
+            actual = versions.get("dependencies", {}).get(name)
+            if actual != expected:
+                errors.append(f"Expected {name} {expected}, found {actual or 'missing metadata'}")
         run([str(python), "-m", "pip", "check"], env=runtime_env(prefix, graphviz_path=graphviz_path), timeout=60)
     except (SetupError, ValueError, KeyError, TypeError) as error:
         errors.append(str(error))

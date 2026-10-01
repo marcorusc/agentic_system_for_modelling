@@ -184,7 +184,8 @@ def plan(args, root: Path, manifest: dict) -> tuple[dict, list[str]]:
                 "environment_mode": "reuse" if reuse else "managed",
                 "biomass": values.get("biomass", "disabled"), "graphviz_path": graphviz,
                 "manager_path": executable, "codex_home": home, "package_source": source,
-                "package": f'{manifest["package"]}=={manifest["version"]}'}
+                "package": f'{manifest["package"]}=={manifest["version"]}',
+                "dependency_pins": manifest.get("dependency_pins", {})}
     return resolved, errors
 
 

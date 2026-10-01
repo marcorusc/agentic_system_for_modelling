@@ -33,6 +33,14 @@ def validate_sources(entries: list[dict]) -> None:
             raise SetupError(f"Backend source package identity differs from manifest: {path}")
 
 
+def validate_versions(entries: list[dict], manifest: dict) -> None:
+    expected = {**manifest.get("dependency_pins", {}), manifest["package"]: manifest["version"]}
+    for entry in entries:
+        if entry["name"] in expected and entry["version"] != expected[entry["name"]]:
+            raise SetupError(f"Backend {entry['name']} version must match setup/dependencies.toml "
+                             f"({expected[entry['name']]})")
+
+
 def load(path: Path, manifest: dict) -> list[dict]:
     data = read_json(path)
     if set(data) != {"schema_version", "packages"} or type(data["schema_version"]) is not int or data["schema_version"] != 1:
@@ -53,8 +61,7 @@ def load(path: Path, manifest: dict) -> list[dict]:
         entries.append({**entry, "path": str(source)})
     if {e["name"] for e in entries} != NAMES:
         raise SetupError("Pin each supported backend exactly once")
-    if next(e for e in entries if e["name"] == manifest["package"])["version"] != manifest["version"]:
-        raise SetupError("Backend MCP version must match setup/dependencies.toml")
+    validate_versions(entries, manifest)
     validate_sources(entries)
     return sorted(entries, key=lambda e: e["name"])
 

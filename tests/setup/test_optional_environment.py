@@ -290,7 +290,7 @@ class OptionalEnvironmentTests(unittest.TestCase):
                     self.assertIn("-I", argv)
                     self.assertIn("-B", argv)
                     self.assertEqual(Path(kwargs["env"]["NUMBA_CACHE_DIR"]).parent, kwargs["cwd"])
-                    return mock.Mock(stdout=json.dumps({"version": manifest["version"], "python": version}))
+                    return mock.Mock(stdout=json.dumps({"version": manifest["version"], "python": version, "dependencies": manifest["dependency_pins"]}))
                 return mock.Mock(stdout="")
             with self.subTest(version=version), mock.patch.object(environment, "run", side_effect=run):
                 report = environment.verify_environment(self.prefix, manifest)
