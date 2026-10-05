@@ -121,6 +121,27 @@ def _run(request: SpecialistInvocationRequest, execution: SpecialistExecutionRes
     prompt = request.task
     if cancellation_requested():
         return 130
+    # New downstream sessions must be authorized before any child starts. Existing
+    # bounded inspection remains possible without creating a downstream session.
+    from scripts.codex.launcher_config import INSPECTION_TOOLS
+    downstream = request.specialist in INSPECTION_TOOLS
+    # An existing ID is a recording binding, not authority to create state.
+    # Explicit gate headers are checked even for already-recorded sessions.
+    needs_gate = downstream and (
+        request.record_session_id is None
+        or request.task.startswith("STAGE_GATE ")
+        or bool(set(request.approved_tools) - set(INSPECTION_TOOLS[request.specialist]))
+    )
+    inspection_only = downstream and not needs_gate
+    if needs_gate:
+        from scripts.gate import check_task
+        try:
+            gate_result = check_task(PROJECT_ROOT, request.specialist, request.task)
+            event_callback({"type": "stage_gate", "result": gate_result})
+        except (ValueError, OSError, KeyError, TypeError) as exc:
+            execution.handoff_error = f"stage gate failed: {exc}"
+            emit_status(execution.handoff_error)
+            return 2
     try:
         codex = resolve_codex_executable(codex_executable)
         approved_tools = list(request.approved_tools)
@@ -177,6 +198,7 @@ def _run(request: SpecialistInvocationRequest, execution: SpecialistExecutionRes
                 approved_tools,
                 pubmed_transport=pubmed_transport,
                 allow_web_search=request.allow_web_search,
+                inspection_only=inspection_only,
             ),
             cwd=PROJECT_ROOT,
             check=True,
@@ -324,6 +346,7 @@ def _run(request: SpecialistInvocationRequest, execution: SpecialistExecutionRes
             approved_tools,
             pubmed_transport=pubmed_transport,
             review_kind=request.review_kind,
+            inspection_only=inspection_only,
         )
         execution.artifact_dir = launcher_dir
         execution.event_stream = launcher_dir / "events.jsonl"
