@@ -23,7 +23,7 @@ from scripts.validate.common import artifact, load_json_yaml, load_series, numbe
 def propose(root: Path, config_path: str):
     path, provenance = artifact(root, config_path)
     config = load_json_yaml(path)
-    if config.get('schema_version') != 1 or type(config.get('sample_count')) is not int or config['sample_count'] != 1:
+    if type(config.get('schema_version')) is not int or config.get('schema_version') != 1 or type(config.get('sample_count')) is not int or config['sample_count'] != 1:
         raise ValueError('calibration requires schema_version=1 and sample_count=1')
     threshold = number(config['threshold'], 'threshold')
     if not 0 < threshold <= 1:
@@ -53,12 +53,18 @@ def propose(root: Path, config_path: str):
                 phase, entered = (phase + 1) % len(phases), time
         cycles.extend(observed)
         trajectories.append({'path': value, 'complete_cycle_durations': observed})
+    complete_inputs = all(item['complete_cycle_durations'] for item in trajectories)
     mean = statistics.mean(cycles) if cycles else None
-    return {'schema_version': 1, 'kind': 'calibration_proposal', 'status': 'proposed' if mean else 'incomplete',
+    scaling = target / mean if mean and complete_inputs else None
+    if scaling is not None:
+        number(scaling, 'scaling', positive=True)
+    return {'schema_version': 1, 'kind': 'calibration_proposal', 'status': 'proposed' if scaling is not None else 'incomplete',
             'configuration': provenance, 'inputs': inputs, 'trajectories': trajectories,
             'mean_cycle_duration': mean, 'source_time_unit': config['source_time_unit'],
             'target_duration': target, 'target_unit': config['target_unit'],
-            'scaling': target / mean if mean else None,
+            'scaling': scaling,
+            'all_inputs_have_complete_cycles': complete_inputs,
+            'sample_count_source': 'researcher-declared configuration; not verifiable from CSV alone',
             'phase_dwell_mean': {name: statistics.mean(values) if values else None for name, values in dwell.items()},
             'requires_researcher_approval': True,
             'limitations': ['Immediate transitions, at most one exit per tick; phase-0 start.', 'Tick-averaged thresholding; finite rates and stochastic update intervals are not emulated.', 'Phase dwell means include boundary partial phase observations.']}

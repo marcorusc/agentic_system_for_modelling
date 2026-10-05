@@ -90,8 +90,8 @@ def load_bnet(path: Path):
             raise ValueError('BNET target must be a unique identifier')
         rules[node] = rule
     nodes = sorted(rules)
-    if not nodes or len(nodes) > 20:
-        raise ValueError('exact analysis supports 1..20 nodes')
+    if not nodes or len(nodes) > 25:
+        raise ValueError('exact analysis supports 1..25 nodes')
     return nodes, [Expression(rules[node], nodes) for node in nodes]
 
 
@@ -129,6 +129,11 @@ def analyze(path: Path, options: dict):
     if type(limit) is not int or not 1 <= limit <= 1000000:
         raise ValueError('max_states must be an integer in [1,1000000]')
     mode = options['analysis']
+    def readout_indices():
+        outputs = options['readout_nodes']
+        if not isinstance(outputs, list) or len(outputs) < 2 or any(not isinstance(n, str) or n not in nodes for n in outputs) or len(set(outputs)) != len(outputs):
+            raise ValueError('readout_nodes requires at least two distinct known outputs')
+        return [nodes.index(n) for n in outputs]
     if mode in ('fixed_points', 'readout_exclusivity'):
         if 2**len(nodes) > limit:
             raise LimitExceeded('complete state space exceeds max_states')
@@ -139,24 +144,29 @@ def analyze(path: Path, options: dict):
             if type(expected) is not int or expected < 0:
                 raise ValueError('expected_count must be a nonnegative integer')
             return len(fixed) == expected, {'fixed_points': fixed, 'states_checked': 2**len(nodes)}
-        outputs = options['readout_nodes']
-        if len(outputs) < 2 or len(set(outputs)) != len(outputs) or any(n not in nodes for n in outputs):
-            raise ValueError('readout_nodes requires at least two distinct known outputs')
-        indices = [nodes.index(n) for n in outputs]
+        indices = readout_indices()
         for state in range(2**len(nodes)):
             active = [nodes[i] for i in indices if functions[i](state)]
             if len(active) > 1:
-                return False, {'counterexample_state': [n for i, n in enumerate(nodes) if state & (1 << i)], 'simultaneously_enabled_rules': active}
-        return True, {'states_checked': 2**len(nodes), 'semantics': 'mutual exclusivity of evaluated readout functions, not asynchronous node values'}
-    if mode != 'reachable_attractors':
+                return False, {'counterexample_state': [n for i, n in enumerate(nodes) if state & (1 << i)], 'simultaneously_enabled_rules': active, 'proves_asynchronous_state_exclusivity': False}
+        return True, {'states_checked': 2**len(nodes), 'semantics': 'mutual exclusivity of evaluated readout functions, not asynchronous node values', 'proves_asynchronous_state_exclusivity': False}
+    if mode not in ('reachable_attractors', 'reachable_readout_exclusivity'):
         raise ValueError('unknown structural analysis')
     initial = options['initial_state']
     if not isinstance(initial, dict) or set(initial) != set(nodes) or any(type(v) is not bool for v in initial.values()):
         raise ValueError('initial_state must explicitly assign every node a Boolean')
+    indices = readout_indices() if mode == 'reachable_readout_exclusivity' else []
     start = sum(1 << i for i, node in enumerate(nodes) if initial[node])
     queue, seen, graph, edges = deque([start]), {start}, {}, 0
     while queue:
         state = queue.popleft()
+        if indices:
+            active = [nodes[i] for i in indices if state & (1 << i)]
+            if len(active) > 1:
+                return False, {'counterexample_state': [n for i, n in enumerate(nodes) if state & (1 << i)],
+                               'simultaneously_active_nodes': active,
+                               'semantics': 'reachable asynchronous node values from the declared initial state',
+                               'proves_asynchronous_state_exclusivity': False}
         children = [state ^ (1 << i) for i, fn in enumerate(functions) if fn(state) != bool(state & (1 << i))]
         graph[state] = children; edges += len(children)
         if edges > 2000000:
@@ -167,6 +177,10 @@ def analyze(path: Path, options: dict):
                 if len(seen) > limit:
                     raise LimitExceeded('reachable states exceed max_states')
                 queue.append(child)
+    if mode == 'reachable_readout_exclusivity':
+        return True, {'reachable_states': len(seen), 'readout_nodes': options['readout_nodes'],
+                      'semantics': 'general asynchronous single-node updates from the declared initial state',
+                      'proves_asynchronous_state_exclusivity': True}
     terminal = terminal_scc(graph)
     summaries = [{'size': len(part), 'fixed_on': [n for i, n in enumerate(nodes) if all(s & (1 << i) for s in part)],
                   'fixed_off': [n for i, n in enumerate(nodes) if all(not s & (1 << i) for s in part)]} for part in terminal]

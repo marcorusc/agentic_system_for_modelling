@@ -18,7 +18,7 @@ save stdout through the orchestrator's authorized artifact capture. The report
 contains the criteria digest, input digests, criterion IDs, metrics, and one of
 `passed`, `failed`, `incomplete`. Missing inputs, malformed data, and resource-limit
 failures are incomplete, never passing. Exit status is 1 if any criterion does
-not pass. The empty template evaluates no scientific claim.
+not pass. The empty template is rejected until explicit criteria are declared; it cannot pass vacuously.
 
 Each `criteria` entry has exactly these fields:
 
@@ -42,7 +42,7 @@ Supported methods and required options:
 |---|---|
 | `ordered_peaks` | `nodes`: ordered distinct node names; `comparators`: `<` or `<=` for each adjacent pair; `metric`: `first_peak` with explicit positive `drop`, or `fraction_max` with `fraction` in `(0,1]` |
 | `canonical_cycles` | `activation_order`: three distinct nodes; `onset_node`; `reset_node`; `threshold` in `(0,1]`; `sample_count`: 1; `minimum_canonical`: positive integer; `minimum_fraction` in `[0,1]` |
-| `boolean_structure` | `analysis`: `fixed_points`, `reachable_attractors` or `readout_exclusivity`; explicit `max_states` in `[1,1000000]`; additional options below |
+| `boolean_structure` | `analysis`: `fixed_points`, `reachable_attractors` or `readout_exclusivity`, or `reachable_readout_exclusivity`; explicit `max_states` in `[1,1000000]`; additional options below |
 
 `first_peak` is the first local maximum followed by a drop **strictly greater**
 than `drop` before any larger value. A plateau's last point is considered its
@@ -78,7 +78,7 @@ uses a dedicated parser, never `eval` or `exec`.
   true over all states. This does not prove asynchronous readout-node values are
   exclusive during lagged updates. A failed proof includes a counterexample.
 
-The implementation accepts 1–20 nodes and stops at the explicit state limit or
+The implementation accepts 1–25 nodes and stops at the explicit state limit or
 2,000,000 reachable edges. A stopped computation reports incomplete; it is not an
 approximate proof.
 
@@ -108,7 +108,13 @@ and records division on exiting the final phase. It excludes the first partial
 and final incomplete cycles. Scaling is `target_duration / mean_cycle_duration`,
 in target units per source unit: MaBoSS elapsed time equals physical elapsed time
 divided by scaling. Output is a **proposal requiring researcher approval**, or
-`incomplete` with null scaling when no complete cycles exist. It neither edits a
+`incomplete` with null scaling when any declared input has no complete cycles. It neither edits a
 handoff nor simulates PhysiBoSS. Finite exit rates, stochastic update intervals
 and sub-tick transitions are not modeled. Phase dwell summaries include boundary
 phase observations and are reported separately from complete-cycle calibration.
+
+`readout_exclusivity` checks rule functions and explicitly does not prove stored
+asynchronous node exclusivity. Use `reachable_readout_exclusivity` with a full
+`initial_state`, declared `readout_nodes`, and `max_states` to check actual node
+values in all reachable asynchronous states, including the initial state. A resource
+limit returns incomplete. Up to 25 nodes are supported within explicit state/edge bounds.

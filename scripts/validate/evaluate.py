@@ -24,8 +24,8 @@ from scripts.validate.boolean_structure import analyze
 def evaluate(root: Path, criteria_path: str) -> dict:
     path, provenance = artifact(root, criteria_path)
     config = load_json_yaml(path)
-    if set(config) != {'schema_version', 'criteria'} or config['schema_version'] != 1 or not isinstance(config['criteria'], list):
-        raise ValueError('criteria requires schema_version=1 and a criteria array')
+    if set(config) != {'schema_version', 'criteria'} or type(config['schema_version']) is not int or config['schema_version'] != 1 or not isinstance(config['criteria'], list) or not config['criteria']:
+        raise ValueError('criteria requires integer schema_version=1 and a nonempty criteria array')
     results, identifiers = [], set()
     for item in config['criteria']:
         if not isinstance(item, dict) or set(item) != {'criterion_id', 'method', 'inputs', 'options'}:

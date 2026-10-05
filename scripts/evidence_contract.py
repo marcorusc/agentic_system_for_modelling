@@ -38,6 +38,25 @@ def parse_footer(content: str) -> dict:
         raise ValueError(f"footer must use JSON-compatible YAML: {error}") from error
     if not isinstance(data, dict) or set(data) != FIELDS:
         raise ValueError("footer must contain exactly the required evidence fields")
+    enums = {'verdict': {'supported', 'contradicted', 'context-dependent', 'insufficient evidence'},
+             'interaction_type': {'activation', 'inhibition', 'binding', 'transcriptional', 'unclear'},
+             'confidence': {'high', 'medium', 'low'}}
+    for field, choices in enums.items():
+        if not isinstance(data[field], str) or data[field] not in choices:
+            raise ValueError(f'invalid footer {field}')
+    edge = data['edge']
+    if not isinstance(edge, list) or len(edge) != 3 or any(not isinstance(value, str) or not value.strip() for value in edge):
+        raise ValueError('footer edge must contain source, explicit effect, and target strings')
+    if any(not SAFE.fullmatch(edge[index]) for index in (0, 2)):
+        raise ValueError('unsafe footer edge identifier')
+    if not isinstance(data['neko_session_id'], str) or not SAFE.fullmatch(data['neko_session_id']):
+        raise ValueError('invalid footer neko_session_id')
+    for field in ('supporting_pmids', 'excluded_pmids'):
+        values = data[field]
+        if not isinstance(values, list) or any(not isinstance(value, str) or not PMID.fullmatch(value) for value in values) or len(set(values)) != len(values):
+            raise ValueError(f'{field} must contain unique PMID strings')
+    if set(data['supporting_pmids']) & set(data['excluded_pmids']):
+        raise ValueError('supporting and excluded PMIDs must be disjoint')
     return data
 
 

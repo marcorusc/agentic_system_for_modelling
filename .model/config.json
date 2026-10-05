@@ -9,6 +9,7 @@
     "CURRENT_STATE.md",
     "DECISIONS.md",
     "VALIDATION_PLAN.md",
+    "VALIDATION_CRITERIA.yaml",
     "DATA_DICTIONARY.md",
     "evidence",
     "memory",
@@ -22,7 +23,8 @@
     "DECISIONS.md": "templates/DECISIONS.md",
     "VALIDATION_PLAN.md": "templates/VALIDATION_PLAN.md",
     "DATA_DICTIONARY.md": "templates/DATA_DICTIONARY.md",
-    "memory/MEMORY.md": "templates/MEMORY.md"
+    "memory/MEMORY.md": "templates/MEMORY.md",
+    "VALIDATION_CRITERIA.yaml": "templates/VALIDATION_CRITERIA.yaml"
   },
   "state_directories": [
     "evidence",

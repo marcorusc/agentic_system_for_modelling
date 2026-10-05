@@ -45,3 +45,15 @@ class EvidenceContractTests(unittest.TestCase):
             payload['artifacts'] = [first, second]
             validate_handoff(payload, project_root=root)
             self.assertEqual((root / first['path']).read_text(), VALID_REPORT)
+
+
+class FooterBoundaryTests(unittest.TestCase):
+    def test_raw_footer_reader_rejects_invalid_types_enums_and_overlapping_pmids(self):
+        original = parse_footer(VALID_REPORT)
+        for field, value in [('verdict', 'approved'), ('confidence', 1), ('interaction_type', None),
+                             ('edge', ['GAB1','  ','AKT1']), ('edge', ['../escape','stimulation','AKT1']),
+                             ('supporting_pmids', [12345678]), ('excluded_pmids', ['12345678']),
+                             ('neko_session_id', '../escape')]:
+            data = dict(original); data[field] = value
+            content = VALID_REPORT.split('```yaml')[0] + '```yaml\n' + json.dumps(data) + '\n```\n'
+            with self.subTest(field=field, value=value), self.assertRaises(ValueError): parse_footer(content)

@@ -106,3 +106,57 @@ class ArtifactTests(unittest.TestCase):
         result = propose(self.root,'calibration.yaml')
         self.assertEqual(result['status'],'incomplete'); self.assertIsNone(result['scaling'])
         self.assertIsNone(result['phase_dwell_mean']['P1'])
+
+
+class ValidationReviewRegressions(unittest.TestCase):
+    setUp = ArtifactTests.setUp
+    tearDown = ArtifactTests.tearDown
+    write = ArtifactTests.write
+    def test_rule_exclusivity_does_not_prove_lagged_state_exclusivity(self):
+        path = self.write('readouts.bnet', 'A, !A\nB, A\nC, !A\n')
+        options = {'analysis': 'readout_exclusivity', 'max_states': 8, 'readout_nodes': ['B', 'C']}
+        passed, result = analyze(path, options)
+        self.assertTrue(passed)
+        self.assertFalse(result['proves_asynchronous_state_exclusivity'])
+        options.update(analysis='reachable_readout_exclusivity', initial_state={'A':False, 'B':False, 'C':False})
+        passed, result = analyze(path, options)
+        self.assertFalse(passed)
+        self.assertEqual(result['simultaneously_active_nodes'], ['B','C'])
+
+    def test_reachable_exclusivity_checks_initial_state_and_limits(self):
+        path = self.write('readouts.bnet', 'A, A\nB, A\nC, !A\n')
+        options = {'analysis': 'reachable_readout_exclusivity', 'max_states': 8, 'readout_nodes': ['B','C'],
+                   'initial_state': {'A':False,'B':False,'C':False}}
+        passed, result = analyze(path, options)
+        self.assertTrue(passed)
+        self.assertTrue(result['proves_asynchronous_state_exclusivity'])
+        options['initial_state'].update(B=True,C=True)
+        self.assertFalse(analyze(path, options)[0])
+        options['initial_state'].update(B=False,C=False)
+        options['max_states'] = 1
+        with self.assertRaises(LimitExceeded): analyze(path, options)
+
+    def test_reachable_analysis_accepts_bounded_22_node_readout_model(self):
+        nodes = [f'N{i}' for i in range(22)]
+        path = self.write('model.bnet', ''.join(f'{n}, {n}\n' for n in nodes))
+        passed, result = analyze(path, {'analysis':'reachable_attractors','max_states':1,'expected_count':1,
+                                       'initial_state':{n:False for n in nodes}})
+        self.assertTrue(passed)
+        self.assertEqual(result['reachable_states'],1)
+
+    def test_empty_criteria_cannot_pass_vacuously(self):
+        self.write('criteria.yaml', json.dumps({'schema_version':1,'criteria':[]}))
+        with self.assertRaisesRegex(ValueError, 'nonempty'): evaluate(self.root, 'criteria.yaml')
+
+    def test_calibration_requires_cycles_in_every_declared_trajectory(self):
+        self.write('complete.csv', 'Time,A\n0,1\n1,0\n2,1\n3,0\n')
+        self.write('incomplete.csv', 'Time,A\n0,0\n1,0\n')
+        config = {'schema_version':1,'inputs':['complete.csv','incomplete.csv'],'sample_count':1,'threshold':.5,
+                  'target_duration':10,'target_unit':'minutes','source_time_unit':'simulation unit',
+                  'phases':[{'name':'P0','node':'A','on':True},{'name':'P1','node':'A','on':False}]}
+        self.write('calibration.yaml', json.dumps(config))
+        result = propose(self.root, 'calibration.yaml')
+        self.assertEqual(result['mean_cycle_duration'],2)
+        self.assertEqual(result['status'],'incomplete')
+        self.assertFalse(result['all_inputs_have_complete_cycles'])
+        self.assertIsNone(result['scaling'])
