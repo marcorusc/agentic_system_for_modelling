@@ -20,31 +20,74 @@ PREFIXES = {'network-curator': 'neko', 'boolean-dynamics-modeler': 'maboss',
             'multicellular-configurator': 'physicell', 'ode-modeler': 'biomass'}
 
 def transcript_sessions(path, specialist):
-    """Read explicit session_id values only from this specialist's MCP blocks."""
-    sessions = set()
-    call_ids = set()
-    def collect(value):
-        if isinstance(value, dict):
-            if value.get('server') and str(value['server']).lower() != PREFIXES[specialist]:
-                return
-            for key, item in value.items():
-                if key == 'session_id' and isinstance(item, str):
-                    sessions.add(item)
-                else:
-                    collect(item)
-        elif isinstance(value, list):
-            for item in value: collect(item)
-        elif isinstance(value, str):
-            try: collect(json.loads(value))
-            except (ValueError, RecursionError): pass
+    """Bind current-session fields, never listed sessions or artifact lineage.
+
+    Only matched role MCP calls count. Input session_id is top-level; results
+    may unwrap MCP content/text/structuredContent but never arbitrary nested
+    objects such as source_manifest, lineage, artifacts, or sessions arrays.
+    """
+    sessions, calls = set(), {}
     prefix = PREFIXES[specialist]
+    def direct(value):
+        server = value.get('server')
+        if server is not None and str(server).lower() not in {prefix, prefix + '-agent', prefix + '_agent'}:
+            return
+        session = value.get('session_id')
+        if session is not None:
+            sessions.add(validate_session_id(session))
+    def result(value, tool):
+        if isinstance(value, str):
+            try:
+                result(json.loads(value), tool)
+            except (json.JSONDecodeError, RecursionError):
+                # Exact server return formats, tied to the creation operation;
+                # UUID-looking text, paths and unrelated IDs are never scanned.
+                pattern = None
+                if tool == 'create_session':
+                    pattern = r'^Session created: ([A-Za-z0-9][A-Za-z0-9._-]*)(?: \([^\n]*\))?\s*$'
+                elif tool == 'create_network':
+                    pattern = r'^Network created(?:: session=| \(session=)([A-Za-z0-9][A-Za-z0-9._-]*)(?:[ )]|$)'
+                match = re.match(pattern, value) if pattern else None
+                if match:
+                    sessions.add(validate_session_id(match[1]))
+        elif isinstance(value, dict):
+            if value.get('isError') is True:
+                return
+            direct(value)
+            for key in ('structuredContent', 'content', 'text'):
+                if key in value:
+                    wrapped = value[key]
+                    if isinstance(wrapped, list):
+                        for block in wrapped:
+                            if isinstance(block, dict) and block.get('type') == 'text':
+                                result(block.get('text'), tool)
+                    else:
+                        result(wrapped, tool)
+        elif isinstance(value, list):
+            for block in value:
+                if isinstance(block, dict) and block.get('type') == 'text':
+                    result(block.get('text'), tool)
+    reject_symlinks(Path(path))
     for line in Path(path).read_text().splitlines():
+        if not line.strip():
+            continue
         event = json.loads(line)
-        for block in event.get('message', {}).get('content', []) if isinstance(event.get('message', {}).get('content'), list) else []:
-            if block.get('type') == 'tool_use' and re.match(r'^mcp__' + prefix + r'(?:-agent|_agent)?__', block.get('name', '')):
-                call_ids.add(block.get('id')); collect(block.get('input'))
-            elif block.get('type') == 'tool_result' and block.get('tool_use_id') in call_ids:
-                collect(block.get('content'))
+        if not isinstance(event, dict):
+            raise ValueError('transcript events must be objects')
+        content = event.get('message', {}).get('content', [])
+        for block in content if isinstance(content, list) else []:
+            if not isinstance(block, dict):
+                raise ValueError('transcript blocks must be objects')
+            match = re.match(r'^mcp__' + prefix + r'(?:-agent|_agent)?__(.+)$', block.get('name', ''))
+            if block.get('type') == 'tool_use' and match:
+                identity = block.get('id')
+                if not isinstance(identity, str) or not identity:
+                    raise ValueError('MCP call requires an explicit tool use ID')
+                calls[identity] = match[1]
+                if isinstance(block.get('input'), dict):
+                    direct(block['input'])
+            elif block.get('type') == 'tool_result' and block.get('tool_use_id') in calls and block.get('is_error') is not True:
+                result(block.get('content'), calls[block['tool_use_id']])
     return sessions
 
 def validate(payload, project, specialist, expected_session=None):
@@ -55,10 +98,13 @@ def validate(payload, project, specialist, expected_session=None):
     if not path.is_absolute(): raise ValueError('report path must be absolute')
     reject_symlinks(path)
     relative = path.relative_to(project)
+    if '..' in relative.parts or path.absolute() != path.resolve(strict=False):
+        raise ValueError('report path must be canonical')
     if len(relative.parts) != 4 or relative.parts[:2] != ('runs', specialist) or relative.name != 'report.md':
         raise ValueError('only runs/<this specialist>/<session>/report.md is writable')
     session = validate_session_id(relative.parts[2])
     if expected_session:
+        expected_session = validate_session_id(expected_session)
         if session != expected_session: raise ValueError('report session disagrees with invocation binding')
     elif session not in transcript_sessions(payload['transcript_path'], specialist):
         raise ValueError('report session is absent from this invocation MCP record')

@@ -164,3 +164,67 @@ class CodexUsageTests(unittest.TestCase):
             self.assertFalse((project/'runs/index.json').exists())
 
 if __name__=='__main__':unittest.main()
+
+class CaptureIntegrityReviewTests(CaptureTests):
+    def test_only_current_session_fields_authorize_report_paths(self):
+        transcript = self.transcript()
+        event = {'type':'user','message':{'content':[{'type':'tool_result','tool_use_id':'call',
+            'content':json.dumps({'server':'NeKo','session_id':'session-1',
+                 'sessions':[{'session_id':'listed-session'}],
+                 'lineage':[{'session_id':'upstream-session'}],
+                 'artifact':{'session_id':'artifact-session'}})}]}}
+        with transcript.open('a') as output: output.write('\n'+json.dumps(event))
+        self.assertEqual(guard.transcript_sessions(transcript,'network-curator'), {'session-1'})
+        result = record(self.project,{'agent_type':'network-curator','agent_id':'agent-1','agent_transcript_path':str(transcript)})
+        self.assertEqual(result['session_id'],'session-1')
+
+    def test_fresh_session_creation_and_wrapped_current_results(self):
+        transcript = self.root/'created.jsonl'
+        events = [
+            {'message':{'content':[{'type':'tool_use','id':'fresh','name':'mcp__maboss-agent__create_session','input':{}}]}},
+            {'message':{'content':[{'type':'tool_result','tool_use_id':'fresh','content':[{'type':'text','text':'Session created: scientific-session (set as default)'}]}]}},
+            {'message':{'content':[{'type':'tool_use','id':'status','name':'mcp__maboss-agent__status','input':{}}]}},
+            {'message':{'content':[{'type':'tool_result','tool_use_id':'status','content':json.dumps({'structuredContent':{'session_id':'scientific-session','server':'MaBoSS','source_manifest':{'session_id':'upstream'}}})}]}},
+            {'message':{'content':[{'type':'text','text':'random session_id: fabricated-session'}]}}
+        ]
+        transcript.write_text('\n'.join(json.dumps(e) for e in events))
+        self.assertEqual(guard.transcript_sessions(transcript,'boolean-dynamics-modeler'), {'scientific-session'})
+
+    def test_index_rejects_identity_mismatch_and_bad_usage(self):
+        target = self.project/'runs/network-curator/session-1/invocation/agent-1'
+        target.mkdir(parents=True)
+        meta = target/'invocation.json'
+        meta.write_text(json.dumps({'session_id':'other','specialist':'network-curator','invocation_id':'agent-1'}))
+        with self.assertRaisesRegex(ValueError,'session identity'):
+            register_capture(self.project,target)
+        meta.write_text(json.dumps({'session_id':'session-1','specialist':'network-curator','invocation_id':'agent-1'}))
+        for usage in ({'input_tokens':-1}, {'output_tokens':True}, {'wall_time_seconds':float('nan')}, {'cost_usd':-1}, {'private':'secret'}):
+            with self.assertRaisesRegex(ValueError,'usage'):
+                register_capture(self.project,target,usage=usage)
+        self.assertFalse((self.project/'runs/index.json').exists())
+
+    def test_literature_invocation_keeps_explicit_role_and_session_lineage(self):
+        target = self.project/'runs/network-curator/session-1/specialist-invocations/agent-1'
+        target.mkdir(parents=True)
+        (target/'handoff.json').write_text(json.dumps({'session_id':'session-1','specialist':'literature_reviewer'}))
+        result = register_capture(self.project,target)
+        self.assertEqual(result['specialist'],'literature-reviewer')
+        self.assertEqual(result['session_id'],'session-1')
+
+    def test_malformed_index_is_not_replaced(self):
+        target = self.project/'runs/network-curator/session-1/captures/capture-1'
+        target.mkdir(parents=True); (target/'report').write_text('report')
+        index = self.project/'runs/index.json'
+        for data in ([], {'schema_version':1,'runs':['bad']}):
+            index.write_text(json.dumps(data)); original = index.read_bytes()
+            with self.assertRaisesRegex(ValueError,'malformed'):
+                register_capture(self.project,target)
+            self.assertEqual(index.read_bytes(),original)
+
+    def test_repeated_transcript_tool_blocks_do_not_double_count_calls(self):
+        transcript = self.transcript()
+        events = [json.loads(line) for line in transcript.read_text().splitlines()]
+        with transcript.open('a') as output: output.write('\n'+json.dumps(events[1]))
+        result = record(self.project,{'agent_type':'network-curator','agent_id':'agent-1','agent_transcript_path':str(transcript)})
+        self.assertEqual(result['usage']['tool_calls'],1)
+        self.assertEqual(result['usage']['input_tokens'],22)

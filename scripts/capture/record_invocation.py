@@ -26,6 +26,8 @@ def session_ids(path, specialist):
     return module.transcript_sessions(path, specialist)
 
 def record(project, payload):
+    if not isinstance(payload, dict): raise ValueError('hook payload must be an object')
+    project = project.resolve(strict=True)
     specialist = payload.get('agent_type')
     if specialist not in SPECIALISTS:
         return {'status': 'ignored', 'reason': 'not a modelling specialist'}
@@ -35,17 +37,21 @@ def record(project, payload):
     raw = transcript.read_bytes()
     events = [sanitize_json_value(json.loads(line)) for line in raw.splitlines() if line.strip()]
     sessions = session_ids(transcript, specialist)
+    if transcript.read_bytes() != raw:
+        raise ValueError('transcript changed while recording; preserve source and retry explicitly')
     if len(sessions) != 1:
         raise ValueError('invocation must identify exactly one scientific session; record manually with reviewed attribution')
     session = validate_session_id(sessions.pop())
     target = project / 'runs' / specialist / session / 'invocation' / invocation
     calls, prompts, final, usage_rows, timestamps = [], [], [], {}, []
     for event in events:
+        if not isinstance(event, dict): raise ValueError('transcript events must be objects')
         if event.get('timestamp'):
             time = datetime.fromisoformat(event['timestamp'].replace('Z', '+00:00'))
             if time.tzinfo is None: raise ValueError('transcript timestamp lacks timezone')
             timestamps.append(time)
         message = event.get('message', {})
+        if not isinstance(message, dict): raise ValueError('transcript message must be an object')
         content = message.get('content', [])
         if event.get('type') == 'user' and isinstance(content, str): prompts.append(content)
         if message.get('usage') and message.get('id'):
@@ -53,6 +59,7 @@ def record(project, payload):
         if isinstance(content, list):
             text = []
             for block in content:
+                if not isinstance(block, dict): raise ValueError('transcript blocks must be objects')
                 if block.get('type') in {'tool_use', 'tool_result'}: calls.append(block)
                 elif block.get('type') == 'text': text.append(block.get('text', ''))
             if event.get('type') == 'assistant' and text: final = text
@@ -63,7 +70,7 @@ def record(project, payload):
     usage = {'input_tokens': total('input_tokens'), 'output_tokens': total('output_tokens'),
              'cache_creation_input_tokens': total('cache_creation_input_tokens'),
              'cache_read_input_tokens': total('cache_read_input_tokens'),
-             'tool_calls': sum(c['type'] == 'tool_use' for c in calls),
+             'tool_calls': len({c['id'] for c in calls if c['type'] == 'tool_use' and isinstance(c.get('id'), str)}),
              'wall_time_seconds': (max(timestamps)-min(timestamps)).total_seconds() if len(timestamps)>1 else None,
              'cost_usd': None, 'source': 'Claude agent transcript; elapsed timestamps, deduplicated message usage'}
     with staged_capture(project, target) as stage:
