@@ -178,14 +178,13 @@ def _completed_artifacts(handoff: dict[str, Any], project: Path) -> None:
                 except (OSError, ValueError) as error:
                     raise HandoffValidationError(str(error)) from error
             return
+        from scripts.evidence_contract import report_identity
         for path, file in files.items():
-            if file.parent != project / "evidence/reports" / handoff["session_id"]:
-                raise HandoffValidationError("edge report must be directly under its NeKo session")
-            parts = file.stem.split("__")
-            if file.suffix != ".md" or len(parts) != 2:
-                raise HandoffValidationError(f"invalid edge report filename: {path}")
             try:
-                validate_report(file.read_text(encoding="utf-8"), *parts)
+                session, source, target, _, _ = report_identity(project, file)
+                if session != handoff["session_id"]:
+                    raise ValueError("edge report session mismatch")
+                validate_report(file.read_text(encoding="utf-8"), source, target, session)
             except (OSError, UnicodeError, ValueError) as error:
                 raise HandoffValidationError(f"invalid evidence report {path}: {error}") from error
         return

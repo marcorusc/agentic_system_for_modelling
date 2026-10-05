@@ -45,7 +45,7 @@ def materialize(root: Path, payload: dict) -> None:
         except ImportError:  # unittest discovery imports this module at top level.
             from test_literature_report_writer import VALID_REPORT
         base = f"evidence/reports/{session}"
-        outputs = {"GAB1__AKT1.md": VALID_REPORT}
+        outputs = {"GAB1__AKT1.md": VALID_REPORT.replace("session-1", session)}
     else:
         base = payload["artifacts"][0].rsplit("/", 1)[0]
         identity = {field: payload[field] for field in (
