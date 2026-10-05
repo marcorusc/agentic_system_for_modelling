@@ -52,9 +52,9 @@ def frontmatter(text: str) -> str:
 
 class SpecialistMcpAccessTests(unittest.TestCase):
     def check_transport(self, metadata: str, server: str, executable: str) -> None:
-        self.assertIn(f"mcpServers:\n  - {server}:\n", metadata)
+        self.assertIn(f"mcpServers:\n  - {server}-agent:\n", metadata)
         block = metadata.split("mcpServers:\n", 1)[1].split("\ntools:", 1)[0]
-        self.assertEqual(re.findall(r"^  - (\w+):$", block, re.MULTILINE), [server])
+        self.assertEqual(re.findall(r"^  - ([\w-]+):$", block, re.MULTILINE), [server + "-agent"])
         values = {}
         for key in ("command", "CONDA_PREFIX", "PATH"):
             matches = re.findall(rf"^ +{key}: (.+)$", block, re.MULTILINE)
@@ -113,7 +113,7 @@ class SpecialistMcpAccessTests(unittest.TestCase):
             with self.subTest(agent=filename):
                 metadata = frontmatter(agent_text(filename))
                 self.assertIn("  - ToolSearch\n", metadata)
-                self.assertIn(f"  - 'mcp__{server}__*'\n", metadata)
+                self.assertIn(f"  - 'mcp__{server}-agent__*'\n", metadata)
 
     def test_resource_bridge_dependency_is_removed(self) -> None:
         paths = [

@@ -3,7 +3,7 @@ name: model-restore
 description: Restore a named biological-model archive without rolling back agent configuration or inputs. Use only when the user explicitly invokes /model-restore with an archive name.
 disable-model-invocation: true
 argument-hint: "<name>"
-allowed-tools: PowerShell(python .claude/scripts/model_lifecycle.py *)
+allowed-tools: PowerShell(python .claude/scripts/model_lifecycle.py *), Bash(python .claude/scripts/model_lifecycle.py *), Bash(python3 .claude/scripts/model_lifecycle.py *)
 ---
 
 # Restore an archived model

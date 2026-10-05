@@ -47,7 +47,8 @@ def main() -> int:
     if sys.version_info < (3, 11):
         print("Python 3.11 or newer is required.", file=sys.stderr)
         return 2
-    failed = False
+    guard = subprocess.run([sys.executable, "scripts/check_isolation.py", "--repository-only"], cwd=ROOT)
+    failed = guard.returncode != 0
     for suite in SUITES:
         print(f"Running {suite}", flush=True)
         return_code = run_suite(suite)

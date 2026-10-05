@@ -19,7 +19,7 @@ class BioMASSSetupTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)/'project'; self.root.mkdir()
-        for name in ('setup', '.codex', '.codex-plugin', '.claude/agents'):
+        for name in ('setup', '.codex', '.codex-plugin', '.claude/agents', '.claude/skills'):
             shutil.copytree(ROOT/name, self.root/name)
         self.prefix = Path(self.temp.name)/'existing-environment'; self.prefix.mkdir()
         (self.prefix/'untouched.txt').write_text('external environment')

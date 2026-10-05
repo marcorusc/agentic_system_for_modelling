@@ -46,3 +46,29 @@ If the dispatcher is unavailable, the same bounded request may use
 <project-relative-task-file>`. Place that file in `.codex-tasks/`; add
 `--record-session-id` and exact `--approve-tool` entries as applicable. Preserve
 all scientific gates and validate the recorded result before synthesis.
+
+## Persistence, seeds and artifact analyses (backend 2.4.0)
+
+The benchmark's simulate_mutation output was not persisted like run_simulation.
+Require durable perturbation inputs/settings/results for reproducibility. If a
+persisted rule-clamp workaround is necessary, it is an explicit researcher-approved
+rule change or refinement, never an automatic mutation substitute. Restore/verify
+matched WT and perturbation settings and record all differences.
+
+Trajectory visualizations/result.csv can overwrite earlier output. Capture each
+run/plot under its own immutable run identifier before another visualization or
+simulation; preserve inputs, mutation, threads, sample count and seed with it.
+Do not claim transient tables or overwritten plots establish reproducibility.
+
+The benchmark showed starts 0 and 1 shared 1999 of 2000 trajectory seeds. Plan
+replicate starts at least sample_count apart using scripts/validate/plan_seeds.py,
+record engine/version/thread settings, and empirically assess replicate variability.
+Spacing avoids overlapping assumed consecutive seed intervals; it does not prove
+statistical independence for every engine/version or threading implementation.
+
+Use supported scripts/validate tools on captured artifacts for declared cycle
+criteria, bounded exact fixed points/reachable terminal components and readout-function
+exclusivity. Record update semantics and input hashes. Incomplete exploration is not
+a proof. scripts/validate/README.md specifies the criteria contract. Capture the
+researcher-approved PhysiCell handoff with
+scripts/capture/record_maboss_physicell_handoff.py; keep upstream lineage intact.

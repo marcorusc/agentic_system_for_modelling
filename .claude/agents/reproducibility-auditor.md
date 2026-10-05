@@ -16,7 +16,7 @@ disallowedTools:
   - WebSearch
   - WebFetch
   - 'mcp__*'
-  - 'mcp__biomass__*'
+  - 'mcp__biomass-agent__*'
 permissionMode: default
 maxTurns: 30
 ---
@@ -58,3 +58,13 @@ not authorize a stage transition.
 
 Keep the report bounded to the requested stage; absence of findings within that
 scope is not a claim that the entire system or model is valid.
+
+## PhysiCell/PhysiBoSS closure checklist
+
+Review the exact exported package before closure: enabled dependency completeness,
+relative paths, upstream handoff lineage, mapping to existing Boolean nodes and
+behavior names, readout exclusivity proof, timing scaling/units, all phase exit
+links and base rates, initial-cell provenance, and exported parameter readback after
+patches. Distinguish unsupported tool features and missing measurements from passes.
+Inspect captured invocation records and validator output; report unverified execution
+explicitly. Configuration validation never proves a PhysiCell simulation ran.

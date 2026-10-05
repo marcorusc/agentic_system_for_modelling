@@ -23,7 +23,7 @@ class SetupTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)/"project with spaces"
         self.root.mkdir()
-        for name in ("setup", ".codex", ".codex-plugin", ".claude/agents"):
+        for name in ("setup", ".codex", ".codex-plugin", ".claude/agents", ".claude/skills"):
             shutil.copytree(ROOT/name, self.root/name)
         self.prefix = self.root/".setup/environment"
         self.home = Path(self.temp.name)/"codex home"

@@ -3,7 +3,7 @@ name: model-archive
 description: Create a named, Git-backed archive of the current biological-model state. Use only when the user explicitly invokes /model-archive and supplies an archive name.
 disable-model-invocation: true
 argument-hint: "<name>"
-allowed-tools: PowerShell(python .claude/scripts/model_lifecycle.py *)
+allowed-tools: PowerShell(python .claude/scripts/model_lifecycle.py *), Bash(python .claude/scripts/model_lifecycle.py *), Bash(python3 .claude/scripts/model_lifecycle.py *)
 ---
 
 # Archive the current model

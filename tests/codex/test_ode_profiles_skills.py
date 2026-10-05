@@ -27,7 +27,7 @@ class OdeProfileSkillTests(unittest.TestCase):
                 value = tomllib.loads(path.read_text())
                 servers = value['mcp_servers']
                 self.assertEqual({name for name, config in servers.items() if config.get('enabled')},
-                                 {permitted} if permitted else set())
+                                 {permitted} if permitted else {"pubmed"})
                 self.assertFalse(value['features']['apps'])
                 self.assertFalse(servers['specialist_dispatcher']['enabled'])
                 self.assertEqual(value['sandbox_mode'], 'read-only')
@@ -40,7 +40,8 @@ class OdeProfileSkillTests(unittest.TestCase):
                     self.assertEqual(servers[permitted]['default_tools_approval_mode'], 'writes')
                     self.assertTrue(transport[1].startswith(f'mcp_servers.{permitted}='))
                 else:
-                    self.assertEqual(transport, [])
+                    self.assertTrue(transport[1].startswith("mcp_servers.pubmed="))
+                    self.assertEqual(servers["pubmed"]["url"], "https://pubmed.mcp.claude.com/mcp")
                 if role == 'ode_modeler':
                     self.assertEqual(set(servers['biomass']['disabled_tools']),
                                      {'delete_session', 'clean_generated_files', 'close_session'})
@@ -52,20 +53,25 @@ class OdeProfileSkillTests(unittest.TestCase):
         header, body = claude[4:].split('\n---\n', 1)
         self.assertEqual(compatibility['name'], 'ode_modeler')
         self.assertEqual(compatibility['developer_instructions'], profile['developer_instructions'])
-        self.assertTrue(body.strip().startswith(profile['developer_instructions'].strip()))
+        for boundary in ('Use only BioMASS', 'Do not spawn or delegate', 'never call NeKo, MaBoSS, PhysiCell'):
+            self.assertIn(boundary, body)
+            self.assertIn(boundary, profile['developer_instructions'])
+        self.assertIn('Read only artifact or specification paths explicitly named', body)
         servers = header.split('mcpServers:\n', 1)[1].split('\ntools:', 1)[0]
-        self.assertEqual(re.findall(r'^  - ([a-z_]+):$', servers, re.M), ['biomass'])
-        self.assertIn('command: __configure_biomass_command__', servers)
-        self.assertIn('CONDA_PREFIX: __configure_biomass_environment__', servers)
-        self.assertIn('PATH: __configure_biomass_path__', servers)
-        self.assertNotIn('/home/', servers)
+        self.assertEqual(re.findall(r'^  - ([a-z_-]+):$', servers, re.M), ['biomass-agent'])
+        # Setup-managed local paths are valid; compare the actual executable to
+        # its declared prefix rather than requiring shipped placeholders.
+        command = re.search(r'^      command: (.+)$', servers, re.M)[1].strip('"')
+        prefix = re.search(r'^        CONDA_PREFIX: (.+)$', servers, re.M)[1].strip('"')
+        self.assertTrue(command == '__configure_biomass_command__' or command == str(Path(prefix)/'bin/mcp-biomass-server'))
+        self.assertIn('specialist_report_guard.py', header)
         self.assertIn('  - biomass-workflow\n', header)
         self.assertIn('  - Task\n', header)
         self.assertIn('  - Agent\n', header)
-        self.assertIn('  - mcp__biomass__close_session\n', header)
+        self.assertIn('  - mcp__biomass-agent__close_session\n', header)
         for path in (ROOT / '.claude/agents').glob('*.md'):
             if path.name != 'ode-modeler.md':
-                self.assertIn("  - 'mcp__biomass__*'\n", path.read_text().split('\n---\n', 1)[0])
+                self.assertIn("  - 'mcp__biomass-agent__*'\n", path.read_text().split('\n---\n', 1)[0])
 
     def test_local_reference_hashes_and_client_copies_match(self):
         codex = ROOT / 'skills/biomass-workflow'
@@ -149,7 +155,9 @@ class ClaudeOdeReportHookTests(unittest.TestCase):
 
     def test_legacy_edge_and_read_controls_remain(self):
         edge = self.root / 'evidence/reports/neko-session/A__B.md'
-        checked = self.call(edge, 'legacy edge content')
+        from tests.codex.test_literature_report_writer import VALID_REPORT
+        content = VALID_REPORT.replace('GAB1', 'A').replace('AKT1', 'B').replace('session-1', 'neko-session')
+        checked = self.call(edge, content)
         self.assertEqual(checked.returncode, 0, checked.stderr)
         outside = self.call(self.root / 'CURRENT_STATE.md', 'state mutation')
         self.assertEqual(outside.returncode, 2, outside.stderr)
