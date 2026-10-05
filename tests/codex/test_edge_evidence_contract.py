@@ -52,7 +52,8 @@ class FooterBoundaryTests(unittest.TestCase):
         original = parse_footer(VALID_REPORT)
         for field, value in [('verdict', 'approved'), ('confidence', 1), ('interaction_type', None),
                              ('edge', ['GAB1','  ','AKT1']), ('edge', ['../escape','stimulation','AKT1']),
-                             ('supporting_pmids', [12345678]), ('excluded_pmids', ['12345678']),
+                             ('supporting_pmids', [12345678]), ('supporting_pmids', []),
+                             ('excluded_pmids', ['12345678']),
                              ('neko_session_id', '../escape')]:
             data = dict(original); data[field] = value
             content = VALID_REPORT.split('```yaml')[0] + '```yaml\n' + json.dumps(data) + '\n```\n'

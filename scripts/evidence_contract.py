@@ -57,6 +57,8 @@ def parse_footer(content: str) -> dict:
             raise ValueError(f'{field} must contain unique PMID strings')
     if set(data['supporting_pmids']) & set(data['excluded_pmids']):
         raise ValueError('supporting and excluded PMIDs must be disjoint')
+    if data['verdict'] == 'supported' and not data['supporting_pmids']:
+        raise ValueError('supported verdict requires at least one supporting PMID')
     return data
 
 
