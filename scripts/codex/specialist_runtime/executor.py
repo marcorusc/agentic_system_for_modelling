@@ -452,6 +452,12 @@ def _run(request: SpecialistInvocationRequest, execution: SpecialistExecutionRes
             f"Recorded specialist invocation: {artifact_dir.relative_to(PROJECT_ROOT)}"
         )
     except (OSError, ValueError) as exc:
+        # Publication may have completed before indexing failed. Preserve the
+        # recorder's explicit destination rather than the now-moved launcher path.
+        preserved = getattr(exc, "artifact_dir", None)
+        if isinstance(preserved, Path):
+            execution.artifact_dir = preserved
+            execution.event_stream = preserved / "events.jsonl" if (preserved / "events.jsonl").is_file() else None
         emit_status(f"failed to record specialist invocation: {exc}")
         if result.returncode == 0:
             emit_status(
