@@ -12,3 +12,7 @@ __pycache__/
 
 # Dispatcher operational registry; scientific artifacts remain under runs/
 .dispatcher/
+
+# Library diagnostics and persistent capture/index locks
+pypath_log/
+**/.*.capture.lock
