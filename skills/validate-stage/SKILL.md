@@ -32,3 +32,21 @@ actual numerical settings and scenario results. Validate ODE evidence with expli
 session/revision conclusive-export approval; a candidate snapshot keeps the
 scientific registry pending. Existing `runs/` and `evidence/` lifecycle scopes
 already include ODE artifacts. Successful solves are not biological validation.
+
+## Sequential review gate
+
+Complete both independent scientific review and reproducibility audit before any
+downstream dispatch. Persist reports under runs/orchestrator/reviews/<session>/.
+Use scripts/state.py record for a stage_review record identifying exact session,
+artifact hash, both report paths/hashes and outcome approved, approved_with_limitations,
+revision_required or blocked. Then obtain and record researcher stage_approval for
+that exact artifact and declared outputs. Run scripts/gate.py check and quote its
+JSON result before dispatch; a review recommendation is not researcher approval.
+A later blocking review or changed artifact invalidates the earlier gate.
+
+PhysiCell closure also requires both reviews. Inspect all enabled package dependencies,
+relative paths, NeKo/MaBoSS lineage, exact mappings, node/behavior existence, readout
+exclusivity, timing/units, cycle phase exits/base rates, initial cells and declared
+parameters. Read exported values after patches, especially apoptosis/necrosis/motility.
+Record missing coverage as unverified; never equate valid XML/configuration with
+an executed or scientifically validated multicellular simulation.

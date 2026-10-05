@@ -2,69 +2,52 @@
 
 ## Sources of truth
 
-- `MODEL_SPEC.md`: authoritative mechanistic and mathematical specification.
-- `DATA_DICTIONARY.md`: variables, identifiers, units, and data provenance.
-- `ASSUMPTIONS.md`: explicit accepted assumptions.
-- `DECISIONS.md`: accepted and rejected modelling decisions with rationale. Every
-  entry concerning network topology must cite the specific evidence report path(s)
-  and PMIDs that informed it.
-- `CURRENT_STATE.md`: current workflow checkpoint, including the session registry
-  (see below).
-- `VALIDATION_PLAN.md`: validation criteria and current status.
-- `runs/network-curator/{neko_session_id}/`: immutable NeKo artifacts — SIF file,
-  paths file, report.
-- `runs/boolean-dynamics-modeler/{maboss_session_id}/`: immutable MaBoSS artifacts —
-  BND/CFG exports, simulation results, report.
-- `runs/multicellular-configurator/{physicell_session_id}/`: immutable PhysiCell
-  artifacts — configs, simulation outputs, report.
-- `evidence/reports/{neko_session_id}/{A}__{B}.md`: literature-reviewer output, one
-  file per edge reviewed, filed under the NeKo session whose topology the edge came
-  from — since edges are a NeKo-stage concept, not a pipeline-wide one. If the same
-  edge is reviewed again after `network-curator` is asked to revise the topology
-  (a new NeKo session), the new review is written under the new session's ID rather
-  than overwriting the earlier one, so `DECISIONS.md` entries stay pinned to the
-  exact report version they cite.
+Durable files, never chat or memory, define scientific state:
+- MODEL_SPEC.md: mechanistic/mathematical specification.
+- DATA_DICTIONARY.md: identifiers, units, versions and provenance.
+- ASSUMPTIONS.md: accepted and proposed assumptions kept distinct.
+- DECISIONS.md: decisions, rationale, approval; topology entries cite exact reports
+  and supporting PMIDs. Structured governance records live in this file too.
+- CURRENT_STATE.md: active stage, append-only session registry, warnings, next action.
+- VALIDATION_PLAN.md: declared criterion IDs and validator-generated results.
+- VALIDATION_CRITERIA.yaml: explicit executable criteria; initialize from its empty
+  template only when starting a model.
+- runs/<specialist>/<full-session-id>/: immutable artifacts, specialist report,
+  capture/invocation records. Each MCP issues its own ID; no pipeline-wide run ID.
+- runs/orchestrator/<purpose>/: orchestrator-authored summaries, analyses and inputs.
+  Manual inputs require CHANGES.md: base path+SHA256, ordered exact edits,
+  evidence+supporting PMIDs, authorization, output path+SHA256, reproduction command
+  or patch. Missing server capabilities never justify undocumented edits.
+- evidence/reports/<neko-session>/<source>__<target>.md: immutable edge reviews;
+  candidates/ contains proposed-edge reports, .r2.md etc. explicit revisions.
+  Never overwrite evidence or reuse another session's report location.
+- inputs/: preserved user sources; runs/index.json: script-maintained artifact/usage index.
 
-Each specialist's session ID comes from that specialist's own MCP server when a
-session is created — there is no single pipeline-wide run ID. The orchestrator is
-responsible for recording which session ID belongs to which specialist and which
-stage, and for passing the *correct* one to each downstream call (e.g. the
-`neko_session_id` of the topology currently under discussion goes to
-`literature-reviewer`, not the `maboss_session_id` of a later stage).
+## Main-agent role and isolation
 
-Do not treat chat history or auto-memory as authoritative scientific state.
+The main Claude session is the sole scientific orchestrator and shared-state writer:
+clarify objectives, delegate bounded tasks, validate returned handoffs, reconcile
+conflicts, obtain researcher decisions and control every stage transition. Specialists
+cannot delegate, alter shared state or advance stages. Guarded report Write is their
+only local authoring exception; model files are written by permitted MCP tools.
 
-## Main-agent role
+The orchestrator must have no modelling MCP tools; stop if any are visible. Run the
+setup isolation guard. Four specialist-inline *-agent transports expose only NeKo to
+network-curator, MaBoSS to boolean-dynamics-modeler, PhysiCell to
+multicellular-configurator and BioMASS to ode-modeler. No global/project modelling
+registration or project-wide allow rule is permitted. PubMed is the default literature
+backend; web search needs explicit researcher authorization. Missing/failed required
+servers return blocked; never substitute another domain server.
 
-The main Claude Code session is the scientific orchestrator. It must clarify the
-objective, delegate bounded tasks, review all returned summaries, reconcile
-conflicts, request human approval for consequential biological assumptions, control
-stage transitions, update durable state, and invoke independent review.
-
-Subagents cannot spawn other subagents. Do not ask them to coordinate directly.
-
-The orchestrator does not call NeKo, MaBoSS, PhysiCell, or BioMASS MCP tools directly.
-Delegate modelling operations to the relevant specialist; knowing that a server
-exists is not authorization to invoke it.
-
-NeKo, MaBoSS, and PhysiCell are defined inline in their specialist agent
-frontmatter. Claude Code starts the relevant server for that subagent and disconnects
-it when the invocation ends, keeping modelling tools out of the orchestrator's tool
-pool. Each specialist also preloads its matching project workflow skill. Do not use
-MCP resource-listing or resource-reading tools for these manuals: Claude Code strips
-those host bridge tools from background subagents.
-
-## Specialist allocation
-
-- `network-curator`: NeKo MCP only.
-- `boolean-dynamics-modeler`: MaBoSS MCP only.
-- `multicellular-configurator`: PhysiCell MCP only.
-- `literature-reviewer`: PubMed or literature tools only.
+Follow the specialist's preloaded workflow skill, not MCP resource bridge tools
+(unavailable in background Claude agents). Codex uses its separate isolated dispatcher
+runtime and AGENTS.md; never same-process modelling delegation.
 
 ## Scientific rules
 
 - Never infer units.
-- Never invent parameter values without labelling them as hypotheses.
+- Never invent parameter values. Proposed values must be labelled hypotheses with
+  source and consequence, then explicitly approved before scientific use.
 - Never silently select output nodes, mutations, initial states, or mappings.
 - Keep evidence, assumptions, model outputs, and conclusions distinct.
 - Use one MCP session per independent modelling hypothesis.
@@ -81,203 +64,93 @@ those host bridge tools from background subagents.
 
 ## Literature review
 
-- Autonomous invocation of `literature-reviewer` to gather evidence is always
-  permitted without pausing, whether triggered by explicit user request or by the
-  orchestrator's own read of a `network-curator` report.
-- Acting on that evidence — changing topology, removing an edge, switching
-  databases — is a consequential decision and requires human approval per the
-  Scientific rules above, regardless of whether the review that informed it was
-  user-directed or autonomous.
-- When invoking `literature-reviewer`, extract the exact edge subset to review
-  from `literature_queue.json` yourself and inline it as literal
-  `[source, effect, target]` triples in the Task prompt. Never instruct
-  `literature-reviewer` to open `literature_queue.json` itself — the sub-agent
-  only ever needs the specific slice already selected for that invocation.
-- Point `literature-reviewer` at the relevant SIF file for PMID/provenance
-  lookups by Grep only (source/target scoped to each edge), never a full
-  `Read` — codify this explicitly rather than relying on the prompt happening
-  to get it right each time.
-- Dispatch in bounded slices: one `literature-reviewer` invocation reviews at
-  most one coherent edge cluster (≤ ~13 edges) — never the whole queue in a
-  single agent. Split a large queue into per-cluster dispatches; include the
-  cluster's SIF-provided reference PMIDs inline in the prompt.
-- Concurrency: run at most 2 `literature-reviewer` agents at a time (PubMed
-  rate limits + backend stability); launch the next slice only after a running
-  one reports back.
-- Recovery: after any failed/stopped reviewer run, check
-  `evidence/reports/{neko_session_id}/` for already-written edge reports and
-  re-dispatch only the missing edges — never re-review edges that already have
-  a report file (unless explicitly re-requested).
+Evidence gathering may proceed autonomously; evidence-driven topology/database
+changes require explicit authorization. Load review-literature-evidence. Send literal
+[source, effect, target] triples and known PMIDs, at most 13 coherent edges per
+invocation and two reviewers concurrently. Inline the bounded queue subset; SIF
+lookup is source/target-scoped Grep, never full Read. After interruption redispatch
+only missing reports unless re-review was explicitly requested. Never fabricate
+findings or overstate abstract-only access. ODE reviews use explicit review_kind=ode
+and their own session-scoped claim contract.
 
 ## Model refinement discipline
 
-Adjusting Boolean rules so a model reproduces target dynamics (oscillation, arrest
-under a perturbation, etc.) is a legitimate modelling method — the same kind of
-search a domain expert does by hand or an ML fitting procedure does formally. It is
-not treated as more suspect than literature-derived rules. It does need the same
-discipline those methods have by construction: an explicit objective, a bounded
-search space, and a record of what was tried. This is a distinct,
-explicitly-authorized workflow, separate from `boolean-dynamics-modeler`'s default
-(never change rules on its own initiative):
+Refinement requires explicit researcher authorization naming nodes and a concrete
+VALIDATION_PLAN target. Search only Boolean functions over those nodes' existing
+incoming regulators. Never add nodes/edges or change unnamed rules; structural
+needs return to topology and evidence review. Record every tested variant and
+result. Every final rule and every manual edge needs a provenance tag in DECISIONS:
 
-- **Gate:** rule-refinement mode may not be invoked until `VALIDATION_PLAN.md` has
-  actual content — no target, no fitting. The plan may come from discussion with the
-  orchestrator (qualitative goals) or be written a priori from experimental data;
-  either is valid, but something concrete must exist to fit against.
-- **Explicit scope:** the orchestrator invokes refinement by naming the specific
-  node(s) to refine and pointing at the relevant part of `VALIDATION_PLAN.md` as the
-  objective. `boolean-dynamics-modeler` may only adjust the Boolean function among a
-  node's *existing* incoming regulators — no new edges, no new nodes. If reaching
-  the target dynamic seems to require a structural change beyond that, that is a
-  topology question and routes back to `network-curator`/`literature-reviewer` — it
-  is not something rule-fitting silently absorbs.
-- **Search record:** variants tried and rejected during refinement are reported, not
-  just the final rule chosen — this is the record an ML fit would give for free, and
-  a rule-refinement report without it is incomplete.
-- **Provenance tagging in `DECISIONS.md`:** every node's final rule is tagged as
-  either `literature-derived` (specific rule form has citation support from
-  `literature-reviewer`) or `fitted-for-dynamics` (chosen to reproduce target
-  behavior in `VALIDATION_PLAN.md`; no independent literature claim about this
-  specific Boolean form). A fitted rule is not second-class — it is labelled
-  honestly, the same way a hypothesized parameter already must be per the Scientific
-  rules above.
+- `database-default`: imported database-derived rule/edge, not a literature claim.
+- `literature-derived`: specific mechanism/rule supported by dedicated cited review.
+- `manual-literature`: explicitly authorized manual edge with its own candidate
+  report, supporting PMIDs, sign/direction assessment and approval.
+- `fitted-for-dynamics`: chosen against a named validation target; no independent
+  literature claim for the fitted Boolean function.
+- `readout`: derived observable; document definition, inputs and exclusivity proof.
+  It has no regulatory targets unless a separate topology change is approved.
 
 ## Session registry
 
-`CURRENT_STATE.md` must maintain a table of every specialist session created so far,
-updated at stage 7 of the workflow (recording session IDs, parameters, artifacts) and
-whenever a session is superseded:
-
-| Specialist | Session ID | Stage | Status | Derived from | Handoff | Artifacts |
-|---|---|---|---|---|---|---|
-| network-curator | `neko_session_id` | topology | active / superseded | — | pending / approved / exported | `runs/network-curator/{id}/` |
-| boolean-dynamics-modeler | `maboss_session_id` | boolean-dynamics | active / superseded | `neko_session_id` | pending / approved / exported | `runs/boolean-dynamics-modeler/{id}/` |
-| multicellular-configurator | `physicell_session_id` | multicellular | active / superseded | `maboss_session_id` | — | `runs/multicellular-configurator/{id}/` |
-
-`Handoff` tracks the conclusive, gated export each modelling stage produces for the
-next: `pending` while results are under review, `approved` once the user has signed
-off but before the export call is made, `exported` once the handoff artifact exists
-on disk. A downstream specialist session may only be created against an upstream row
-marked `exported` — a `boolean-dynamics-modeler` session requires an `exported`
-`network-curator` row, and a `multicellular-configurator` session requires an
-`exported` `boolean-dynamics-modeler` row.
-
-Rules:
-
-- Never overwrite a row in place when a session is superseded (e.g. topology
-  revised, a new NeKo session created). Mark the old row `superseded` and add a new
-  row — the registry itself is an append-only log, not just a snapshot of current
-  state.
-- `Derived from` records the upstream session ID a given session was built from
-  (e.g. which `neko_session_id`'s SIF/BNET export a `maboss_session_id` started
-  from), so lineage across the pipeline stays reconstructible after `/compact` or
-  `/clear`.
-- Before invoking any specialist, the orchestrator checks this table for the
-  relevant `active` session ID rather than assuming one from chat context.
-- If the table shows no `active` session for a specialist a task requires, that is
-  itself a signal to create a fresh session (stage 4 of the workflow), not to guess
-  an ID.
+CURRENT_STATE contains the append-only lineage table: Specialist, full Session ID,
+Stage, Status, Derived from, Handoff, Artifacts. Mark superseded rows and append new
+sessions; never replace history. Resolve active IDs from this table before dispatch.
+Handoff is pending during review, approved only after researcher sign-off, exported
+only after a verified conclusive artifact exists. Downstream sessions require the
+exact upstream exported session: NeKo -> MaBoSS -> PhysiCell. These approvals do not
+authorize later stages. Record full lineage, effective parameters/policies, initial
+states, mutations, units, threads/seeds, manifests/hashes, warnings and failures.
 
 ## Required stage workflow
 
-1. Follow the specialist's preloaded NeKo, MaBoSS, or PhysiCell workflow skill.
-2. State the scientific objective.
-3. Identify missing information and assumptions.
-4. Create a fresh specialist session.
-5. Inspect before material mutation.
-6. Execute the modelling operation.
-7. Record session IDs, parameters, artifacts, manifests, and warnings.
-8. Update `CURRENT_STATE.md` and `DECISIONS.md`.
-9. Stop when a required biological choice needs human judgment.
+Before each downstream dispatch, complete validate-stage, wait for both independent
+reviews, and obtain exact session/revision/output approval. Record review and approval
+with state.py; run and quote `python3 scripts/gate.py check <stage> <session> --outputs ...`.
+Prefix the bounded task with `STAGE_GATE {"upstream_session_id":"...","outputs":["..."]}`.
+The dispatch hook checks the durable records again. Explicit standalone sources use
+standalone_decision_id. Never run reviews in parallel with downstream work.
 
-## Context rules
+After authorized operations, use scripts/capture commands to validate, relocate, hash
+and index exports (docs/agentic-operations.md). Specialists write guarded immutable
+report.md; invocation records persist task, tool calls/results, final output and usage.
+Orchestrator summaries belong under runs/orchestrator. Update state using state.py,
+validate and checkpoint; every stage, including multicellular, needs independent
+scientific review and reproducibility audit before closure. Export is not simulation.
 
-- Keep the main context focused on synthesis and decisions.
-- Use subagents for large searches, tool output, and specialist exploration.
-- Do not paste full datasets, complete logs, or large result tables into chat.
-- Before `/compact` or `/clear`, invoke the checkpoint skill.
-- This applies to subagent delegation prompts as well as main chat: extract and
-  inline only the relevant subset of a large source-of-truth file, rather than
-  telling a specialist to read the full file itself.
+## Evidence records and executable checks
 
-## Local Git checkpoints
+Use required evidence footers; cite only supporting_pmids, never excluded citations.
+Each manual edge requires its own report. `gate.py resolve` checks a conditional
+approval against immutable evidence; it never mutates a model or grants new authority.
+Use state.py JSON-file inputs for decisions, registry, validation and checkpoints;
+never shell heredocs or unchecked replacements. Missing/duplicate rows must fail.
+Diff changes before checkpoints. Record timezone-aware ISO-8601 times (helpers use
+UTC +00:00); preserve source offsets and convert before comparing calendar dates.
 
-Git provides a local, recoverable history of the project files; it does not replace
-the scientific sources of truth, MCP history, or immutable run artifacts listed
-above. Invoke the `checkpoint-model` skill at stage transitions and before
-`/compact`, `/clear`, or session exit.
+The orchestrator may run supported read-only scripts/validate artifact analyses:
+fixed points, bounded reachable attractors, readout exclusivity and declared trajectory
+criteria. This authorizes no modelling MCP calls or mutations. Incomplete checks
+cannot pass. Only supported validator output updates VALIDATION_PLAN via state.py.
 
-- Inspect `git status` and the relevant diffs before staging anything.
-- Before staging, run `git branch --show-current` and report it. Model checkpoints
-  must be created on a dedicated local branch whose name starts with `model/`. If
-  the result is empty or names any other branch, do not commit and ask the user to
-  create or switch branches; the checkpoint workflow must never switch branches
-  itself.
-- Update and validate the durable scientific state before creating the checkpoint.
-- Stage explicit task-relevant paths only. Never sweep unrelated pre-existing user
-  changes, secrets, caches, or generated files into a checkpoint.
-- Use a concise message of the form `checkpoint(<stage>): <scientific state>`, then
-  record that content-checkpoint commit ID in `CURRENT_STATE.md` with one follow-up
-  metadata commit. Do not try to embed the metadata commit's own ID in itself.
-- Local checkpoint commits are authorized by this workflow. Pushing, fetching,
-  pulling, switching branches, rebasing, amending, force operations, tags, remotes,
-  and destructive cleanup remain outside scope unless the user explicitly requests
-  them.
-- If provenance is incomplete, validation fails, or relevant changes cannot be
-  separated safely from unrelated work, do not commit. Report the blocker and leave
-  the worktree intact.
+## Multiscale mapping and task-specific procedures
 
-## Model lifecycle
+Use the PhysiCell workflow's explicit Boolean-to-phenotype formulas and timing
+calibration; readout layers need an exclusivity proof and approved topology scope.
+Calibration returns a proposal, requiring researcher approval of units and values.
+After each parameter patch inspect the exported value; execution success is insufficient.
 
-This repository contains one biological model at a time. Model lifecycle is exposed
-only through the user-invoked `/model-list`, `/model-archive`, `/model-restart`, and
-`/model-restore` skills. The orchestrator must never invoke the three mutating skills
-autonomously.
+Checkpoint at transitions and before compact/clear/session exit via checkpoint-model.
+It contains the local model/* branch, explicit staging and two-commit procedure;
+never automatically switch branches or push/pull/fetch/rebase/amend/tag/clean.
+Lifecycle operations require explicit user intent and the model-* skills. Archive
+before reset; restart/restore require a fresh confirmation after preview, preserve
+infrastructure/inputs, and never delete MCP sessions. Archived session IDs are
+provenance only. Clear conversation context before modelling a restarted/restored model.
 
-- `.model/config.json` is the authoritative allowlist of scientific-state paths.
-- `inputs/`, `.claude/`, `.model/`, templates, documentation, and this file are
-  infrastructure or source material and are never reset or restored from an archive.
-- Named archives use annotated `model/archive/*` Git tags. Restart and restore create
-  automatic `model/recovery/*` tags before replacing any state.
-- Restores are path-scoped and must not switch branches, reset Git history, or roll
-  back agent definitions.
-- MCP session IDs in an archive are provenance, not resumable process state. Rebuild
-  specialist runtime state from typed handoffs and artifacts.
-- After restart or restore, instruct the user to run `/clear` so assumptions
-  from the previous Claude conversation do not contaminate the loaded model state.
-
-
-## Optional mechanistic ODE branch
-
-Follow docs/ode-workflow.md and the version-2 artifact contract in docs/ode-contract.md.
-Phase 4 prepares the definitions; scientific ODE execution in the integration
-worktree waits for Phase 5 live/client isolation verification. An inline server
-entry alone does not establish that the parent has no modelling tools.
-
-Use `ode-modeler` with BioMASS only and local `biomass-workflow` references. No other
-specialist or orchestrator receives BioMASS. Choose ODE formulation with the
-researcher, using an approved exported NeKo-to-BioMASS graph or an explicitly
-requested standalone text/reaction source. Keep separate full session IDs and
-representation provenance for approved Boolean/ODE comparisons.
-
-The ODE specialist cannot delegate, search literature, edit shared scientific state
-or advance stages. The orchestrator routes at most 13 coherent literal mechanism,
-kinetic-law or quantity claims per `literature-reviewer` invocation with
-`review_kind=ode` and the BioMASS session ID. At most two independent reviews run
-concurrently across both modes. Guarded reports are immutable at
-`evidence/reports/{biomass_session_id}/ode/{claim_id}.md`; read each report back.
-Existing NeKo edge reviews retain their contract.
-
-Respect the approved drafting scope and requested consolidated model review.
-Keep proposed assumptions and numerical placeholders explicit. Preserve provisional
-candidate bundles within an already authorized workflow, recording the existing
-session-bound authorization described in the contract. This needs no repeated
-snapshot approval and does not authorize new assumptions, simulation or stage
-acceptance. Conclusive export requires the exact session/revision decision.
-
-Return common envelope version 1 with specialist `ode_modeler`, stage `biomass_ode`
-and `ode.contract_version=2`. The orchestrator validates captures, evidence,
-revision/version, numerical settings and authority before scientific acceptance.
-Keep provisional registry rows pending. Existing independent stage review remains
-required; reviewer/auditor definitions are present, but live invocation and review completion still require verification. No calibration,
-sensitivity analysis or ODE-to-PhysiCell coupling is included.
+For ODE work load biomass-workflow, docs/ode-workflow.md and docs/ode-contract.md.
+Preserve the Phase 5 live-isolation readiness gate, distinct sessions and approved
+sources. Provisional preservation within existing workflow authorization is not
+scientific acceptance, simulation permission or conclusive export. Respect whole-model
+review; exact session/revision acceptance is required. No ODE calibration, sensitivity
+analysis or ODE-to-PhysiCell coupling is included. Universal approval, evidence,
+lineage and no-direct-modelling-tool rules apply to both branches.

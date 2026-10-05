@@ -26,7 +26,9 @@ and XML entity declarations fail. Original XML bytes are preserved; the separate
 `package/config/PhysiCell_settings.xml` has relative input paths. Launch from the
 `package` directory. Capture validates XML and artifact integrity; it does not
 claim that a PhysiCell simulation ran or that its configuration is scientifically
-valid. Unknown input conventions need an explicit implementation, not manual omission.
+valid. Only `filename` and `*_filename` dependencies are recognized. Other input
+conventions can escape this scan and require an explicit implementation/review,
+not a claim of complete dependency validation.
 
 NeKo ODE and BioMASS inventory capture are also available at
 `record_neko_ode_handoff.py` and `record_ode_artifacts.py`, with their existing CLI

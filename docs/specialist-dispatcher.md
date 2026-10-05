@@ -366,3 +366,18 @@ import the exported artifact into a fresh session; persistent live sessions are
 not required. [Curation follow-up](neko-curation-continuity.md) records this clarified
 design, the targeted-preview limitation, a rejected reconstruction handoff, and
 the tested JSON-safe redaction fix. Scientific curation remains pending.
+
+## 2026-10-05 maintenance update
+
+The earlier web-only inventory observations above are historical. Setup now configures
+the shared PubMed URL in the isolated reviewer profile, pins seven read-only tools,
+and preserves explicit custom/disabled transports. A migrated local profile passed
+restricted configuration inventory inspection; the remote endpoint independently
+passed initialize/tools-list with all seven tools, without desktop authentication
+or any scientific call. This does not replace live client/tool enforcement checks.
+
+New Boolean downstream sessions require the checked STAGE_GATE task envelope and
+exact durable review/approval records before execution. Ungated existing-session
+inspection is capped to audited non-creating tools because backend getters may create
+sessions. See [checked agentic operations](agentic-operations.md) for task schemas,
+standalone authorization, state edits, captured invocation usage and failure handling.

@@ -89,3 +89,15 @@ candidates within the already approved scope under `docs/ode-contract.md`; do no
 ask again merely to record or save them. Preservation does not approve assumptions,
 numerical values, simulation or a stage transition. Keep provisional lineage rows
 pending and require exact revision approval for conclusive export.
+
+## Executable maintenance gates
+
+Follow docs/agentic-operations.md. Before new Boolean downstream dispatch, finish
+both independent reviews, record exact artifact/session/output researcher approval,
+run scripts/gate.py check, and include its STAGE_GATE task envelope. The runtime
+rechecks it before starting a child; typed blocked/failed results cannot advance stages.
+Use scripts/state.py for checked state edits and scripts/capture for immutable
+copies and index updates. Orchestrator reports belong under runs/orchestrator.
+Only supporting_pmids from validated evidence footers justify decisions. Supported
+scripts/validate read-only artifact analyses are permitted, with explicit criteria,
+resource bounds and no scientific acceptance inferred from successful execution.

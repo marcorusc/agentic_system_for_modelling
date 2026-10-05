@@ -2,7 +2,8 @@
 """Capture a PhysiCell XML and enabled input dependencies as a portable package.
 
 This validates artifact integrity and relocation, not a PhysiCell simulation.
-Unknown enabled filename forms fail rather than silently dropping dependencies.
+Only filename and *_filename dependency conventions are recognized; other XML
+reference conventions require an explicit implementation.
 """
 from __future__ import annotations
 import argparse

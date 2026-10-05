@@ -1,6 +1,6 @@
 # Improvement plan: automated multiscale modelling workspace (NeKo → MaBoSS → PhysiBoSS)
 
-**Status:** proposed · **Date:** 2026-10-05 · **Basis:** final end-to-end test, model `toy-cell-cycle`, 2026-10-02
+**Status:** Point A repository fixes implemented; live acceptance and category B/C work remain · **Date:** 2026-10-05 · **Basis:** final end-to-end test, model `toy-cell-cycle`, 2026-10-02
 (branch `model/toy-cell-cycle`)
 
 This plan turns every problem met during the final test into an action. The actions fall into three groups, by where
@@ -24,6 +24,124 @@ it closes; the appendix maps each finding to its actions.
 - **P3:** friction or cosmetic.
 
 **Effort:** S < ½ day · M ½–2 days · L > 2 days.
+
+---
+
+
+## Implementation record — Point A (2026-10-05)
+
+The original diagnostic and action tables below are preserved as the baseline.
+Codex implemented the repository work with three independent subagents, followed
+by cross-review and integration tests. **Implemented** here means code/workflow
+changes and local checks passed; it does not mean the end-to-end scientific benchmark
+or every client-level acceptance test has been rerun. No category B/C server or
+scientific-library source was changed, and no new model or simulation was executed.
+
+### Model preservation and clean starting state
+
+- Named archive: `model/archive/toy-cell-cycle-2026-10-05`, content commit
+  `badb32b74f40`. Archive manifest and all recorded model-state blob hashes verified.
+- Recovery point: `model/recovery/before-restart-20261005-015513-961944`
+  (`213035c`); researcher-confirmed template reset: `44bacd6`.
+- Pre-existing agent environment edits, benchmark note and this diagnostic were
+  preserved in baseline commit `d7255e6`; unrelated `Slides/` remains untouched.
+- An ignored Python bytecode cache was moved to ignored `.setup/pre-improvements-2026-10-05/`
+  before reset rather than deleted. No unmatched disposable prompts remained.
+- All eight scientific state files now match pristine templates, including the new
+  empty `VALIDATION_CRITERIA.yaml`. Its lifecycle allowlist ensures future criteria
+  are archived/reset/restored with the model. No scientific criteria are initialized.
+
+### Fixes performed
+
+| ID | Implementation and verification | Remaining acceptance limit |
+|---|---|---|
+| A-ISO-1 | Removed four Claude global modelling registrations after private backups; removed Linux Codex global BioMASS registration; renamed inline transports to `*-agent`; retained PubMed and unrelated project settings. | Restart clients; configuration cannot revoke already-loaded tools. Live Claude agent startup still needs a benchmark. |
+| A-ISO-2 | Removed all project modelling allow rules and the matching ignored local grant; wired guarded report/dispatch hooks. | Client-level prompt behavior not measured. |
+| A-ISO-3 | Added `scripts/check_isolation.py`, setup/CI integration, alias/registration checks and explicit scoped preview/apply migration. Current machine fails before migration and passes after. | Static checks explicitly report `live_inventory_verified: false`. |
+| A-CAP-1 | Provider-neutral `scripts/capture/` with compatibility wrappers, typed MaBoSS-to-PhysiCell capture, XML package/dependency capture, hashes and locked index. | Backend still writes its original artifacts outside runs (B-SH-1); typed manifests and recognized enabled XML dependencies are checked; unrecognized XML dependency conventions require additional implementation. |
+| A-CAP-2 | Four modelling agents get guarded Write only to their transcript-bound immutable session report; orchestrator summaries assigned to runs/orchestrator. | Live Claude hook execution not rerun; pre-Write no-overwrite check is not an atomic Write primitive. |
+| A-CAP-3 | Claude SubagentStop records prompt, sanitized calls/results, full report and transcript hash; Codex failure/provenance records retained after indexing errors. | Ambiguous multi-session transcripts fail attribution and remain preserved for inspection. |
+| A-CAP-4 | Ignored pypath_log and persistent capture locks. | Unrelated user files are intentionally not removed. |
+| A-CAP-5 | Claude and Codex invocation usage indexed with measured token/tool/time fields; usage_summary.py generates tables. | Missing cost/usage data is null, never estimated as a measurement. |
+| A-GATE-1 | gate.py plus Claude dispatch hook and Codex runtime enforce exact exported active session, typed dependency hashes, output list, review and researcher approval; unsafe ungated tools capped. | Records document human authorization; they are not a cryptographic human-signature system. |
+| A-GATE-2 | Both independent reviews must precede approval/dispatch; changed artifacts or later blocking reviews invalidate the gate. Added PhysiCell reviewer/auditor closure checklist. | Multicellular scientific acceptance requires a future live review, not just these tests. |
+| A-GATE-3 | Conditional records name literal edge, evidence hash and allowlisted footer conditions; resolver validates full report and returns result without mutation. | It never expands the recorded authorization or automatically changes topology. |
+| A-EVD-1 | Shared strict JSON-compatible YAML footer across Claude guard, Codex writer and handoff validation; supporting/excluded PMID lists cross-checked. | Archived historical reports intentionally retain their original bytes. |
+| A-EVD-2 | Edge reports immutable; explicitly requested .rN revisions require preceding revision. | Avoid concurrent overlapping Claude writes; exclusive creation is guaranteed by Codex writer. |
+| A-EVD-3 | Reviewer/skills require batches of ≤8 PMIDs, abstracts first, full text on demand. | Absence of tool-result spills needs a live benchmark. |
+| A-EVD-4 | Canonical candidates directory and dedicated manual-edge report requirements; candidate/revision handoffs validated. | Report helpers cannot intercept arbitrary backend topology imports. |
+| A-EVD-5 | Two searches for PMID-less candidates and one sibling-seeded related lookup documented. | Token-cost improvement has not been measured. |
+| A-PRV-1 | Defined all five final-rule/manual-edge provenance tags in universal policy and workflows. | Scientific tag accuracy remains a review responsibility. |
+| A-PRV-2 | Defined runs/orchestrator purposes and CHANGES.md base/edit/evidence/approval/output/reproduction schema. | No new manual scientific edits were needed in this maintenance task. |
+| A-PRV-3 | state.py adds checked atomic decisions, governance records, registry, criteria/results and checkpoint operations; rejects silent no-op/duplicate rows. | Helper invocation remains the mandated authoring procedure, not an OS-wide file lockout. |
+| A-PRV-4 | Generated records use timezone-aware ISO UTC; source-zone preservation/conversion documented. | Historical timestamps were not rewritten. |
+| A-PRV-5 | Capture accepts source resource metadata, preserves bytes/hash, indexes version/cache timestamp or explicit unavailable fields. | **Partial: automatic resource version discovery still needs B-NK-6.** |
+| A-VAL-1 | Supported explicit criterion evaluator, hashed inputs/config, first-peak/cycle metrics, passed/failed/incomplete results and checked plan updates. | No biological criteria invented; empty criteria cannot pass. |
+| A-VAL-2 | Safe bounded BNET parser, fixed points, reachable terminal SCCs, rule-function and actual asynchronous readout-state exclusivity. Sanctioned read-only orchestrator analyses. | Resource-bound results are incomplete, not proofs; update semantics must be declared. |
+| A-VAL-3 | Explicit sample-count-spaced seed planner and engine/thread provenance guidance. | Spacing avoids assumed seed overlap; empirical independence remains unverified. |
+| A-VAL-4 | Input-driven phase mapping calibration, explicit units and proposal hashes; incomplete if any trajectory lacks a complete cycle. | Proposal needs numerical approval; sampled emulation is not a PhysiCell simulation. |
+| A-SKL-1 | Added Bash lifecycle tool allowances alongside PowerShell. | Actual client permission prompts not retested. |
+| A-SKL-2 | Documented verified Hill activation/inhibition formulas, leakage, phase-0 behavior, scaling and worked mapping with upstream source commit. | Unsupported server parameters remain B-PC work; no silent XML patch workaround. |
+| A-SKL-3 | Documented mutant persistence/plot overwrite limitations, authorized workarounds and seed semantics. | B-MB-3/4 remain unfixed in the server. |
+| A-SKL-4 | Documented path/reuse growth, SIGNOR consensus limitation, SIF import and complex-label caveat. | B/C NeKo behavior is not changed here. |
+| A-SKL-5 | Refreshed 2.4.0 operational snapshots and added setup drift failure. | Source-reference provenance retains its actual original version where appropriate. |
+| A-SKL-6 | Agents use inlined bounded context and read only additional named inputs; removed implicit Boolean output/initial-state selection. | Live invocation adherence still audited by reports/records. |
+| A-SKL-7 | Reduced CLAUDE.md to 9,695 characters, moving detailed ODE/checkpoint/lifecycle/registry procedures into skills while retaining universal prohibitions. | Refresh installed plugin caches to use revised skill copies. |
+| A-SKL-8 | Added readout layer, asynchronous exclusivity and approved phase/time mapping guidance to both provider workflows. | Structural extensions still require topology authorization. |
+| A-ORC-1 | Supporting-only citations, checked state operations and pre-checkpoint diff requirements integrated. | Does not reinterpret archived decisions. |
+| A-ORC-2 | Covered by enforced downstream gates and independent-review ordering. | No gate bypass through prompt-only approval claims. |
+| A-ORC-3 | Covered by one-command capture and indexed artifacts. | Original server artifact-root configuration remains B-SH-1. |
+
+### Additional Codex PubMed fix
+
+Setup now defaults the isolated Codex literature reviewer to
+`https://pubmed.mcp.claude.com/mcp`, the same remote backend already used by Claude.
+It permits seven read-only PubMed tools and leaves web search disabled without
+separate explicit authorization. Existing custom/disabled transports are preserved.
+The actual dispatcher profile (which differs from the desktop chat home on this
+machine) was migrated after private backup, and its restricted configuration
+inventory passed. The remote endpoint independently passed MCP initialization and
+listed all seven expected tools without desktop authentication. No article search,
+modelling operation or scientific session was performed. A reusable bounded probe
+is available in `scripts/setup_support/probe_pubmed.py`.
+
+### Validation and change history
+
+- `python3 scripts/run_tests.py`: **456 tests run, 13 optional dependency skips,
+  all remaining tests passed** (345 Codex, 22 Claude/lifecycle, 89 setup).
+- Final full run with the installed modelling environment: **456 passed, zero
+  skipped** (345 Codex, 22 Claude/lifecycle, 89 setup), including SDK/contract tests.
+  The first optional-dependency run hit a sandbox thread-shutdown timeout; a minimal
+  standard-library reproduction isolated the environment cause. The same suite
+  passed outside that sandbox without changing dispatcher code.
+- Final evidence hardening also rejects a supported verdict without supporting PMIDs.
+- Read-only PubMed initialize/tools-list: passed; all seven tool names present.
+- Repository and migrated user-config isolation guard: passed. Archive integrity,
+  pristine templates and `git diff --check`: passed.
+- No modelling MCP tools were called. No server/library fix, live scientific
+  benchmark, Claude client hook smoke run or stock template_BM execution is claimed.
+
+Commits have detailed rationale, affected guarantees and validation:
+
+| Commit | Change |
+|---|---|
+| `242cba8` | Provider-neutral artifact capture and indexing |
+| `c677afb` | Immutable structured edge evidence |
+| `df5669e` | Executable artifact criteria and calibration/seed tools |
+| `a277698` | Guarded reports, invocation records and measured usage |
+| `5d08123` | Exact stage gates and checked state edits |
+| `4bffca3` | Reachable-state proof/calibration review fixes; criteria lifecycle |
+| `5e00440` | Direct session attribution and index integrity review fixes |
+| `fe562ca` | Preserve failed invocation records after publication errors |
+| `ea94f71` | Isolation migration, PubMed setup/probe and specialist workflow integration |
+| `b167b9d` | Reject supported verdicts without supporting studies |
+
+Durable verification summary: [Point A checks](audits/2026-10-05-agentic-point-a/verification.json).
+
+Operational instructions: [checked agentic operations](agentic-operations.md),
+[capture](../scripts/capture/README.md), [validation](../scripts/validate/README.md).
+The release-blocker checklist remains unchecked: category B/C work and the live
+re-run are still necessary before describing this system as fully automated.
 
 ---
 

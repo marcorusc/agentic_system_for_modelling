@@ -73,3 +73,31 @@ re-review uses a new claim ID and identifies the superseded report.
 
 CLI fallback adds `--review-kind ode --record-session-id <biomass-session-id>`.
 Unspecified mode remains edge review; wait for all required reports before synthesis.
+
+## Structured, immutable evidence and bounded retrieval
+
+Use PubMed by default, including Codex's isolated configured transport at
+https://pubmed.mcp.claude.com/mcp. Missing/failed access is blocked; web search still
+requires explicit researcher authorization. Chat connector availability alone does
+not establish that an isolated process can use the backend.
+
+Deduplicate supplied PMIDs; retrieve metadata/abstracts in batches of at most eight.
+Retrieve full text only when needed, at most eight PMIDs per retrieval batch. For an
+edge with supplied references allow one search; a PMID-less candidate may use two
+bounded searches and one related-article lookup seeded from a sibling edge PMID.
+Do not loop indefinitely or rely on truncated/spilled results as complete evidence.
+
+Every edge report ends with a fenced `yaml` footer containing a JSON object (the
+strict, dependency-free JSON-compatible YAML subset) with exactly these fields:
+`verdict`, `interaction_type`, `confidence`, `supporting_pmids`, `excluded_pmids`,
+`edge` (literal [source,effect,target]) and `neko_session_id`. PMIDs are strings;
+lists must be disjoint and exactly match the Supporting and Excluded sections.
+Use only supporting_pmids to justify a decision. Valid enums and a complete example
+are in docs/agentic-operations.md and scripts/evidence_contract.py.
+
+Canonical reports are write-once. Proposed edges use
+`evidence/reports/<session>/candidates/<source>__<target>.md`; each manual edge needs
+its own dedicated report before topology inclusion. Explicit re-review creates
+`.r2.md`, `.r3.md`, etc.; the preceding revision must exist. Codex writes via
+write_literature_report.py with --candidate and/or --revision N as applicable.
+Read the written file back; failed validation leaves that review incomplete.
