@@ -94,3 +94,10 @@ time data are null. Generate the benchmark table without guessing these values:
 ```bash
 python scripts/capture/usage_summary.py runs/index.json
 ```
+
+Codex runtime invocations also register their existing immutable
+`specialist-invocations/<invocation_id>/` records. Usage comes from recorded
+`turn.completed` events and unique tool-item IDs; elapsed time comes from the
+measured child-process duration. Pre-session `_blocked`/`_unresolved` records
+remain preserved without inventing a scientific session or an index entry. Index
+failures propagate through the runtime's existing recording-failure handling.

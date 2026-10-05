@@ -79,6 +79,8 @@ def register_capture(project: Path, target: Path, *, usage=None, resource=None):
         resource = json.loads((target / 'resource.json').read_text())
     if usage is None and (target / 'invocation.json').is_file():
         usage = json.loads((target / 'invocation.json').read_text()).get('usage')
+    if usage is None and (target / 'provenance.json').is_file():
+        usage = json.loads((target / 'provenance.json').read_text()).get('usage')
     record = {'record_type': 'capture', 'capture_path': relative.as_posix(),
               'specialist': parts[1], 'session_id': parts[2], 'artifacts': artifacts,
               'recorded_at': utc_now(),

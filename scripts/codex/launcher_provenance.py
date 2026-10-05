@@ -136,10 +136,18 @@ def record_invocation(
     (working / "specialist-output.txt").write_text(final_output, encoding="utf-8")
     if handoff is not None:
         write_json(working / "handoff.json", handoff)
+    from scripts.capture.codex_usage import usage_summary
+    usage = usage_summary(working, provenance)
+    provenance = dict(provenance, usage=usage)
     write_json(working / "provenance.json", provenance)
     if launcher_dir is not None:
         target.parent.mkdir(parents=True, exist_ok=True)
         if target.exists():
             raise ValueError("specialist invocation directory already exists")
         working.rename(target)
+    # Failed/pre-session attempts remain preserved without inventing a scientific
+    # session. Index failures propagate to the caller's recording-failure path.
+    if session_id not in {"_blocked", "_unresolved"}:
+        from scripts.capture.index import register_capture
+        register_capture(project_root, target, usage=usage)
     return target
