@@ -1,6 +1,6 @@
 # Improvement plan: automated multiscale modelling workspace (NeKo → MaBoSS → PhysiBoSS)
 
-**Status:** Point A repository fixes implemented; live acceptance and category B/C work remain · **Date:** 2026-10-05 · **Basis:** final end-to-end test, model `toy-cell-cycle`, 2026-10-02
+**Status:** Point A implemented; Wave 1 library/shared-MCP fixes committed locally; Wave 2 awaits discussion · **Updated:** 2026-10-13 · **Diagnostic date:** 2026-10-05 · **Basis:** final end-to-end test, model `toy-cell-cycle`, 2026-10-02
 (branch `model/toy-cell-cycle`)
 
 This plan turns every problem met during the final test into an action. The actions fall into three groups, by where
@@ -27,6 +27,83 @@ it closes; the appendix maps each finding to its actions.
 
 ---
 
+
+## Implementation record — Wave 1 libraries and shared MCP foundation (2026-10-13)
+
+The researcher approved **Wave 1 only**. Wave 2 requires a separate discussion
+before execution. The original diagnostic tables below remain the baseline;
+this record distinguishes implemented source changes from deployment and from
+outstanding acceptance criteria.
+
+Three coding workers operated in isolated local worktrees, followed by coordinator
+review, compatibility checks and detailed commits. Normal nested-agent startup
+failed because the project dispatcher already had an owner. Separate coding-only
+Codex processes ran from the worktrees with MCP servers and app tools disabled;
+the scientific orchestrator configuration and isolation boundary were unchanged.
+
+### Implemented scope
+
+| Plan item | Change delivered | Remaining limit |
+|---|---|---|
+| **C-NK-1** | Fixed complex and label-only SIF identifiers consistently across the node table, internal Node objects and initial-node registry. Handles omitted initial lists. Regression coverage includes SIF-to-BNET formulas, sanitization collisions and preservation of existing edge/reference records. | Local source branch, not installed/released. The checkout identifies as 1.10.0 while installed metadata is 1.10.1; tests explicitly loaded checkout source. No live SIGNOR benchmark. B-NK-7 remains Wave 2. |
+| **B-PC-1, library portion** | Fixed XML import discarding valid leaf `death_rate` elements through ElementTree truthiness. Zero apoptosis/necrosis and disabled motility now survive repeated save/load cycles. | This diagnoses a reload defect, not a setter truthiness defect. MCP readback and the original complete invocation remain to verify in Wave 2. |
+| **B-PC-4, library support** | Preserved cycle model code/name and imported rates in the representation used by export. Added optional per-transition `fixed_duration`, with explicit false preserved and omission retaining prior defaults. Preserved alternate phase-duration input. | MCP tool still needed. Imported internal cycle dictionaries now use canonical `transition_rates`; direct internal-dictionary consumers must account for that representation. |
+| **B-PC-2/6, library support** | Added optional PhysiBoSS output steepness through the public API, XML export/import and copy. Validated finite nonnegative fractional stochasticity and steepness, including explicit zero, without changing omitted defaults. Updated API docs. | Fractional stochasticity was already serializable in this library; its annotation/validation were deficient. MCP exposure and action-dependent mapping documentation remain Wave 2. No exact switch or default-steepness change. |
+| **B-SH-1** | All four servers use a configurable, server-namespaced artifact root or user-cache default. Consolidated duplicate helpers. Preserved read-only legacy discovery with location markers and safe handling of colliding IDs; cleanup targets current storage only. BioMASS current-root snapshots restore correctly. | Not installed or configured in the running clients. No automatic legacy migration/restore. Workspace capture and zero-copy scientific benchmark integration are not claimed. |
+| **B-SH-2 — partial foundation** | Ordinary NeKo SIF imports and MaBoSS BNET conversions accept verified parent references and distinguish standalone, byte-identical and explicitly edited derivatives. Persist unique import records and typed export sidecars; retain source hashes/history, reject stale conversions, publish records atomically and check ownership. | **Accepted handoff v1 lineage is unchanged.** NeKo v1 forbids upstream lineage; sidecars are provenance, not approval. Cross-stage lineage acceptance, ODE/PhysiCell propagation and lifecycle/capture integration require later design and implementation. |
+| **B-SH-3** | Shared timezone-aware UTC generator for durable metadata/provenance, with aware timestamp checks. | Existing timestamps were largely already aware. Numeric session clocks and historical records retain their formats. |
+
+The supporting PhysiCell configuration library is a distinct implementation layer
+between the MCP server and PhysiCell/PhysiBoSS. No simulation-engine mathematics,
+random-stream algorithm or numerical defaults were changed. No new domain-editing,
+readout, mapping-validation or portable-project tools from Wave 2 were implemented.
+
+### Commits and review locations
+
+Commits are local and belong to their respective repositories; nothing was pushed,
+merged into the original checkouts, installed or published.
+
+| Repository / branch | Commit | Fixing step |
+|---|---|---|
+| NeKo — `codex/wave1-identifiers` | `99176ab` | Consistent SIF complex/label identifiers and offline export regressions |
+| PhysiCell_Settings — `codex/wave1-xml-consistency` | `f2d6246` | Preserve death-rate XML values |
+| PhysiCell_Settings — `codex/wave1-xml-consistency` | `803f86b` | Preserve cycle identity, rates and duration flags |
+| PhysiCell_Settings — `codex/wave1-xml-consistency` | `5e41c53` | PhysiBoSS settings roundtrips, validation and documentation |
+| MCP servers — `codex/wave1-shared-infrastructure` | `12d442e` | Shared artifact storage, verified source records, compatibility and timestamps |
+
+Worktrees are under `/tmp/agentic-wave1-20261013/{neko,physicell-settings,mcp}`;
+the named branches and commits are retained in the original repositories. All
+original checkout heads/statuses are unchanged, including the three modified NeKo
+notebooks. The archive still resolves to `badb32b74f40`; all eight scientific-state
+files remain byte-identical to pristine templates. No live scientific modelling
+session or cell-cycle benchmark was initialized.
+
+### Validation and findings for the next discussion
+
+- NeKo: **79 focused tests passed** with network guards before imports. Of the
+  15 new cases, 13 fail against the original method and 2 already pass.
+- PhysiCell Settings: **82 tests and 30 subtests passed**, including the three
+  exact-match example XML checks. Each intermediate fixing commit was also tested.
+- MCP: **554 affected tests passed**, with 12 existing pyMaBoSS deprecation
+  warnings. The coordinator used normal async execution and headless plotting;
+  no selector-polling workaround was used for the final passing run.
+- Separate error-masking suite: **20 passed, 8 failed on both the unchanged base
+  and the feature code**. TypeError/AttributeError diagnostics appear in returned
+  tool errors with the installed SDK. This pre-existing mismatch is recorded for
+  discussion; assertions and production masking behavior were not weakened.
+- The complete 667-test MCP run exceeded a 180-second limit during engine-heavy
+  BioMASS tests. Full-suite success, release readiness and live benchmark acceptance
+  are not claimed. An initial GUI/Tcl plotting abort was avoided by using the
+  noninteractive plotting backend in subsequent test processes.
+- No installed modelling dependencies were edited. Test-only dependencies were
+  placed in temporary storage. Initial NeKo dependency imports attempted a probe
+  before guards were active; DNS failed, and final tests blocked network access
+  before imports. Ruff was unavailable; source compilation and diff checks passed.
+
+Exact commands, results and preservation checks: [Wave 1 verification](audits/2026-10-13-wave1/README.md)
+and [machine-readable record](audits/2026-10-13-wave1/verification.json).
+
+---
 
 ## Implementation record — Point A (2026-10-05)
 
