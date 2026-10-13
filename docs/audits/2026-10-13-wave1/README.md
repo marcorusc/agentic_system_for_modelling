@@ -1,5 +1,9 @@
 # Wave 1 verification — 2026-10-13
 
+The two limitations discussed after this baseline were addressed in the separately
+approved [Boolean lineage/error-handling follow-up](../2026-10-13-lineage-errors/README.md).
+This record retains the original Wave 1 results.
+
 Approved scope: NeKo identifiers, PhysiCell Settings XML consistency, and shared
 MCP storage/import-provenance/timestamp infrastructure. Wave 2 remains unapproved.
 See the [implementation record](../../improvement-plan-2026-10-05.md).

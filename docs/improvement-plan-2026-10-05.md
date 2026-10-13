@@ -1,6 +1,6 @@
 # Improvement plan: automated multiscale modelling workspace (NeKo → MaBoSS → PhysiBoSS)
 
-**Status:** Point A implemented; Wave 1 library/shared-MCP fixes committed locally; Wave 2 awaits discussion · **Updated:** 2026-10-13 · **Diagnostic date:** 2026-10-05 · **Basis:** final end-to-end test, model `toy-cell-cycle`, 2026-10-02
+**Status:** Point A and Wave 1 implemented locally; approved Boolean lineage/error-handling follow-up implemented; remaining Wave 2 awaits discussion · **Updated:** 2026-10-13 · **Diagnostic date:** 2026-10-05 · **Basis:** final end-to-end test, model `toy-cell-cycle`, 2026-10-02
 (branch `model/toy-cell-cycle`)
 
 This plan turns every problem met during the final test into an action. The actions fall into three groups, by where
@@ -27,6 +27,28 @@ it closes; the appendix maps each finding to its actions.
 
 ---
 
+
+## Follow-up — approved Boolean lineage and error handling (2026-10-13)
+
+After discussing the two Wave 1 limitations, the researcher explicitly selected:
+**"Implement the versioned lineage extension; retain support for existing v1
+handoffs."** This authorizes this bounded follow-up, not the remaining Wave 2.
+
+| Point | Implemented behavior | Boundary |
+|---|---|---|
+| **B-SH-2 / C-NK-2 — Boolean ancestry** | NeKo/MaBoSS emit v2 handoffs carrying verified source imports, exact source/ancestor bytes and original parent snapshots. Standalone, byte-identical and edited derivatives remain distinct; transitive evidence is bounded and checked. V1 handoffs remain readable without adding a null field to v1 responses. | Source ancestry is distinct from an accepted stage parent and never transfers approval. Missing legacy bytes cannot be reconstructed. ODE ancestry is outside this follow-up. |
+| **B-PC-10 — propagation** | MaBoSS propagates NeKo source ancestry; PhysiCell validates it against the exact stage parent and preserves it in imported/saved manifests. Existing stage node/output constraints remain. | Verified configuration/handoff behavior does not establish a successful PhysiCell simulation. |
+| **Agentic capture and gate integration** | Boolean capture accepts explicit per-server artifact roots, preserves embedded evidence and materializes digest-addressed copies under the existing `runs/` lifecycle paths. Gates validate v2 with the pure backend contract reader while retaining exact revision, review, outputs and approval checks. | Installation must include the updated contract package. No dependency installation or client deployment occurred. |
+| **Eight baseline masking failures** | The shared NeKo/MaBoSS/PhysiCell registration wrapper masks unexpected non-domain errors explicitly and logs their tracebacks. Expected domain errors, explicit protocol errors and cancellation retain their behavior. | This fixes the documented shared wrapper mismatch, not every possible error path; BioMASS has a separate wrapper. |
+
+The original "no empty lineage/no null parent" target was too broad: a source
+derivative can have an ancestor without having passed through an accepted typed
+stage import. The approved v2 design records that distinction explicitly.
+Every downstream transition still needs approval of the exact current model.
+
+Implementation, commits, tests and preservation evidence are recorded in the
+[follow-up audit](audits/2026-10-13-lineage-errors/README.md).
+The historical Wave 1 record below describes the earlier baseline and is retained.
 
 ## Implementation record — Wave 1 libraries and shared MCP foundation (2026-10-13)
 
@@ -269,7 +291,7 @@ following:
 
 - [ ] No orchestrator `cp`/`sha256sum` of server artifacts. Artifacts land in `runs/` and are indexed automatically.
 - [ ] No hand-edited SIF, BNET or XML. Every model change goes through a tool and is recorded in typed lineage.
-- [ ] The typed lineage chain NeKo → MaBoSS → PhysiCell is intact. No `lineage: []` and no `parent_manifest: null`
+- [ ] Every declared source derivative retains verified ancestry through NeKo → MaBoSS → PhysiCell. Accepted stage parents and standalone/derived source history remain distinct; null stage parents never silently erase known ancestry. (V2 implementation tested locally; live benchmark pending.)
       unless the model is truly standalone.
 - [ ] The orchestrator cannot see or call modelling tools.
 - [ ] No downstream session can be created without a recorded approval of the exact upstream session.
