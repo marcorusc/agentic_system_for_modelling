@@ -7,19 +7,19 @@ import hashlib
 import json
 from pathlib import Path
 import sys
+import tempfile
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from scripts.capture.artifact_capture import staged_capture, reject_symlinks
+from scripts.capture.artifact_capture import boolean_artifact_root, staged_capture, reject_symlinks
 from scripts.capture.index import register_capture
 from scripts.codex.launcher_config import validate_session_id
 from scripts.codex.ode_artifacts import safe_file, digest
 
-def record_maboss(project, server_root, manifest_path, capture_id, *, parent_root=None):
+def record_maboss(project, server_root, manifest_path, capture_id, *, parent_root=None, artifact_root=None):
     from mcp_biomodelling_servers.handoff import (MaBoSSToPhysiCellHandoffManifest,
-        NeKoToMaBoSSHandoffManifest, verify_handoff_manifest, bnd_node_names, bnet_node_names)
+        NeKoToMaBoSSHandoffManifest, verify_handoff_manifest, bnd_node_names, bnet_node_names, handoff_artifact)
     project = project.resolve(strict=True)
     validate_session_id(capture_id)
-    root = server_root.absolute() / 'artifacts'
-    reject_symlinks(root)
+    root = boolean_artifact_root(server_root, artifact_root)
     original = safe_file(root, manifest_path.absolute().relative_to(root).as_posix())
     original_bytes = original.read_bytes()
     raw = json.loads(original_bytes)
@@ -31,6 +31,9 @@ def record_maboss(project, server_root, manifest_path, capture_id, *, parent_roo
     imported = copy.deepcopy(raw)
     with staged_capture(project, target) as stage:
         (stage / 'original.handoff.json').write_bytes(original_bytes)
+        if parsed.schema_version == '2.0':
+            from mcp_biomodelling_servers.import_lineage import copy_source_ancestry
+            copy_source_ancestry(parsed.source_ancestry, stage / 'ancestry')
         def capture_ref(ref, allowed, prefix=''):
             file = safe_file(allowed, Path(ref['path']).relative_to(allowed).as_posix())
             content = file.read_bytes()
@@ -56,6 +59,19 @@ def record_maboss(project, server_root, manifest_path, capture_id, *, parent_roo
             parent_parsed = NeKoToMaBoSSHandoffManifest.model_validate(parent_raw)
             if parent_parsed.source.session_id != parent['session_id']:
                 raise ValueError('parent manifest session mismatch')
+            if not parsed.lineage or parent_parsed.source != parsed.lineage[0]:
+                raise ValueError('parent provenance disagrees with declared stage lineage')
+            if set(parent_parsed.network.nodes) != set(parsed.network.nodes):
+                raise ValueError('parent and current stage network nodes disagree')
+            if set(parent_parsed.network.output_nodes) != set(parsed.network.output_nodes):
+                raise ValueError('parent and current stage output selections disagree')
+            if parsed.schema_version == '2.0':
+                inherited = [item for item in parsed.source_ancestry if item.source.server == 'NeKo']
+                if inherited != (parent_parsed.source_ancestry or []):
+                    raise ValueError('current ancestry disagrees with the exact stage parent')
+            if parent_parsed.schema_version == '2.0':
+                from mcp_biomodelling_servers.import_lineage import copy_source_ancestry
+                copy_source_ancestry(parent_parsed.source_ancestry, stage / 'ancestry')
             (stage / 'parent/original.handoff.json').write_bytes((stage / parent_name).read_bytes())
             network_name = capture_ref(parent_raw['bnet_file'], allowed, 'parent/network')
             if bnet_node_names(stage / network_name) != parent_parsed.network.nodes:
@@ -70,7 +86,20 @@ def record_maboss(project, server_root, manifest_path, capture_id, *, parent_roo
         for ref in [staged['bnd_file'], staged['cfg_file'], staged.get('parent_manifest'), staged['simulation'].get('result_file')]:
             if ref:
                 ref['path'] = str(stage / Path(ref['path']).relative_to(target))
-        verify_handoff_manifest(MaBoSSToPhysiCellHandoffManifest.model_validate(staged))
+        if staged.get('parent_manifest'):
+            # The published parent points at the final target, which deliberately
+            # does not exist yet. Validate a disposable parent copy against the
+            # staging payload; retain final paths/hashes in the published files.
+            with tempfile.TemporaryDirectory(prefix='.validation-', dir=stage) as folder:
+                checked_parent = copy.deepcopy(parent_raw)
+                checked_parent['bnet_file']['path'] = str(stage / network_name)
+                checked_file = Path(folder) / Path(parent_name).name
+                checked_file.write_text(json.dumps(checked_parent))
+                staged['parent_manifest'] = handoff_artifact(checked_file, server='NeKo',
+                    session_id=parent_parsed.source.session_id, role='parent_manifest').model_dump(mode='json')
+                verify_handoff_manifest(MaBoSSToPhysiCellHandoffManifest.model_validate(staged))
+        else:
+            verify_handoff_manifest(MaBoSSToPhysiCellHandoffManifest.model_validate(staged))
         (stage / 'relocation.json').write_text(json.dumps({'source_manifest': str(original),
             'original_manifest_sha256': hashlib.sha256(original_bytes).hexdigest(),
             'import_manifest_sha256': digest(stage / 'import.handoff.json'),
@@ -80,13 +109,15 @@ def record_maboss(project, server_root, manifest_path, capture_id, *, parent_roo
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--project', type=Path, default=Path(__file__).resolve().parents[2])
-    parser.add_argument('--server-root', type=Path, required=True)
+    roots = parser.add_mutually_exclusive_group(required=True)
+    roots.add_argument('--server-root', type=Path, help='Legacy installation containing artifacts/')
+    roots.add_argument('--artifact-root', type=Path, help='Explicit per-server artifact directory containing session directories')
     parser.add_argument('--manifest', type=Path, required=True)
     parser.add_argument('--capture-id', required=True)
     parser.add_argument('--parent-root', type=Path, help='Explicit trusted root for upstream manifest and its BNET; default project')
     args = parser.parse_args()
     try:
-        print(json.dumps(record_maboss(args.project, args.server_root, args.manifest, args.capture_id, parent_root=args.parent_root), indent=2))
+        print(json.dumps(record_maboss(args.project, args.server_root, args.manifest, args.capture_id, parent_root=args.parent_root, artifact_root=args.artifact_root), indent=2))
     except (ImportError, OSError, ValueError, KeyError, TypeError) as error:
         parser.exit(2, f'MaBoSS capture failed: {error}\n')
     return 0

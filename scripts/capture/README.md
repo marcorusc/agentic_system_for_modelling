@@ -9,8 +9,17 @@ Legacy `scripts/codex/record_*` imports and entry points remain compatible.
 ```bash
 python scripts/capture/record_neko_boolean_handoff.py --server-root /installation/NeKo --manifest /installation/NeKo/artifacts/SESSION/export.handoff.json --capture-id CAPTURE
 python scripts/capture/record_maboss_physicell_handoff.py --server-root /installation/MaBoSS --manifest /installation/MaBoSS/artifacts/SESSION/export.handoff.json --capture-id CAPTURE
+python scripts/capture/record_neko_boolean_handoff.py --artifact-root /cache/mcp-biomodelling/artifacts/NeKo --manifest /cache/mcp-biomodelling/artifacts/NeKo/SESSION/export.handoff.json --capture-id CAPTURE
+python scripts/capture/record_maboss_physicell_handoff.py --artifact-root /cache/mcp-biomodelling/artifacts/MaBoSS --manifest /cache/mcp-biomodelling/artifacts/MaBoSS/SESSION/export.handoff.json --capture-id CAPTURE
 python scripts/capture/record_physicell_config.py --source-root /installation/PhysiCell/artifacts/SESSION --xml /installation/PhysiCell/artifacts/SESSION/settings.xml --session-id SESSION --capture-id CAPTURE
 ```
+
+For Boolean handoffs, supply exactly one of `--server-root` (legacy installation
+with an `artifacts/` directory) or `--artifact-root` (the explicit **per-server**
+directory containing session directories). With `MCP_BIOMODELLING_ARTIFACT_ROOT`,
+append `/NeKo` or `/MaBoSS` to that configured shared root. Capture never infers a
+trusted directory from a manifest or environment variable. Existing path,
+symlink, hash and no-overwrite checks apply to either storage layout.
 
 The MaBoSS recorder uses the project as its default trusted parent-artifact root.
 For an upstream NeKo manifest still in the backend installation, pass an explicit
@@ -18,6 +27,22 @@ For an upstream NeKo manifest still in the backend installation, pass an explici
 manifest, copies and validates the upstream BNET, and changes paths and relocated
 parent-manifest digests in the import copy. It preserves declared lineage rather
 than inventing a missing parent. Standalone exports retain their null parent.
+
+Boolean v2 handoffs add `source_ancestry`, separate from the accepted stage parent
+in `parent_manifest`/`lineage`. Each import records its source digest, relationship
+(`standalone`, `byte-identical`, or `edited-derivative`) and verified snapshots of
+its source and ancestors. Capture retains the embedded snapshots unchanged and
+also writes their bytes under `ancestry/<sha256>`, included in `runs/index.json`.
+Historical paths inside snapshots are labels: capture never opens them. Copies
+remain verifiable after the original source files disappear. Existing v1 handoffs
+are still accepted; ODE formats are unchanged. All capture files remain under the
+existing `runs/` lifecycle allowlist, so archives preserve them with the model.
+
+A source derivative can retain a NeKo ancestor while having no accepted stage
+parent. That source record never grants approval of its changed nodes or rules.
+The current model still requires independent review and exact-revision researcher
+approval before downstream dispatch. When a stage parent is declared, its source,
+node/output selections and inherited v2 ancestry must match the current handoff.
 
 The PhysiCell recorder takes an explicit root for resolving relative input paths.
 All enabled `filename`/`*_filename` inputs must resolve inside that root. Disabled

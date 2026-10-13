@@ -47,8 +47,16 @@ def verify_manifest(root, data, expected_type, session, outputs=None):
     This read-only boundary adds checks before the server's own typed import;
     it never imports modelling libraries or executes a scientific operation.
     """
-    if not isinstance(data, dict) or (data.get("schema_name"), data.get("schema_version"), data.get("handoff_type")) != ("mcp-biomodelling-handoff", "1.0", expected_type):
-        raise ValueError("expected version-1.0 typed handoff for this downstream stage")
+    if not isinstance(data, dict) or (data.get("schema_name"), data.get("handoff_type")) != ("mcp-biomodelling-handoff", expected_type):
+        raise ValueError("expected typed handoff for this downstream stage")
+    version = data.get("schema_version")
+    if version == "2.0" and expected_type in {"neko-to-maboss", "maboss-to-physicell"}:
+        from scripts.boolean_contract import validate_metadata
+        validate_metadata(data)
+    elif version != "1.0":
+        raise ValueError("unsupported typed handoff version for this downstream stage")
+    elif data.get("source_ancestry") is not None:
+        raise ValueError("v1 handoffs cannot declare source ancestry")
     server = "MaBoSS" if expected_type == "maboss-to-physicell" else "NeKo"
     source = data.get("source")
     if not isinstance(source, dict) or (source.get("server"), source.get("session_id")) != (server, session):
@@ -93,7 +101,18 @@ def verify_manifest(root, data, expected_type, session, outputs=None):
                 raise ValueError("parent manifest requires exactly one NeKo lineage entry")
             upstream = identifier(lineage[0].get("session_id"))
             file = _reference(root, parent, "NeKo", upstream, "parent_manifest")
-            verify_manifest(root, json.loads(file.read_text()), "neko-to-maboss", upstream)
+            parent_data = json.loads(file.read_text())
+            verify_manifest(root, parent_data, "neko-to-maboss", upstream)
+            if parent_data.get("source") != lineage[0]:
+                raise ValueError("parent provenance disagrees with declared stage lineage")
+            if set(parent_data["network"]["nodes"]) != set(nodes):
+                raise ValueError("parent and current stage network nodes disagree")
+            if set(parent_data["network"]["output_nodes"]) != set(declared):
+                raise ValueError("parent and current stage output selections disagree")
+            if version == "2.0":
+                inherited = [item for item in data["source_ancestry"] if item["source"]["server"] == "NeKo"]
+                if inherited != (parent_data.get("source_ancestry") or []):
+                    raise ValueError("current ancestry disagrees with the exact stage parent")
     return data
 
 
@@ -125,7 +144,19 @@ def check(root, stage, session, outputs):
     expected_type = {"boolean-dynamics": "neko-to-maboss", "multicellular": "maboss-to-physicell", "biomass_ode": "neko-to-biomass"}[stage]
     verify_manifest(root, data, expected_type, session, outputs)
     if stage == "multicellular" and row["Derived from"] != "—":
-        if (data.get("parent_manifest") or {}).get("session_id") != row["Derived from"]:
+        parents = {(data.get("parent_manifest") or {}).get("session_id")}
+        if data.get("schema_version") == "2.0":
+            # A separately approved BNET derivative retains its immediate source
+            # parent without pretending it was an unchanged typed stage import.
+            # Only the current session's direct NeKo parent can bind this row;
+            # arbitrary/transitive historical sessions never qualify.
+            parents.update(
+                item["parent_manifest"]["session_id"]
+                for item in data["source_ancestry"]
+                if (item["source"]["server"], item["source"]["session_id"]) == ("MaBoSS", session)
+                and (item.get("parent_manifest") or {}).get("server") == "NeKo"
+            )
+        if row["Derived from"] not in parents:
             raise ValueError("registry upstream lineage and exported parent disagree")
     reviews = [r for r in recs if r.get("kind") == "stage_review" and r.get("session_id") == session and r.get("stage") == upstream_stage]
     if not reviews:

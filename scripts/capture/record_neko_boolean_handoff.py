@@ -10,18 +10,17 @@ from pathlib import Path
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from scripts.capture.artifact_capture import reject_symlinks, staged_capture
+from scripts.capture.artifact_capture import boolean_artifact_root, staged_capture
 from scripts.codex.launcher_config import validate_session_id
 from scripts.codex.ode_artifacts import digest, read_json, safe_file
 
 
-def record_neko(project: Path, server_root: Path, manifest_path: Path, capture_id: str, *, resource_metadata_file: Path | None = None) -> dict:
+def record_neko(project: Path, server_root: Path | None, manifest_path: Path, capture_id: str, *, resource_metadata_file: Path | None = None, artifact_root: Path | None = None) -> dict:
     # Pure backend contract readers only; an absent backend fails explicitly.
     from mcp_biomodelling_servers.handoff import NeKoToMaBoSSHandoffManifest, bnet_node_names, verify_handoff_manifest
     project = project.resolve(strict=True)
     validate_session_id(capture_id)
-    artifacts = server_root.absolute() / 'artifacts'
-    reject_symlinks(artifacts)
+    artifacts = boolean_artifact_root(server_root, artifact_root)
     original = safe_file(artifacts, manifest_path.absolute().relative_to(artifacts).as_posix())
     raw = read_json(original)
     parsed = NeKoToMaBoSSHandoffManifest.model_validate(raw)
@@ -44,6 +43,9 @@ def record_neko(project: Path, server_root: Path, manifest_path: Path, capture_i
     with staged_capture(project, target) as stage:
         from scripts.capture.resource import record_resource
         record_resource(stage, resource_metadata_file)
+        if parsed.schema_version == '2.0':
+            from mcp_biomodelling_servers.import_lineage import copy_source_ancestry
+            copy_source_ancestry(parsed.source_ancestry, stage / 'ancestry')
         (stage / 'original.handoff.json').write_bytes(original_bytes)
         (stage / basename).write_bytes(network_bytes)
         (stage / 'import.handoff.json').write_text(json.dumps(imported, indent=2) + '\n', encoding='utf-8')
@@ -59,8 +61,8 @@ def record_neko(project: Path, server_root: Path, manifest_path: Path, capture_i
             'source_manifest_path': str(original), 'source_bnet_path': str(network),
         }, indent=2) + '\n', encoding='utf-8')
         result = {'upstream_manifest': (target / 'import.handoff.json').relative_to(project).as_posix(),
-                  'artifacts': [{'path': (target / p.name).relative_to(project).as_posix(), 'sha256': digest(p)}
-                                for p in sorted(stage.iterdir())]}
+                  'artifacts': [{'path': (target / p.relative_to(stage)).relative_to(project).as_posix(), 'sha256': digest(p)}
+                                for p in sorted(stage.rglob('*')) if p.is_file()]}
     from scripts.capture.index import register_capture
     register_capture(project, target)
     return result
@@ -68,13 +70,15 @@ def record_neko(project: Path, server_root: Path, manifest_path: Path, capture_i
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--server-root', required=True, type=Path)
+    roots = parser.add_mutually_exclusive_group(required=True)
+    roots.add_argument('--server-root', type=Path, help='Legacy installation containing artifacts/')
+    roots.add_argument('--artifact-root', type=Path, help='Explicit per-server artifact directory containing session directories')
     parser.add_argument('--manifest', required=True, type=Path)
     parser.add_argument('--capture-id', required=True)
     parser.add_argument('--resource-metadata', type=Path, help='Explicit server/cache resource record with name, version, cache_timestamp; never inferred')
     args = parser.parse_args()
     try:
-        result = record_neko(Path(__file__).resolve().parents[2], args.server_root, args.manifest, args.capture_id, resource_metadata_file=args.resource_metadata)
+        result = record_neko(Path(__file__).resolve().parents[2], args.server_root, args.manifest, args.capture_id, resource_metadata_file=args.resource_metadata, artifact_root=args.artifact_root)
     except (ImportError, OSError, ValueError, KeyError, TypeError) as error:
         print(f'NeKo Boolean capture failed: {error}', file=sys.stderr)
         return 2

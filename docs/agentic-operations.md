@@ -91,6 +91,24 @@ The checker requires the expected active upstream row with Handoff exactly
 completed independent reviews and subsequent researcher approval. Changed hashes,
 missing artifacts, a superseded session, or a later blocking review fail closed.
 
+Boolean handoffs support versions 1.0 and 2.0. Version 2.0 adds verified source
+ancestry with embedded file snapshots; it does not grant approval of derivatives.
+`scripts/boolean_contract.py` uses the backend's pure contract reader to validate
+this metadata without following historical paths. If system Python lacks that
+package, it uses the existing workstation Python selection from
+`.setup/dispatcher.local.json` or `.setup/local.json`. An unavailable/old contract
+package, invalid ancestry or timeout blocks dispatch; no dependency is installed
+automatically. Current artifact paths must still remain inside the repository.
+The Boolean capture commands accept explicit per-server `--artifact-root` storage
+as well as the legacy installation `--server-root`; see
+[capture instructions](../scripts/capture/README.md).
+
+For a v2 MaBoSS source derivative, a registry `Derived from` NeKo session may match
+the current session's verified **direct** source parent. Transitive historical
+ancestors cannot satisfy that binding. This does not replace the current session's
+review, exported status, exact artifact hash, ordered outputs or researcher approval.
+An accepted typed stage parent retains its stricter matching node/output contract.
+
 The bounded dispatch task begins with one literal line:
 
 ```text

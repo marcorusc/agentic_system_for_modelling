@@ -24,6 +24,18 @@ def reject_symlinks(path: Path) -> None:
         raise ValueError('artifact path contains a symlink')
 
 
+def boolean_artifact_root(server_root: Path | None, artifact_root: Path | None) -> Path:
+    """Select one explicit per-server artifact root; never infer a trusted path."""
+    if (server_root is None) == (artifact_root is None):
+        raise ValueError('supply exactly one server_root or artifact_root')
+    root = artifact_root if artifact_root is not None else server_root / 'artifacts'
+    root = root.absolute()
+    reject_symlinks(root)
+    if not root.is_dir():
+        raise ValueError('artifact root must be an existing directory')
+    return root
+
+
 def publish_capture(stage: Path, target: Path) -> None:
     """Atomically publish a complete stage without replacing another recorder."""
     lock = target.parent / f'.{target.name}.capture.lock'
