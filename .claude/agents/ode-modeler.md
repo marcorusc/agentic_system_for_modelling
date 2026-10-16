@@ -5,10 +5,12 @@ model: inherit
 mcpServers:
   - biomass:
       type: stdio
-      command: __configure_biomass_command__
+      command: "/home/marcorusc/miniforge3/envs/mcp_modelling/bin/mcp-biomass-server"
       env:
-        CONDA_PREFIX: __configure_biomass_environment__
-        PATH: __configure_biomass_path__
+        CONDA_PREFIX: "/home/marcorusc/miniforge3/envs/mcp_modelling"
+        PATH: "/home/marcorusc/miniforge3/envs/mcp_modelling/bin:/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/sbin:/bin"
+        NUMBA_CACHE_DIR: "/home/marcorusc/projects/github/agentic_system_for_modelling/.setup/cache/biomass-numba"
+        PYTHONDONTWRITEBYTECODE: "1"
 tools:
   - Read
   - Grep

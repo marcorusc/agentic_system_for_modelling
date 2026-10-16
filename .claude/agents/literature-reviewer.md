@@ -29,7 +29,7 @@ hooks:
     - matcher: "Read|Write"
       hooks:
         - type: command
-          command: python
+          command: "/home/marcorusc/miniforge3/envs/mcp_modelling/bin/python"
           args:
             - "${CLAUDE_PROJECT_DIR}/.claude/scripts/literature_file_guard.py"
 color: yellow
