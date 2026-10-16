@@ -1,6 +1,6 @@
 # Improvement plan: automated multiscale modelling workspace (NeKo → MaBoSS → PhysiBoSS)
 
-**Status:** Point A and Wave 1 implemented locally; approved Boolean lineage/error-handling follow-up implemented; remaining Wave 2 awaits discussion · **Updated:** 2026-10-13 · **Diagnostic date:** 2026-10-05 · **Basis:** final end-to-end test, model `toy-cell-cycle`, 2026-10-02
+**Status:** Point A implemented; integrated Wave 1 and approved Boolean lineage/error fixes installed as a persistent local baseline; Wave 2 awaits discussion · **Updated:** 2026-10-16 · **Diagnostic date:** 2026-10-05 · **Basis:** final end-to-end test, model `toy-cell-cycle`, 2026-10-02
 (branch `model/toy-cell-cycle`)
 
 This plan turns every problem met during the final test into an action. The actions fall into three groups, by where
@@ -27,6 +27,35 @@ it closes; the appendix maps each finding to its actions.
 
 ---
 
+
+## Installed baseline — integrated Wave 1 (2026-10-16)
+
+The researcher approved establishing a persistent integrated baseline before
+discussing Wave 2. The source branches survived the loss of the temporary worktrees;
+new worktrees now live under `.setup/wave1-baseline/checkouts/`, each on its
+repository's `codex/wave1-baseline` branch. Original checkouts are preserved.
+
+- **NeKo integration:** merged the identifier fixes with the pre-existing per-edge
+  SIF reference preservation fix already present in the installed 1.10.1 package.
+  This avoids regressing references when deploying the older-based feature branch.
+- **Installed packages:** `nekomata 1.10.1+wave1.20261016`,
+  `physicell-settings 0.6.2+wave1.20261016`, and
+  `mcp-biomodelling-servers 2.4.0+wave1.20261016` in the configured
+  `mcp_modelling` environment. Versions identify local, unpublished builds.
+  Settings runtime metadata and all four MCP server descriptors are consistent.
+- **Validation:** 88 NeKo tests; 82 Settings tests and 30 subtests; 648 affected
+  MCP tests; 442 agentic tests and 731 subtests passed. Fresh installed NeKo,
+  MaBoSS, PhysiCell and BioMASS processes initialized and listed tools successfully,
+  without modelling calls or scientific sessions. Dependency checks passed.
+- **Preservation:** all 965 legacy artifact files retain their hashes; the archive,
+  eight pristine scientific-state templates and original NeKo notebooks are
+  unchanged. Retained wheels support reinstall and rollback. No public release,
+  original-branch merge, scientific benchmark or Wave 2 feature was performed.
+
+The [baseline audit](audits/2026-10-16-wave1-baseline/README.md) records source
+commits, wheel hashes, exact validation commands, deployment evidence and rollback.
+The October 13 records below are historical: their temporary paths and
+"not installed" statements describe that earlier state, superseded here.
 
 ## Follow-up — approved Boolean lineage and error handling (2026-10-13)
 
