@@ -8,6 +8,7 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest import mock
+import xml.etree.ElementTree as ET
 from scripts.capture.index import register_capture
 from scripts.capture.record_physicell_config import record_physicell
 from scripts.capture.record_invocation import main as invocation_main, record
@@ -61,6 +62,35 @@ class CaptureTests(unittest.TestCase):
             xml.write_text(text)
             with self.assertRaises(ValueError): record_physicell(self.project,self.source,xml,'session-1','capture-1')
         self.assertFalse((self.project/'runs/index.json').exists())
+
+    def test_physicell_rejects_dtds_before_publication_in_all_xml_encodings(self):
+        for encoding in ('utf-8', 'utf-16', 'utf-16-le', 'utf-16-be'):
+            declaration = 'UTF-8' if encoding == 'utf-8' else 'UTF-16'
+            for dtd in ('<!DOCTYPE PhysiCell_settings>',
+                        '<!DOCTYPE PhysiCell_settings SYSTEM "file:///nonexistent.dtd">',
+                        '<!DOCTYPE PhysiCell_settings [<!ENTITY value "expanded">]>'):
+                with self.subTest(encoding=encoding, dtd=dtd):
+                    body = '<value>&value;</value>' if '<!ENTITY' in dtd else ''
+                    xml = self.source/'settings.xml'
+                    xml.write_bytes((f'<?xml version="1.0" encoding="{declaration}"?>'
+                                     f'{dtd}<PhysiCell_settings>{body}</PhysiCell_settings>').encode(encoding))
+                    with self.assertRaisesRegex(ValueError, 'declarations are unsupported'):
+                        record_physicell(self.project,self.source,xml,'session-1','capture-1')
+                    self.assertFalse((self.project/'runs').exists())
+
+    def test_physicell_accepts_declaration_free_utf16_and_preserves_original_bytes(self):
+        for encoding in ('utf-16', 'utf-16-le', 'utf-16-be'):
+            with self.subTest(encoding=encoding):
+                xml = self.source/'settings.xml'
+                original = ('<?xml version="1.0" encoding="UTF-16"?>'
+                            '<PhysiCell_settings><label>α-cell</label></PhysiCell_settings>').encode(encoding)
+                xml.write_bytes(original)
+                result = record_physicell(self.project,self.source,xml,'session-1',encoding)
+                target = self.project/result['capture_path']
+                self.assertEqual((target/'original.xml').read_bytes(), original)
+                output = ET.parse(target/'package/config/PhysiCell_settings.xml')
+                self.assertEqual(output.findtext('label'), 'α-cell')
+
     def test_index_recovery_is_idempotent_and_detects_tampering(self):
         target=self.project/'runs/network-curator/session-1/captures/capture-1';target.mkdir(parents=True)
         (target/'report.md').write_text('evidence')

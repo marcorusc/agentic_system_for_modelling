@@ -17,6 +17,14 @@ from scripts.capture.index import register_capture
 from scripts.codex.launcher_config import validate_session_id
 from scripts.codex.ode_artifacts import safe_file, digest
 
+
+class DeclarationFreeTreeBuilder(ET.TreeBuilder):
+    """Reject DTDs before entity processing, after the parser decodes XML bytes."""
+
+    def doctype(self, name, pubid, system):
+        raise ValueError('XML document type and entity declarations are unsupported')
+
+
 def record_physicell(project, source_root, xml_path, session_id, capture_id):
     project = project.resolve(strict=True)
     source_root = source_root.absolute()
@@ -24,9 +32,8 @@ def record_physicell(project, source_root, xml_path, session_id, capture_id):
     validate_session_id(session_id); validate_session_id(capture_id)
     source = safe_file(source_root, xml_path.absolute().relative_to(source_root).as_posix())
     original = source.read_bytes()
-    if b'<!DOCTYPE' in original.upper() or b'<!ENTITY' in original.upper():
-        raise ValueError('XML entity declarations are unsupported')
-    tree = ET.fromstring(original)
+    parser = ET.XMLParser(target=DeclarationFreeTreeBuilder())
+    tree = ET.fromstring(original, parser=parser)
     if tree.tag != 'PhysiCell_settings':
         raise ValueError('expected PhysiCell_settings XML root')
     target = project / 'runs/multicellular-configurator' / session_id / 'configs' / capture_id
