@@ -1,13 +1,16 @@
 import importlib.util
+from contextlib import redirect_stderr, redirect_stdout
+import io
 import json
 import multiprocessing
+import os
 from pathlib import Path
 import tempfile
 import unittest
 from unittest import mock
 from scripts.capture.index import register_capture
 from scripts.capture.record_physicell_config import record_physicell
-from scripts.capture.record_invocation import record
+from scripts.capture.record_invocation import main as invocation_main, record
 from scripts.capture.usage_summary import render
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -116,15 +119,112 @@ class CaptureTests(unittest.TestCase):
         self.assertNotIn('secret', (target/'transcript.jsonl').read_text())
         table=render(json.loads((self.project/'runs/index.json').read_text()))
         self.assertIn('| 22 | 11 | 1 | 10.0 | unavailable |',table)
-        with self.assertRaisesRegex(ValueError,'already exists'):
-            record(self.project,{'agent_type':'network-curator','agent_id':'agent-1','agent_transcript_path':str(self.root/'transcript.jsonl')})
+        retry = record(self.project,{'agent_type':'network-curator','agent_id':'agent-1','agent_transcript_path':str(self.root/'transcript.jsonl')})
+        self.assertEqual(retry, result)
+        self.assertEqual(len(json.loads((self.project/'runs/index.json').read_text())['runs']), 1)
+
+    def run_stop_hook(self, payload):
+        stdout, stderr = io.StringIO(), io.StringIO()
+        with mock.patch.dict(os.environ, {'CLAUDE_PROJECT_DIR': str(self.project)}), \
+             mock.patch('sys.stdin', io.StringIO(json.dumps(payload))), \
+             redirect_stdout(stdout), redirect_stderr(stderr):
+            code = invocation_main()
+        return code, stdout.getvalue(), stderr.getvalue()
+
+    def test_session_free_blocker_is_preserved_and_stops_on_both_hook_states(self):
+        transcript = self.root/'blocked.jsonl'
+        transcript.write_text(json.dumps({'type':'assistant','message':{'content':[
+            {'type':'text','text':'Blocked: required MCP server unavailable.'}]}})+'\n')
+        payload = {'agent_type':'network-curator','agent_id':'agent-blocked',
+                   'agent_transcript_path':str(transcript)}
+        for active in (False, True):
+            with self.subTest(stop_hook_active=active):
+                code, stdout, stderr = self.run_stop_hook({**payload, 'stop_hook_active':active})
+                self.assertEqual(code, 0, stderr)
+                result = json.loads(stdout)
+                self.assertEqual(result['status'], 'unbound')
+                self.assertIsNone(result['session_id'])
+                target = self.project/result['invocation_path']
+                self.assertIn('Blocked:', (target/'final_report.md').read_text())
+                metadata = json.loads((target/'invocation.json').read_text())
+                self.assertIsNone(metadata['session_id'])
+                self.assertEqual(metadata['scientific_status'], 'unresolved')
+                self.assertIn('cannot authorize stage advancement', result['systemMessage'])
+        self.assertFalse((self.project/'runs/index.json').exists())
+        self.assertFalse((self.project/'runs/network-curator').exists())
+
+    def test_repeated_recording_failure_is_visible_but_does_not_block_stop(self):
+        payload = {'agent_type':'network-curator','agent_id':'agent-1',
+                   'agent_transcript_path':str(self.root/'missing.jsonl')}
+        for active, expected in ((False, 2), (True, 0), ('true', 2)):
+            code, stdout, stderr = self.run_stop_hook({**payload, 'stop_hook_active':active})
+            self.assertEqual(code, expected)
+            self.assertIn('invocation recording failed', stderr)
+            if active is True:
+                self.assertIn('before stage advancement', json.loads(stdout)['systemMessage'])
+        self.assertFalse((self.project/'runs/index.json').exists())
+
+    def test_identical_invocation_retry_recovers_index_failure(self):
+        payload = {'agent_type':'network-curator','agent_id':'agent-1',
+                   'agent_transcript_path':str(self.transcript())}
+        with mock.patch('scripts.capture.record_invocation.register_capture', side_effect=OSError('index unavailable')):
+            with self.assertRaisesRegex(OSError, 'index unavailable'):
+                record(self.project, payload)
+        self.assertFalse((self.project/'runs/index.json').exists())
+        result = record(self.project, payload)
+        self.assertEqual(result['session_id'], 'session-1')
+        self.assertEqual(len(json.loads((self.project/'runs/index.json').read_text())['runs']), 1)
+
+    def test_invocation_retry_rejects_changed_source_and_preserves_original(self):
+        transcript = self.transcript()
+        payload = {'agent_type':'network-curator','agent_id':'agent-1',
+                   'agent_transcript_path':str(transcript)}
+        result = record(self.project, payload)
+        target = self.project/result['capture_path']
+        original = (target/'transcript.jsonl').read_bytes()
+        transcript.write_text(transcript.read_text()+'\n'+json.dumps(
+            {'type':'assistant','message':{'content':[{'type':'text','text':'Changed report'}]}}))
+        with self.assertRaisesRegex(ValueError, 'content changed'):
+            record(self.project, payload)
+        self.assertEqual((target/'transcript.jsonl').read_bytes(), original)
+
+    def test_invocation_retry_rejects_tampered_or_symlinked_artifact(self):
+        payload = {'agent_type':'network-curator','agent_id':'agent-1',
+                   'agent_transcript_path':str(self.transcript())}
+        result = record(self.project, payload)
+        report = self.project/result['capture_path']/'final_report.md'
+        report.write_text('tampered')
+        with self.assertRaisesRegex(ValueError, 'content changed'):
+            record(self.project, payload)
+        report.unlink()
+        outside = self.root/'report.md'; outside.write_text('Full specialist report.\n')
+        report.symlink_to(outside)
+        with self.assertRaisesRegex(ValueError, 'symlink'):
+            record(self.project, payload)
+
+    def test_unbound_invocation_rejects_symlinked_destination(self):
+        parent = self.project/'runs/orchestrator/unbound-invocations'
+        parent.parent.mkdir(parents=True)
+        parent.symlink_to(self.source, target_is_directory=True)
+        transcript = self.root/'blocked.jsonl'
+        transcript.write_text(json.dumps({'type':'assistant','message':{'content':[]}}))
+        with self.assertRaisesRegex(ValueError, 'symlink'):
+            record(self.project, {'agent_type':'network-curator','agent_id':'agent-1',
+                                 'agent_transcript_path':str(transcript)})
+        self.assertEqual(list(self.source.iterdir()), [])
     def test_invocation_ambiguous_session_fails_without_index(self):
         transcript=self.transcript()
         with transcript.open('a') as out:
             out.write('\n'+json.dumps({'type':'assistant','message':{'content':[{'type':'tool_use','id':'call2','name':'mcp__neko__status','input':{'session_id':'other'}}]}}))
         with self.assertRaisesRegex(ValueError,'exactly one'):
             record(self.project,{'agent_type':'network-curator','agent_id':'agent-1','agent_transcript_path':str(transcript)})
+        code, stdout, stderr = self.run_stop_hook({'agent_type':'network-curator',
+            'agent_id':'agent-1','agent_transcript_path':str(transcript),'stop_hook_active':True})
+        self.assertEqual(code, 0)
+        self.assertIn('exactly one', json.loads(stdout)['systemMessage'])
+        self.assertIn('recording failed', stderr)
         self.assertFalse((self.project/'runs/index.json').exists())
+        self.assertFalse((self.project/'runs/orchestrator/unbound-invocations').exists())
 
 
 class CodexUsageTests(unittest.TestCase):

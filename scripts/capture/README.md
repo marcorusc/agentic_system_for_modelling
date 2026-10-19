@@ -57,7 +57,7 @@ not a claim of complete dependency validation.
 
 NeKo ODE and BioMASS inventory capture are also available at
 `record_neko_ode_handoff.py` and `record_ode_artifacts.py`, with their existing CLI
-arguments and contract checks. Every successful recorder appends verified artifact
+arguments and contract checks. Every session-bound recorder appends verified artifact
 hashes to `runs/index.json`. Per-target publication and index replacement are atomic
 for cooperating POSIX processes. They are **separate transactions**: an interrupted
 index write can leave a complete capture without an index row. Recover it using:
@@ -107,11 +107,26 @@ python3 "$CLAUDE_PROJECT_DIR/.claude/scripts/record_specialist_invocation.py"
 
 The hook requires Claude's `agent_type`, `agent_id`, and `agent_transcript_path`
 fields. Nonmodelling agents are ignored. A unique modelling-session identity is
-required; ambiguous or missing identities fail with an actionable error, preserving
-the original Claude transcript. The immutable `invocation/<agent_id>/` record
+required for scientific attribution; ambiguous identities fail with an actionable
+error, preserving the original Claude transcript. The immutable `invocation/<agent_id>/` record
 contains the task text, sanitized transcript, tool arguments/results, final full
 report, source transcript digest, and usage summary. Common credential fields are
 redacted using the same sanitizer as the Codex runtime.
+
+Attempts that stop before creating a scientific session are preserved under
+`runs/orchestrator/unbound-invocations/<specialist>/<agent_id>/`, with a null session
+and unresolved scientific status. These technical records are not added to the
+scientific capture index or session registry and cannot authorize advancement.
+They retain the same sanitized transcript, report and measured usage fields.
+
+Identical stop-event retries verify every artifact byte and reuse the existing
+record, recovering a missing index entry when applicable. Changed transcripts or
+artifacts fail without overwriting the original. On a recording error the first
+stop hook exits 2 with repair instructions. If `stop_hook_active` is already true,
+it exits 0 and emits the recording failure as a visible system message to prevent
+repeated blocked continuations. This permits process termination only: the
+orchestrator must preserve the original transcript and repair recording/attribution
+before accepting the result or advancing a stage.
 
 Token counts are summed by unique assistant-message ID. Tool calls are counted from
 the transcript. Wall time is the elapsed span of timezone-aware transcript events;
