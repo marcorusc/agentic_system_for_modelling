@@ -1,5 +1,6 @@
 from __future__ import annotations
 import json
+from itertools import product
 from pathlib import Path
 import tempfile
 import unittest
@@ -11,6 +12,38 @@ from scripts.validate.calibrate_cycle import propose
 
 
 class CycleMetricsTests(unittest.TestCase):
+    def test_first_peak_matches_original_classifier_exhaustively(self):
+        def original(times, values, drop):
+            for i in range(1, len(values) - 1):
+                if values[i] >= values[i - 1] and values[i] > values[i + 1]:
+                    for j in range(i + 1, len(values)):
+                        if values[j] > values[i]:
+                            break
+                        if values[i] - values[j] > drop:
+                            return times[i]
+            return None
+
+        # Exact binary fractions exercise strict equality at the drop boundary,
+        # plateaus, ties, higher-value invalidation and peaks at either endpoint.
+        for length in range(8):
+            times = [i * 2.5 for i in range(length)]
+            for values in product((0, .25, .5, .75), repeat=length):
+                for drop in (.25, .5, .75):
+                    self.assertEqual(first_peak(times, values, drop), original(times, values, drop),
+                                     (values, drop))
+
+    def test_first_peak_uses_linear_work_for_small_oscillations(self):
+        class CountedValues(list):
+            reads = 0
+            def __getitem__(self, index):
+                self.reads += 1
+                return super().__getitem__(index)
+
+        for size in (100, 200, 400, 800):
+            values = CountedValues([.80, .79] * (size // 2))
+            self.assertIsNone(first_peak(range(size), values, .1))
+            self.assertLessEqual(values.reads, 4 * size)
+
     def test_peak_requires_strict_drop_before_higher_value(self):
         self.assertEqual(first_peak([0,1,2,3,4], [0,.8,.8,.5,.4], .1), 2)
         self.assertIsNone(first_peak([0,1,2,3], [0,.8,.75,.9], .1))

@@ -12,13 +12,20 @@ from scripts.validate.common import number
 
 def first_peak(times, values, drop):
     number(drop, 'drop', positive=True)
-    for i in range(1, len(values) - 1):
-        if values[i] >= values[i - 1] and values[i] > values[i + 1]:
-            for j in range(i + 1, len(values)):
-                if values[j] > values[i]:
-                    break
-                if values[i] - values[j] > drop:
-                    return times[i]
+    pending = None
+    height = None
+    for i in range(1, len(values)):
+        value = values[i]
+        if pending is not None:
+            if value > height:
+                pending = None
+            elif height - value > drop:
+                return times[pending]
+        # The earliest pending peak dominates every equal or lower candidate:
+        # any drop qualifying those also qualifies this peak. A strictly higher
+        # sample invalidates it and every intervening lower candidate together.
+        if pending is None and i < len(values) - 1 and value >= values[i - 1] and value > values[i + 1]:
+            pending, height = i, value
     return None
 
 
