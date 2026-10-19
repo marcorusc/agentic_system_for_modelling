@@ -1,6 +1,6 @@
 # Improvement plan: automated multiscale modelling workspace (NeKo → MaBoSS → PhysiBoSS)
 
-**Status:** Point A implemented; integrated Wave 1 and approved Boolean lineage/error fixes installed as a persistent local baseline; Wave 2 awaits discussion · **Updated:** 2026-10-16 · **Diagnostic date:** 2026-10-05 · **Basis:** final end-to-end test, model `toy-cell-cycle`, 2026-10-02
+**Status:** Point A implemented; PR #6 review fixes applied; companion Wave 1 PRs merged but new releases remain unpublished; persistent local baseline retained; Wave 2 awaits discussion · **Updated:** 2026-10-19 · **Diagnostic date:** 2026-10-05 · **Basis:** final end-to-end test, model `toy-cell-cycle`, 2026-10-02
 (branch `model/toy-cell-cycle`)
 
 This plan turns every problem met during the final test into an action. The actions fall into three groups, by where
@@ -27,6 +27,41 @@ it closes; the appendix maps each finding to its actions.
 
 ---
 
+
+## PR #6 review follow-up (2026-10-19)
+
+The researcher authorized addressing all four Copilot findings and refreshing
+integration against the merged companion sources. Each correction has a separate
+commit with its rationale and validation:
+
+| Finding | Fix and boundary | Commit |
+|---|---|---|
+| [Session-free stop failure](https://github.com/marcorusc/agentic_system_for_modelling/pull/6#discussion_r4309752751) | Preserve attempts under `runs/orchestrator/unbound-invocations/` with null scientific session and unresolved status. Repeated recording failures emit visible repair instructions without trapping the subagent in continued stops. Identical retries verify all bytes and recover missing index entries; changed content and ambiguous sessions remain errors. No change to scientific approval or handoff gates. | `8d298b4` |
+| [Encoded XML declaration bypass](https://github.com/marcorusc/agentic_system_for_modelling/pull/6#discussion_r4309752773) | Reject DTDs through a parser callback before capture publication, covering UTF-8, UTF-16 and both byte orders. Benign UTF-16 and original XML bytes remain supported. | `418eb71` |
+| [Nonportable literature interpreter](https://github.com/marcorusc/agentic_system_for_modelling/pull/6#discussion_r4309752792) | Track `python3`, document manual overrides, and retain automatic substitution with the selected environment's absolute executable. File-guard permissions are unchanged. | `bd87e69` |
+| [Quadratic peak scan](https://github.com/marcorusc/agentic_system_for_modelling/pull/6#discussion_r4309752815) | Retain the earliest pending peak in one forward pass. Exhaustive equivalence checks preserve strict drop, plateau, tie and higher-value behavior; a counted-access regression verifies linear work. | `717148f` |
+
+Integration source pins now use the final merged NeKo fork, PhysiCell Settings and
+MCP revisions instead of the earlier review commits. The official NeKo identifier
+fix is merged, but its package metadata remains 1.10.1 while MCP 2.5.0 requires
+1.10.2. The isolated source-integration environment uses the merged fork's 1.10.2
+revision until the official release is prepared. See
+[review and release ordering](wave1-pr-review.md) for exact commits and release
+prerequisites. Default published-package pins and the installed modelling baseline
+are unchanged. This work does not publish packages, update the MCP Registry,
+execute a biological model or begin Wave 2.
+
+Validation against those exact sources passed: **371 Codex, 22 Claude and 90 setup
+tests (483 total)**, with dependency consistency and installed Git revision checks.
+The separate PR validation environment uses Python 3.14 and inherits third-party
+dependencies from the baseline; its three companion packages were explicitly
+reinstalled from the pinned merged commits. The CI job verifies both package
+versions and installed source revisions in clean Python 3.11/3.13 jobs.
+The initial restricted-sandbox run timed out at an SDK protocol test; that test
+and the complete suite passed outside the restriction. No timeout is counted as a
+pass. Local logs and installed-source evidence are retained under the PR worktree's
+ignored `.setup/pr6-review-20261019/` directory. The existing modelling installation
+still reports its three `+wave1.20261016` package versions.
 
 ## Installed baseline — integrated Wave 1 (2026-10-16)
 
