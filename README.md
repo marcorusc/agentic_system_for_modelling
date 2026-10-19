@@ -129,6 +129,12 @@ configuration is prepared for Phase 5; live ODE readiness is not yet verified.
    `<env>/Scripts/mcp-…-server.exe` on Windows. Do not put `${...}` placeholders in
    `command`; inline command values are executed directly rather than by a shell.
 
+   The literature reviewer's file guard uses `python3` from your environment by
+   default. If that command is unavailable, set the hook `command` in
+   `.claude/agents/literature-reviewer.md` to your Python 3.11+ executable. Automatic
+   setup replaces this portable default with the selected environment's absolute
+   Python path.
+
 3. Configure the remote server named `pubmed` at
    `https://pubmed.mcp.claude.com/mcp` for Claude literature review. Codex setup
    supplies this URL in the isolated reviewer profile; existing custom transports

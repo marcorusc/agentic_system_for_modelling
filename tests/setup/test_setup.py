@@ -146,6 +146,17 @@ class SetupTests(unittest.TestCase):
             path.write_text(text)
         self.assertEqual(configure_claude.render(self.root, self.prefix), outputs)
 
+    def test_literature_hook_is_portable_and_setup_replaces_only_its_interpreter(self):
+        path = self.root/'.claude/agents/literature-reviewer.md'
+        original = path.read_text()
+        self.assertIn('          command: "python3"\n', original)
+        rendered = configure_claude.render(self.root, self.prefix)[path]
+        expected = original.replace('          command: "python3"\n',
+            '          command: '+json.dumps(str(self.prefix/'bin/python'))+'\n')
+        self.assertEqual(rendered, expected)
+        path.write_text(rendered)
+        self.assertEqual(configure_claude.render(self.root, self.prefix)[path], rendered)
+
     def test_backups_idempotency_and_symlinks(self):
         target = self.root/"settings.json"
         target.write_text('old')
