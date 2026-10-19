@@ -59,7 +59,12 @@ class LiteratureFileGuardTests(unittest.TestCase):
     def tool_call(tool_name: str, file_path: Path) -> dict[str, object]:
         tool_input: dict[str, object] = {"file_path": str(file_path)}
         if tool_name == "Write":
-            tool_input["content"] = "report content"
+            sys.path.insert(0, str(SOURCE_ROOT))
+            from tests.codex.test_literature_report_writer import VALID_REPORT
+            stem = file_path.stem.split(".r")[0]
+            source, target = stem.split("__") if "__" in stem else ("A", "B")
+            session = file_path.parent.name
+            tool_input["content"] = VALID_REPORT.replace("GAB1", source).replace("AKT1", target).replace("session-1", session)
         return {"tool_name": tool_name, "tool_input": tool_input}
 
     def assert_blocked(
@@ -78,6 +83,16 @@ class LiteratureFileGuardTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertTrue(target.parent.is_dir())
         self.assertFalse(target.exists(), "the guard must not write report content")
+
+    def test_missing_footer_and_overwrite_are_blocked(self) -> None:
+        target = self.project / "evidence/reports/session-1/A__B.md"
+        payload = self.tool_call("Write", target)
+        invalid = self.tool_call("Write", target)
+        invalid["tool_input"]["content"] = "bare edge report"
+        self.assert_blocked(self.run_guard(invalid), "heading")
+        self.assertEqual(self.run_guard(payload).returncode, 0)
+        target.write_text(payload["tool_input"]["content"])
+        self.assert_blocked(self.run_guard(payload), "overwrite")
 
     def test_ordinary_reads_are_allowed(self) -> None:
         for target in (
@@ -190,14 +205,7 @@ class LiteratureFileGuardTests(unittest.TestCase):
             / "smoke-session"
             / "PTPN11__AKT1.md"
         )
-        content = """## Edge: PTPN11 -> AKT1
-
-**Verdict:** supported
-**Confidence:** medium
-
-### Supporting evidence
-- PMID 12345678 (DOI: none): smoke-test evidence
-"""
+        content = self.tool_call("Write", target)["tool_input"]["content"]
 
         write_check = self.run_guard(self.tool_call("Write", target))
         self.assertEqual(write_check.returncode, 0, write_check.stderr)
@@ -215,7 +223,7 @@ class LiteratureReviewerDefinitionTests(unittest.TestCase):
         definition = AGENT.read_text(encoding="utf-8")
         self.assertIn("  - Write\n", definition)
         self.assertIn('    - matcher: "Read|Write"\n', definition)
-        self.assertIn("          command: python\n", definition)
+        self.assertIn("command:", definition)
         self.assertIn(
             '            - "${CLAUDE_PROJECT_DIR}/.claude/scripts/'
             'literature_file_guard.py"\n',

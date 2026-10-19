@@ -17,6 +17,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import NoReturn, Sequence
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from scripts.evidence_contract import validate_footer, report_identity
+
 
 IDENTIFIER = re.compile(r"\A[A-Za-z0-9][A-Za-z0-9._-]{0,127}\Z")
 PMID_LINE = re.compile(r"^- PMID (?P<pmid>[0-9]{1,10}) \(DOI: (?P<doi>.+)\):(?:\s|$)")
@@ -56,6 +59,9 @@ class ValidatedReport:
     interaction_type: str
     confidence: str
     pmids: tuple[str, ...]
+    excluded_pmids: tuple[str, ...]
+    edge: tuple[str, str, str]
+    session_id: str
 
 
 def _validate_identifier(value: str, label: str) -> str:
@@ -83,6 +89,7 @@ def expected_destination(
     source: str,
     target: str,
     requested_output: str | None = None,
+    *, candidate: bool = False, revision: int = 1,
 ) -> Path:
     """Return the sole allowed output path, rejecting traversal and aliases."""
 
@@ -95,7 +102,13 @@ def expected_destination(
     if not _strictly_below(reports_root, project):
         raise ReportValidationError("evidence/reports resolves outside the project")
 
-    relative = Path("evidence") / "reports" / session_id / f"{source}__{target}.md"
+    if type(revision) is not int or revision < 1:
+        raise ReportValidationError("revision must be a positive integer")
+    suffix = "" if revision == 1 else f".r{revision}"
+    directory = Path("evidence") / "reports" / session_id
+    if candidate:
+        directory /= "candidates"
+    relative = directory / f"{source}__{target}{suffix}.md"
     if requested_output is not None:
         requested = Path(requested_output)
         if requested.is_absolute() or requested != relative:
@@ -108,8 +121,12 @@ def expected_destination(
     # follow a dangling symlink and create its target in a different session.
     if destination.is_symlink():
         raise ReportValidationError("report destination must not be a symlink")
-    if destination.parent.resolve(strict=False) != reports_root / session_id:
-        raise ReportValidationError("report destination is outside its exact session directory")
+    try:
+        identity = report_identity(project, destination)
+        if identity != (session_id, source, target, candidate, revision):
+            raise ValueError("edge identifiers use reserved revision or separator syntax")
+    except ValueError as error:
+        raise ReportValidationError(str(error)) from error
     return destination
 
 
@@ -124,7 +141,7 @@ def _field(content: str, name: str, allowed: set[str]) -> str:
     return value
 
 
-def validate_report(content: str, source: str, target: str) -> ValidatedReport:
+def validate_report(content: str, source: str, target: str, session_id: str | None = None) -> ValidatedReport:
     """Validate the Markdown contract without interpreting scientific claims."""
 
     _validate_identifier(source, "source")
@@ -173,13 +190,20 @@ def validate_report(content: str, source: str, target: str) -> ValidatedReport:
                 )
             pmids.append(citation.group("pmid"))
 
+    try:
+        footer = validate_footer(content, source, target, session_id)
+    except ValueError as error:
+        raise ReportValidationError(str(error)) from error
     return ValidatedReport(
         source=source,
         target=target,
         verdict=verdict,
         interaction_type=interaction_type,
         confidence=confidence,
-        pmids=tuple(pmids),
+        pmids=tuple(footer["supporting_pmids"]),
+        excluded_pmids=tuple(footer["excluded_pmids"]),
+        edge=tuple(footer["edge"]),
+        session_id=footer["neko_session_id"],
     )
 
 
@@ -191,17 +215,18 @@ def write_report(
     target: str,
     draft_path: Path,
     requested_output: str | None = None,
+    candidate: bool = False, revision: int = 1,
 ) -> dict[str, object]:
     """Validate a draft, then create its exact destination without overwriting."""
 
     destination = expected_destination(
-        project_root, session_id, source, target, requested_output
+        project_root, session_id, source, target, requested_output, candidate=candidate, revision=revision
     )
     try:
         content = draft_path.read_text(encoding="utf-8")
     except (OSError, UnicodeError) as error:
         raise ReportValidationError(f"could not read UTF-8 draft: {error}") from error
-    parsed = validate_report(content, source, target)
+    parsed = validate_report(content, source, target, session_id)
 
     reports_root = (project_root.resolve(strict=True) / "evidence" / "reports")
     reports_root.mkdir(parents=True, exist_ok=True)
@@ -217,6 +242,16 @@ def write_report(
         raise ReportValidationError(f"could not create report session directory: {error}") from error
     if session_dir.is_symlink() or session_dir.resolve(strict=True).parent != reports_root.resolve(strict=True):
         raise ReportValidationError("report session directory is not a direct, non-symlink child")
+
+    if candidate:
+        destination.parent.mkdir(exist_ok=True)
+    expected_destination(project_root, session_id, source, target, requested_output,
+                         candidate=candidate, revision=revision)
+    if revision > 1:
+        previous = expected_destination(project_root, session_id, source, target,
+                                        candidate=candidate, revision=revision - 1)
+        if not previous.is_file():
+            raise ReportValidationError("explicit revision requires the previous immutable report")
 
     # Exclusive creation enforces the immutable evidence-report contract and
     # refuses both ordinary overwrites and a symlink at the final component.
@@ -244,7 +279,11 @@ def write_report(
         "verdict": parsed.verdict,
         "interaction_type": parsed.interaction_type,
         "confidence": parsed.confidence,
-        "pmids": list(parsed.pmids),
+        "pmids": list(parsed.pmids),  # compatibility alias: supporting citations ONLY
+        "supporting_pmids": list(parsed.pmids),
+        "excluded_pmids": list(parsed.excluded_pmids),
+        "edge": list(parsed.edge),
+        "neko_session_id": parsed.session_id,
     }
 
 
@@ -255,6 +294,8 @@ def _project_root() -> Path:
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--session-id", required=True)
+    parser.add_argument("--candidate", action="store_true")
+    parser.add_argument("--revision", type=int, default=1, help="explicitly authorized immutable revision number")
     parser.add_argument("--source")
     parser.add_argument("--target")
     parser.add_argument("--claim-id", help="ODE review mode; mutually exclusive with source/target")
@@ -275,7 +316,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     arguments = parse_args(argv)
     try:
         if arguments.claim_id is not None:
-            if arguments.source is not None or arguments.target is not None:
+            if arguments.source is not None or arguments.target is not None or arguments.candidate or arguments.revision != 1:
                 raise ReportValidationError("--claim-id cannot be combined with --source/--target")
             try:
                 from scripts.codex.ode_evidence import (
@@ -303,6 +344,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             target=arguments.target,
             draft_path=arguments.draft_file,
             requested_output=arguments.output,
+            candidate=arguments.candidate, revision=arguments.revision,
         )
     except (ReportValidationError, OSError, UnicodeError) as error:
         fail(str(error))

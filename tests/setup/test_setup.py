@@ -23,7 +23,7 @@ class SetupTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)/"project with spaces"
         self.root.mkdir()
-        for name in ("setup", ".codex", ".codex-plugin", ".claude/agents"):
+        for name in ("setup", ".codex", ".codex-plugin", ".claude/agents", ".claude/skills"):
             shutil.copytree(ROOT/name, self.root/name)
         self.prefix = self.root/".setup/environment"
         self.home = Path(self.temp.name)/"codex home"
@@ -145,6 +145,17 @@ class SetupTests(unittest.TestCase):
         for path, text in outputs.items():
             path.write_text(text)
         self.assertEqual(configure_claude.render(self.root, self.prefix), outputs)
+
+    def test_literature_hook_is_portable_and_setup_replaces_only_its_interpreter(self):
+        path = self.root/'.claude/agents/literature-reviewer.md'
+        original = path.read_text()
+        self.assertIn('          command: "python3"\n', original)
+        rendered = configure_claude.render(self.root, self.prefix)[path]
+        expected = original.replace('          command: "python3"\n',
+            '          command: '+json.dumps(str(self.prefix/'bin/python'))+'\n')
+        self.assertEqual(rendered, expected)
+        path.write_text(rendered)
+        self.assertEqual(configure_claude.render(self.root, self.prefix)[path], rendered)
 
     def test_backups_idempotency_and_symlinks(self):
         target = self.root/"settings.json"

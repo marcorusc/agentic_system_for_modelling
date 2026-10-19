@@ -23,6 +23,14 @@ RUN_ROOTS = {
 }
 
 
+class InvocationRecordingError(OSError):
+    """Indexing failed after files were preserved at an explicit artifact path."""
+
+    def __init__(self, message: str, artifact_dir: Path):
+        super().__init__(message)
+        self.artifact_dir = artifact_dir
+
+
 def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
@@ -135,11 +143,24 @@ def record_invocation(
 
     (working / "specialist-output.txt").write_text(final_output, encoding="utf-8")
     if handoff is not None:
-        write_json(working / "handoff.json", handoff)
+        # Invalid returned payloads are diagnostics, never a validated handoff.
+        filename = "rejected-handoff.json" if provenance.get("handoff_parse_error") else "handoff.json"
+        write_json(working / filename, handoff)
+    from scripts.capture.codex_usage import usage_summary
+    usage = usage_summary(working, provenance)
+    provenance = dict(provenance, usage=usage)
     write_json(working / "provenance.json", provenance)
     if launcher_dir is not None:
         target.parent.mkdir(parents=True, exist_ok=True)
         if target.exists():
             raise ValueError("specialist invocation directory already exists")
         working.rename(target)
+    # Failed/pre-session attempts remain preserved without inventing a scientific
+    # session. Index failures propagate to the caller's recording-failure path.
+    if session_id not in {"_blocked", "_unresolved"}:
+        from scripts.capture.index import register_capture
+        try:
+            register_capture(project_root, target, usage=usage)
+        except (OSError, ValueError) as error:
+            raise InvocationRecordingError(str(error), target) from error
     return target

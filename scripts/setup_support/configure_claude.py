@@ -24,7 +24,7 @@ def render(root: Path, prefix: Path, *, with_biomass: bool = False,
         if len(parts) != 3 or parts[0]:
             raise SetupError(f"Unsupported agent frontmatter: {path.name}")
         header = parts[1]
-        start = f"mcpServers:\n  - {server}:\n"
+        start = f"mcpServers:\n  - {server}-agent:\n"
         if header.count(start) != 1:
             raise SetupError(f"Unsupported MCP transport shape: {path.name}")
         begin = header.index(start) + len(start)

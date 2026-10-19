@@ -8,12 +8,14 @@ import tomllib
 from pathlib import Path
 from typing import Any
 
-from scripts.codex.launcher_config import SPECIALISTS, MODELLING_SERVERS, toml_literal
+from scripts.codex.launcher_config import SPECIALISTS, MODELLING_SERVERS, PUBMED_TOOLS, toml_literal
 from .state import SetupError
 from .environment import transport_path
 
 
 # Base setup remains independent of the optional ODE environment.
+PUBMED_URL = "https://pubmed.mcp.claude.com/mcp"
+
 SETUP_SPECIALISTS = (
     "network_curator", "literature_reviewer",
     "boolean_dynamics_modeler", "multicellular_configurator",
@@ -175,6 +177,10 @@ def render(root: Path, prefix: Path, codex_home: Path, *, with_biomass: bool = F
         source = target if target.exists() else root/".codex/profiles"/f"{profile}.config.toml.example"
         payload = tomllib.loads(source.read_text(encoding="utf-8"))
         servers = payload.setdefault("mcp_servers", {})
+        if role == "literature_reviewer":
+            servers.setdefault("pubmed", {"url": PUBMED_URL, "enabled": True, "required": True,
+                                           "enabled_tools": list(PUBMED_TOOLS)})
+            payload["web_search"] = "disabled"
         for name, config in servers.items():
             if name not in {server, "pubmed" if server is None else server} and config.get("enabled", True):
                 raise SetupError(f"Unexpected enabled MCP in {target.name}: {name}")

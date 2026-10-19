@@ -15,8 +15,10 @@ tools:
   - 'mcp__pubmed__convert_article_ids'
   - 'mcp__pubmed__get_full_text_article'
   - 'mcp__pubmed__find_related_articles'
+  - 'mcp__pubmed__get_copyright_status'
+  - 'mcp__pubmed__lookup_article_by_citation'
 disallowedTools:
-  - 'mcp__biomass__*'
+  - 'mcp__biomass-agent__*'
   - Edit
   - Bash
   - Task
@@ -29,7 +31,7 @@ hooks:
     - matcher: "Read|Write"
       hooks:
         - type: command
-          command: python
+          command: "python3"
           args:
             - "${CLAUDE_PROJECT_DIR}/.claude/scripts/literature_file_guard.py"
 color: yellow
@@ -56,7 +58,7 @@ ask the orchestrator for one rather than guessing or writing to an unversioned p
   `convert_article_ids`, then call `get_full_text_article` with that PMCID. Only
   a subset of PubMed articles have a PMCID. If none exists, treat the abstract as
   the available evidence — a missing PMCID is not a reason to keep searching.
-- If the one permitted `search_articles` call and any supplied reference PMIDs
+- If the permitted bounded search calls and any supplied reference PMIDs
   don't produce usable direct evidence, one optional `find_related_articles`
   (link_type=`pubmed_pubmed`) call against the most relevant known PMID may surface
   adjacent pathway evidence. This is capped the same way as `search_articles` — one
@@ -70,7 +72,7 @@ ask the orchestrator for one rather than guessing or writing to an unversioned p
   no access to those tools.
 - Collect every reference PMID already supplied for the edge set (from the task
   prompt and/or Grep-scoped SIF lookups), deduplicate, and fetch metadata for all of
-  them in as few `get_article_metadata` calls as possible before adjudicating any
+  them in `get_article_metadata` batches of at most eight PMIDs before adjudicating any
   single edge. When `search_articles`/`find_related_articles` surface additional
   PMIDs during review, fold those into the same batched `get_article_metadata`
   pattern rather than issuing a separate metadata call per edge after each search.
@@ -166,3 +168,31 @@ full session ID, report paths and hashes; the orchestrator owns shared manifests
 After failure, review only missing claims unless re-review is explicitly requested.
 A missing literature backend returns blocked; no fabricated evidence or hidden
 web-search fallback. The orchestrator coordinates at most two independent reviews.
+
+## Structured, immutable evidence and bounded retrieval
+
+Use PubMed by default, including Codex's isolated configured transport at
+https://pubmed.mcp.claude.com/mcp. Missing/failed access is blocked; web search still
+requires explicit researcher authorization. Chat connector availability alone does
+not establish that an isolated process can use the backend.
+
+Deduplicate supplied PMIDs; retrieve metadata/abstracts in batches of at most eight.
+Retrieve full text only when needed, at most eight PMIDs per retrieval batch. For an
+edge with supplied references allow one search; a PMID-less candidate may use two
+bounded searches and one related-article lookup seeded from a sibling edge PMID.
+Do not loop indefinitely or rely on truncated/spilled results as complete evidence.
+
+Every edge report ends with a fenced `yaml` footer containing a JSON object (the
+strict, dependency-free JSON-compatible YAML subset) with exactly these fields:
+`verdict`, `interaction_type`, `confidence`, `supporting_pmids`, `excluded_pmids`,
+`edge` (literal [source,effect,target]) and `neko_session_id`. PMIDs are strings;
+lists must be disjoint and exactly match the Supporting and Excluded sections.
+Use only supporting_pmids to justify a decision. Valid enums and a complete example
+are in docs/agentic-operations.md and scripts/evidence_contract.py.
+
+Canonical reports are write-once. Proposed edges use
+`evidence/reports/<session>/candidates/<source>__<target>.md`; each manual edge needs
+its own dedicated report before topology inclusion. Explicit re-review creates
+`.r2.md`, `.r3.md`, etc.; the preceding revision must exist. Codex writes via
+write_literature_report.py with --candidate and/or --revision N as applicable.
+Read the written file back; failed validation leaves that review incomplete.

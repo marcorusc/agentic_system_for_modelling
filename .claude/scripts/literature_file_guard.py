@@ -101,6 +101,24 @@ def validate_write(candidate: Path, content: object = None) -> None:
         ode_path |= len(parts) >= 4 and parts[:2] == ("evidence", "reports") and parts[3] == "ode"
     if ode_path:
         validate_ode_write(project_root, candidate, content)
+    else:
+        sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+        from scripts.evidence_contract import report_identity
+        from scripts.codex.write_literature_report import validate_report, expected_destination
+        try:
+            session, source, target_name, is_candidate, revision = report_identity(project_root, candidate)
+            if candidate.exists():
+                raise ValueError("refusing to overwrite existing edge report")
+            if not isinstance(content, str):
+                raise ValueError("edge report Write requires content")
+            validate_report(content, source, target_name, session)
+            if revision > 1:
+                previous = expected_destination(project_root, session, source, target_name,
+                                                candidate=is_candidate, revision=revision - 1)
+                if not previous.is_file():
+                    raise ValueError("explicit revision requires the previous immutable report")
+        except (ValueError, OSError) as error:
+            deny(str(error))
 
     try:
         target.parent.mkdir(parents=True, exist_ok=True)

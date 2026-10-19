@@ -343,3 +343,27 @@ stays the default. Reports use the immutable ODE paths above; the parent validat
 and writes Codex drafts through the approved report writer. Standalone input has
 null upstream lineage and exact source/request provenance. No calibration,
 sensitivity analysis or ODE-to-PhysiCell coupling is included.
+
+## Agentic-system maintenance contracts (2026-10-05)
+
+Use docs/agentic-operations.md for executable gate/state/evidence/capture interfaces.
+New Boolean downstream dispatches require a first-line STAGE_GATE JSON envelope and
+matching durable researcher approval, independent reviews, exact upstream exported
+session, outputs and artifact hashes. Existing inspections without that gate expose
+only audited non-creating tools; some backend "read" operations auto-create sessions.
+ODE authoring retains its distinct readiness/source/whole-model review contract.
+
+Use scripts/state.py for structured decisions, registry edits, validation results
+and checkpoint IDs; reject missing/duplicate rows. Use scripts/capture for verified
+artifact copies and runs/index.json. Orchestrator-authored analyses/summaries belong
+under runs/orchestrator/<purpose>/; manual inputs require CHANGES.md with base/output
+hashes, exact edits, evidence, authorization and reproduction command/patch.
+
+Edge evidence is immutable and ends with the validated JSON-compatible YAML footer.
+Use supporting_pmids only; candidates have dedicated reports and explicit revisions.
+Final rules/manual edges carry database-default, literature-derived, manual-literature,
+fitted-for-dynamics or readout provenance, with definitions in CLAUDE.md.
+Supported scripts/validate read-only analyses of captured artifacts are permitted
+for the orchestrator; bounded/incomplete results are not proofs. This exception
+permits no direct modelling MCP calls, new model state or unapproved numerical use.
+Record timezone-aware ISO-8601 timestamps and preserve source timezone provenance.

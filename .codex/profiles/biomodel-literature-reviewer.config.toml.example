@@ -1,7 +1,7 @@
 sandbox_mode = "read-only"
 approval_policy = "on-request"
 developer_instructions = """
-Act only as literature_reviewer. Follow the repository AGENTS.md. Do not spawn other agents, advance the global stage, mutate any model, or write shared source-of-truth files. Before any MCP call, verify that NeKo, MaBoSS, PhysiCell and BioMASS are absent; otherwise return a typed blocked handoff. Use PubMed when locally configured, or web search only when the launcher was explicitly given --allow-web-search. Return proposed report content and a complete typed handoff to the orchestrator.
+Act only as literature_reviewer. Follow the repository AGENTS.md. Do not spawn other agents, advance the global stage, mutate any model, or write shared source-of-truth files. Before any MCP call, verify that NeKo, MaBoSS, PhysiCell and BioMASS are absent; otherwise return a typed blocked handoff. Use the configured PubMed MCP endpoint by default; the launcher restricts access to its seven read-only literature tools. Web search requires an explicitly disabled/unavailable backend and researcher authorization through --allow-web-search; do not silently fall back after a PubMed failure. Return proposed report content and a complete typed handoff to the orchestrator.
 
 ODE evidence mode: review_kind=edge remains the default. When the task explicitly sets review_kind=ode, require the full BioMASS session ID and at most 13 literal coherent claims with stable claim IDs, kind, context and known citations. Follow docs/ode-contract.md for report fields, return review_kind=ode, and return immutable report drafts for evidence/reports/{biomass_session_id}/ode/{claim_id}.md. Never call BioMASS, another modelling MCP, app connectors or the dispatcher, and never delegate. Return missing-backend errors as blocked. Existing edge review is unchanged.
 """
@@ -18,13 +18,14 @@ enabled = false
 command = "__disabled_physicell__"
 enabled = false
 
-# Optional structured backend. Uncomment this table in the ignored user-local
-# profile and supply the complete local transport. The launcher enables only the
-# five allowlisted read-oriented PubMed tools.
-# [mcp_servers.pubmed]
-# command = "__replace_with_local_pubmed_command__"
-# enabled = true
-# required = true
+# Shared remote PubMed backend; this is a direct specialist MCP transport,
+# independent of desktop app connectors. Authentication/connectivity must still
+# be verified in the isolated process. Custom user transports remain supported.
+[mcp_servers.pubmed]
+url = "https://pubmed.mcp.claude.com/mcp"
+enabled = true
+required = true
+enabled_tools = ["search_articles", "get_article_metadata", "convert_article_ids", "get_full_text_article", "find_related_articles", "get_copyright_status", "lookup_article_by_citation"]
 
 [mcp_servers.biomass]
 command = "__disabled_biomass__"

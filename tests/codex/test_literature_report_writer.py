@@ -37,6 +37,12 @@ The abstract supports the interaction in a different cellular context.
 
 ### Open questions for researcher judgment
 - Directness in the target context remains unresolved.
+
+```yaml
+{"verdict":"supported","interaction_type":"activation","confidence":"medium",
+"supporting_pmids":["12345678"],"excluded_pmids":["87654321"],
+"edge":["GAB1","stimulation","AKT1"],"neko_session_id":"session-1"}
+```
 """
 
 
@@ -46,7 +52,7 @@ class LiteratureReportValidationTests(unittest.TestCase):
         self.assertEqual(parsed.verdict, "supported")
         self.assertEqual(parsed.interaction_type, "activation")
         self.assertEqual(parsed.confidence, "medium")
-        self.assertEqual(parsed.pmids, ("12345678", "87654321"))
+        self.assertEqual(parsed.pmids, ("12345678",))
 
     def test_parenthesized_doi_markdown_link_is_accepted(self) -> None:
         content = VALID_REPORT.replace(
@@ -110,9 +116,9 @@ class LiteratureReportWriterTests(unittest.TestCase):
         self.assertEqual(code, 0)
         result = json.loads(output.getvalue())
         self.assertEqual(set(result), {"path", "sha256", "bytes", "source", "target", "verdict",
-                                       "interaction_type", "confidence", "pmids"})
+                                       "interaction_type", "confidence", "pmids", "supporting_pmids", "excluded_pmids", "edge", "neko_session_id"})
         self.assertEqual(result["path"], "evidence/reports/session-1/GAB1__AKT1.md")
-        self.assertEqual(result["pmids"], ["12345678", "87654321"])
+        self.assertEqual(result["pmids"], ["12345678"])
         self.assertEqual((self.root / result["path"]).read_text(), VALID_REPORT)
 
     def test_cli_requires_one_complete_review_identity(self) -> None:

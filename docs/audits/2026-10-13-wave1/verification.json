@@ -1,0 +1,82 @@
+{
+  "checked_at": "2026-10-13T05:26:31.153498+00:00",
+  "repositories": {
+    "Neko": {
+      "original_checkout_unchanged": true,
+      "head": "f9b8d8cb7b5ca82f6111b8d96610596c2193574a",
+      "status": " M notebooks/11_network_history.ipynb\n M notebooks/1_network_building.ipynb\n M notebooks/6_ontology.ipynb\n"
+    },
+    "PhysiCell_Settings": {
+      "original_checkout_unchanged": true,
+      "head": "902f08dfc8370ceb028b8ff665afbc99c227bf84",
+      "status": ""
+    },
+    "mcp-biomodelling-servers": {
+      "original_checkout_unchanged": true,
+      "head": "85510616836e7f76d7651976f47bc3c18fda904e",
+      "status": ""
+    }
+  },
+  "notebooks_unchanged": true,
+  "pristine_templates": {
+    "MODEL_SPEC.md": true,
+    "ASSUMPTIONS.md": true,
+    "CURRENT_STATE.md": true,
+    "DECISIONS.md": true,
+    "VALIDATION_PLAN.md": true,
+    "DATA_DICTIONARY.md": true,
+    "memory/MEMORY.md": true,
+    "VALIDATION_CRITERIA.yaml": true
+  },
+  "archive_commit": "badb32b74f40eee96d49d1f9d18f41ca9c7c9773",
+  "neko": {
+    "head": "99176abe2c6bd8555fc3c2e0eb01fe89347d3c61",
+    "branch": "codex/wave1-identifiers",
+    "status": ""
+  },
+  "physicell-settings": {
+    "head": "5e41c53a9d7101ffbb52424484fb273312ee9703",
+    "branch": "codex/wave1-xml-consistency",
+    "status": ""
+  },
+  "mcp": {
+    "head": "12d442e2aa57499708bc8dddb665c7f78181c126",
+    "branch": "codex/wave1-shared-infrastructure",
+    "status": ""
+  },
+  "scope": "Wave 1 only; Wave 2 not authorized; local feature branches, not deployed",
+  "tests": {
+    "neko": {
+      "passed": 79,
+      "scope": "offline identifiers, core/export, renaming, ChEBI and selected network cases"
+    },
+    "physicell_settings": {
+      "passed": 82,
+      "subtests_passed": 30,
+      "scope": "full library suite including unchanged curated XML examples"
+    },
+    "mcp": {
+      "passed": 554,
+      "warnings": 12,
+      "scope": "affected storage, session, provenance, schema, protocol, concurrency and preservation suites"
+    },
+    "mcp_error_masking_baseline": {
+      "passed": 20,
+      "failed": 8,
+      "base_commit": "85510616836e7f76d7651976f47bc3c18fda904e",
+      "same_failures_on_feature_branch": true
+    },
+    "mcp_complete_suite": {
+      "status": "incomplete",
+      "timeout_seconds": 180,
+      "collected": 667,
+      "note": "Timed out during engine-heavy BioMASS tests; not a full-suite pass."
+    }
+  },
+  "artifact_sha256": {
+    "mcp-tests.log": "c245421090edf7873acc688e71b863ec887e387151c419ba22c70da2c69ef6f6",
+    "settings-tests.log": "c53e7f2214f711a031e388e5f88f238226933cb8690f4367749e8095727b68b6",
+    "baseline-error-masking.log": "a43be4f398c47352ef097f14d457494d4d64f14b915feaa3cc9f2580c2d1a004",
+    "neko-tests.log": "78de52c030708c3eda664aafe5aa2cdf3cfedd37d0e1b89d99a243e7c653b9b5"
+  }
+}

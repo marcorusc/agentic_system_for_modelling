@@ -46,3 +46,44 @@ If the dispatcher is unavailable, the same bounded request may use
 <project-relative-task-file>`. Place that file in `.codex-tasks/`; add
 `--record-session-id` and exact `--approve-tool` entries as applicable. Preserve
 all scientific gates and validate the recorded result before synthesis.
+
+## Boolean to phenotype mapping (verified source semantics)
+
+For Boolean activity x (or the smoothed activity probability), let
+H=(2*x)^n/(1+(2*x)^n), where n is link steepness. PhysiBoSS computes:
+
+- activation: base_value + (value-base_value)*H
+- inhibition: base_value + (value-base_value)*(1-H)
+
+Thus inhibition uses value at OFF and approaches base_value at ON. With smoothing=0
+and n=10, H(1)=1024/1025, leaving 1/1025 (~0.0976%) of the inhibited range. This is
+finite-Hill leakage, not exact Boolean switching. Never assume n=10 gives zero rate;
+any alternative steepness is an approved numerical choice, and the 2.4.0 tool may
+not expose it. Read exported XML back after every patch; the benchmark's multi-field
+patch reported success while apoptosis retained its default. Flag missing capabilities
+instead of silently editing scientific XML or inventing a value.
+
+MaBoSS elapsed time = PhysiCell update interval / scaling. Scaling therefore relates
+the explicitly declared time units; it is not a dimensionless biological default.
+The behavior "cycle entry" is phase-0 exit. Discover exact behavior names and phase
+indices from the selected cycle model rather than inferring synonyms.
+
+Worked pattern (illustrative, not a parameter authorization): define mutually
+exclusive E/A/B readouts without regulatory targets. Map E activation to G1->S,
+A activation to S->G2, B activation to G2->M, and B inhibition to M exit/division.
+Explicitly identify which configured phases implement those transitions; approve
+values, base values, steepness, smoothing and base cycle rates. Prove the intended
+readout exclusivity on declared update semantics and assess asynchronous lag: a proof
+about readout Boolean functions alone is not a proof that stored asynchronous readout
+nodes are mutually exclusive. Configure all phase exits and verify exported rates.
+
+Use scripts/validate/calibrate_cycle.py with an explicit mapping, target cycle time
+and units. It emits proposed scaling, never grants acceptance. Record the approved
+proposal artifact and hashes in the handoff provenance. Calibration emulates the
+phase mapping; it does not execute PhysiCell. Capture the final XML package through
+scripts/capture/record_physicell_config.py and review enabled dependencies.
+
+Source checked: MathCancer/PhysiCell commit
+69a23dbe7eaac4f41dc9548ad85072eff7921a03, addons/PhysiBoSS/src/utils.h
+(update), maboss_network.cpp (time_to_update/scaling), and
+core/PhysiCell_signal_behavior.cpp (cycle entry/phase-0 exit). Recheck after upgrades.

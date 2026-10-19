@@ -16,6 +16,7 @@ if sys.version_info < (3, 11):
     raise SystemExit("Setup requires Python 3.11+; on Windows run it inside WSL.")
 
 import tomllib
+from scripts.check_isolation import snapshot_errors
 from scripts.setup_support import backend_sources, configure_claude, configure_codex, detect, environment, verify
 from scripts.setup_support.state import SetupError, atomic_write, read_json, write_config
 
@@ -80,7 +81,7 @@ def settings(args, root: Path) -> dict:
 def plan(args, root: Path, manifest: dict) -> tuple[dict, list[str]]:
     values = settings(args, root)
     system = detect.system_info()
-    errors = []
+    errors = snapshot_errors(root, manifest["version"])
     if system["system"] not in manifest["supported_systems"]:
         errors.append("This installer supports Linux/WSL. Run inside WSL on Windows; native Windows/macOS are not validated.")
     if not detect.discover("git"):

@@ -261,7 +261,15 @@ class Phase3ProvenanceTests(unittest.TestCase):
                 self.assertFalse(launcher.exists())
                 self.assertEqual((target / "task.txt").read_text(), "bounded task\n")
                 self.assertTrue((target / "events.jsonl").is_file())
-                self.assertEqual(json.loads((target / "provenance.json").read_text()), metadata)
+                recorded = json.loads((target / "provenance.json").read_text())
+                usage = recorded.pop("usage")
+                self.assertEqual(recorded, metadata)
+                self.assertEqual(usage["tool_calls"], 0)
+                for field in ("input_tokens", "output_tokens", "wall_time_seconds", "cost_usd"):
+                    self.assertIsNone(usage[field])
+                index = json.loads((root / "runs/index.json").read_text())
+                self.assertEqual(index["runs"][0]["specialist"], role.replace("_", "-"))
+                self.assertEqual(index["runs"][0]["usage"], usage)
                 self.assertEqual(json.loads((target / "handoff.json").read_text()), handoff)
 
     def test_review_mode_cannot_move_launcher_artifacts_between_roots(self):

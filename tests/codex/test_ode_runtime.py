@@ -232,6 +232,10 @@ class ODERuntimeTests(unittest.TestCase):
                 self.assertIsNone(record['handoff'])
                 self.assertTrue(record['error'])
                 self.assertTrue((self.root/record['artifact_dir']/'provenance.json').is_file())
+                if '/specialist-invocations/' in record['artifact_dir']:
+                    preserved = self.root / record['artifact_dir']
+                    self.assertFalse((preserved / 'handoff.json').exists())
+                    self.assertEqual(json.loads((preserved / 'rejected-handoff.json').read_text()), invalid)
                 expected_root = 'runs/network-curator/' if request.review_kind == 'edge' else 'runs/ode-modeler/'
                 self.assertTrue(record['artifact_dir'].startswith(expected_root))
         (revision/'model.txt').write_text('tampered fixture')
@@ -255,6 +259,17 @@ class ODERuntimeTests(unittest.TestCase):
             record = self.finish(self.manager.start(Request('ode_modeler', 'inspect', 'fixture-session')))
         self.assertEqual(record['execution_state'], 'failed', record)
         self.assertIsNone(record['handoff'])
+
+    def test_index_failure_retains_published_provenance_path(self):
+        self.configure()
+        with mock.patch('scripts.capture.index.register_capture', side_effect=OSError('index unavailable')):
+            record = self.finish(self.manager.start(Request('ode_modeler', 'inspect', 'fixture-session')))
+        self.assertEqual(record['execution_state'], 'failed', record)
+        self.assertEqual(record['return_code'], 3)
+        self.assertIsNone(record['handoff'])
+        self.assertIn('/specialist-invocations/', record['artifact_dir'])
+        self.assertTrue((self.root / record['artifact_dir'] / 'provenance.json').is_file())
+        self.assertTrue((self.root / record['event_stream']).is_file())
 
     def test_unsafe_ode_inventory_never_executes_child(self):
         for prohibited in ('neko', 'maboss', 'physicell', 'specialist_dispatcher', 'codex_apps'):

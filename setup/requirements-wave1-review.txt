@@ -1,0 +1,6 @@
+# Immutable merged Wave 1 sources; use a separate validation environment.
+# Official NeKo has the fix but still declares 1.10.1. The merged fork supplies
+# the 1.10.2 metadata required by MCP 2.5.0 until the official release is prepared.
+nekomata @ git+https://github.com/marcorusc/Neko.git@0cccd28946b25cf31d612291feeaaf70195c118f
+physicell-settings @ git+https://github.com/marcorusc/PhysiCell_Settings.git@75485757b040cc9ea336d458d65c94e02cb4aff4
+mcp-biomodelling-servers @ git+https://github.com/marcorusc/mcp-biomodelling-servers.git@0e3f7fcd542d3d8047d27e04a6e9765b59e06b49

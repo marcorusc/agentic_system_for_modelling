@@ -26,7 +26,7 @@ class OptionalEnvironmentTests(unittest.TestCase):
         self.directory = Path(temporary.name)
         self.root = self.directory / "project"
         self.root.mkdir()
-        for name in ("setup", ".codex", ".codex-plugin", ".claude/agents"):
+        for name in ("setup", ".codex", ".codex-plugin", ".claude/agents", ".claude/skills"):
             shutil.copytree(ROOT / name, self.root / name)
         self.prefix = self.directory / "existing environment"
         self.prefix.mkdir()
@@ -270,6 +270,7 @@ class OptionalEnvironmentTests(unittest.TestCase):
                 stack.enter_context(mock.patch.object(detect, "client_version", return_value="2.0.0"))
                 stack.enter_context(mock.patch.object(environment, "verify_environment", return_value={"passed": True}))
                 stack.enter_context(mock.patch.object(verify, "run", side_effect=run))
+                stack.enter_context(mock.patch.object(verify.check_isolation, "check", return_value={"passed": True, "errors": []}))
                 report = setup.execute(args, self.root)
             self.assertTrue(report["passed"])
             selected = {"neko", "maboss", "physicell"} | ({"biomass"} if enabled else set())

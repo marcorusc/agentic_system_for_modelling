@@ -7,6 +7,7 @@ import tempfile
 from pathlib import Path
 
 from scripts.codex import check_environment
+from scripts import check_isolation
 from .detect import run
 from .environment import runtime_env
 from .state import SetupError
@@ -87,6 +88,8 @@ def verify(root: Path, prefix: Path, clients: dict, *, with_biomass: bool = Fals
         if not parent["passed"]:
             errors.append("Codex parent configuration has enabled modelling MCPs")
     if "claude" in clients:
+        isolation = check_isolation.check(root, user_config=Path.home()/".claude.json")
+        errors.extend(isolation["errors"])
         try:
             run([clients["claude"], "mcp", "list"], cwd=root, timeout=60)
         except SetupError as error:

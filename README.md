@@ -61,7 +61,7 @@ your local installation.
 - Python 3.11 or newer (the Codex launcher uses the standard-library `tomllib`)
 - Claude Code with custom agents and skills enabled
 - A modelling environment containing the NeKo, MaBoSS, and PhysiCell MCP executables
-- An optional PubMed MCP server for literature review
+- Network access to the shared PubMed MCP endpoint for literature review
 - For ODE work only, a BioMASS server with the required authoring/export capabilities
 
 The inline NeKo, MaBoSS, and PhysiCell commands must point to executables installed
@@ -129,8 +129,16 @@ configuration is prepared for Phase 5; live ODE readiness is not yet verified.
    `<env>/Scripts/mcp-…-server.exe` on Windows. Do not put `${...}` placeholders in
    `command`; inline command values are executed directly rather than by a shell.
 
-3. Configure an external MCP server named `pubmed` if literature review will be
-   used. The name must match the agent definition.
+   The literature reviewer's file guard uses `python3` from your environment by
+   default. If that command is unavailable, set the hook `command` in
+   `.claude/agents/literature-reviewer.md` to your Python 3.11+ executable. Automatic
+   setup replaces this portable default with the selected environment's absolute
+   Python path.
+
+3. Configure the remote server named `pubmed` at
+   `https://pubmed.mcp.claude.com/mcp` for Claude literature review. Codex setup
+   supplies this URL in the isolated reviewer profile; existing custom transports
+   remain supported. The name must match the agent definition.
 
 4. Start Claude Code from the repository root.
 
@@ -187,11 +195,11 @@ creates nor authorizes that exposure.
 4. Run the non-mutating preflight:
 
    ```text
-   python scripts/codex/check_environment.py --allow-web-search
+   python scripts/codex/check_environment.py
    ```
 
-   Omit `--allow-web-search` when literature searches must use only a configured
-   PubMed MCP. A healthy result reports the orchestrator with no enabled modelling
+   PubMed is the default. Add `--allow-web-search` only after explicit researcher
+   authorization for that alternative. A healthy result reports the orchestrator with no enabled modelling
    MCP and each modelling specialist with exactly its own server.
 
 Ask Codex to “inspect the durable model state and recommend the next permitted
@@ -255,12 +263,15 @@ approved by the launcher. For Windows-to-WSL routing, copy
 local values, and add `--transport wsl` to the same command.
 
 Literature review prefers a complete `pubmed` transport in the ignored user-local
-literature profile. Otherwise it uses hosted search only when
+literature profile. Setup defaults to `https://pubmed.mcp.claude.com/mcp`.
+Otherwise it uses hosted search only when
 `allow_web_search=true` was explicitly authorized (CLI: `--allow-web-search`);
 parent ChatGPT web access is never assumed. Search
 is limited to primary biomedical sources, and reports distinguish metadata,
 abstract-only review, and retrieved full text. With neither backend, the launcher
-records a typed `blocked` handoff. The optional structured NCBI MCP is not bundled.
+records a typed `blocked` handoff. The remote service is externally operated; its server implementation is not bundled.
+Use the bounded initialize/tools-list connectivity probe described in
+[agentic operations](docs/agentic-operations.md).
 
 Claude's `PreToolUse` hook is not the Codex write boundary. The Codex literature
 subprocess is read-only, and the orchestrator sends each returned draft through
@@ -614,7 +625,11 @@ inspect the matching `PreToolUse:Read` or `PreToolUse:Write` entry.
 ### PubMed is unavailable
 
 Run `/mcp` and confirm a server with the exact name `pubmed` is configured. Its
-source repository and release process are external to this template.
+URL is `https://pubmed.mcp.claude.com/mcp`. For Codex check the actual dispatcher
+profile, which may differ from the desktop chat configuration. Run
+`python3 scripts/setup_support/probe_pubmed.py --python /path/to/modelling/python`
+to test initialization and the seven tool names without retrieving literature.
+See [agentic operations](docs/agentic-operations.md) for migration and isolation checks.
 
 ### A lifecycle command refuses to run
 

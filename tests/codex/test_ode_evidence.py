@@ -269,6 +269,7 @@ class ODEReportWriterTests(unittest.TestCase):
         scripts.mkdir(parents=True)
         for name in ("write_literature_report.py", "ode_evidence.py"):
             shutil.copyfile(ROOT / "scripts/codex" / name, scripts / name)
+        shutil.copyfile(ROOT / "scripts/evidence_contract.py", scripts.parent / "evidence_contract.py")
         command = [sys.executable, str(scripts / "write_literature_report.py"),
                    "--session-id", "bio-session", "--claim-id", "binding",
                    "--draft-file", str(self.draft)]

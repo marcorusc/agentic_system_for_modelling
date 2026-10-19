@@ -1,0 +1,432 @@
+................FFFFFFFF....                                             [100%]
+=================================== FAILURES ===================================
+_ test_domain_errors_are_actionable_and_programming_errors_remain_masked[TypeError-False-auto] _
+  + Exception Group Traceback (most recent call last):
+  |   File "/home/marcorusc/projects/github/mcp-biomodelling-servers/tests/test_tool_registration.py", line 37, in test_domain_errors_are_actionable_and_programming_errors_remain_masked
+  |     asyncio.run(exercise())
+  |     ~~~~~~~~~~~^^^^^^^^^^^^
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/asyncio/runners.py", line 205, in run
+  |     return runner.run(main)
+  |            ~~~~~~~~~~^^^^^^
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/asyncio/runners.py", line 128, in run
+  |     return self._loop.run_until_complete(task)
+  |            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/asyncio/base_events.py", line 719, in run_until_complete
+  |     return future.result()
+  |            ~~~~~~~~~~~~~^^
+  |   File "/home/marcorusc/projects/github/mcp-biomodelling-servers/tests/test_tool_registration.py", line 29, in exercise
+  |     async with Client(server, mode=mode) as client:
+  |                ~~~~~~^^^^^^^^^^^^^^^^^^^
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/site-packages/mcp/client/client.py", line 475, in __aexit__
+  |     await self._exit_stack.__aexit__(exc_type, exc_val, exc_tb)
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/contextlib.py", line 768, in __aexit__
+  |     raise exc
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/contextlib.py", line 751, in __aexit__
+  |     cb_suppress = await cb(*exc_details)
+  |                   ^^^^^^^^^^^^^^^^^^^^^^
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/site-packages/anyio/_backends/_asyncio.py", line 815, in __aexit__
+  |     raise BaseExceptionGroup(
+  |         "unhandled errors in a TaskGroup", self._exceptions
+  |     ) from None
+  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Exception Group Traceback (most recent call last):
+    |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/contextlib.py", line 751, in __aexit__
+    |     cb_suppress = await cb(*exc_details)
+    |                   ^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/site-packages/mcp/client/session.py", line 481, in __aexit__
+    |     result = await self._task_group.__aexit__(exc_type, exc_val, exc_tb)
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/site-packages/anyio/_backends/_asyncio.py", line 815, in __aexit__
+    |     raise BaseExceptionGroup(
+    |         "unhandled errors in a TaskGroup", self._exceptions
+    |     ) from None
+    | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+    +-+---------------- 1 ----------------
+      | Traceback (most recent call last):
+      |   File "/home/marcorusc/projects/github/mcp-biomodelling-servers/tests/test_tool_registration.py", line 35, in exercise
+      |     assert (message in text) == (error_type not in (TypeError, AttributeError))
+      | AssertionError: assert ('diagnostic-marker-should-only-be-visible-for-domain-errors' in 'Error executing tool failure: diagnostic-marker-should-only-be-visible-for-domain-errors') == (<class 'TypeError'> not in (<class 'TypeError'>, <class 'AttributeError'>))
+      +------------------------------------
+_ test_domain_errors_are_actionable_and_programming_errors_remain_masked[TypeError-False-legacy] _
+  + Exception Group Traceback (most recent call last):
+  |   File "/home/marcorusc/projects/github/mcp-biomodelling-servers/tests/test_tool_registration.py", line 37, in test_domain_errors_are_actionable_and_programming_errors_remain_masked
+  |     asyncio.run(exercise())
+  |     ~~~~~~~~~~~^^^^^^^^^^^^
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/asyncio/runners.py", line 205, in run
+  |     return runner.run(main)
+  |            ~~~~~~~~~~^^^^^^
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/asyncio/runners.py", line 128, in run
+  |     return self._loop.run_until_complete(task)
+  |            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/asyncio/base_events.py", line 719, in run_until_complete
+  |     return future.result()
+  |            ~~~~~~~~~~~~~^^
+  |   File "/home/marcorusc/projects/github/mcp-biomodelling-servers/tests/test_tool_registration.py", line 29, in exercise
+  |     async with Client(server, mode=mode) as client:
+  |                ~~~~~~^^^^^^^^^^^^^^^^^^^
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/site-packages/mcp/client/client.py", line 475, in __aexit__
+  |     await self._exit_stack.__aexit__(exc_type, exc_val, exc_tb)
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/contextlib.py", line 768, in __aexit__
+  |     raise exc
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/contextlib.py", line 751, in __aexit__
+  |     cb_suppress = await cb(*exc_details)
+  |                   ^^^^^^^^^^^^^^^^^^^^^^
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/site-packages/mcp/client/_memory.py", line 108, in __aexit__
+  |     await self._cm.__aexit__(exc_type, exc_val, exc_tb)
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/contextlib.py", line 235, in __aexit__
+  |     await self.gen.athrow(value)
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/site-packages/mcp/client/_memory.py", line 67, in _connect
+  |     async with anyio.create_task_group() as tg:
+  |                ~~~~~~~~~~~~~~~~~~~~~~~^^
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/site-packages/anyio/_backends/_asyncio.py", line 815, in __aexit__
+  |     raise BaseExceptionGroup(
+  |         "unhandled errors in a TaskGroup", self._exceptions
+  |     ) from None
+  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Exception Group Traceback (most recent call last):
+    |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/site-packages/mcp/client/_memory.py", line 71, in _connect
+    |     yield client_read, client_write
+    |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/contextlib.py", line 751, in __aexit__
+    |     cb_suppress = await cb(*exc_details)
+    |                   ^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/site-packages/mcp/client/session.py", line 481, in __aexit__
+    |     result = await self._task_group.__aexit__(exc_type, exc_val, exc_tb)
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/site-packages/anyio/_backends/_asyncio.py", line 815, in __aexit__
+    |     raise BaseExceptionGroup(
+    |         "unhandled errors in a TaskGroup", self._exceptions
+    |     ) from None
+    | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+    +-+---------------- 1 ----------------
+      | Traceback (most recent call last):
+      |   File "/home/marcorusc/projects/github/mcp-biomodelling-servers/tests/test_tool_registration.py", line 35, in exercise
+      |     assert (message in text) == (error_type not in (TypeError, AttributeError))
+      | AssertionError: assert ('diagnostic-marker-should-only-be-visible-for-domain-errors' in 'Error executing tool failure: diagnostic-marker-should-only-be-visible-for-domain-errors') == (<class 'TypeError'> not in (<class 'TypeError'>, <class 'AttributeError'>))
+      +------------------------------------
+_ test_domain_errors_are_actionable_and_programming_errors_remain_masked[TypeError-True-auto] _
+  + Exception Group Traceback (most recent call last):
+  |   File "/home/marcorusc/projects/github/mcp-biomodelling-servers/tests/test_tool_registration.py", line 37, in test_domain_errors_are_actionable_and_programming_errors_remain_masked
+  |     asyncio.run(exercise())
+  |     ~~~~~~~~~~~^^^^^^^^^^^^
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/asyncio/runners.py", line 205, in run
+  |     return runner.run(main)
+  |            ~~~~~~~~~~^^^^^^
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/asyncio/runners.py", line 128, in run
+  |     return self._loop.run_until_complete(task)
+  |            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/asyncio/base_events.py", line 719, in run_until_complete
+  |     return future.result()
+  |            ~~~~~~~~~~~~~^^
+  |   File "/home/marcorusc/projects/github/mcp-biomodelling-servers/tests/test_tool_registration.py", line 29, in exercise
+  |     async with Client(server, mode=mode) as client:
+  |                ~~~~~~^^^^^^^^^^^^^^^^^^^
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/site-packages/mcp/client/client.py", line 475, in __aexit__
+  |     await self._exit_stack.__aexit__(exc_type, exc_val, exc_tb)
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/contextlib.py", line 768, in __aexit__
+  |     raise exc
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/contextlib.py", line 751, in __aexit__
+  |     cb_suppress = await cb(*exc_details)
+  |                   ^^^^^^^^^^^^^^^^^^^^^^
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/site-packages/anyio/_backends/_asyncio.py", line 815, in __aexit__
+  |     raise BaseExceptionGroup(
+  |         "unhandled errors in a TaskGroup", self._exceptions
+  |     ) from None
+  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Exception Group Traceback (most recent call last):
+    |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/contextlib.py", line 751, in __aexit__
+    |     cb_suppress = await cb(*exc_details)
+    |                   ^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/site-packages/mcp/client/session.py", line 481, in __aexit__
+    |     result = await self._task_group.__aexit__(exc_type, exc_val, exc_tb)
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/site-packages/anyio/_backends/_asyncio.py", line 815, in __aexit__
+    |     raise BaseExceptionGroup(
+    |         "unhandled errors in a TaskGroup", self._exceptions
+    |     ) from None
+    | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+    +-+---------------- 1 ----------------
+      | Traceback (most recent call last):
+      |   File "/home/marcorusc/projects/github/mcp-biomodelling-servers/tests/test_tool_registration.py", line 35, in exercise
+      |     assert (message in text) == (error_type not in (TypeError, AttributeError))
+      | AssertionError: assert ('diagnostic-marker-should-only-be-visible-for-domain-errors' in 'Error executing tool failure: diagnostic-marker-should-only-be-visible-for-domain-errors') == (<class 'TypeError'> not in (<class 'TypeError'>, <class 'AttributeError'>))
+      +------------------------------------
+_ test_domain_errors_are_actionable_and_programming_errors_remain_masked[TypeError-True-legacy] _
+  + Exception Group Traceback (most recent call last):
+  |   File "/home/marcorusc/projects/github/mcp-biomodelling-servers/tests/test_tool_registration.py", line 37, in test_domain_errors_are_actionable_and_programming_errors_remain_masked
+  |     asyncio.run(exercise())
+  |     ~~~~~~~~~~~^^^^^^^^^^^^
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/asyncio/runners.py", line 205, in run
+  |     return runner.run(main)
+  |            ~~~~~~~~~~^^^^^^
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/asyncio/runners.py", line 128, in run
+  |     return self._loop.run_until_complete(task)
+  |            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/asyncio/base_events.py", line 719, in run_until_complete
+  |     return future.result()
+  |            ~~~~~~~~~~~~~^^
+  |   File "/home/marcorusc/projects/github/mcp-biomodelling-servers/tests/test_tool_registration.py", line 29, in exercise
+  |     async with Client(server, mode=mode) as client:
+  |                ~~~~~~^^^^^^^^^^^^^^^^^^^
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/site-packages/mcp/client/client.py", line 475, in __aexit__
+  |     await self._exit_stack.__aexit__(exc_type, exc_val, exc_tb)
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/contextlib.py", line 768, in __aexit__
+  |     raise exc
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/contextlib.py", line 751, in __aexit__
+  |     cb_suppress = await cb(*exc_details)
+  |                   ^^^^^^^^^^^^^^^^^^^^^^
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/site-packages/mcp/client/_memory.py", line 108, in __aexit__
+  |     await self._cm.__aexit__(exc_type, exc_val, exc_tb)
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/contextlib.py", line 235, in __aexit__
+  |     await self.gen.athrow(value)
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/site-packages/mcp/client/_memory.py", line 67, in _connect
+  |     async with anyio.create_task_group() as tg:
+  |                ~~~~~~~~~~~~~~~~~~~~~~~^^
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/site-packages/anyio/_backends/_asyncio.py", line 815, in __aexit__
+  |     raise BaseExceptionGroup(
+  |         "unhandled errors in a TaskGroup", self._exceptions
+  |     ) from None
+  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Exception Group Traceback (most recent call last):
+    |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/site-packages/mcp/client/_memory.py", line 71, in _connect
+    |     yield client_read, client_write
+    |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/contextlib.py", line 751, in __aexit__
+    |     cb_suppress = await cb(*exc_details)
+    |                   ^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/site-packages/mcp/client/session.py", line 481, in __aexit__
+    |     result = await self._task_group.__aexit__(exc_type, exc_val, exc_tb)
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/site-packages/anyio/_backends/_asyncio.py", line 815, in __aexit__
+    |     raise BaseExceptionGroup(
+    |         "unhandled errors in a TaskGroup", self._exceptions
+    |     ) from None
+    | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+    +-+---------------- 1 ----------------
+      | Traceback (most recent call last):
+      |   File "/home/marcorusc/projects/github/mcp-biomodelling-servers/tests/test_tool_registration.py", line 35, in exercise
+      |     assert (message in text) == (error_type not in (TypeError, AttributeError))
+      | AssertionError: assert ('diagnostic-marker-should-only-be-visible-for-domain-errors' in 'Error executing tool failure: diagnostic-marker-should-only-be-visible-for-domain-errors') == (<class 'TypeError'> not in (<class 'TypeError'>, <class 'AttributeError'>))
+      +------------------------------------
+_ test_domain_errors_are_actionable_and_programming_errors_remain_masked[AttributeError-False-auto] _
+  + Exception Group Traceback (most recent call last):
+  |   File "/home/marcorusc/projects/github/mcp-biomodelling-servers/tests/test_tool_registration.py", line 37, in test_domain_errors_are_actionable_and_programming_errors_remain_masked
+  |     asyncio.run(exercise())
+  |     ~~~~~~~~~~~^^^^^^^^^^^^
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/asyncio/runners.py", line 205, in run
+  |     return runner.run(main)
+  |            ~~~~~~~~~~^^^^^^
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/asyncio/runners.py", line 128, in run
+  |     return self._loop.run_until_complete(task)
+  |            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/asyncio/base_events.py", line 719, in run_until_complete
+  |     return future.result()
+  |            ~~~~~~~~~~~~~^^
+  |   File "/home/marcorusc/projects/github/mcp-biomodelling-servers/tests/test_tool_registration.py", line 29, in exercise
+  |     async with Client(server, mode=mode) as client:
+  |                ~~~~~~^^^^^^^^^^^^^^^^^^^
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/site-packages/mcp/client/client.py", line 475, in __aexit__
+  |     await self._exit_stack.__aexit__(exc_type, exc_val, exc_tb)
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/contextlib.py", line 768, in __aexit__
+  |     raise exc
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/contextlib.py", line 751, in __aexit__
+  |     cb_suppress = await cb(*exc_details)
+  |                   ^^^^^^^^^^^^^^^^^^^^^^
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/site-packages/anyio/_backends/_asyncio.py", line 815, in __aexit__
+  |     raise BaseExceptionGroup(
+  |         "unhandled errors in a TaskGroup", self._exceptions
+  |     ) from None
+  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Exception Group Traceback (most recent call last):
+    |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/contextlib.py", line 751, in __aexit__
+    |     cb_suppress = await cb(*exc_details)
+    |                   ^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/site-packages/mcp/client/session.py", line 481, in __aexit__
+    |     result = await self._task_group.__aexit__(exc_type, exc_val, exc_tb)
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/site-packages/anyio/_backends/_asyncio.py", line 815, in __aexit__
+    |     raise BaseExceptionGroup(
+    |         "unhandled errors in a TaskGroup", self._exceptions
+    |     ) from None
+    | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+    +-+---------------- 1 ----------------
+      | Traceback (most recent call last):
+      |   File "/home/marcorusc/projects/github/mcp-biomodelling-servers/tests/test_tool_registration.py", line 35, in exercise
+      |     assert (message in text) == (error_type not in (TypeError, AttributeError))
+      | AssertionError: assert ('diagnostic-marker-should-only-be-visible-for-domain-errors' in 'Error executing tool failure: diagnostic-marker-should-only-be-visible-for-domain-errors') == (<class 'AttributeError'> not in (<class 'TypeError'>, <class 'AttributeError'>))
+      +------------------------------------
+_ test_domain_errors_are_actionable_and_programming_errors_remain_masked[AttributeError-False-legacy] _
+  + Exception Group Traceback (most recent call last):
+  |   File "/home/marcorusc/projects/github/mcp-biomodelling-servers/tests/test_tool_registration.py", line 37, in test_domain_errors_are_actionable_and_programming_errors_remain_masked
+  |     asyncio.run(exercise())
+  |     ~~~~~~~~~~~^^^^^^^^^^^^
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/asyncio/runners.py", line 205, in run
+  |     return runner.run(main)
+  |            ~~~~~~~~~~^^^^^^
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/asyncio/runners.py", line 128, in run
+  |     return self._loop.run_until_complete(task)
+  |            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/asyncio/base_events.py", line 719, in run_until_complete
+  |     return future.result()
+  |            ~~~~~~~~~~~~~^^
+  |   File "/home/marcorusc/projects/github/mcp-biomodelling-servers/tests/test_tool_registration.py", line 29, in exercise
+  |     async with Client(server, mode=mode) as client:
+  |                ~~~~~~^^^^^^^^^^^^^^^^^^^
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/site-packages/mcp/client/client.py", line 475, in __aexit__
+  |     await self._exit_stack.__aexit__(exc_type, exc_val, exc_tb)
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/contextlib.py", line 768, in __aexit__
+  |     raise exc
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/contextlib.py", line 751, in __aexit__
+  |     cb_suppress = await cb(*exc_details)
+  |                   ^^^^^^^^^^^^^^^^^^^^^^
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/site-packages/mcp/client/_memory.py", line 108, in __aexit__
+  |     await self._cm.__aexit__(exc_type, exc_val, exc_tb)
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/contextlib.py", line 235, in __aexit__
+  |     await self.gen.athrow(value)
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/site-packages/mcp/client/_memory.py", line 67, in _connect
+  |     async with anyio.create_task_group() as tg:
+  |                ~~~~~~~~~~~~~~~~~~~~~~~^^
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/site-packages/anyio/_backends/_asyncio.py", line 815, in __aexit__
+  |     raise BaseExceptionGroup(
+  |         "unhandled errors in a TaskGroup", self._exceptions
+  |     ) from None
+  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Exception Group Traceback (most recent call last):
+    |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/site-packages/mcp/client/_memory.py", line 71, in _connect
+    |     yield client_read, client_write
+    |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/contextlib.py", line 751, in __aexit__
+    |     cb_suppress = await cb(*exc_details)
+    |                   ^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/site-packages/mcp/client/session.py", line 481, in __aexit__
+    |     result = await self._task_group.__aexit__(exc_type, exc_val, exc_tb)
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/site-packages/anyio/_backends/_asyncio.py", line 815, in __aexit__
+    |     raise BaseExceptionGroup(
+    |         "unhandled errors in a TaskGroup", self._exceptions
+    |     ) from None
+    | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+    +-+---------------- 1 ----------------
+      | Traceback (most recent call last):
+      |   File "/home/marcorusc/projects/github/mcp-biomodelling-servers/tests/test_tool_registration.py", line 35, in exercise
+      |     assert (message in text) == (error_type not in (TypeError, AttributeError))
+      | AssertionError: assert ('diagnostic-marker-should-only-be-visible-for-domain-errors' in 'Error executing tool failure: diagnostic-marker-should-only-be-visible-for-domain-errors') == (<class 'AttributeError'> not in (<class 'TypeError'>, <class 'AttributeError'>))
+      +------------------------------------
+_ test_domain_errors_are_actionable_and_programming_errors_remain_masked[AttributeError-True-auto] _
+  + Exception Group Traceback (most recent call last):
+  |   File "/home/marcorusc/projects/github/mcp-biomodelling-servers/tests/test_tool_registration.py", line 37, in test_domain_errors_are_actionable_and_programming_errors_remain_masked
+  |     asyncio.run(exercise())
+  |     ~~~~~~~~~~~^^^^^^^^^^^^
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/asyncio/runners.py", line 205, in run
+  |     return runner.run(main)
+  |            ~~~~~~~~~~^^^^^^
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/asyncio/runners.py", line 128, in run
+  |     return self._loop.run_until_complete(task)
+  |            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/asyncio/base_events.py", line 719, in run_until_complete
+  |     return future.result()
+  |            ~~~~~~~~~~~~~^^
+  |   File "/home/marcorusc/projects/github/mcp-biomodelling-servers/tests/test_tool_registration.py", line 29, in exercise
+  |     async with Client(server, mode=mode) as client:
+  |                ~~~~~~^^^^^^^^^^^^^^^^^^^
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/site-packages/mcp/client/client.py", line 475, in __aexit__
+  |     await self._exit_stack.__aexit__(exc_type, exc_val, exc_tb)
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/contextlib.py", line 768, in __aexit__
+  |     raise exc
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/contextlib.py", line 751, in __aexit__
+  |     cb_suppress = await cb(*exc_details)
+  |                   ^^^^^^^^^^^^^^^^^^^^^^
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/site-packages/anyio/_backends/_asyncio.py", line 815, in __aexit__
+  |     raise BaseExceptionGroup(
+  |         "unhandled errors in a TaskGroup", self._exceptions
+  |     ) from None
+  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Exception Group Traceback (most recent call last):
+    |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/contextlib.py", line 751, in __aexit__
+    |     cb_suppress = await cb(*exc_details)
+    |                   ^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/site-packages/mcp/client/session.py", line 481, in __aexit__
+    |     result = await self._task_group.__aexit__(exc_type, exc_val, exc_tb)
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/site-packages/anyio/_backends/_asyncio.py", line 815, in __aexit__
+    |     raise BaseExceptionGroup(
+    |         "unhandled errors in a TaskGroup", self._exceptions
+    |     ) from None
+    | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+    +-+---------------- 1 ----------------
+      | Traceback (most recent call last):
+      |   File "/home/marcorusc/projects/github/mcp-biomodelling-servers/tests/test_tool_registration.py", line 35, in exercise
+      |     assert (message in text) == (error_type not in (TypeError, AttributeError))
+      | AssertionError: assert ('diagnostic-marker-should-only-be-visible-for-domain-errors' in 'Error executing tool failure: diagnostic-marker-should-only-be-visible-for-domain-errors') == (<class 'AttributeError'> not in (<class 'TypeError'>, <class 'AttributeError'>))
+      +------------------------------------
+_ test_domain_errors_are_actionable_and_programming_errors_remain_masked[AttributeError-True-legacy] _
+  + Exception Group Traceback (most recent call last):
+  |   File "/home/marcorusc/projects/github/mcp-biomodelling-servers/tests/test_tool_registration.py", line 37, in test_domain_errors_are_actionable_and_programming_errors_remain_masked
+  |     asyncio.run(exercise())
+  |     ~~~~~~~~~~~^^^^^^^^^^^^
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/asyncio/runners.py", line 205, in run
+  |     return runner.run(main)
+  |            ~~~~~~~~~~^^^^^^
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/asyncio/runners.py", line 128, in run
+  |     return self._loop.run_until_complete(task)
+  |            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/asyncio/base_events.py", line 719, in run_until_complete
+  |     return future.result()
+  |            ~~~~~~~~~~~~~^^
+  |   File "/home/marcorusc/projects/github/mcp-biomodelling-servers/tests/test_tool_registration.py", line 29, in exercise
+  |     async with Client(server, mode=mode) as client:
+  |                ~~~~~~^^^^^^^^^^^^^^^^^^^
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/site-packages/mcp/client/client.py", line 475, in __aexit__
+  |     await self._exit_stack.__aexit__(exc_type, exc_val, exc_tb)
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/contextlib.py", line 768, in __aexit__
+  |     raise exc
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/contextlib.py", line 751, in __aexit__
+  |     cb_suppress = await cb(*exc_details)
+  |                   ^^^^^^^^^^^^^^^^^^^^^^
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/site-packages/mcp/client/_memory.py", line 108, in __aexit__
+  |     await self._cm.__aexit__(exc_type, exc_val, exc_tb)
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/contextlib.py", line 235, in __aexit__
+  |     await self.gen.athrow(value)
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/site-packages/mcp/client/_memory.py", line 67, in _connect
+  |     async with anyio.create_task_group() as tg:
+  |                ~~~~~~~~~~~~~~~~~~~~~~~^^
+  |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/site-packages/anyio/_backends/_asyncio.py", line 815, in __aexit__
+  |     raise BaseExceptionGroup(
+  |         "unhandled errors in a TaskGroup", self._exceptions
+  |     ) from None
+  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Exception Group Traceback (most recent call last):
+    |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/site-packages/mcp/client/_memory.py", line 71, in _connect
+    |     yield client_read, client_write
+    |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/contextlib.py", line 751, in __aexit__
+    |     cb_suppress = await cb(*exc_details)
+    |                   ^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/site-packages/mcp/client/session.py", line 481, in __aexit__
+    |     result = await self._task_group.__aexit__(exc_type, exc_val, exc_tb)
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/marcorusc/miniforge3/envs/mcp_modelling/lib/python3.14/site-packages/anyio/_backends/_asyncio.py", line 815, in __aexit__
+    |     raise BaseExceptionGroup(
+    |         "unhandled errors in a TaskGroup", self._exceptions
+    |     ) from None
+    | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+    +-+---------------- 1 ----------------
+      | Traceback (most recent call last):
+      |   File "/home/marcorusc/projects/github/mcp-biomodelling-servers/tests/test_tool_registration.py", line 35, in exercise
+      |     assert (message in text) == (error_type not in (TypeError, AttributeError))
+      | AssertionError: assert ('diagnostic-marker-should-only-be-visible-for-domain-errors' in 'Error executing tool failure: diagnostic-marker-should-only-be-visible-for-domain-errors') == (<class 'AttributeError'> not in (<class 'TypeError'>, <class 'AttributeError'>))
+      +------------------------------------
+=========================== short test summary info ============================
+FAILED tests/test_tool_registration.py::test_domain_errors_are_actionable_and_programming_errors_remain_masked[TypeError-False-auto]
+FAILED tests/test_tool_registration.py::test_domain_errors_are_actionable_and_programming_errors_remain_masked[TypeError-False-legacy]
+FAILED tests/test_tool_registration.py::test_domain_errors_are_actionable_and_programming_errors_remain_masked[TypeError-True-auto]
+FAILED tests/test_tool_registration.py::test_domain_errors_are_actionable_and_programming_errors_remain_masked[TypeError-True-legacy]
+FAILED tests/test_tool_registration.py::test_domain_errors_are_actionable_and_programming_errors_remain_masked[AttributeError-False-auto]
+FAILED tests/test_tool_registration.py::test_domain_errors_are_actionable_and_programming_errors_remain_masked[AttributeError-False-legacy]
+FAILED tests/test_tool_registration.py::test_domain_errors_are_actionable_and_programming_errors_remain_masked[AttributeError-True-auto]
+FAILED tests/test_tool_registration.py::test_domain_errors_are_actionable_and_programming_errors_remain_masked[AttributeError-True-legacy]
+8 failed, 20 passed in 0.63s

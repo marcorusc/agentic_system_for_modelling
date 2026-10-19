@@ -173,8 +173,18 @@ Exit 0 means the requested installation checks passed; exit 2 means something is
 missing, incompatible, stale, or failed. This is not scientific approval. Client
 login is reported as unverified, and clients must be restarted after path changes.
 Claude inline-agent isolation still needs client-level inspection. Literature
-requires separately configured PubMed, or explicitly authorized web search for
-Codex; setup does not invent a PubMed backend or enable search consent.
+uses `https://pubmed.mcp.claude.com/mcp` by default in the isolated Codex profile,
+while preserving custom/disabled transports. Web search still requires explicit
+researcher authorization. Test remote availability independently with
+`python3 scripts/setup_support/probe_pubmed.py --python /path/to/modelling/python`;
+it performs only initialization and tools/list under a process watchdog. A healthy
+chat connector alone does not configure the dispatcher profile.
+
+Setup and CI run the isolation/snapshot guard. Use `scripts/check_isolation.py`
+for read-only inspection and its explicit preview/apply migration to remove unsafe
+user/current-project modelling registrations after private backup. Never register
+modelling servers globally to work around a specialist failure. See
+[agentic operations](agentic-operations.md).
 
 ## Development
 

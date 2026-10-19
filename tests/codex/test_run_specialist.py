@@ -694,7 +694,10 @@ for _ in range(12):
                 self.assertEqual(len(records), 1)
                 provenance = json.loads((records[0] / "provenance.json").read_text())
                 self.assertEqual(provenance["handoff_parse_error"] is not None, status == "completed")
-                self.assertEqual(json.loads((records[0] / "handoff.json").read_text()), payload)
+                name = "rejected-handoff.json" if status == "completed" else "handoff.json"
+                self.assertEqual(json.loads((records[0] / name).read_text()), payload)
+                if status == "completed":
+                    self.assertFalse((records[0] / "handoff.json").exists())
 
 
 if __name__ == "__main__":

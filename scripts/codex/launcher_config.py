@@ -31,7 +31,23 @@ PUBMED_TOOLS = (
     "convert_article_ids",
     "get_full_text_article",
     "find_related_articles",
+    "get_copyright_status",
+    "lookup_article_by_citation",
 )
+
+
+# Audited against backend 2.4.0: even most MaBoSS getters call ensure_session
+# and can auto-create state when session_id is omitted. Only these tools are safe
+# without a successful new-stage gate; unknown future tools fail closed.
+INSPECTION_TOOLS = {
+    "boolean_dynamics_modeler": ("list_sessions", "list_artifact_sessions"),
+    "multicellular_configurator": (
+        "list_sessions", "list_artifact_sessions", "get_workflow_status",
+        "get_maboss_context", "analyze_loaded_configuration", "list_loaded_components",
+        "get_available_cycle_models", "list_all_available_signals",
+        "list_all_available_behaviors", "validate_xml_file",
+    ),
+}
 
 
 SPECIALISTS = {
@@ -148,6 +164,7 @@ def mcp_config_arguments(
     *,
     pubmed_transport: bool = False,
     allow_web_search: bool = False,
+    inspection_only: bool = False,
 ) -> list[str]:
     _, permitted_server = SPECIALISTS[specialist]
     if not isinstance(allow_web_search, bool):
@@ -174,6 +191,11 @@ def mcp_config_arguments(
     for server in MODELLING_SERVERS:
         enabled = "true" if server == permitted_server else "false"
         arguments.extend(["-c", f"mcp_servers.{server}.enabled={enabled}"])
+    if inspection_only:
+        allowed = INSPECTION_TOOLS.get(specialist)
+        if allowed is None or set(approved_tools or ()) - set(allowed):
+            raise ValueError("ungated inspection cannot enable scientific mutation or session creation")
+        arguments.extend(["-c", f"mcp_servers.{permitted_server}.enabled_tools=" + json.dumps(allowed)])
     if permitted_server is not None:
         arguments.extend(["-c", f"mcp_servers.{permitted_server}.required=true"])
         disabled_tools = ["delete_session", "clean_generated_files"]
@@ -285,6 +307,7 @@ def build_command(
     approved_tools: list[str] | None = None,
     pubmed_transport: bool = False,
     review_kind: str | None = None,
+    inspection_only: bool = False,
 ) -> list[str]:
     review_kind = normalize_review_kind(specialist, review_kind)
     profile, _ = SPECIALISTS[specialist]
@@ -317,6 +340,7 @@ def build_command(
             approved_tools,
             pubmed_transport=pubmed_transport,
             allow_web_search=allow_web_search,
+            inspection_only=inspection_only,
         )
     )
     contract_guidance = ""
@@ -359,6 +383,7 @@ def build_mcp_list_command(
     approved_tools: list[str] | None = None,
     pubmed_transport: bool = False,
     allow_web_search: bool = False,
+    inspection_only: bool = False,
 ) -> list[str]:
     profile, _ = SPECIALISTS[specialist]
     return [
@@ -371,6 +396,7 @@ def build_mcp_list_command(
             approved_tools,
             pubmed_transport=pubmed_transport,
             allow_web_search=allow_web_search,
+            inspection_only=inspection_only,
         ),
         "mcp",
         "list",

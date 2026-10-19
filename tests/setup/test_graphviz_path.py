@@ -25,7 +25,7 @@ class GraphvizPathTests(unittest.TestCase):
         self.directory = Path(temporary.name)
         self.root = self.directory / "project"
         self.root.mkdir()
-        for name in ("setup", ".codex", ".codex-plugin", ".claude/agents"):
+        for name in ("setup", ".codex", ".codex-plugin", ".claude/agents", ".claude/skills"):
             shutil.copytree(ROOT / name, self.root / name)
         self.prefix = self.directory / "environment"
         self.home = self.directory / "codex"

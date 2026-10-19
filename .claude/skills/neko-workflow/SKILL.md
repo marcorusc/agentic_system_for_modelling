@@ -5,7 +5,7 @@ description: "Use this skill whenever working with the NeKo MCP server to build,
 
 # NeKo Signalling Network Workflow
 
-Operational snapshot for `mcp-biomodelling-servers` 2.3.0. Recheck this skill when
+Operational snapshot for `mcp-biomodelling-servers` 2.4.0. Recheck this skill when
 the server package is upgraded.
 
 NeKo builds and curates molecular signalling networks (OmniPath and similar
@@ -101,3 +101,25 @@ Follow `docs/ode-workflow.md`, including readiness and verified relocation captu
 This branch does not require BNET or Boolean-specific connectivity criteria.
 Only the isolated ODE specialist receives BioMASS; the network specialist retains
 NeKo alone. Existing topology policies and conclusive-export gates still apply.
+
+## Semantics and caveats (backend 2.4.0)
+
+State all five consequential policies before construction/repair: path_policy,
+reuse_policy, max_len, only_signed, consensus. max_len limits the paths searched,
+not the final edge count. discovered_paths reuse can introduce connections among
+newly added nodes and grow the graph beyond a seed-only picture. Inspect connected
+components and evidence, preview connector impact, and compare history alternatives
+before any explicitly authorized repair; do not silently change policy to shrink it.
+
+SIGNOR consensus=True does not imply independent multi-resource corroboration;
+record its database-specific/no-op limitation. A SIF import constructs the supplied
+network without the completion implied by older create_network prose. Preserve the
+original identifiers/reference columns and inspect imported counts/history before
+assuming equivalence. The benchmark exposed null complex labels during BNET export:
+inspect and report offending labels, never silently relabel complexes. Relabelling
+changes topology provenance and needs explicit approval and renewed review/export.
+
+Capture approved exports with scripts/capture/record_neko_boolean_handoff.py or
+record_neko_ode_handoff.py. Capture resource version/cache timestamp if supplied;
+unknown metadata stays null, never inferred from the installed package version.
+See scripts/capture/README.md. An SIF review export is not conclusive BNET approval.
