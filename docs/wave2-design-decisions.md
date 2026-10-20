@@ -21,7 +21,8 @@ each implementation task will need reconciliation against the accepted source.
 | W2-D005 | Assign the interaction-curation work to agents working on NeKo and the MCP servers. | NeKo owns validated mutations and durable provenance; MCP owns exposure, truthful responses and interface efficiency. The researcher will distribute the work after discussion. |
 | W2-D006 | Include explanations of automatic topology growth for reproducibility and verifiability. Track how the topology emerged through NeKo's existing history, state checkout, graph export and visualization capabilities. | Extend the existing state graph and metadata rather than introducing a parallel history system. Record why interactions were introduced, preserve branches and bind explanations to exact states. Reuse existing MCP history interfaces where possible. |
 | W2-D007 | Track only the database name for resource identity in Wave 2. Defer version and download-time tracking and other detailed resource metadata until needed. | Record the selected resource, such as SIGNOR or OmniPath. Do not add resource-release discovery, acquisition/cache timestamps, dataset fingerprinting or database-snapshot capture in this work. This narrows B-NK-6 and supersedes the broader resource-metadata proposal. |
-| W2-D008 | Keep summary readout-node creation and modification of their Boolean rules in the MaBoSS MCP server. These nodes summarize effects rather than introduce biological routes. | Provide a bounded readout extension using existing MaBoSS/pyMaBoSS APIs. Preserve the biological core, upstream ancestry and exact-revision approval. Output selection remains distinct; transition-rate editing is a separate pending discussion. |
+| W2-D008 | Keep summary readout-node creation and modification of their Boolean rules in the MaBoSS MCP server. These nodes summarize effects rather than introduce biological routes. | Provide a bounded readout extension using existing MaBoSS/pyMaBoSS APIs. Preserve the biological core, upstream ancestry and exact-revision approval. Output selection remains distinct; transition-rate access is covered separately by W2-D009. |
+| W2-D009 | Provide tool-based inspection and explicit editing of activation/deactivation rates for named MaBoSS nodes, including readouts. Agents should not need to inspect model files to obtain rate information. | Return concise, structured rate information from the active model, preserve existing settings unless explicitly edited, and record effective configuration in simulation inputs. Reuse coherent interfaces where practical; implementation stays in the MCP repository. |
 
 Authority: the researcher's message on 2026-10-20 stating the maintenance boundary
 and requesting discussion and a decision record before distributing the work.
@@ -37,6 +38,9 @@ and that's it" and defer version/download-time work to avoid unnecessary effort.
 W2-D008 follows the researcher's clarification that a readout summarizes effects,
 can be added and have its Boolean rule modified, and "should stay in the MaBoSS
 mcp server".
+W2-D009 follows the researcher's acceptance of rate configuration with the condition
+that rate information be accessed through tools rather than inspecting CFG files,
+to reduce agent work and context use.
 
 Changes to PhysiCell/PhysiBoSS engines, random-stream algorithms, publication,
 scientific defaults and additional repositories are not authorized by this scope.
@@ -49,7 +53,7 @@ researcher approval for their use on a scientific model.
 | Area | Items to examine | Decision status |
 |---|---|---|
 | NeKo editing and provenance | B-NK-1: explicit interaction additions/sign changes. B-NK-2/3/5/7: truthful diagnostics and identifier handling. B-NK-4/6 and remaining C-NK provenance/documentation work: explain network growth and expose resource metadata. | Manual-edge policy and compact editing approach accepted (W2-D003–005). Topology-growth explanations through existing history accepted (W2-D006). Database-name-only resource identity accepted (W2-D007); remaining diagnostics still need discussion. |
-| MaBoSS reproducibility and readouts | B-MB-1: readout semantics and lineage. B-MB-2: investigate import failures. B-MB-3/4: persistent mutation runs and unique artifacts. B-MB-5/6: existing-engine rate configuration and analysis capabilities. Remaining metadata/documentation items. | Summary readout creation/rule editing accepted (W2-D008). Other items pending; MCP changes only, no MaBoSS/pyMaBoSS package changes. |
+| MaBoSS reproducibility and readouts | B-MB-1: readout semantics and lineage. B-MB-2: investigate import failures. B-MB-3/4: persistent mutation runs and unique artifacts. B-MB-5/6: existing-engine rate configuration and analysis capabilities. Remaining metadata/documentation items. | Summary readout creation/rule editing accepted (W2-D008); tool-based rate inspection/editing accepted (W2-D009). Other items pending; MCP changes only, no MaBoSS/pyMaBoSS package changes. |
 | PhysiCell configuration | Remaining MCP portions of B-PC-1/2/4/6, initial cells/user parameters, portable project export, substrate handling and mapping validation. Reconcile already completed library and lineage work before assigning tasks. | Pending. |
 | Analysis ownership | Decide whether existing artifact-validation calculations remain orchestrator checks, are also exposed through MCP, or need a shared implementation. Define the approved scope before any ODE extension. | Pending. |
 | Release boundary | Decide whether the selected Wave 2 fits the next coordinated release or follows a separate Wave 1 release. Resolve official NeKo metadata and dependency alignment before publication. | Pending. |
@@ -274,7 +278,7 @@ Implementation scope:
    assume expression exclusivity proves simulated readout-state exclusivity.
 5. Creation or editing in a scientific model still requires explicit authorization
    for the named nodes and rules. Do not silently select numerical rates or initial
-   states. Dedicated rate-editing scope (B-MB-5) remains to be discussed.
+   states. Tool-based rate inspection/editing is covered by W2-D009.
 
 Acceptance evidence: create a summary node in an imported-model fixture, update
 its rule, and verify that core rules remain unchanged; reject invalid or out-of-scope
@@ -287,6 +291,43 @@ The MCP agent should identify any required agentic-policy/validator integration
 before implementation. This decision authorizes the bounded feature design, not
 unrestricted topology editing or changes to unrelated scientific gates. Computed
 observables remain a separate analysis topic.
+
+## MaBoSS rate inspection and configuration (B-MB-5; W2-D009)
+
+Status: **accepted**, owned by the MCP-server agent.
+
+Provide compact structured inspection of activation/deactivation rates for
+explicitly selected nodes, including readouts. Obtain information from the active
+model/configuration through supported APIs; do not require the calling agent to
+open BND/CFG files. Those files remain reproducibility artifacts.
+
+Implementation requirements:
+
+1. Identify the session/model revision and return each requested node's configured
+   up/down rate expressions, referenced parameter values and unresolved references,
+   if any. Distinguish expressions from constant coefficients; do not report an
+   instantaneous numerical rate without the state and inputs needed to evaluate it.
+   Keep normal results limited to requested nodes and relevant parameters.
+2. Support explicit up/down rate configuration for named nodes through supported
+   package APIs. Preserve logical activation/deactivation conditions when changing
+   their rate coefficients; a coefficient edit must not silently replace a
+   conditional expression with unconditional switching. If a custom expression
+   cannot be edited unambiguously, report that limitation rather than guessing.
+3. Validate requested changes before mutation, preserve unspecified settings,
+   avoid unintended changes to other nodes through shared parameters, and return
+   before/after values read back from the active model. Reject invalid operations
+   without partial changes. Scientific values still require researcher authorization.
+4. Preserve effective rate configuration and its model revision in saved simulation
+   inputs and associated run metadata. Apply existing stale-approval/export checks.
+5. Prefer extending coherent existing inspection/configuration interfaces over
+   proliferating tools. Exact names/schema are implementation choices; arbitrary
+   expression-authoring capabilities are not required by this decision.
+
+Acceptance evidence: targeted inspection matches the active model; an authorized
+rate edit reads back correctly and survives supported persistence/export; other
+nodes and logical conditions remain unchanged; invalid or ambiguous edits fail
+without mutation. Compare representative response sizes with raw model-file
+inspection rather than claiming an unmeasured performance improvement.
 
 ## Implementation handoff format
 
