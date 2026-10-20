@@ -32,6 +32,7 @@ each implementation task will need reconciliation against the accepted source.
 | W2-D016 | Provide typed user-parameter editing/inspection and configuration of existing initial-cell CSV files through PhysiCell MCP; defer placement generation. | Reuse supported Settings APIs, return stored values and make combined count/CSV initialization visible. Do not automatically alter cell counts when enabling CSV or assume arbitrary user parameters are interpreted by the executable. |
 | W2-D017 | Export a portable PhysiCell configuration bundle containing XML and its supported input dependencies, with provenance and portable references. | MCP owns packaging/session provenance using Settings serialization. Preserve session state and previous exports; exclude executables, compilation and engine installation. |
 | W2-D018 | Preserve the required substrate for PhysiCell compatibility. The researcher reports that an empty substrate configuration crashes the software and breaks dependent interaction/parameter lookups. The revised default-visibility and readiness proposal is accepted for assignment to the Settings and MCP agents. | Withdraw the proposed empty-substrate export mode. Keep the required default and dependent configuration consistent, expose its origin/values and recognize it in readiness bookkeeping. Distinguish “no biological substrate of interest” from zero substrate entries. |
+| W2-D019 | Implement compact MCP inspection improvements for PhysiCell stored parameters/behavior names and MaBoSS readable rules/effective configuration/output visibility. | Extend existing tools with targeted results. Preserve model rules, numerical defaults and scientific selections; do not automatically enable stationary-distribution calculations or change output nodes. |
 
 Authority: the researcher's message on 2026-10-20 stating the maintenance boundary
 and requesting discussion and a decision record before distributing the work.
@@ -69,9 +70,9 @@ researcher approval for their use on a scientific model.
 | Area | Items to examine | Decision status |
 |---|---|---|
 | NeKo editing and provenance | B-NK-1: explicit interaction additions/sign changes. B-NK-2/3/5/7: truthful diagnostics and identifier handling. B-NK-4/6 and remaining C-NK provenance/documentation work: explain network growth and expose resource metadata. | Manual-edge policy and compact editing approach accepted (W2-D003–005). Topology-growth explanations through existing history accepted (W2-D006). Database-name-only resource identity accepted (W2-D007); remaining diagnostics still need discussion. |
-| MaBoSS reproducibility and readouts | B-MB-1: readout semantics and lineage. B-MB-2: investigate import failures. B-MB-3/4: persistent mutation runs and unique artifacts. B-MB-5/6: existing-engine rate configuration and analysis capabilities. Remaining metadata/documentation items. | Summary readout creation/rule editing accepted (W2-D008); tool-based rate inspection/editing accepted (W2-D009); persistent runs and plots accepted (W2-D010). Other items pending; MCP changes only, no MaBoSS/pyMaBoSS package changes. |
-| PhysiCell configuration | Remaining MCP portions of B-PC-1/2/4/6, initial cells/user parameters, portable project export, substrate handling and mapping validation. Reconcile already completed library and lineage work before assigning tasks. | MCP exposure of steepness, cycle transitions and fractional stochasticity accepted (W2-D014); typed user parameters and existing initial-cell CSV configuration accepted (W2-D016); portable configuration bundle accepted (W2-D017). Broader testing and mapping-validation discussion deferred (W2-D015); other implementation choices remain pending. |
-| Analysis ownership | Decide whether existing artifact-validation calculations remain orchestrator checks, are also exposed through MCP, or need a shared implementation. Define the approved scope before any ODE extension. | Pending. |
+| MaBoSS reproducibility and readouts | B-MB-1: readout semantics and lineage. B-MB-2: investigate import failures. B-MB-3/4: persistent mutation runs and unique artifacts. B-MB-5/6: existing-engine rate configuration and analysis capabilities. Remaining metadata/documentation items. | Readout editing, rate access and persistent runs accepted (W2-D008–010); B-MB-7/8/9 inspection improvements accepted (W2-D019). Import investigation deferred (W2-D011); analysis moved to separate MaBoSS_test evaluation (W2-D012/013). No MaBoSS/pyMaBoSS package changes. |
+| PhysiCell configuration | Remaining MCP portions of B-PC-1/2/4/6, initial cells/user parameters, portable project export, substrate handling and mapping validation. Reconcile already completed library and lineage work before assigning tasks. | Configuration extensions, user parameters/CSV, portable bundles and required-substrate visibility accepted (W2-D014/016–018); B-PC-1/9 inspection scope accepted (W2-D019). Broader testing and mapping-validation discussion deferred (W2-D015). |
+| Analysis ownership | Decide whether existing artifact-validation calculations remain orchestrator checks, are also exposed through MCP, or need a shared implementation. Define the approved scope before any ODE extension. | Separate MaBoSS_test evaluation (W2-D012/013); preserve existing validators and defer new standalone post-analysis development. Detailed replacement/integration scope remains undecided. |
 | Release boundary | Decide whether the selected Wave 2 fits the next coordinated release or follows a separate Wave 1 release. Resolve official NeKo metadata and dependency alignment before publication. | Pending. |
 
 ## First proposal: explicit NeKo interaction editing (B-NK-1)
@@ -526,8 +527,8 @@ not authorized by this maintenance assignment.
 
 Initial cells/user parameters (B-PC-3) are covered separately by W2-D016.
 Portable export (B-PC-5) is covered separately by W2-D017.
-Broader B-PC-1 inspection/patch behavior, substrate handling (B-PC-7) and behavior-name discovery
-(B-PC-9) remain separate implementation topics. Mapping validation (B-PC-8) and
+Substrate handling (B-PC-7) is covered by W2-D018; parameter inspection/readback
+and behavior-name discovery (B-PC-1/9) are covered by W2-D019. Mapping validation (B-PC-8) and
 the broader benchmark/testing campaign are deferred. This does not remove existing
 runtime input validation, artifact integrity checks or scientific approval gates.
 
@@ -662,6 +663,26 @@ Ownership: Settings maintains the required default and dependent
 configuration consistency; MCP exposes its origin/values and consistent readiness.
 This is a focused configuration/status proposal, not an engine modification or
 an expansion of the deferred testing campaign.
+
+## Compact MCP inspection improvements (W2-D019)
+
+Status: **accepted**, ready for assignment to the MCP-maintenance agent.
+Authority: the researcher explicitly approved the proposed inspection package.
+
+| Item | Accepted implementation |
+|---|---|
+| B-PC-1, inspection/readback scope | Inspect selected stored cell settings through tools and return actual stored values after updates. Preserve explicit zero/false and do not confuse an echoed request with successful application. Coordinate with W2-D014/016/018 rather than adding duplicate inspection interfaces. |
+| B-PC-9 | Expose supported behavior names and aliases, including cycle-exit behaviors, through existing discovery interfaces. Use the supported backend vocabulary and cell/model context; do not invent aliases or claim unsupported phase names are usable. |
+| B-MB-7 | Return readable Boolean rules with equivalent semantics, without changing the underlying model. Prefer the actual logical rule over redundant transition-expression formatting; if a custom configuration cannot be represented faithfully as a simple Boolean rule, report the limitation rather than guessing. |
+| B-MB-8 | Report effective simulation configuration through tools, including relevant sampling, thread, time and stationary-distribution settings. Describe disabled outputs accurately; do not automatically enable stationary-distribution computation or change defaults. |
+| B-MB-9 | Report selected output versus internal nodes through inspection and export summaries. Bind export descriptions to the exported configuration, not stale session labels. Do not change output selections or imply that an internal node is absent from the model. |
+
+Prefer concise structured responses for requested nodes/settings and coherent
+extensions of existing tools. Keep source model/session/revision identity clear
+where relevant and distinguish stored values from unknown/unavailable values.
+This package changes visibility and presentation, not biological rules or
+scientific configuration. It is separate from the deferred testing campaign and
+does not authorize MaBoSS/pyMaBoSS changes or new analysis algorithms.
 
 ## Implementation handoff format
 
