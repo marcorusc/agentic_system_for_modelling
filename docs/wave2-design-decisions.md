@@ -25,6 +25,7 @@ each implementation task will need reconciliation against the accepted source.
 | W2-D009 | Provide tool-based inspection and explicit editing of activation/deactivation rates for named MaBoSS nodes, including readouts. Agents should not need to inspect model files to obtain rate information. | Return concise, structured rate information from the active model, preserve existing settings unless explicitly edited, and record effective configuration in simulation inputs. Reuse coherent interfaces where practical; implementation stays in the MCP repository. |
 | W2-D010 | Persist ordinary and mutation simulations through shared run storage, support explicit run selection for inspection/plotting, and prevent plot/result overwrites. | Extend existing MCP tools and preservation helpers. Preserve exact executed inputs, generated outputs and run identity; keep the base model unchanged by mutation experiments; permit historical inspection after restart without rerunning simulations. |
 | W2-D011 | Defer B-MB-2, the NeKo-to-MaBoSS import/handoff reliability investigation; the researcher will investigate later. | Do not assign this investigation now or mark the historical failure resolved. Move the discussion to B-MB-6. |
+| W2-D012 | Redirect B-MB-6 discussion toward extending MaBoSS_test and integrating it with the MaBoSS MCP server; defer separate new MaBoSS post-analysis scripts while assessing this route. | Preserve existing validators. The detailed MaBoSS_test extension, semantics and integration contract remain pending discussion; no implementation or migration is assigned yet. |
 
 Authority: the researcher's message on 2026-10-20 stating the maintenance boundary
 and requesting discussion and a decision record before distributing the work.
@@ -47,6 +48,9 @@ W2-D010 follows the researcher's acceptance of the shared persistence, run-selec
 and unique-plot proposal and request to record it for assignment to the MCP agent.
 W2-D011 follows the researcher's request to skip the handoff investigation for now
 and discuss B-MB-6 instead.
+W2-D012 records the researcher's proposed MaBoSS_test direction and preference to
+defer separate post-analysis development if this route is adopted. The inspection
+supports discussing that route; it does not establish feature completeness.
 
 Changes to PhysiCell/PhysiBoSS engines, random-stream algorithms, publication,
 scientific defaults and additional repositories are not authorized by this scope.
@@ -401,8 +405,9 @@ publication, automatic scientific execution or deletion of existing artifacts.
 
 ## Bounded Boolean analysis (B-MB-6): discussion opened
 
-Status: **pending researcher decision**. B-MB-2 is deferred under W2-D011,
-not completed or included in this proposal.
+Status: **redirected to MaBoSS_test design discussion under W2-D012**. The earlier
+proposal below is retained as context, not an implementation assignment. B-MB-2
+is deferred under W2-D011, not completed or included in this proposal.
 
 The existing `scripts/validate/boolean_structure.py` already implements bounded
 logical fixed-point enumeration, reachable terminal strongly connected components
@@ -429,6 +434,55 @@ rate/constraint semantics match the analysed transition relation. Zero rates,
 clamps or custom rate expressions must not be silently ignored. A rules-only
 analysis may be explicitly labelled as such; unsupported configured-model claims
 must be rejected rather than presented as proofs.
+
+## MaBoSS_test integration direction (W2-D012)
+
+Status: design discussion; detailed scope and contract **pending**.
+
+Researcher-proposed upstream:
+https://github.com/sysbio-curie/MaBoSS_test
+
+Source inspection of `maboss_test/MaBoSSTestCase.py` (GitHub file blob
+`b670adaec12b2f9189b0d2c2ab8baf577a0d694c`) found Python unittest-style assertions
+for state-probability changes under mutations, stable-state probability checks
+and node dependencies among simulation-reported stable states. Conditions are
+structured Python dictionaries with direction/threshold arguments; this is not
+currently a general temporal-logic or exhaustive model-checking implementation.
+
+Relevant integration issues observed in source, not runtime-tested:
+
+- Assertions invoke simulations internally and may change outputs on their copied
+  models. An adapter must not silently rerun a model or choose scientific settings.
+- Several paths print failures or return early rather than emit a reliable typed
+  outcome; missing/invalid evidence must remain distinguishable from a passed test.
+- State collections use probabilities as dictionary keys, so equal-probability
+  states can overwrite one another. Preserve state identity independently of
+  probability before relying on aggregation or dependency tests.
+- Comparisons truncate values to a decimal precision. Numerical tolerances,
+  statistical uncertainty and biological acceptance thresholds need explicit,
+  separately defined semantics.
+
+Recommended architecture for discussion:
+
+1. MaBoSS_test owns reusable condition definitions, validation, evaluation and
+   structured outcomes; retain a compatible unittest facade where practical.
+2. MCP owns authorized simulation orchestration, W2-D010 run persistence and
+   selection, and compact exposure of evaluations bound to exact inputs/results.
+3. Permit evaluation of suitable stored results without simulation. Report missing
+   timepoints, joint-state information or required outputs rather than synthesizing
+   them or interpreting absence as zero.
+4. Persist the condition, evidence run IDs, evaluation settings and detailed report.
+   Distinguish pass/fail/inconclusive from invalid input or execution error.
+5. Keep simulation-based evidence distinct from exhaustive structural proofs.
+   Fixed-point completeness, reachable-attractor enumeration and general invariant
+   proofs remain separate possible extensions, not capabilities established by
+   this integration.
+
+Defer new standalone analysis scripts and the earlier proposal to relocate their
+algorithms into the MCP package. Keep existing supported validators available until
+any replacement is explicitly scoped, tested and accepted. No MaBoSS/pyMaBoSS
+package modifications are included; a future assignment would target MaBoSS_test
+and the MCP repository, with agentic-workflow integration scoped separately.
 
 ## Implementation handoff format
 
