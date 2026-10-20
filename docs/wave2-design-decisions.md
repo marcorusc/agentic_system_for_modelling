@@ -442,9 +442,11 @@ Status: **separate evaluation workstream under W2-D013**; detailed scope and
 contract pending. The researcher will fork/clone MaBoSS_test and assess usefulness
 with another agent before assigning implementation.
 
-Portable handoff:
-[MaBoSS_test evaluation and integration brief](maboss-test-evaluation-and-integration-brief.md).
-The brief is self-contained and can be copied into the new repository.
+The researcher has cloned MaBoSS_test and requested transfer of the portable
+handoff. It now lives in that repository at `docs/maboss-test-evaluation-and-integration-brief.md`
+(local checkout: `/home/marcorusc/projects/github/MaBoSS_test`).
+The brief remains self-contained. Its original content is also preserved in this
+repository's commit `21da56d`.
 
 Researcher-proposed upstream:
 https://github.com/sysbio-curie/MaBoSS_test
