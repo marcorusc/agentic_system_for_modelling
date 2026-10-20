@@ -47,8 +47,10 @@ question, not permission to bypass its internal consistency requirements.
 
 Proposed contract:
 
-1. Provide distinct MCP operations for adding an interaction and changing the
-   effect of an existing interaction. Do not silently overwrite a conflicting edge.
+1. Provide distinct operations for adding an interaction and changing the
+   effect of an existing interaction. Whether they share one MCP tool remains
+   under discussion; separate operations do not require separate tool names.
+   Do not silently overwrite a conflicting edge.
 2. Require explicit source/target identifiers resolving unambiguously to existing
    nodes. Missing endpoints require a separate explicit node-addition operation;
    editing an edge must not silently expand or reconnect the network.
@@ -65,6 +67,66 @@ Proposed contract:
 First decision requested: agree or revise the proposed separation of edge editing
 from node addition/automatic network completion. After that, settle evidence,
 conflict handling and revision requirements before marking B-NK-1 ready for work.
+
+## Database restrictions and tool discoverability discussion (2026-10-20)
+
+Researcher concerns: original NeKo behavior may reject nodes/interactions absent
+from its database; adding many MCP tools may impair discovery and consume context.
+These concerns reopen the first proposal. No curation policy or tool layout has
+been accepted.
+
+### Source inspection findings
+
+Inspected the accepted official NeKo revision
+[`673875d09e4c49c97d0d760d3ea85bd2603efc82`](https://github.com/sysbio-curie/Neko/blob/673875d09e4c49c97d0d760d3ea85bd2603efc82/neko/core/network.py):
+
+- Ordinary `add_node` checks the resource database and returns `False` if no
+  accepted identifier is present. Its SIF-import path allows unmapped labels.
+- Low-level `add_edge` derives the sign from supplied interaction fields and
+  appends/consolidates the supplied edge. It does not look up the exact directed
+  interaction in the resource database. Resource-driven connection methods are
+  a different path from directly supplying an edge.
+- `add_edge` calls `add_node` for missing endpoints without checking its Boolean
+  result. This must not be exposed as a validated manual-curation interface.
+  A focused regression should establish the behavior on a rejected endpoint.
+
+Inspected the accepted MCP revision
+[`0e3f7fcd542d3d8047d27e04a6e9765b59e06b49`](https://github.com/marcorusc/mcp-biomodelling-servers/blob/0e3f7fcd542d3d8047d27e04a6e9765b59e06b49/NeKo/server.py):
+
+- `add_nodes` increments its success counter without checking `add_node`'s return
+  value. A database rejection can therefore be counted as an addition. Record this
+  as a correctness issue to verify and address in a later authorized task.
+- `NeKo/server.py` has 27 static `@tool` declarations. This is a source count,
+  not a measurement of the tool schemas loaded by a particular client.
+
+### Revised recommendations, still pending
+
+Separate the scientific provenance policy from the MCP interface:
+
+- Retain resource-backed construction behavior. Consider a separately explicit,
+  researcher-authorized curation operation for literature-supported interactions
+  absent from that resource. Such an edge must not acquire a database provenance
+  label. Whether to admit these edits is the next researcher decision; custom
+  nodes and evidence-free hypotheses remain separate unresolved choices.
+- Consider one focused `edit_interactions` tool with a small, strictly typed set
+  of operations such as `add` and `set_effect`, instead of one new tool per edit.
+  Preserve operation-specific authorization and validation. Do not collapse
+  unrelated capabilities into an unrestricted generic executor or remove existing
+  tools as part of this proposal.
+- Measure schema size, representative result size, tool-selection errors and
+  required call count before and after any interface change. Fewer names alone
+  do not establish lower context use or better discovery.
+- Keep specialist server isolation. Consider task-specific exposure of tool
+  subsets where the client supports it, with essential inspection available and
+  no expansion of mutation permissions. This is an integration proposal, not an
+  assertion that the current runtime filters every task's tool set.
+- Prefer concise schemas, clear names and bounded/paginated results. On-demand
+  tool loading is client-dependent and cannot be assumed from MCP support alone.
+
+Sources for the discovery tradeoff: [MCP tools specification](https://modelcontextprotocol.io/specification/2025-11-25/server/tools)
+defines discovery and schemas; [Anthropic's tool-use engineering discussion](https://www.anthropic.com/engineering/advanced-tool-use)
+describes context costs, overlapping-tool selection failures and deferred loading.
+No client-specific token measurement or live modelling operation was performed.
 
 ## Implementation handoff format
 
