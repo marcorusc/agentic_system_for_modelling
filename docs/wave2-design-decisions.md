@@ -21,6 +21,7 @@ each implementation task will need reconciliation against the accepted source.
 | W2-D005 | Assign the interaction-curation work to agents working on NeKo and the MCP servers. | NeKo owns validated mutations and durable provenance; MCP owns exposure, truthful responses and interface efficiency. The researcher will distribute the work after discussion. |
 | W2-D006 | Include explanations of automatic topology growth for reproducibility and verifiability. Track how the topology emerged through NeKo's existing history, state checkout, graph export and visualization capabilities. | Extend the existing state graph and metadata rather than introducing a parallel history system. Record why interactions were introduced, preserve branches and bind explanations to exact states. Reuse existing MCP history interfaces where possible. |
 | W2-D007 | Track only the database name for resource identity in Wave 2. Defer version and download-time tracking and other detailed resource metadata until needed. | Record the selected resource, such as SIGNOR or OmniPath. Do not add resource-release discovery, acquisition/cache timestamps, dataset fingerprinting or database-snapshot capture in this work. This narrows B-NK-6 and supersedes the broader resource-metadata proposal. |
+| W2-D008 | Keep summary readout-node creation and modification of their Boolean rules in the MaBoSS MCP server. These nodes summarize effects rather than introduce biological routes. | Provide a bounded readout extension using existing MaBoSS/pyMaBoSS APIs. Preserve the biological core, upstream ancestry and exact-revision approval. Output selection remains distinct; transition-rate editing is a separate pending discussion. |
 
 Authority: the researcher's message on 2026-10-20 stating the maintenance boundary
 and requesting discussion and a decision record before distributing the work.
@@ -33,6 +34,9 @@ are required and that NeKo already supports network-state history, checkout and
 state-graph export/visualization.
 W2-D007 follows the researcher's instruction to track "just ... the database name
 and that's it" and defer version/download-time work to avoid unnecessary effort.
+W2-D008 follows the researcher's clarification that a readout summarizes effects,
+can be added and have its Boolean rule modified, and "should stay in the MaBoSS
+mcp server".
 
 Changes to PhysiCell/PhysiBoSS engines, random-stream algorithms, publication,
 scientific defaults and additional repositories are not authorized by this scope.
@@ -45,7 +49,7 @@ researcher approval for their use on a scientific model.
 | Area | Items to examine | Decision status |
 |---|---|---|
 | NeKo editing and provenance | B-NK-1: explicit interaction additions/sign changes. B-NK-2/3/5/7: truthful diagnostics and identifier handling. B-NK-4/6 and remaining C-NK provenance/documentation work: explain network growth and expose resource metadata. | Manual-edge policy and compact editing approach accepted (W2-D003–005). Topology-growth explanations through existing history accepted (W2-D006). Database-name-only resource identity accepted (W2-D007); remaining diagnostics still need discussion. |
-| MaBoSS reproducibility and readouts | B-MB-1: readout semantics and lineage. B-MB-2: investigate import failures. B-MB-3/4: persistent mutation runs and unique artifacts. B-MB-5/6: existing-engine rate configuration and analysis capabilities. Remaining metadata/documentation items. | Pending; MCP changes only, no MaBoSS/pyMaBoSS package changes. |
+| MaBoSS reproducibility and readouts | B-MB-1: readout semantics and lineage. B-MB-2: investigate import failures. B-MB-3/4: persistent mutation runs and unique artifacts. B-MB-5/6: existing-engine rate configuration and analysis capabilities. Remaining metadata/documentation items. | Summary readout creation/rule editing accepted (W2-D008). Other items pending; MCP changes only, no MaBoSS/pyMaBoSS package changes. |
 | PhysiCell configuration | Remaining MCP portions of B-PC-1/2/4/6, initial cells/user parameters, portable project export, substrate handling and mapping validation. Reconcile already completed library and lineage work before assigning tasks. | Pending. |
 | Analysis ownership | Decide whether existing artifact-validation calculations remain orchestrator checks, are also exposed through MCP, or need a shared implementation. Define the approved scope before any ODE extension. | Pending. |
 | Release boundary | Decide whether the selected Wave 2 fits the next coordinated release or follows a separate Wave 1 release. Resolve official NeKo metadata and dependency alignment before publication. | Pending. |
@@ -224,8 +228,8 @@ only limits new resource-identity tracking.
 
 ## NeKo and MCP implementation allocation
 
-These requirements are recorded for later assignment; no implementation agents
-have been dispatched as part of this discussion.
+The researcher reports having handed the accepted NeKo/MCP work to their two
+repository agents. This discussion thread has not dispatched implementation agents.
 
 | Owner | Responsibility | Acceptance evidence |
 |---|---|---|
@@ -240,6 +244,49 @@ wrapper. Test the combined workflow after both changes land. A format such as BN
 that cannot represent all edge metadata must retain it in an accompanying typed
 artifact, rather than silently dropping the manual-origin designation. Existing
 consumers need a documented compatible path.
+
+## MaBoSS summary readouts (B-MB-1; W2-D008)
+
+Status: **accepted**, for implementation in the MCP-server repository using
+supported MaBoSS/pyMaBoSS capabilities. No changes to those packages are authorized.
+
+Selecting existing output nodes does not add model variables. This feature instead
+adds explicitly requested summary nodes and permits editing their Boolean rules.
+The researcher accepted this responsibility in the MaBoSS stage because these
+nodes summarize the biological core rather than extend its biological routes.
+
+Implementation scope:
+
+1. Keep readouts distinguishable from core nodes, with `readout` provenance,
+   exact rules and a recorded explanation. The initial bounded design uses
+   existing core nodes as regulators and permits no feedback into the core.
+   Preserve core rules and reject attempts to use the readout editor for general
+   biological topology changes.
+2. Support creation and rule updates through a compact interface. Validate names,
+   collisions, rule syntax and referenced identifiers before committing a change;
+   invalid operations must leave the model intact.
+3. Record before/after revisions and retain verified upstream NeKo ancestry.
+   A readout edit does not inherit scientific approval for the changed model;
+   invalidate stale exports/approvals and preserve the existing review/export gates.
+4. Persist the readout definitions and effective initial-state/rate configuration
+   through supported save/load and export paths. These are simulated nodes with
+   stochastic update timing, not instantaneous calculated expressions. Do not
+   assume expression exclusivity proves simulated readout-state exclusivity.
+5. Creation or editing in a scientific model still requires explicit authorization
+   for the named nodes and rules. Do not silently select numerical rates or initial
+   states. Dedicated rate-editing scope (B-MB-5) remains to be discussed.
+
+Acceptance evidence: create a summary node in an imported-model fixture, update
+its rule, and verify that core rules remain unchanged; reject invalid or out-of-scope
+edits without partial mutation; preserve definitions, upstream ancestry and model
+revision through supported persistence and downstream handoff; reject stale approval.
+Validate downstream references to the exported readout names without claiming to
+execute a PhysiCell simulation.
+
+The MCP agent should identify any required agentic-policy/validator integration
+before implementation. This decision authorizes the bounded feature design, not
+unrestricted topology editing or changes to unrelated scientific gates. Computed
+observables remain a separate analysis topic.
 
 ## Implementation handoff format
 
