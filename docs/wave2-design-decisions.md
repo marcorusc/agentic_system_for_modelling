@@ -31,6 +31,7 @@ each implementation task will need reconciliation against the accepted source.
 | W2-D015 | Focus the current discussion on implementation; defer the broader testing campaign and mapping-validation feature discussion. | Do not make benchmark reruns or new analysis/testing features prerequisites for discussing implementation. Necessary developer checks remain part of coherent changes; existing validation and scientific approval gates remain intact. |
 | W2-D016 | Provide typed user-parameter editing/inspection and configuration of existing initial-cell CSV files through PhysiCell MCP; defer placement generation. | Reuse supported Settings APIs, return stored values and make combined count/CSV initialization visible. Do not automatically alter cell counts when enabling CSV or assume arbitrary user parameters are interpreted by the executable. |
 | W2-D017 | Export a portable PhysiCell configuration bundle containing XML and its supported input dependencies, with provenance and portable references. | MCP owns packaging/session provenance using Settings serialization. Preserve session state and previous exports; exclude executables, compilation and engine installation. |
+| W2-D018 | Preserve the required substrate for PhysiCell compatibility. The researcher reports that an empty substrate configuration crashes the software and breaks dependent interaction/parameter lookups. | Withdraw the proposed empty-substrate export mode. Distinguish “no biological substrate of interest” from a configuration containing zero substrate entries; the revised visibility/readiness design below remains pending approval. |
 
 Authority: the researcher's message on 2026-10-20 stating the maintenance boundary
 and requesting discussion and a decision record before distributing the work.
@@ -624,6 +625,42 @@ configuration serialization. Identify any missing library API separately.
 The feature excludes executable distribution, compilation, engine installation,
 automatic simulation execution and claims of successful scientific validation.
 The broader testing campaign remains deferred under W2-D015.
+
+## Required default substrate: revised B-PC-7 discussion (W2-D018)
+
+Status: compatibility constraint recorded from researcher direction; revised
+implementation proposal **pending approval**.
+
+The researcher clarified that the target PhysiCell software requires a substrate:
+omitting even the default causes crashes and missing-substrate references in
+interactions/parameters. Do not implement the previously discussed empty-substrate
+mode or disable the required default insertion on that basis. The original
+diagnostic's “substrate-free” readiness goal must mean no biologically specified
+diffusing substrate, not an empty executable configuration.
+
+Revised proposal:
+
+- Retain the required default entry and its existing name for compatibility.
+  Identify its default/template origin through inspection metadata rather than
+  renaming it automatically or claiming it represents a researcher-selected species.
+- Make the effective default and its parameters visible before export, keeping
+  configuration, dependent cell settings and MCP status synchronized. Export
+  should not be the first point at which the agent discovers the default.
+- Base substrate-step readiness on the actual valid configuration, including a
+  known required default. Do not require an extra `add_substrate` call merely to
+  satisfy workflow bookkeeping. Overall export approval and other gates remain.
+- Preserve imported substrates and their references. Adding a biological substrate
+  must not silently delete or rename the default; replacement/removal requires
+  explicit intent and coherent handling of dependent references. Never leave zero
+  substrate entries in the supported configuration.
+- Do not call the default inert or biologically neutral without evidence.
+  Report its effective units and parameters; do not silently normalize units,
+  change numerical defaults or convert values as part of this visibility fix.
+
+Potential ownership: Settings maintains the required default and dependent
+configuration consistency; MCP exposes its origin/values and consistent readiness.
+This is a focused configuration/status proposal, not an engine modification or
+an expansion of the deferred testing campaign.
 
 ## Implementation handoff format
 
