@@ -26,6 +26,7 @@ each implementation task will need reconciliation against the accepted source.
 | W2-D010 | Persist ordinary and mutation simulations through shared run storage, support explicit run selection for inspection/plotting, and prevent plot/result overwrites. | Extend existing MCP tools and preservation helpers. Preserve exact executed inputs, generated outputs and run identity; keep the base model unchanged by mutation experiments; permit historical inspection after restart without rerunning simulations. |
 | W2-D011 | Defer B-MB-2, the NeKo-to-MaBoSS import/handoff reliability investigation; the researcher will investigate later. | Do not assign this investigation now or mark the historical failure resolved. Move the discussion to B-MB-6. |
 | W2-D012 | Redirect B-MB-6 discussion toward extending MaBoSS_test and integrating it with the MaBoSS MCP server; defer separate new MaBoSS post-analysis scripts while assessing this route. | Preserve existing validators. The detailed MaBoSS_test extension, semantics and integration contract remain pending discussion; no implementation or migration is assigned yet. |
+| W2-D013 | Separate MaBoSS_test evaluation into its own discussion; the researcher will fork/clone the repository and transfer a standalone brief to another agent. | Use the portable evaluation brief below. This work may proceed in parallel; no MaBoSS_test implementation is dispatched from this discussion. |
 
 Authority: the researcher's message on 2026-10-20 stating the maintenance boundary
 and requesting discussion and a decision record before distributing the work.
@@ -437,7 +438,13 @@ must be rejected rather than presented as proofs.
 
 ## MaBoSS_test integration direction (W2-D012)
 
-Status: design discussion; detailed scope and contract **pending**.
+Status: **separate evaluation workstream under W2-D013**; detailed scope and
+contract pending. The researcher will fork/clone MaBoSS_test and assess usefulness
+with another agent before assigning implementation.
+
+Portable handoff:
+[MaBoSS_test evaluation and integration brief](maboss-test-evaluation-and-integration-brief.md).
+The brief is self-contained and can be copied into the new repository.
 
 Researcher-proposed upstream:
 https://github.com/sysbio-curie/MaBoSS_test
