@@ -23,6 +23,7 @@ each implementation task will need reconciliation against the accepted source.
 | W2-D007 | Track only the database name for resource identity in Wave 2. Defer version and download-time tracking and other detailed resource metadata until needed. | Record the selected resource, such as SIGNOR or OmniPath. Do not add resource-release discovery, acquisition/cache timestamps, dataset fingerprinting or database-snapshot capture in this work. This narrows B-NK-6 and supersedes the broader resource-metadata proposal. |
 | W2-D008 | Keep summary readout-node creation and modification of their Boolean rules in the MaBoSS MCP server. These nodes summarize effects rather than introduce biological routes. | Provide a bounded readout extension using existing MaBoSS/pyMaBoSS APIs. Preserve the biological core, upstream ancestry and exact-revision approval. Output selection remains distinct; transition-rate access is covered separately by W2-D009. |
 | W2-D009 | Provide tool-based inspection and explicit editing of activation/deactivation rates for named MaBoSS nodes, including readouts. Agents should not need to inspect model files to obtain rate information. | Return concise, structured rate information from the active model, preserve existing settings unless explicitly edited, and record effective configuration in simulation inputs. Reuse coherent interfaces where practical; implementation stays in the MCP repository. |
+| W2-D010 | Persist ordinary and mutation simulations through shared run storage, support explicit run selection for inspection/plotting, and prevent plot/result overwrites. | Extend existing MCP tools and preservation helpers. Preserve exact executed inputs, generated outputs and run identity; keep the base model unchanged by mutation experiments; permit historical inspection after restart without rerunning simulations. |
 
 Authority: the researcher's message on 2026-10-20 stating the maintenance boundary
 and requesting discussion and a decision record before distributing the work.
@@ -41,6 +42,8 @@ mcp server".
 W2-D009 follows the researcher's acceptance of rate configuration with the condition
 that rate information be accessed through tools rather than inspecting CFG files,
 to reduce agent work and context use.
+W2-D010 follows the researcher's acceptance of the shared persistence, run-selection
+and unique-plot proposal and request to record it for assignment to the MCP agent.
 
 Changes to PhysiCell/PhysiBoSS engines, random-stream algorithms, publication,
 scientific defaults and additional repositories are not authorized by this scope.
@@ -53,7 +56,7 @@ researcher approval for their use on a scientific model.
 | Area | Items to examine | Decision status |
 |---|---|---|
 | NeKo editing and provenance | B-NK-1: explicit interaction additions/sign changes. B-NK-2/3/5/7: truthful diagnostics and identifier handling. B-NK-4/6 and remaining C-NK provenance/documentation work: explain network growth and expose resource metadata. | Manual-edge policy and compact editing approach accepted (W2-D003–005). Topology-growth explanations through existing history accepted (W2-D006). Database-name-only resource identity accepted (W2-D007); remaining diagnostics still need discussion. |
-| MaBoSS reproducibility and readouts | B-MB-1: readout semantics and lineage. B-MB-2: investigate import failures. B-MB-3/4: persistent mutation runs and unique artifacts. B-MB-5/6: existing-engine rate configuration and analysis capabilities. Remaining metadata/documentation items. | Summary readout creation/rule editing accepted (W2-D008); tool-based rate inspection/editing accepted (W2-D009). Other items pending; MCP changes only, no MaBoSS/pyMaBoSS package changes. |
+| MaBoSS reproducibility and readouts | B-MB-1: readout semantics and lineage. B-MB-2: investigate import failures. B-MB-3/4: persistent mutation runs and unique artifacts. B-MB-5/6: existing-engine rate configuration and analysis capabilities. Remaining metadata/documentation items. | Summary readout creation/rule editing accepted (W2-D008); tool-based rate inspection/editing accepted (W2-D009); persistent runs and plots accepted (W2-D010). Other items pending; MCP changes only, no MaBoSS/pyMaBoSS package changes. |
 | PhysiCell configuration | Remaining MCP portions of B-PC-1/2/4/6, initial cells/user parameters, portable project export, substrate handling and mapping validation. Reconcile already completed library and lineage work before assigning tasks. | Pending. |
 | Analysis ownership | Decide whether existing artifact-validation calculations remain orchestrator checks, are also exposed through MCP, or need a shared implementation. Define the approved scope before any ODE extension. | Pending. |
 | Release boundary | Decide whether the selected Wave 2 fits the next coordinated release or follows a separate Wave 1 release. Resolve official NeKo metadata and dependency alignment before publication. | Pending. |
@@ -328,6 +331,70 @@ rate edit reads back correctly and survives supported persistence/export; other
 nodes and logical conditions remain unchanged; invalid or ambiguous edits fail
 without mutation. Compare representative response sizes with raw model-file
 inspection rather than claiming an unmeasured performance improvement.
+
+## Persistent MaBoSS runs and plots (B-MB-3/4; W2-D010)
+
+Status: **accepted**, for assignment by the researcher to the MCP-server agent.
+No MaBoSS/pyMaBoSS package changes or new analysis algorithms are required.
+
+Source inspection found that ordinary runs already call
+`MaBoSS/services/artifacts.py:preserve_simulation_result`, which preserves unique
+exact engine inputs, raw outputs, state/node tables and an artifact inventory.
+The caller still writes a shared `result.csv`; mutation runs do not use that
+preservation helper; plotting writes a shared `network_trajectory.png`.
+Extend this foundation rather than building a separate storage system.
+
+Implementation requirements:
+
+1. Use shared persistence for ordinary and mutation simulations. Keep existing
+   simulation entry points where practical. Each invocation has a unique run ID
+   associated with its full session ID, source model revision and run kind.
+2. Preserve exact BND/CFG inputs sent to the engine, generated outputs and artifact
+   integrity metadata. Record requested mutations and effective simulation
+   configuration, including rates, initial conditions, outputs and supported seed/
+   thread settings. Preserve only outputs actually produced; missing optional
+   outputs must not be represented as successful analyses.
+3. Run mutations on a copy, retaining the base simulation and its configuration.
+   Save the actual mutated engine inputs, not merely a mutation description.
+   Mutation runs must not silently replace the latest ordinary-result selection.
+4. Extend result inspection and plotting to accept an explicit run ID. Saved
+   historical runs must remain inspectable and plottable after later runs or a
+   server restart, without recreating a scientific session or rerunning a model.
+   Reuse existing inspection/listing interfaces to make run IDs discoverable.
+5. Make unique run artifacts authoritative. Any retained legacy latest-result
+   convenience file is not the historical record. Never overwrite historical
+   results or plots; associate each plot with its source run and rendering options.
+   Support multiple plot variants for a run without collisions.
+6. Where omission of a run ID preserves legacy latest-ordinary-result behavior,
+   always return the resolved run ID. Never silently substitute another run when
+   an explicit ID is missing or belongs to a different session. Preserve existing
+   path/integrity boundaries when loading saved artifacts.
+7. Return concise structured summaries: session/run IDs, completion status,
+   mutations where applicable and artifact references. Retrieve detailed tables
+   only on request with bounded responses.
+8. Make failures explicit. Do not report a completed reproducible run until its
+   required artifacts are safely published. Distinguish engine failure from
+   persistence failure, preserve available diagnostic/partial evidence with its
+   incomplete status, and leave earlier successful runs intact. Never implicitly
+   retry a simulation merely because saving failed.
+
+Acceptance evidence:
+
+- Two ordinary runs and two mutant runs retain distinct, retrievable artifacts
+  and exact inputs; mutant execution leaves the base model unchanged.
+- Later model edits do not relabel historical results as belonging to the new
+  model revision. Saved readout/rate configuration reflects the executed model.
+- Explicitly inspect and plot both run kinds after restart without an engine run.
+  Multiple plot options preserve earlier artifacts and identify their source.
+- Invalid/cross-session IDs, engine failures and injected persistence failures
+  cannot produce false success, overwrite earlier runs or silently change selection.
+- Existing ordinary-run callers retain documented compatibility, while compact
+  responses expose run identity without embedding full trajectories by default.
+
+Coordinate metadata and revision handling with W2-D008/009. Changes to result
+schemas and tool annotations must describe the actual persistence behavior and
+retain a documented compatibility path. This assignment does not authorize
+publication, automatic scientific execution or deletion of existing artifacts.
 
 ## Implementation handoff format
 
