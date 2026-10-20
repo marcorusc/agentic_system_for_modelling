@@ -27,6 +27,8 @@ each implementation task will need reconciliation against the accepted source.
 | W2-D011 | Defer B-MB-2, the NeKo-to-MaBoSS import/handoff reliability investigation; the researcher will investigate later. | Do not assign this investigation now or mark the historical failure resolved. Move the discussion to B-MB-6. |
 | W2-D012 | Redirect B-MB-6 discussion toward extending MaBoSS_test and integrating it with the MaBoSS MCP server; defer separate new MaBoSS post-analysis scripts while assessing this route. | Preserve existing validators. The detailed MaBoSS_test extension, semantics and integration contract remain pending discussion; no implementation or migration is assigned yet. |
 | W2-D013 | Separate MaBoSS_test evaluation into its own discussion; the researcher will fork/clone the repository and transfer a standalone brief to another agent. | Use the portable evaluation brief below. This work may proceed in parallel; no MaBoSS_test implementation is dispatched from this discussion. |
+| W2-D014 | Expose existing PhysiCell Settings support for output steepness, cycle transitions and fractional time stochasticity through the PhysiCell MCP server. | Extend coherent existing tools where practical, preserve omitted defaults and return stored values. The researcher may assign this bounded work to the MCP-maintenance agent. |
+| W2-D015 | Focus the current discussion on implementation; defer the broader testing campaign and mapping-validation feature discussion. | Do not make benchmark reruns or new analysis/testing features prerequisites for discussing implementation. Necessary developer checks remain part of coherent changes; existing validation and scientific approval gates remain intact. |
 
 Authority: the researcher's message on 2026-10-20 stating the maintenance boundary
 and requesting discussion and a decision record before distributing the work.
@@ -65,7 +67,7 @@ researcher approval for their use on a scientific model.
 |---|---|---|
 | NeKo editing and provenance | B-NK-1: explicit interaction additions/sign changes. B-NK-2/3/5/7: truthful diagnostics and identifier handling. B-NK-4/6 and remaining C-NK provenance/documentation work: explain network growth and expose resource metadata. | Manual-edge policy and compact editing approach accepted (W2-D003–005). Topology-growth explanations through existing history accepted (W2-D006). Database-name-only resource identity accepted (W2-D007); remaining diagnostics still need discussion. |
 | MaBoSS reproducibility and readouts | B-MB-1: readout semantics and lineage. B-MB-2: investigate import failures. B-MB-3/4: persistent mutation runs and unique artifacts. B-MB-5/6: existing-engine rate configuration and analysis capabilities. Remaining metadata/documentation items. | Summary readout creation/rule editing accepted (W2-D008); tool-based rate inspection/editing accepted (W2-D009); persistent runs and plots accepted (W2-D010). Other items pending; MCP changes only, no MaBoSS/pyMaBoSS package changes. |
-| PhysiCell configuration | Remaining MCP portions of B-PC-1/2/4/6, initial cells/user parameters, portable project export, substrate handling and mapping validation. Reconcile already completed library and lineage work before assigning tasks. | Pending. |
+| PhysiCell configuration | Remaining MCP portions of B-PC-1/2/4/6, initial cells/user parameters, portable project export, substrate handling and mapping validation. Reconcile already completed library and lineage work before assigning tasks. | MCP exposure of steepness, cycle transitions and fractional stochasticity accepted (W2-D014). Broader testing and mapping-validation discussion deferred (W2-D015); other implementation choices remain pending. |
 | Analysis ownership | Decide whether existing artifact-validation calculations remain orchestrator checks, are also exposed through MCP, or need a shared implementation. Define the approved scope before any ODE extension. | Pending. |
 | Release boundary | Decide whether the selected Wave 2 fits the next coordinated release or follows a separate Wave 1 release. Resolve official NeKo metadata and dependency alignment before publication. | Pending. |
 
@@ -492,6 +494,38 @@ algorithms into the MCP package. Keep existing supported validators available un
 any replacement is explicitly scoped, tested and accepted. No MaBoSS/pyMaBoSS
 package modifications are included; a future assignment would target MaBoSS_test
 and the MCP repository, with agentic-workflow integration scoped separately.
+
+## PhysiCell MCP exposure of existing library capabilities (W2-D014/015)
+
+Status: **accepted for researcher assignment to the MCP-maintenance agent**.
+Authority: the researcher accepted the proposal to expose existing Wave 1 library
+capabilities while prioritizing implementation before a new testing campaign.
+
+Scope:
+
+- B-PC-2: expose optional output-mapping `steepness` through the MCP interface.
+  Correct action-dependent descriptions of mapping parameters against the
+  supported library/PhysiBoSS behavior. Do not automatically raise steepness,
+  promise an exact Boolean switch or change omitted defaults.
+- B-PC-4: expose cycle transition rates and optional `fixed_duration`, using the
+  library's public API. Explicit zero and false values are meaningful. Do not
+  silently choose a cycle model, transition, duration policy or scientific rate.
+- B-PC-6: accept finite nonnegative fractional `time_stochasticity`, including zero,
+  consistently with the corrected library API. Preserve defaults when omitted.
+- Prefer coherent extensions of existing tools over duplicate tool families.
+  Read back and return the stored values for these operations, so an agent does
+  not need to inspect XML to determine what was applied.
+
+Use the accepted PhysiCell Settings capabilities; do not assume their merged
+source is already installed or published. Identify any genuinely missing library
+capability separately. Package publication and scientific model configuration are
+not authorized by this maintenance assignment.
+
+Broader B-PC-1 inspection/patch behavior, initial cells/user parameters (B-PC-3),
+portable export (B-PC-5), substrate handling (B-PC-7) and behavior-name discovery
+(B-PC-9) remain separate implementation topics. Mapping validation (B-PC-8) and
+the broader benchmark/testing campaign are deferred. This does not remove existing
+runtime input validation, artifact integrity checks or scientific approval gates.
 
 ## Implementation handoff format
 
