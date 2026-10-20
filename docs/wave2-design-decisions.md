@@ -20,6 +20,7 @@ each implementation task will need reconciliation against the accepted source.
 | W2-D004 | Accept the compact-tool approach proposed for Wave 2. | Prefer extending coherent existing interfaces, one focused interaction editor with explicit add/effect-change operations, concise schemas and bounded results. Measure context/discovery effects; retain specialist isolation and consider client-supported task subsets/deferred discovery. No arbitrary tool-count limit or unrestricted generic executor is approved. |
 | W2-D005 | Assign the interaction-curation work to agents working on NeKo and the MCP servers. | NeKo owns validated mutations and durable provenance; MCP owns exposure, truthful responses and interface efficiency. The researcher will distribute the work after discussion. |
 | W2-D006 | Include explanations of automatic topology growth for reproducibility and verifiability. Track how the topology emerged through NeKo's existing history, state checkout, graph export and visualization capabilities. | Extend the existing state graph and metadata rather than introducing a parallel history system. Record why interactions were introduced, preserve branches and bind explanations to exact states. Reuse existing MCP history interfaces where possible. |
+| W2-D007 | Track only the database name for resource identity in Wave 2. Defer version and download-time tracking and other detailed resource metadata until needed. | Record the selected resource, such as SIGNOR or OmniPath. Do not add resource-release discovery, acquisition/cache timestamps, dataset fingerprinting or database-snapshot capture in this work. This narrows B-NK-6 and supersedes the broader resource-metadata proposal. |
 
 Authority: the researcher's message on 2026-10-20 stating the maintenance boundary
 and requesting discussion and a decision record before distributing the work.
@@ -30,6 +31,8 @@ to agents responsible for NeKo and MCP servers.
 W2-D006 follows the researcher's confirmation that topology-growth explanations
 are required and that NeKo already supports network-state history, checkout and
 state-graph export/visualization.
+W2-D007 follows the researcher's instruction to track "just ... the database name
+and that's it" and defer version/download-time work to avoid unnecessary effort.
 
 Changes to PhysiCell/PhysiBoSS engines, random-stream algorithms, publication,
 scientific defaults and additional repositories are not authorized by this scope.
@@ -41,7 +44,7 @@ researcher approval for their use on a scientific model.
 
 | Area | Items to examine | Decision status |
 |---|---|---|
-| NeKo editing and provenance | B-NK-1: explicit interaction additions/sign changes. B-NK-2/3/5/7: truthful diagnostics and identifier handling. B-NK-4/6 and remaining C-NK provenance/documentation work: explain network growth and expose resource metadata. | Manual-edge policy and compact editing approach accepted (W2-D003–005). Topology-growth explanations through existing history accepted (W2-D006). Resource identity fields and remaining diagnostics still need discussion. |
+| NeKo editing and provenance | B-NK-1: explicit interaction additions/sign changes. B-NK-2/3/5/7: truthful diagnostics and identifier handling. B-NK-4/6 and remaining C-NK provenance/documentation work: explain network growth and expose resource metadata. | Manual-edge policy and compact editing approach accepted (W2-D003–005). Topology-growth explanations through existing history accepted (W2-D006). Database-name-only resource identity accepted (W2-D007); remaining diagnostics still need discussion. |
 | MaBoSS reproducibility and readouts | B-MB-1: readout semantics and lineage. B-MB-2: investigate import failures. B-MB-3/4: persistent mutation runs and unique artifacts. B-MB-5/6: existing-engine rate configuration and analysis capabilities. Remaining metadata/documentation items. | Pending; MCP changes only, no MaBoSS/pyMaBoSS package changes. |
 | PhysiCell configuration | Remaining MCP portions of B-PC-1/2/4/6, initial cells/user parameters, portable project export, substrate handling and mapping validation. Reconcile already completed library and lineage work before assigning tasks. | Pending. |
 | Analysis ownership | Decide whether existing artifact-validation calculations remain orchestrator checks, are also exposed through MCP, or need a shared implementation. Define the approved scope before any ODE extension. | Pending. |
@@ -194,10 +197,30 @@ Implementation acceptance criteria:
    is not silently changed or used to authorize deletion.
 
 State recovery and replay are distinct: recovering a stored topology does not
-prove that rerunning construction against a changed database produces it. Record
-the resource/input identity needed to assess replay, and report missing inputs.
-The exact resource metadata fields are the next discussion item (B-NK-6).
+prove that rerunning construction against a changed database produces it. Under
+W2-D007, resource identity is deliberately limited to the database name. Do not
+expand this history work into database versioning, acquisition tracking or
+dataset capture; reproducibility claims must reflect that chosen scope.
 History navigation/export never transfers scientific approval to a changed model.
+
+## Resource identity: database name only (B-NK-6; W2-D007)
+
+Status: **accepted reduced scope**.
+
+Record the actual selected database name (for example, SIGNOR or OmniPath) with
+the network/history and expose it through existing inspection/export metadata.
+Use the name associated with construction, rather than relabelling an existing
+network if mutable session defaults subsequently change. The selected resource
+does not imply that imported or manually curated edges came from that database.
+
+Deferred: provider release/version discovery, download/load/cache timestamps,
+resource-data fingerprints and database snapshots. Do not implement empty-field
+plumbing for these deferred additions merely to satisfy the original wider plan.
+
+The accepted topology history, effective construction parameters, manual-origin
+labels and available PMIDs remain required. Existing artifact hashes, handoff
+integrity checks and established timestamps remain unchanged; this scope decision
+only limits new resource-identity tracking.
 
 ## NeKo and MCP implementation allocation
 
@@ -210,6 +233,7 @@ have been dispatched as part of this discussion.
 | MCP-server agent | Expose the approved editing operations compactly through the NeKo API; validate exact operation inputs; return the actual resulting change and revision. Correct the node-addition success report when the library returns `False`. Preserve provenance in returned records and appropriate handoff metadata/sidecars. | No false success after a refused node addition; precise edit responses and provenance; stale-revision/approval protections remain effective; representative tool-discovery, schema-size and result-size comparisons are recorded. |
 | NeKo agent — history extension | Extend existing state snapshots/metadata with structured topology-emergence explanations, effective parameters, path attribution and manual evidence. Preserve state navigation, branching and visualization. | Fixture-level change attribution, branch/checkout consistency and supported history export/reload checks described in W2-D006. |
 | MCP-server agent — history integration | Extend existing history/inspection/export interfaces with concise explanations and references to durable full history artifacts. Preserve state/session identity and report incomplete history. | History can be inspected and exported without a duplicate history tool family; saved artifacts identify exact states and preserve available provenance across branches. |
+| NeKo/MCP agents — resource identity | Carry the database name actually used through the existing network/history and inspection/export interfaces. | SIGNOR/OmniPath selection remains correctly labelled after later session-default changes; manual edges retain their distinct origin. No additional resource-version, acquisition-time or dataset-tracking feature is introduced. |
 
 Agree on the library API and provenance representation before integrating the MCP
 wrapper. Test the combined workflow after both changes land. A format such as BNET
