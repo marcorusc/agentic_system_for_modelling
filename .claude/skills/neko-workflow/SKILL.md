@@ -1,12 +1,14 @@
 ---
 name: neko-workflow
-description: "Use this skill whenever working with the NeKo MCP server to build, curate, or export molecular signalling networks — session/network creation, connectivity auditing, connection strategies (connect_targeted_nodes, bridge_components, apply_global_connection), network history navigation, or network export. Trigger this any time NeKo tools are called or the user mentions NeKo, signalling networks, OmniPath-based network building, Boolean network export, or BNET files — including when a network has exploded in size, is disconnected, or needs debugging. Fully standalone; optionally hands off to maboss-workflow when the task continues into Boolean-model simulation."
+description: "Operational guide for the NeKo MCP server — session/network creation, connectivity auditing, connection strategies (connect_targeted_nodes, bridge_components, apply_global_connection), history navigation, export, and debugging exploded or disconnected networks. Preloaded into the network-curator subagent; in the main session, delegate NeKo work to network-curator instead of loading this skill."
 ---
 
 # NeKo Signalling Network Workflow
 
-Operational snapshot for `mcp-biomodelling-servers` 2.3.0. Recheck this skill when
-the server package is upgraded.
+Tool names and parameters checked against the live `mcp-biomodelling-servers`
+2.4.0 schemas (installed build `2.4.0+wave1.20261016`). Behaviour the schemas do
+not describe is carried over from the 2.3.0 snapshot. Recheck this skill when the
+server package is upgraded.
 
 NeKo builds and curates molecular signalling networks (OmniPath and similar
 databases). It's a complete tool on its own — most tasks end at network
@@ -40,16 +42,18 @@ Boolean-model simulation, `export_neko_handoff` hands off to
      nodes, declared outputs, package versions, history state, artifact
      digests.
    - `export_network(format='bnet')` — standalone BNET only, no provenance.
+     Fails unless the network is fully connected; run
+     `analyze_connectivity()` first. `format='sif'` has no such requirement.
 
 ## Tool categories
 
-- **Sessions:** `create_session`, `list_sessions`, `set_default_session`, `delete_session`, `status`, `reset_network`
+- **Sessions:** `create_session`, `list_sessions`, `list_artifact_sessions` (sessions with files on disk, including past server runs), `set_default_session`, `delete_session`, `status`, `reset_network`
 - **Construction:** `create_network`, `add_nodes` (batch, optional cheap direct-neighbour autoconnect), `remove_gene`, `remove_interaction`
 - **Connectivity diagnostics:** `analyze_connectivity` (isolated nodes + component partition), `analyze_gene_set` (requested-gene resolution, internal/boundary edges), `preview_connection_impact` (non-mutating scout)
 - **Connection strategies:** `connect_targeted_nodes`, `bridge_components`, `apply_global_connection` — see the [strategy reference](https://github.com/sysbio-curie/Neko/blob/development/docs_mkdocs/strategies/index.md)
 - **Inspection:** `list_genes_and_interactions`, `find_paths`, `get_references`, `filter_interactions`
 - **History:** `list_network_history`, `navigate_network_history`, `compare_network_states`, `set_network_history_limit`
-- **Handoff:** `export_neko_handoff`
+- **Export and handoff:** `export_network` (SIF/BNET), `list_bnet_files`, `export_neko_handoff`, `export_biomass_handoff`
 
 ## Connection strategy cost guide
 
@@ -59,9 +63,9 @@ only if it fails. Costs assume seed/group sizes of a few dozen genes.
 | Tool | Strategy | Cardinality | Relative cost | Notes |
 |---|---|---|---|---|
 | `add_nodes` | `autoconnect=True` | new node(s) → existing network | Very low | Direct-neighbour edges only (maxlen=1); no multi-step search |
-| `connect_targeted_nodes` | `connect_to_upstream_nodes` | specific node(s) | Low, bounded by `depth` | Cascades upstream from given nodes only |
+| `connect_targeted_nodes` | `connect_to_upstream_nodes` | specific node(s) | Low, bounded by `max_len` (upstream depth, default 1) | Cascades upstream from given nodes only |
 | `connect_targeted_nodes` | `connect_subgroup` | one node list | Moderate, ~O(pairs) | Pairwise search within the group only |
-| `bridge_components` | `connect_component` (A, B) | group A ↔ group B | Moderate-high | Also silently runs `connect_subgroup` on every node outside A/B |
+| `bridge_components` | — (`comp_a`, `comp_b`, `mode`) | group A ↔ group B | Moderate-high | Also silently runs `connect_subgroup` on every node outside A/B |
 | `apply_global_connection` | `connect_network_radially` | whole network | Moderate-high, bounded by `max_len` | Expands from existing seed nodes, not all pairs |
 | `apply_global_connection` | `connect_as_atopo` | whole network, output-anchored | High, open-ended | Runs radial/complete connection then loops upstream until fully connected — **not** bounded by `max_len` alone |
 | `apply_global_connection` | `complete_connection` | whole network | **Highest — O(N²) over every pair** | Usual cause of a blown-up network (e.g. `max_len=2`, 20+ seed genes → hundreds of edges) |
@@ -73,6 +77,11 @@ only if it fails. Costs assume seed/group sizes of a few dozen genes.
 ## Critical rules
 
 - **Session first:** `create_session` before `create_network`.
+- **Pass policies explicitly:** `create_network`, `connect_targeted_nodes`,
+  and `bridge_components` declare their own fixed defaults (`max_len` 2, 1,
+  and 2; `create_network` also defaults to `one_shortest` /
+  `discovered_paths`), so `set_default_params` may not reach them. Pass
+  `max_len` and the policy values on those calls.
 - **Scout before you shoot:** `preview_connection_impact()` before any
   heavy connection tool — check against the cost guide above.
 - **Output names:** `export_neko_handoff` translates original NeKo names

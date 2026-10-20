@@ -1,13 +1,14 @@
 ---
 name: physicell-workflow
-description: "Use this skill whenever working with the PhysiCell MCP server to build, inspect, or edit a tissue/agent-based simulation configuration — domain, substrate, and cell-type setup, cell-parameter and substrate-interaction patches, signal-behavior rules, or XML and cell-rules export. Trigger this any time PhysiCell tools are called or the user mentions PhysiCell, agent-based tissue simulation configuration, PhysiBoSS, or cell rules CSV. Fully standalone; optionally integrates an intracellular Boolean model through a maboss-workflow handoff."
+description: "Operational guide for the PhysiCell MCP server — domain, substrate, and cell-type setup, parameter and substrate-interaction patches, signal-behavior rules, PhysiBoSS integration, and XML/cell-rules export. Preloaded into the multicellular-configurator subagent; in the main session, delegate PhysiCell work to multicellular-configurator instead of loading this skill."
 ---
 
 # PhysiCell Simulation Configuration Workflow
 
-Operational snapshot for `mcp-biomodelling-servers` 2.3.0. The tool names below
-were verified against the installed PhysiCell MCP server. Recheck this skill when
-the server package is upgraded.
+Tool names and parameters checked against the live `mcp-biomodelling-servers`
+2.4.0 schemas (installed build `2.4.0+wave1.20261016`). Behaviour the schemas do
+not describe is carried over from the 2.3.0 snapshot. Recheck this skill when the
+server package is upgraded.
 
 PhysiCell configures agent-based tissue simulations: domain, substrates, cell
 types, and signal-behavior rules. It's a complete tool on its own — pure
@@ -24,8 +25,11 @@ configurations active.
 1. `create_session()`
 2. `analyze_biological_scenario()` — record the modelling objective.
 3. `create_simulation_domain()` — space, mesh, dimensionality, time.
-4. `add_single_substrate()` once per substrate.
-5. `add_single_cell_type()` once per cell population.
+4. `add_single_substrate()` once per substrate. Its `units` argument is a
+   cosmetic label defaulting to "dimensionless"; set it from the
+   specification rather than leaving the default to stand in for a unit.
+5. `add_single_cell_type()` once per cell population;
+   `get_available_cycle_models()` lists valid `cycle_model` keys.
 6. `list_all_available_signals()` / `list_all_available_behaviors()` — get
    exact names before writing rules that reference them.
 7. Configure each cell type and its substrate interactions.
@@ -55,8 +59,8 @@ reset to defaults.
 - `configure_cell_parameters()` preserves omitted volume, motility, and
   death parameters. Motility only toggles when `motility_enabled` is
   supplied explicitly.
-- `set_substrate_interaction()` preserves omitted secretion/uptake rates,
-  secretion target, and net export rate.
+- `set_substrate_interaction()` preserves an omitted secretion or uptake
+  rate (the only two rates it sets).
 - `configure_physiboss_settings()` preserves omitted timing,
   stochasticity, scaling, start-time, and inheritance settings.
 
@@ -92,26 +96,25 @@ auto-translated into PhysiBoSS timing or mappings — call
 
 Use MCP tools rather than MCP resources when inspecting a configuration:
 
-- `get_workflow_status()` — progress and recommended next steps.
-- `get_simulation_summary()` — consolidated domain, substrate, cell-type,
-  cell-rule, and PhysiBoSS state.
+- `get_simulation_summary()` — session progress, configured substrates,
+  cell types, rules, and PhysiBoSS models, completed steps, and export
+  readiness. (`get_workflow_status()` is an alias for it.)
 - `get_maboss_context()` — stored intracellular-model context by target cell type.
 - `list_loaded_components()` — components found after loading existing XML.
 - `list_generated_files()` — XML/CSV artifacts for the active session.
 - `list_artifact_sessions()` — persisted artifact directories after a restart.
 
-These names were verified as callable tools in `mcp-biomodelling-servers` 2.3.0.
 Use configuration tools, not inspection tools, to change state.
 
 ## Inspection and export
 
-- `get_workflow_status()` / `get_simulation_summary()` — complete workflow state
+- `get_simulation_summary()` — complete workflow state
 - `get_maboss_context()` — all stored target-cell contexts, or one via `cell_type`
 - `list_generated_files()` — session-scoped XML/CSV artifacts
 - `export_xml_configuration()` — PhysiCell settings XML
 - `export_cell_rules_csv()` — CBHG cell-rules file, when rules exist
 
-Files are confined to `PhysiCell/artifacts/<session_id>/`. Use
+Exports are written to the session's artifact directory. Use
 `list_artifact_sessions()` to rediscover files after a server restart.
 
 ## Troubleshooting

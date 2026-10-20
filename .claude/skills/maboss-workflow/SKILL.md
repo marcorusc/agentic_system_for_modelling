@@ -1,12 +1,14 @@
 ---
 name: maboss-workflow
-description: "Use this skill whenever working with the MaBoSS MCP server to load, configure, or simulate Boolean models — session creation, loading a standalone BNET or a NeKo handoff, inspecting nodes/parameters, restricting output nodes before simulating, running simulations, analyzing or visualizing results, or mutation studies. Trigger this any time MaBoSS tools are called or the user mentions MaBoSS, Boolean model simulation, state-space explosion, or a BNET file — including when a simulation is slow, hangs, or never returns. Fully standalone; optionally imports typed provenance from neko-workflow and hands off to physicell-workflow for tissue-level simulation."
+description: "Operational guide for the MaBoSS MCP server — sessions, loading a BNET or NeKo handoff, inspecting nodes/parameters, restricting output nodes, running and analysing simulations, mutation studies, and debugging slow or hanging runs. Preloaded into the boolean-dynamics-modeler subagent; in the main session, delegate MaBoSS work to boolean-dynamics-modeler instead of loading this skill."
 ---
 
 # MaBoSS Simulation Workflow
 
-Operational snapshot for `mcp-biomodelling-servers` 2.3.0. Recheck this skill when
-the server package is upgraded.
+Tool names and parameters checked against the live `mcp-biomodelling-servers`
+2.4.0 schemas (installed build `2.4.0+wave1.20261016`). Behaviour the schemas do
+not describe is carried over from the 2.3.0 snapshot. Recheck this skill when the
+server package is upgraded.
 
 MaBoSS runs stochastic simulations of Boolean models. It's a complete tool
 on its own — any BNET file can be loaded and simulated without ever
@@ -29,7 +31,7 @@ Optionally imports a typed NeKo handoff instead of a bare BNET (see
    `simulate_mutation`) only accept these names.
 4. **Inspect parameters:** `update_maboss_parameters()` with no args —
    current defaults and full set of valid keys.
-5. **Tune:** `update_maboss_parameters({"sample_count": 1000, "thread_count": 4})`.
+5. **Tune:** `update_maboss_parameters(parameters={"sample_count": 1000, "thread_count": 4})`.
    Set `thread_count` early.
 6. **Reduce output nodes — important:**
    `set_maboss_output_nodes(["Apoptosis", "Proliferation"])` restricts the
@@ -41,11 +43,13 @@ Optionally imports a typed NeKo handoff instead of a bare BNET (see
    `set_maboss_initial_state(...)`.
    - One node: `[P(OFF), P(ON)]`.
    - Multiple nodes: `[{"state": [0, 0], "probability": 0.4}, {"state": [1, 0], "probability": 0.6}]`.
-   - State-vector order must match `get_maboss_nodes()` order;
-     probabilities must sum to 1; only use returned node names.
-8. **Run:** `run_simulation()` — saves `result.csv` to the artifact
-   directory.
-9. **Analyse:** `get_simulation_result()` — Markdown probability table.
+   - State-vector order must match the order of the `nodes` argument
+     you pass; probabilities must sum to 1; only use returned node names.
+8. **Run:** `run_simulation()` — stores the result in the session. Read it
+   with `get_simulation_result()`, not the `maboss://` resource the tool
+   description mentions (resources are unavailable to subagents).
+9. **Analyse:** `get_simulation_result()` — Markdown probability table of
+   the final timepoint.
 10. **Visualise:** `visualize_network_trajectories()` — PNG artifact.
 11. **Mutate:** `simulate_mutation(nodes, state)` — one-off mutant copy.
 12. **PhysiCell handoff:** `export_maboss_handoff(target_cell_type=...)` —
@@ -54,11 +58,11 @@ Optionally imports a typed NeKo handoff instead of a bare BNET (see
 
 ## Tool categories
 
-- **Session management:** `create_session`, `list_sessions`, `set_default_session`, `delete_session`
+- **Session management:** `create_session`, `list_sessions`, `list_artifact_sessions` (sessions with files on disk, including past server runs), `set_default_session`, `delete_session`
 - **Pipeline:** `import_neko_handoff`, `bnet_to_bnd_and_cfg`, `build_simulation`, `run_simulation`
-- **Handoff:** `import_neko_handoff`, `export_maboss_handoff`
+- **Handoff and export:** `import_neko_handoff`, `export_maboss_handoff`, `export_maboss_bnd_cfg`
 - **Inspection (read-only):** `get_maboss_nodes`, `get_maboss_initial_state`, `get_maboss_logical_rules`, `get_maboss_mutations`, `update_maboss_parameters` (no args)
-- **Configuration:** `update_maboss_parameters`, `set_maboss_output_nodes`, `set_maboss_initial_state`
+- **Configuration:** `update_maboss_parameters`, `set_maboss_output_nodes`, `set_maboss_initial_state`, `change_maboss_rule` (validates the new rule and restores the previous one if invalid)
 - **Analysis:** `get_simulation_result`, `simulate_mutation`, `visualize_network_trajectories`
 - **Housekeeping:** `list_generated_files`, `clean_generated_files`
 
@@ -75,7 +79,9 @@ Optionally imports a typed NeKo handoff instead of a bare BNET (see
 ## Critical rules
 
 - Always `create_session()` before any simulation tool.
-- File I/O is scoped to `<server>/artifacts/<session_id>/`.
+- Generated files go to the session's directory under the configured
+  artifact root; input paths such as `bnet_path` may be absolute or
+  CWD-relative.
 - Pass `session_id` explicitly for parallel simulations.
 - `update_maboss_parameters` with no args lists all valid keys.
 - Set `thread_count` early to speed up iteration.
@@ -93,4 +99,4 @@ Optionally imports a typed NeKo handoff instead of a bare BNET (see
 - **Node name rejected** → re-run `get_maboss_nodes()` — names are
   sanitized during NeKo/BNET import.
 - **Initial-state probabilities rejected** → confirm state-vector order
-  matches `get_maboss_nodes()` and probabilities sum to exactly 1.
+  matches the `nodes` argument and probabilities sum to exactly 1.

@@ -56,11 +56,11 @@ ask the orchestrator for one rather than guessing or writing to an unversioned p
   `convert_article_ids`, then call `get_full_text_article` with that PMCID. Only
   a subset of PubMed articles have a PMCID. If none exists, treat the abstract as
   the available evidence — a missing PMCID is not a reason to keep searching.
-- If the one permitted `search_articles` call and any supplied reference PMIDs
-  don't produce usable direct evidence, one optional `find_related_articles`
-  (link_type=`pubmed_pubmed`) call against the most relevant known PMID may surface
-  adjacent pathway evidence. This is capped the same way as `search_articles` — one
-  attempt, not a retry loop.
+- Make at most one `search_articles` call per edge; fold identifiers and synonyms
+  into that one query with OR. If that search and any supplied reference PMIDs
+  don't produce usable direct evidence, you may make one `find_related_articles`
+  call (link_type=`pubmed_pubmed`) against the most relevant known PMID to surface
+  adjacent pathway evidence — one attempt, not a retry loop.
 - `get_copyright_status` and `lookup_article_by_citation` are not needed for this
   workflow and are intentionally excluded from this agent's tools.
 

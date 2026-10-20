@@ -35,8 +35,9 @@ topology and literature review. Require a typed handoff, session-scoped SIF,
 important-paths summary, bounded literature queue, effective policies, history
 state, dimensions, warnings, and exact artifacts.
 
-The operational tool semantics correspond to `mcp-biomodelling-servers` 2.3.0 and
-must be revalidated after server upgrades. Expensive all-pairs or open-ended
+The operational tool semantics were checked against the live
+`mcp-biomodelling-servers` 2.4.0 schemas and must be revalidated after server
+upgrades. Expensive all-pairs or open-ended
 connection strategies require size inspection and a non-mutating preview; prefer a
 targeted strategy when it answers the scientific question.
 
