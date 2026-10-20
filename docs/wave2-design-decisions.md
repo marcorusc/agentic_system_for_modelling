@@ -30,6 +30,7 @@ each implementation task will need reconciliation against the accepted source.
 | W2-D014 | Expose existing PhysiCell Settings support for output steepness, cycle transitions and fractional time stochasticity through the PhysiCell MCP server. | Extend coherent existing tools where practical, preserve omitted defaults and return stored values. The researcher may assign this bounded work to the MCP-maintenance agent. |
 | W2-D015 | Focus the current discussion on implementation; defer the broader testing campaign and mapping-validation feature discussion. | Do not make benchmark reruns or new analysis/testing features prerequisites for discussing implementation. Necessary developer checks remain part of coherent changes; existing validation and scientific approval gates remain intact. |
 | W2-D016 | Provide typed user-parameter editing/inspection and configuration of existing initial-cell CSV files through PhysiCell MCP; defer placement generation. | Reuse supported Settings APIs, return stored values and make combined count/CSV initialization visible. Do not automatically alter cell counts when enabling CSV or assume arbitrary user parameters are interpreted by the executable. |
+| W2-D017 | Export a portable PhysiCell configuration bundle containing XML and its supported input dependencies, with provenance and portable references. | MCP owns packaging/session provenance using Settings serialization. Preserve session state and previous exports; exclude executables, compilation and engine installation. |
 
 Authority: the researcher's message on 2026-10-20 stating the maintenance boundary
 and requesting discussion and a decision record before distributing the work.
@@ -68,7 +69,7 @@ researcher approval for their use on a scientific model.
 |---|---|---|
 | NeKo editing and provenance | B-NK-1: explicit interaction additions/sign changes. B-NK-2/3/5/7: truthful diagnostics and identifier handling. B-NK-4/6 and remaining C-NK provenance/documentation work: explain network growth and expose resource metadata. | Manual-edge policy and compact editing approach accepted (W2-D003–005). Topology-growth explanations through existing history accepted (W2-D006). Database-name-only resource identity accepted (W2-D007); remaining diagnostics still need discussion. |
 | MaBoSS reproducibility and readouts | B-MB-1: readout semantics and lineage. B-MB-2: investigate import failures. B-MB-3/4: persistent mutation runs and unique artifacts. B-MB-5/6: existing-engine rate configuration and analysis capabilities. Remaining metadata/documentation items. | Summary readout creation/rule editing accepted (W2-D008); tool-based rate inspection/editing accepted (W2-D009); persistent runs and plots accepted (W2-D010). Other items pending; MCP changes only, no MaBoSS/pyMaBoSS package changes. |
-| PhysiCell configuration | Remaining MCP portions of B-PC-1/2/4/6, initial cells/user parameters, portable project export, substrate handling and mapping validation. Reconcile already completed library and lineage work before assigning tasks. | MCP exposure of steepness, cycle transitions and fractional stochasticity accepted (W2-D014); typed user parameters and existing initial-cell CSV configuration accepted (W2-D016). Broader testing and mapping-validation discussion deferred (W2-D015); other implementation choices remain pending. |
+| PhysiCell configuration | Remaining MCP portions of B-PC-1/2/4/6, initial cells/user parameters, portable project export, substrate handling and mapping validation. Reconcile already completed library and lineage work before assigning tasks. | MCP exposure of steepness, cycle transitions and fractional stochasticity accepted (W2-D014); typed user parameters and existing initial-cell CSV configuration accepted (W2-D016); portable configuration bundle accepted (W2-D017). Broader testing and mapping-validation discussion deferred (W2-D015); other implementation choices remain pending. |
 | Analysis ownership | Decide whether existing artifact-validation calculations remain orchestrator checks, are also exposed through MCP, or need a shared implementation. Define the approved scope before any ODE extension. | Pending. |
 | Release boundary | Decide whether the selected Wave 2 fits the next coordinated release or follows a separate Wave 1 release. Resolve official NeKo metadata and dependency alignment before publication. | Pending. |
 
@@ -523,8 +524,8 @@ capability separately. Package publication and scientific model configuration ar
 not authorized by this maintenance assignment.
 
 Initial cells/user parameters (B-PC-3) are covered separately by W2-D016.
-Broader B-PC-1 inspection/patch behavior, portable export (B-PC-5),
-substrate handling (B-PC-7) and behavior-name discovery
+Portable export (B-PC-5) is covered separately by W2-D017.
+Broader B-PC-1 inspection/patch behavior, substrate handling (B-PC-7) and behavior-name discovery
 (B-PC-9) remain separate implementation topics. Mapping validation (B-PC-8) and
 the broader benchmark/testing campaign are deferred. This does not remove existing
 runtime input validation, artifact integrity checks or scientific approval gates.
@@ -567,9 +568,62 @@ The initial implementation does not generate positions, clusters or random
 distributions, choose geometry/seeds, or provide implicit per-cell-type count
 semantics. Placement generation is deferred for separate discussion.
 
-Coordinate file references with the later portable-export design (B-PC-5), which
-is not yet approved by this decision. Broader testing remains deferred under
+Coordinate file references with the portable-export design (B-PC-5; W2-D017).
+Broader testing remains deferred under
 W2-D015; runtime input checks and existing scientific authorization remain required.
+
+## Portable PhysiCell configuration bundle (B-PC-5; W2-D017)
+
+Status: **accepted**, ready for assignment to the MCP-maintenance agent.
+Authority: the researcher explicitly approved the configuration-bundle proposal,
+excluding executable/build packaging.
+
+Export the configuration and its supported input dependencies as a uniquely named,
+self-contained bundle for an existing compatible PhysiCell/PhysiBoSS executable.
+An illustrative layout is:
+
+```text
+export/
+  config/
+    PhysiCell_settings.xml
+    boolean_models/
+      tumour.bnd
+      tumour.cfg
+    cells.csv
+    cell_rules.csv
+  manifest.json
+  README.md
+```
+
+Include only applicable files; names and internal layout are implementation
+choices. Support distinct Boolean models for multiple cell types without filename
+collisions or incorrect reference substitution.
+
+Implementation requirements:
+
+1. Collect referenced BND/CFG files, enabled initial-cell CSV files, cell rules and
+   other explicitly supported input dependencies. Coordinate CSV ownership and
+   preservation with W2-D016. Do not copy arbitrary directories.
+2. Rewrite supported references in the exported copy to portable paths resolved
+   according to the target configuration's path semantics. Document the required
+   working directory and expected executable/template compatibility in README.
+   Do not assume paths are resolved relative to the XML location.
+3. Preserve the active session configuration and original source artifacts.
+   Packaging changes file locations, not scientific model settings.
+4. Record source session/model identity, upstream lineage, dependency inventory
+   and file hashes in the manifest. Preserve existing artifact-integrity and
+   scientific export gates; a packaging manifest does not grant model approval.
+5. Report missing required inputs and unsupported external references explicitly.
+   Do not label an incomplete bundle self-contained or ready to run. Leave
+   existing exports intact and avoid publishing a partial bundle as complete.
+6. Create a unique export destination; never silently overwrite a previous bundle.
+   Return concise bundle/manifest locations and unresolved requirements.
+
+MCP owns packaging and session provenance; reuse PhysiCell Settings for
+configuration serialization. Identify any missing library API separately.
+The feature excludes executable distribution, compilation, engine installation,
+automatic simulation execution and claims of successful scientific validation.
+The broader testing campaign remains deferred under W2-D015.
 
 ## Implementation handoff format
 
