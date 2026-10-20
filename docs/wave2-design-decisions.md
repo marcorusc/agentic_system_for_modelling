@@ -33,6 +33,7 @@ each implementation task will need reconciliation against the accepted source.
 | W2-D017 | Export a portable PhysiCell configuration bundle containing XML and its supported input dependencies, with provenance and portable references. | MCP owns packaging/session provenance using Settings serialization. Preserve session state and previous exports; exclude executables, compilation and engine installation. |
 | W2-D018 | Preserve the required substrate for PhysiCell compatibility. The researcher reports that an empty substrate configuration crashes the software and breaks dependent interaction/parameter lookups. The revised default-visibility and readiness proposal is accepted for assignment to the Settings and MCP agents. | Withdraw the proposed empty-substrate export mode. Keep the required default and dependent configuration consistent, expose its origin/values and recognize it in readiness bookkeeping. Distinguish “no biological substrate of interest” from zero substrate entries. |
 | W2-D019 | Implement compact MCP inspection improvements for PhysiCell stored parameters/behavior names and MaBoSS readable rules/effective configuration/output visibility. | Extend existing tools with targeted results. Preserve model rules, numerical defaults and scientific selections; do not automatically enable stationary-distribution calculations or change output nodes. |
+| W2-D020 | Implement the bounded NeKo diagnostics/documentation cleanup for B-NK-2/3/5/7. | Distinguish import from construction, document actual resource-specific consensus semantics, report identifiers/counts/path outcomes correctly and identify invalid export labels. Split ownership between NeKo and MCP; preserve topology policies, defaults and identifier mappings. |
 
 Authority: the researcher's message on 2026-10-20 stating the maintenance boundary
 and requesting discussion and a decision record before distributing the work.
@@ -69,7 +70,7 @@ researcher approval for their use on a scientific model.
 
 | Area | Items to examine | Decision status |
 |---|---|---|
-| NeKo editing and provenance | B-NK-1: explicit interaction additions/sign changes. B-NK-2/3/5/7: truthful diagnostics and identifier handling. B-NK-4/6 and remaining C-NK provenance/documentation work: explain network growth and expose resource metadata. | Manual-edge policy and compact editing approach accepted (W2-D003–005). Topology-growth explanations through existing history accepted (W2-D006). Database-name-only resource identity accepted (W2-D007); remaining diagnostics still need discussion. |
+| NeKo editing and provenance | B-NK-1: explicit interaction additions/sign changes. B-NK-2/3/5/7: truthful diagnostics and identifier handling. B-NK-4/6 and remaining C-NK provenance/documentation work: explain network growth and expose resource metadata. | Manual-edge policy and compact editing accepted (W2-D003–005); topology-growth history accepted (W2-D006); database-name-only identity accepted (W2-D007); diagnostics/documentation cleanup accepted (W2-D020). Reconcile assignments with the agents' current implementations. |
 | MaBoSS reproducibility and readouts | B-MB-1: readout semantics and lineage. B-MB-2: investigate import failures. B-MB-3/4: persistent mutation runs and unique artifacts. B-MB-5/6: existing-engine rate configuration and analysis capabilities. Remaining metadata/documentation items. | Readout editing, rate access and persistent runs accepted (W2-D008–010); B-MB-7/8/9 inspection improvements accepted (W2-D019). Import investigation deferred (W2-D011); analysis moved to separate MaBoSS_test evaluation (W2-D012/013). No MaBoSS/pyMaBoSS package changes. |
 | PhysiCell configuration | Remaining MCP portions of B-PC-1/2/4/6, initial cells/user parameters, portable project export, substrate handling and mapping validation. Reconcile already completed library and lineage work before assigning tasks. | Configuration extensions, user parameters/CSV, portable bundles and required-substrate visibility accepted (W2-D014/016–018); B-PC-1/9 inspection scope accepted (W2-D019). Broader testing and mapping-validation discussion deferred (W2-D015). |
 | Analysis ownership | Decide whether existing artifact-validation calculations remain orchestrator checks, are also exposed through MCP, or need a shared implementation. Define the approved scope before any ODE extension. | Separate MaBoSS_test evaluation (W2-D012/013); preserve existing validators and defer new standalone post-analysis development. Detailed replacement/integration scope remains undecided. |
@@ -683,6 +684,41 @@ where relevant and distinguish stored values from unknown/unavailable values.
 This package changes visibility and presentation, not biological rules or
 scientific configuration. It is separate from the deferred testing campaign and
 does not authorize MaBoSS/pyMaBoSS changes or new analysis algorithms.
+
+## NeKo diagnostics and documentation (B-NK-2/3/5/7; W2-D020)
+
+Status: **accepted**, ready for researcher assignment to the NeKo and MCP agents.
+Authority: the researcher explicitly approved the four-item cleanup proposal.
+Reconcile with current agent branches before implementation to avoid duplicate work.
+
+| Item | Accepted implementation | Owner |
+|---|---|---|
+| B-NK-2 | Correct construction/import documentation and responses. A SIF import does not automatically run connection completion; report actual imported counts and any separately performed additions or completion. | MCP |
+| B-NK-3 | Document actual resource-specific consensus behavior and align tool descriptions with it. Remove blanket claims that consensus always means multiple databases or higher confidence. Preserve the current scientific policy and defaults. | NeKo semantics/documentation; MCP tool descriptions |
+| B-NK-5 | Return readable labels alongside stable identifiers where available; count the canonical node inventory, including label-only nodes; distinguish no path from invalid endpoints or execution errors. | NeKo identity/path reporting; MCP counts and structured outcomes |
+| B-NK-7 | Identify offending nodes and invalid/missing labels in export failures, with actionable correction guidance. Preserve valid mappings and do not silently relabel a scientific model. | NeKo diagnostic details; MCP error presentation |
+
+Correction to the historical diagnostic: the inspected SIGNOR adapter calculates
+consensus stimulation/inhibition flags by comparing grouped sign-record totals.
+Do not implement an unconditional “SIGNOR consensus is a no-op” warning.
+Confirm the implementation in the agent's target revision and document its actual
+semantics, including how ties or missing consensus information are handled.
+This assignment does not approve changing how consensus is computed.
+
+The inspected MCP path interface captures printed library output and can count
+a warning as a path-output line. Prefer structured library results where practical
+and keep any public compatibility wrapper; at minimum never present diagnostics
+as discovered paths. Report the requested path-length/direction scope accurately.
+Do not infer disconnected components merely because no path exists within a bound.
+
+Canonical node identity must drive counts and graph membership. Neither non-null
+UniProt identifiers alone nor unique display labels are sufficient in general.
+Preserve missing-identifier and ambiguity information rather than inventing
+mappings or merging nodes with colliding labels.
+
+Use existing interfaces where practical. No new topology mutation, resource
+tracking beyond W2-D007, automatic repair, consensus-policy change or broader
+testing campaign is included. Necessary developer checks remain part of the work.
 
 ## Implementation handoff format
 
