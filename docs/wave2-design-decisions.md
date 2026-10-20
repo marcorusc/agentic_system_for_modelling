@@ -24,6 +24,7 @@ each implementation task will need reconciliation against the accepted source.
 | W2-D008 | Keep summary readout-node creation and modification of their Boolean rules in the MaBoSS MCP server. These nodes summarize effects rather than introduce biological routes. | Provide a bounded readout extension using existing MaBoSS/pyMaBoSS APIs. Preserve the biological core, upstream ancestry and exact-revision approval. Output selection remains distinct; transition-rate access is covered separately by W2-D009. |
 | W2-D009 | Provide tool-based inspection and explicit editing of activation/deactivation rates for named MaBoSS nodes, including readouts. Agents should not need to inspect model files to obtain rate information. | Return concise, structured rate information from the active model, preserve existing settings unless explicitly edited, and record effective configuration in simulation inputs. Reuse coherent interfaces where practical; implementation stays in the MCP repository. |
 | W2-D010 | Persist ordinary and mutation simulations through shared run storage, support explicit run selection for inspection/plotting, and prevent plot/result overwrites. | Extend existing MCP tools and preservation helpers. Preserve exact executed inputs, generated outputs and run identity; keep the base model unchanged by mutation experiments; permit historical inspection after restart without rerunning simulations. |
+| W2-D011 | Defer B-MB-2, the NeKo-to-MaBoSS import/handoff reliability investigation; the researcher will investigate later. | Do not assign this investigation now or mark the historical failure resolved. Move the discussion to B-MB-6. |
 
 Authority: the researcher's message on 2026-10-20 stating the maintenance boundary
 and requesting discussion and a decision record before distributing the work.
@@ -44,6 +45,8 @@ that rate information be accessed through tools rather than inspecting CFG files
 to reduce agent work and context use.
 W2-D010 follows the researcher's acceptance of the shared persistence, run-selection
 and unique-plot proposal and request to record it for assignment to the MCP agent.
+W2-D011 follows the researcher's request to skip the handoff investigation for now
+and discuss B-MB-6 instead.
 
 Changes to PhysiCell/PhysiBoSS engines, random-stream algorithms, publication,
 scientific defaults and additional repositories are not authorized by this scope.
@@ -395,6 +398,37 @@ Coordinate metadata and revision handling with W2-D008/009. Changes to result
 schemas and tool annotations must describe the actual persistence behavior and
 retain a documented compatibility path. This assignment does not authorize
 publication, automatic scientific execution or deletion of existing artifacts.
+
+## Bounded Boolean analysis (B-MB-6): discussion opened
+
+Status: **pending researcher decision**. B-MB-2 is deferred under W2-D011,
+not completed or included in this proposal.
+
+The existing `scripts/validate/boolean_structure.py` already implements bounded
+logical fixed-point enumeration, reachable terminal strongly connected components
+under general asynchronous single-node updates, readout-function exclusivity and
+reachable stored-readout-state exclusivity. These operate on BNET artifacts, not
+the complete configured MaBoSS rate model. They have explicit state/edge bounds;
+resource exhaustion is incomplete, not proof. A general invariant-expression
+interface is not currently implemented.
+
+Proposal for discussion: provide one focused MCP analysis interface with a small
+set of explicit operations, concise results and saved detailed reports. Reuse a
+single maintained analysis implementation rather than creating divergent copies
+in the orchestrator and server. The MCP distribution must not depend on an
+external agentic-system checkout. Shared implementation ownership and migration
+of existing script callers need agreement before assignment.
+
+Separate analysis discovery from validation against an expected count. Tie results
+to exact rule/configuration artifacts, initial-state scope, update semantics and
+completion status. Explain that logical fixed points and asynchronous terminal
+components do not provide stochastic probabilities or timing.
+
+Before claiming results describe a configured MaBoSS model, verify that its
+rate/constraint semantics match the analysed transition relation. Zero rates,
+clamps or custom rate expressions must not be silently ignored. A rules-only
+analysis may be explicitly labelled as such; unsupported configured-model claims
+must be rejected rather than presented as proofs.
 
 ## Implementation handoff format
 
