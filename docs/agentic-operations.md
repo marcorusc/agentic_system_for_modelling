@@ -91,8 +91,14 @@ The checker requires the expected active upstream row with Handoff exactly
 completed independent reviews and subsequent researcher approval. Changed hashes,
 missing artifacts, a superseded session, or a later blocking review fail closed.
 
-Boolean handoffs support versions 1.0 and 2.0. Version 2.0 adds verified source
-ancestry with embedded file snapshots; it does not grant approval of derivatives.
+Boolean handoffs support versions 1.0, 2.0 and 2.1. Version 2.0 adds verified
+source ancestry with embedded file snapshots; it does not grant approval of
+derivatives. Version 2.1, written by `mcp-biomodelling-servers` 2.5.0, adds a
+required `curation_file` NeKo history companion to NeKo-to-MaBoSS manifests and
+the MaBoSS model revision plus explicit readout definitions (possibly empty) to
+MaBoSS-to-PhysiCell manifests. Only declared readouts may extend the NeKo core.
+NeKo-to-BioMASS 2.0 likewise names a `curation_file`. Capture and retain every
+referenced file; approval binds to the exact NeKo state or MaBoSS revision.
 `scripts/boolean_contract.py` uses the backend's pure contract reader to validate
 this metadata without following historical paths. If system Python lacks that
 package, it uses the existing workstation Python selection from
@@ -162,6 +168,10 @@ Claude hook checks no-overwrite before Write. Keep review slices non-overlapping
 the Claude preflight check is not an atomic replacement for the underlying Write.
 Every manual edge needs a dedicated report before inclusion; arbitrary backend
 imports are not rewritten or retrospectively validated by these report helpers.
+With backend 2.5.0, apply an approved manual edge or effect change through
+NeKo `edit_interactions` rather than a hand-edited SIF: NeKo records its manual
+origin, rationale and supplied PMIDs in the network history, separately from
+database evidence. A missing PMID stays empty; it is never filled in.
 
 Use provenance tags database-default, literature-derived, manual-literature,
 fitted-for-dynamics and readout as defined in CLAUDE.md. Orchestrator-authored inputs
