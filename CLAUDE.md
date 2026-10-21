@@ -120,7 +120,9 @@ The dispatch hook checks the durable records again. Explicit standalone sources 
 standalone_decision_id. Never run reviews in parallel with downstream work.
 
 After authorized operations, use scripts/capture commands to validate, relocate, hash
-and index exports (docs/agentic-operations.md). Specialists write guarded immutable
+and index exports (docs/agentic-operations.md). Curation-bearing handoffs (NeKo 2.1,
+NeKo-to-BioMASS 2.0, and MaBoSS 2.1 with such a parent) are imported from the
+recorder's `backend_import_manifest`; the capture stays the gate/approval record. Specialists write guarded immutable
 report.md; invocation records persist task, tool calls/results, final output and usage.
 Orchestrator summaries belong under runs/orchestrator. Update state using state.py,
 validate and checkpoint; every stage, including multicellular, needs independent

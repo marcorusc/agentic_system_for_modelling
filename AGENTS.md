@@ -385,5 +385,8 @@ later edit supersedes it. MaBoSS ordinary and mutant runs are durable run IDs;
 record them. NeKo-to-MaBoSS 2.1 and NeKo-to-BioMASS 2.0 handoffs carry a
 `curation_file` history companion; MaBoSS-to-PhysiCell 2.1 carries the model
 revision and readout definitions. Retain all referenced files with the manifest.
+The backend binds each companion to the original model path, so specialists import
+the recorder's `backend_import_manifest`; the project capture remains the record
+that gates and approvals bind to.
 Marketplace modelling plugins must not be enabled in this project: they would
 expose modelling tools to the orchestrator.

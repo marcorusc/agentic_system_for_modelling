@@ -25,7 +25,9 @@ executable is installed or needed.
 1. **Session:** `create_session()` — returns a `session_id`. Pass it
    explicitly with multiple models or parallel simulations.
 2. **Load a model:** Prefer `import_neko_handoff(manifest_path)` (typed
-   NeKo transfer). Standalone BNET: `bnet_to_bnd_and_cfg(bnet_path)` →
+   NeKo transfer). For a 2.1 manifest use the original server manifest path
+   the orchestrator supplies; relocated project copies fail the `curation_file`
+   binding check. Standalone BNET: `bnet_to_bnd_and_cfg(bnet_path)` →
    `build_simulation()`.
 3. **Inspect nodes — mandatory:** `get_maboss_nodes()` lists every valid
    node name. Required before any configuration step; downstream tools

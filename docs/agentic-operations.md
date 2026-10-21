@@ -99,6 +99,11 @@ the MaBoSS model revision plus explicit readout definitions (possibly empty) to
 MaBoSS-to-PhysiCell manifests. Only declared readouts may extend the NeKo core.
 NeKo-to-BioMASS 2.0 likewise names a `curation_file`. Capture and retain every
 referenced file; approval binds to the exact NeKo state or MaBoSS revision.
+The backend binds each `curation_file` to the model file's original absolute path,
+so downstream import tools reject relocated copies: for these versions give the
+importing specialist the recorder's `backend_import_manifest` (the original server
+manifest, whose hash `relocation.json` records), while the project capture remains
+the record that the gate and approvals bind to.
 `scripts/boolean_contract.py` uses the backend's pure contract reader to validate
 this metadata without following historical paths. If system Python lacks that
 package, it uses the existing workstation Python selection from

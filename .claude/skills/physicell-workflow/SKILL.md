@@ -105,7 +105,8 @@ was applied.
 Preferred typed workflow:
 1. Export a `maboss-to-physicell` handoff from MaBoSS (see `maboss-workflow`).
 2. `import_maboss_handoff()` — verifies and copies the NeKo/MaBoSS
-   lineage, attaches the model atomically. Version 2.1 manifests carry the
+   lineage, attaches the model atomically. Use the original server manifest
+   path the orchestrator supplies; relocated copies fail the curation binding. Version 2.1 manifests carry the
    MaBoSS model revision and readout definitions; only declared readouts may
    extend the NeKo core. Report the imported revision and readout names.
 3. `configure_physiboss_settings()` — timing and inheritance.

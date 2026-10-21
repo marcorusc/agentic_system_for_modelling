@@ -31,7 +31,8 @@ Name the objective and one authorized input kind:
 
 - `neko`: verified exported NeKo-to-BioMASS graph handoff and complete source-session
   lineage. Version 2.0 handoffs name a `curation_file` NeKo history companion;
-  keep it with the manifest. A BNET file or signed network is not a biochemical
+  keep it with the manifest and import from the original server manifest
+  (`backend_import_manifest`), since relocated copies fail its binding check. A BNET file or signed network is not a biochemical
   reaction model.
 - `standalone_text`: explicit standalone authorization, exact Text2Model source and
   source hash; no NeKo session or connected graph is required.
