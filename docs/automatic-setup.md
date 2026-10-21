@@ -36,22 +36,23 @@ The default environment lives at `.setup/environment`. Auto mode chooses Conda
 when available, otherwise Python's virtualenv support. Override it with
 `--manager conda` or `--manager venv`; `--manager-path` identifies Conda or the
 Python interpreter used to create the environment. `--env-prefix` selects another
-new environment location. Conda installs Python 3.11, pip, and Graphviz from
-conda-forge. Venv requires Graphviz's `dot` already available on PATH and uses the
-selected Python interpreter. Use `--graphviz-path /absolute/path/to/dot` when
-Graphviz is outside the standard locations; the equivalent JSON/saved setting is
-`graphviz_path`. Setup resolves `dot` during planning, preferring the selected
-environment's `bin/dot`, and persists its directory in server PATH alongside stable
-system directories. It does not copy the calling IDE's full PATH. Setup does not
-run sudo or alter system packages.
+new environment location. Conda installs Python 3.11 and pip from conda-forge; venv
+uses the selected Python interpreter. The released servers bundle the MaBoSS engine
+(cmaboss) and Graphviz (PyGraphviz wheels), so neither a MaBoSS executable nor a
+system Graphviz is required. `--graphviz-path /absolute/path/to/dot` (JSON/saved
+setting `graphviz_path`) remains an optional override: when supplied, its directory
+is added to server PATH alongside stable system directories. Setup never
+auto-discovers `dot`, does not copy the calling IDE's full PATH, and does not run
+sudo or alter system packages.
 
 `setup/dependencies.toml` pins the released pair
-`mcp-biomodelling-servers==2.4.0` and `nekomata==1.10.1`. The MCP release includes
-BioMASS support; the NeKo release preserves SIF evidence references. Setup passes
-both pins to pip and checks both installed versions before any client configuration
-writes, including in reuse mode and `--check`. Historical workflow snapshots retain
-their original versions. Other modelling libraries are resolved from the upstream
-package dependencies; `dot` is a separate native requirement. The package's installation
+`mcp-biomodelling-servers==2.5.0` and `nekomata==1.10.2`. The MCP release includes
+BioMASS support and the Wave 2 interfaces (NeKo interaction curation and history
+export, MaBoSS readouts, rates and durable runs, PhysiCell inputs and configuration
+bundles). Setup passes both pins to pip and checks both installed versions before
+any client configuration writes, including in reuse mode and `--check`. Historical
+workflow snapshots retain their original versions. Other modelling libraries are
+resolved from the upstream package dependencies. The package's installation
 instructions and declared dependencies are maintained at
 [the upstream repository](https://github.com/marcorusc/mcp-biomodelling-servers).
 
@@ -60,7 +61,7 @@ versions to `resolved-requirements.txt` inside the environment. This is an insta
 version snapshot, not a committed cross-platform lock with artifact hashes. Later
 runs reuse the environment and validate it; they do not silently upgrade it.
 To upgrade from an older setup, select a new environment prefix, for example
-`--env-prefix "$PWD/.setup/environment-mcp-2.4.0-neko-1.10.1"`. An old ownership
+`--env-prefix "$PWD/.setup/environment-mcp-2.5.0-neko-1.10.2"`. An old ownership
 marker or changed dependency pins require a new prefix; reuse mode verifies an
 existing environment and cannot upgrade it. If the pinned release is unavailable,
 setup fails rather than substituting another release. A local source checkout of
@@ -77,8 +78,52 @@ The default `--environment-mode managed` retains the owned-environment behavior
 above. Use `--environment-mode reuse --env-prefix <existing-env>` to verify an
 existing environment without calling an installer or creating an ownership marker.
 Reuse does not require discovering Conda or a venv manager and cannot be combined
-with `--package-source`. The existing Python, package/import, executable, dependency
-and Graphviz requirements still apply; reusable does not mean unverified.
+with `--package-source`. The existing Python, package/import, executable and
+dependency requirements still apply; reusable does not mean unverified.
+
+## Plugin mode (uv only)
+
+The MCP repository publishes each server as a Claude Code, Codex and Agent Plugins
+1.0 plugin in the `marcorusc` marketplace
+(`claude plugin marketplace add marcorusc/mcp-biomodelling-servers`). **Do not enable
+those plugins for this project.** An enabled plugin connects its MCP servers to the
+main session, which would give the orchestrator modelling tools; plugin-shipped
+agents also cannot declare their own MCP servers. The isolation check fails when
+`neko`, `maboss`, `physicell` or `biomass` plugins are enabled in project, local or
+user Claude settings, or when `mcp__plugin_<server>_…` tools are allowed project-wide.
+
+Instead, `--environment-mode plugin` gives each specialist the plugin's own launch,
+inline and visible only to that specialist:
+
+```text
+uvx --from mcp-biomodelling-servers==2.5.0 mcp-<server>-server
+```
+
+[uv](https://docs.astral.sh/uv/) is the only prerequisite: no Conda, venv, MaBoSS
+or Graphviz installation. Setup discovers `uvx` on PATH or in `~/.local/bin`
+(override with `--uv-path`, saved as `uv_path`), resolves the launch once so the
+first specialist start does not download packages, checks the resolved server
+version, and probes each server's tool inventory through that exact launch. Plugin
+mode cannot be combined with `--env-prefix`, `--manager`, `--manager-path`,
+`--package-source` or `--backend-sources`; values saved from another mode are not
+carried over.
+
+```text
+python scripts/setup.py --client claude --environment-mode plugin --with-biomass
+```
+
+The plugin pins only `mcp-biomodelling-servers`; its other dependencies follow that
+package's declared ranges and can drift as upstream releases appear. Setup reports a
+resolved version that differs from a tested pin (for example `nekomata`) as a
+warning in the report rather than failing. Use a managed environment when an exact
+installed snapshot (`resolved-requirements.txt`) matters more than install
+simplicity. Capture helpers that read handoff contracts need the package too; in
+plugin mode run them with the same release, for example
+`uvx --from mcp-biomodelling-servers==2.5.0 python scripts/capture/<helper>.py …`.
+
+The tracked agent definitions ship this launch with a bare `uvx`, so a checkout with
+uv on PATH works before setup runs. Setup rewrites it to the absolute `uvx` path and
+a fixed PATH, because desktop clients often start without the login shell's PATH.
 
 Add `--with-biomass` to configure the optional `ode_modeler` / `ode-modeler` profile
 and require the BioMASS authoring, import, evidence, simulation and bundle-export
@@ -129,8 +174,10 @@ and version from Codex's structured JSON output. Check mode reports drift withou
 changing it.
 
 Claude's three base modelling agent files, plus `ode-modeler` when selected,
-receive updated command, CONDA_PREFIX, and PATH fields. The literature-reviewer Python hook receives the environment's Python
-path. Agent bodies, tool permissions, skills, and scientific rules are preserved.
+receive a regenerated transport block: command, CONDA_PREFIX and PATH for an
+environment, or the absolute `uvx`, the plugin arguments and PATH in plugin mode.
+The literature-reviewer Python hook receives the environment's Python path; plugin
+mode keeps the portable `python3` (the hook uses only the standard library). Agent bodies, tool permissions, skills, and scientific rules are preserved.
 The adapter accepts the repository's existing inline YAML structure and rejects
 unsupported layouts instead of guessing. These Claude edits are machine-specific;
 review them before committing or sharing a checkout.
@@ -150,8 +197,9 @@ there too. Setup never stores authentication tokens in its input or state schema
 writing configuration, or starting MCP servers. It does run client version checks.
 `--check` verifies an existing installation without repairing it. Setup checks:
 
-- Python imports, installed server version, pip dependency consistency, executable
-  files, and Graphviz availability;
+- Python imports, installed server version, pip dependency consistency and
+  executable files (plugin mode: the resolved launch's server version, with
+  dependency drift reported as warnings);
 - MCP initialization and paginated tool listings for each server, without creating
   scientific sessions or calling modelling tools;
 - expected domain tools and absence of other domains' sentinel tools;
@@ -208,7 +256,7 @@ requires `name`, `version`, `path` and a full Git `commit`. Relative paths resol
 from the manifest's directory. The selected checkout must be its repository root,
 clean, and at that commit. Both package versions must also match
 `setup/dependencies.toml`. The example `setup/backend-sources.integration.json`
-now pins the released MCP 2.4.0 and NeKo 1.10.1 source revisions. Adjust its paths
+now pins the released MCP 2.5.0 (`v2.5.0`) and NeKo 1.10.2 (`v1.10.2`) source revisions. Adjust its paths
 to clean checkouts at those exact commits; a newer checkout is not interchangeable.
 The NeKo revision comes from [sysbio-curie/Neko](https://github.com/sysbio-curie/Neko),
 so an older personal fork may need that upstream revision fetched first.

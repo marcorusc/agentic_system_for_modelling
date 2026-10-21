@@ -41,8 +41,28 @@ def registrations(path: Path, root: Path) -> list[tuple[str, dict]]:
             if modelling(name, config) and config.get('enabled', True)]
 
 
-def check(root: Path, *, user_config: Path | None = None, codex_configs: tuple[Path, ...] = ()) -> dict:
+def enabled_modelling_plugins(data: dict) -> list[str]:
+    """Enabled plugins named after a modelling server, from any marketplace.
+
+    Claude Code connects an enabled plugin's MCP servers to the main session,
+    so the marketplace plugins would hand modelling tools to the orchestrator.
+    """
+    plugins = data.get('enabledPlugins', {})
+    if not isinstance(plugins, dict):
+        return []
+    return sorted(key for key, enabled in plugins.items()
+                  if enabled is not False and str(key).split('@', 1)[0].lower() in MODELLING_SERVERS)
+
+
+def check(root: Path, *, user_config: Path | None = None, codex_configs: tuple[Path, ...] = (),
+          user_settings: Path | None = None) -> dict:
     errors = []
+    settings = [root/'.claude/settings.json', root/'.claude/settings.local.json']
+    for path in settings + ([user_settings] if user_settings is not None else []):
+        if path.exists():
+            for key in enabled_modelling_plugins(read_json(path)):
+                errors.append(f'{path}: enabled modelling plugin {key} exposes its MCP tools to the orchestrator; '
+                              'disable it here and use the isolated specialist transports')
     paths = [root/'.mcp.json', root/'.codex/config.toml']
     if user_config is not None:
         paths.append(user_config)
@@ -53,7 +73,7 @@ def check(root: Path, *, user_config: Path | None = None, codex_configs: tuple[P
     for path in (root/'.claude/settings.json', root/'.claude/settings.local.json'):
         data = read_json(path)
         for rule in data.get('permissions', {}).get('allow', []):
-            if any(re.search(rf'mcp__{server}(?:[-_]agent)?__', rule) for server in MODELLING_SERVERS):
+            if any(re.search(rf'mcp__(?:plugin_{server}_[\w-]+|{server}(?:[-_]agent)?)__', rule) for server in MODELLING_SERVERS):
                 errors.append(f'{path}: project-wide modelling allow rule {rule}')
         if data.get('mcpServers'):
             for name, config in data['mcpServers'].items():
@@ -124,6 +144,7 @@ def main(argv=None) -> int:
     p.add_argument('--root', type=Path, default=ROOT)
     p.add_argument('--repository-only', action='store_true')
     p.add_argument('--user-config', type=Path, default=Path.home()/'.claude.json')
+    p.add_argument('--user-settings', type=Path, default=Path.home()/'.claude/settings.json')
     p.add_argument('--codex-config', type=Path, action='append', default=[])
     p.add_argument('--literature-profile', type=Path)
     p.add_argument('--preview', action='store_true')
@@ -133,14 +154,16 @@ def main(argv=None) -> int:
         user = None if args.repository_only else args.user_config
         if args.repository_only and (args.apply or args.preview):
             raise SetupError('Migration requires explicit user configuration scope')
-        result = check(args.root, user_config=user, codex_configs=tuple(args.codex_config))
+        result = check(args.root, user_config=user, codex_configs=tuple(args.codex_config),
+                       user_settings=None if args.repository_only else args.user_settings)
         if args.preview or args.apply:
             outputs = migration(user, tuple(args.codex_config), args.literature_profile, args.root)
             result['planned_files'] = [str(path) for path in outputs]
             if args.apply:
                 backups = args.root/'.setup/backups/isolation'
                 result['writes'] = [write_config(path, text, backups) for path,text in outputs.items()]
-                result.update(check(args.root, user_config=user, codex_configs=tuple(args.codex_config)))
+                result.update(check(args.root, user_config=user, codex_configs=tuple(args.codex_config),
+                                    user_settings=None if args.repository_only else args.user_settings))
         print(json.dumps(result, indent=2))
         return 0 if result['passed'] else 2
     except (OSError, ValueError, TypeError, KeyError) as error:

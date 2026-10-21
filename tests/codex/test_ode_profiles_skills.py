@@ -62,8 +62,15 @@ class OdeProfileSkillTests(unittest.TestCase):
         # Setup-managed local paths are valid; compare the actual executable to
         # its declared prefix rather than requiring shipped placeholders.
         command = re.search(r'^      command: (.+)$', servers, re.M)[1].strip('"')
-        prefix = re.search(r'^        CONDA_PREFIX: (.+)$', servers, re.M)[1].strip('"')
-        self.assertTrue(command == '__configure_biomass_command__' or command == str(Path(prefix)/'bin/mcp-biomass-server'))
+        prefix = re.search(r'^        CONDA_PREFIX: (.+)$', servers, re.M)
+        args = re.search(r'^      args: (.+)$', servers, re.M)
+        if args:
+            # Marketplace plugin launch (tracked default or setup plugin mode).
+            self.assertEqual(Path(command).name, 'uvx')
+            self.assertIsNone(prefix)
+            self.assertEqual(json.loads(args[1])[-1], 'mcp-biomass-server')
+        else:
+            self.assertTrue(command == '__configure_biomass_command__' or command == str(Path(prefix[1].strip('"'))/'bin/mcp-biomass-server'))
         self.assertIn('specialist_report_guard.py', header)
         self.assertIn('  - biomass-workflow\n', header)
         self.assertIn('  - Task\n', header)

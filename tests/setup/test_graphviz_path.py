@@ -1,4 +1,6 @@
-"""Preserve an explicitly discovered dependency without saving the shell PATH."""
+"""Preserve an explicitly chosen Graphviz override without saving the shell PATH.
+
+Released servers bundle Graphviz; setup never requires or auto-discovers dot."""
 from __future__ import annotations
 
 import json
@@ -64,7 +66,7 @@ class GraphvizPathTests(unittest.TestCase):
             return override or "/fixture/tool"
         args = setup.parser().parse_args([
             "--client", "codex", "--manager", "venv", "--env-prefix", str(self.prefix),
-            "--codex-home", str(self.home), "--non-interactive",
+            "--codex-home", str(self.home), "--non-interactive", "--graphviz-path", str(self.graphviz),
         ])
         with ExitStack() as stack:
             stack.enter_context(mock.patch.object(detect, "discover", side_effect=discover))
@@ -86,6 +88,20 @@ class GraphvizPathTests(unittest.TestCase):
         self.assertEqual(inspect.call_args.kwargs["graphviz_path"], str(self.graphviz))
         self.assertEqual(check.call_args.kwargs["graphviz_path"], str(self.graphviz))
         self.assertTrue(all(not item["changed"] for item in second["writes"]))
+
+    def test_dot_on_path_is_neither_required_nor_discovered(self):
+        args = setup.parser().parse_args([
+            "--client", "claude", "--manager", "venv", "--env-prefix", str(self.prefix), "--non-interactive",
+        ])
+        manifest = tomllib.loads((self.root / "setup/dependencies.toml").read_text())
+        for path in (f"{self.graphviz.parent}:/usr/bin", "/nonexistent"):
+            with self.subTest(path=path), mock.patch.dict(os.environ, {"PATH": path}), \
+                 mock.patch.object(detect, "discover", side_effect=lambda name, override=None:
+                                   None if name == "dot" else override or "/fixture/tool"), \
+                 mock.patch.object(detect, "client_version", return_value="3.11.0"):
+                plan, errors = setup.plan(args, self.root, manifest)
+            self.assertFalse(errors)
+            self.assertIsNone(plan["graphviz_path"])
 
     def test_stable_dot_alias_is_retained_when_underlying_binary_has_another_name(self):
         binary = self.directory / "custom-graphviz/libexec/graphviz-engine"

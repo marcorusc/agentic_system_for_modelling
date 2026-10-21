@@ -7,6 +7,7 @@ import json
 import re
 import shutil
 import tempfile
+import tomllib
 import unittest
 from pathlib import Path
 
@@ -55,20 +56,26 @@ class SpecialistMcpAccessTests(unittest.TestCase):
         self.assertIn(f"mcpServers:\n  - {server}-agent:\n", metadata)
         block = metadata.split("mcpServers:\n", 1)[1].split("\ntools:", 1)[0]
         self.assertEqual(re.findall(r"^  - ([\w-]+):$", block, re.MULTILINE), [server + "-agent"])
-        values = {}
-        for key in ("command", "CONDA_PREFIX", "PATH"):
+        def value(key: str):
             matches = re.findall(rf"^ +{key}: (.+)$", block, re.MULTILINE)
-            self.assertEqual(len(matches), 1)
-            value = matches[0]
-            values[key] = json.loads(value) if value.startswith('"') else value
-        if server == "biomass" and values["command"] == "__configure_biomass_command__":
-            self.assertEqual(values["CONDA_PREFIX"], "__configure_biomass_environment__")
-            self.assertEqual(values["PATH"], "__configure_biomass_path__")
+            self.assertLessEqual(len(matches), 1)
+            return json.loads(matches[0]) if matches else None
+        command = value("command")
+        arguments = value("args")
+        if arguments is not None:
+            # Marketplace plugin launch, pinned to the tested release; tracked
+            # defaults use a bare uvx and setup writes an absolute one.
+            manifest = tomllib.loads((ROOT / "setup/dependencies.toml").read_text())
+            self.assertEqual(Path(command).name, "uvx")
+            self.assertEqual(arguments, ["--from", f"{manifest['package']}=={manifest['version']}", executable])
+            self.assertIsNone(value("CONDA_PREFIX"))
+            if Path(command).is_absolute():
+                self.assertEqual(value("PATH").split(":")[0], str(Path(command).parent))
         else:
-            prefix = Path(values["CONDA_PREFIX"])
+            prefix = Path(value("CONDA_PREFIX"))
             self.assertTrue(prefix.is_absolute())
-            self.assertEqual(values["command"], str(prefix / "bin" / executable))
-            self.assertEqual(values["PATH"].split(":")[0], str(prefix / "bin"))
+            self.assertEqual(command, str(prefix / "bin" / executable))
+            self.assertEqual(value("PATH").split(":")[0], str(prefix / "bin"))
         self.assertNotIn("${MCP_MODELLING_ENV}", metadata)
 
     def test_agents_define_isolated_inline_servers(self) -> None:
@@ -84,6 +91,23 @@ class SpecialistMcpAccessTests(unittest.TestCase):
             rendered = configure_claude.render(root, root / "another environment", with_biomass=True)
             for filename, (server, executable, _) in AGENTS.items():
                 self.check_transport(frontmatter(rendered[root / ".claude/agents" / filename]), server, executable)
+
+    def test_generated_plugin_transports_pin_the_released_launch(self) -> None:
+        import tomllib as toml
+        from scripts.setup_support import configure_claude
+        manifest = toml.loads((ROOT / "setup/dependencies.toml").read_text())
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            shutil.copytree(ROOT / ".claude/agents", root / ".claude/agents")
+            plugin = {"uvx": "/opt/uv tools/bin/uvx", "manifest": manifest}
+            rendered = configure_claude.render(root, None, with_biomass=True, plugin=plugin)
+            for filename, (server, executable, _) in AGENTS.items():
+                self.check_transport(frontmatter(rendered[root / ".claude/agents" / filename]), server, executable)
+            hook = rendered[root / ".claude/agents/literature-reviewer.md"]
+            self.assertIn('          command: "python3"\n', hook)
+            for path, text in rendered.items():
+                path.write_text(text)
+            self.assertEqual(configure_claude.render(root, None, with_biomass=True, plugin=plugin), rendered)
 
     def test_required_validation_reviewers_exist_and_are_read_only(self) -> None:
         workflow = (ROOT / ".claude/skills/validate-stage/SKILL.md").read_text()
