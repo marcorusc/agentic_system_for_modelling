@@ -259,7 +259,29 @@ def validate_completion(handoff: dict, project: Path, files: dict[str, Path]) ->
             raise ValueError('record a project-contained NeKo network before ODE completion') from error
         if digest(network) != artifact.get('sha256'):
             raise ValueError('upstream network hash mismatch')
+        try:
+            from scripts.curation_contract import CURATION_PATH_KEYS, check_binding, relocation_of
+        except ModuleNotFoundError:
+            # Script entry points may run with only scripts/codex on sys.path.
+            import sys
+            sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+            from scripts.curation_contract import CURATION_PATH_KEYS, check_binding, relocation_of
         parent = (project / manifest_path).parent
+        accepted_upstream = [manifest]
+        curation = manifest.get('curation_file')
+        if curation is not None:
+            # Backend 2.5.0 ODE v2.0 binds this companion to the network artifact.
+            if manifest.get('schema_version') != '2.0' or not isinstance(curation, dict) or (curation.get('server'), curation.get('session_id'), curation.get('role')) != ('NeKo', handoff['derived_from_session_id'], 'neko_history'):
+                raise ValueError('upstream curation companion ownership mismatch')
+            try:
+                companion = safe_file(project, Path(curation.get('path', '')).relative_to(project).as_posix())
+            except ValueError as error:
+                raise ValueError('record a project-contained NeKo curation companion before ODE completion') from error
+            if digest(companion) != curation.get('sha256') or companion.stat().st_size != curation.get('size_bytes'):
+                raise ValueError('upstream curation companion hash mismatch')
+            check_binding(companion.read_bytes(), artifact, handoff['derived_from_session_id'], manifest.get('history_state_id'))
+        elif manifest.get('schema_version') == '2.0':
+            raise ValueError('NeKo-to-BioMASS v2.0 requires curation_file')
         recorded_import = PurePosixPath(manifest_path).name == 'import.handoff.json' or 'ode-handoffs' in PurePosixPath(manifest_path).parts
         if recorded_import or (parent / 'relocation.json').exists():
             relocation = read_json(safe_file(parent, 'relocation.json'))
@@ -267,13 +289,18 @@ def validate_completion(handoff: dict, project: Path, files: dict[str, Path]) ->
             original = read_json(original_path)
             if relocation.get('original_manifest_sha256') != digest(original_path) or relocation.get('import_manifest_sha256') != digest(project / manifest_path) or relocation.get('network_sha256') != digest(network):
                 raise ValueError('NeKo relocation hashes do not match')
+            if curation is not None and relocation.get('curation_sha256') != curation.get('sha256'):
+                raise ValueError('NeKo relocation curation hash does not match')
             if not isinstance(original.get('network_file'), dict):
                 raise ValueError('original NeKo network ownership is malformed')
-            original['network_file']['path'] = artifact['path']
-            if original != manifest:
+            if not relocation_of(original, manifest, CURATION_PATH_KEYS['neko-to-biomass']):
                 raise ValueError('relocation changed NeKo scientific provenance')
+            if curation is not None:
+                # BioMASS 2.5.0 cannot import the relocated copy, so its snapshot
+                # records the original backend manifest that this capture preserves.
+                accepted_upstream.append(original)
         upstream = document.get('upstream', {})
-        if upstream != manifest:
+        if upstream not in accepted_upstream:
             raise ValueError('snapshot upstream differs from recorded NeKo manifest')
     for relative in ode['evidence_paths']:
         # ODE claims and existing upstream edge reviews have distinct locations.
