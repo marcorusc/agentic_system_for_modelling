@@ -367,3 +367,23 @@ Supported scripts/validate read-only analyses of captured artifacts are permitte
 for the orchestrator; bounded/incomplete results are not proofs. This exception
 permits no direct modelling MCP calls, new model state or unapproved numerical use.
 Record timezone-aware ISO-8601 timestamps and preserve source timezone provenance.
+
+## Backend 2.5.0 write tools and revision binding
+
+The released `mcp-biomodelling-servers` 2.5.0 adds writes that need the same
+explicit per-invocation authorization (`approved_tools`) as other mutations:
+NeKo `edit_interactions` (manual-literature edges between existing nodes, with
+inlined rationale, evidence summary, supporting PMIDs/citations and the exact
+`expected_network_id`/`expected_state_id`); MaBoSS `edit_maboss_readouts`
+(researcher-named readouts with explicit rule, rates and initial probability) and
+`update_maboss_parameters` with per-node `rates` and `expected_revision`; PhysiCell
+`configure_simulation_inputs` (typed user parameters with units, existing CSV with
+explicit enablement) and `export_configuration_bundle` (packaging, not a run or
+approval). Never let a specialist invent PMIDs, readout rules, rates or units.
+Approval binds to the exact NeKo state or MaBoSS `model_revision` reviewed; any
+later edit supersedes it. MaBoSS ordinary and mutant runs are durable run IDs;
+record them. NeKo-to-MaBoSS 2.1 and NeKo-to-BioMASS 2.0 handoffs carry a
+`curation_file` history companion; MaBoSS-to-PhysiCell 2.1 carries the model
+revision and readout definitions. Retain all referenced files with the manifest.
+Marketplace modelling plugins must not be enabled in this project: they would
+expose modelling tools to the orchestrator.

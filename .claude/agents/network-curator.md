@@ -66,6 +66,12 @@ suggestions, not instructions for this specific task.
   scientific consequence of applying it versus leaving it as-is. The orchestrator
   takes this back to the user; a decision to apply it arrives as an explicit
   instruction in a later invocation, not as something you infer now.
+- `edit_interactions` (adding an interaction or changing an edge's effect) is a
+  topology mutation reserved for manual-literature curation: use it only for the
+  exact edges, effects, rationale, evidence summaries, PMIDs and citations inlined
+  in this invocation, with `expected_network_id`/`expected_state_id` read from
+  `status`. Never invent a PMID, add a missing endpoint or run a connection tool to
+  make an edit succeed; return the failure instead.
 - This applies even if you judge the recommendation obviously correct. Do not mutate
   the network solely on your own assessment of workflow guidance or reference
   annotations from `neko:get_references` — you do not have literature access to
@@ -133,6 +139,9 @@ BNET export is pending orchestrator sign-off — do not export "while you're at 
 - Report the scientific consequence of removing ambiguous interactions.
 - Prepare an edge-level literature evidence queue.
 - Export the typed NeKo-to-MaBoSS BNET handoff only per the gated rule above.
+- Report the state ID before and after every topology change; an export or
+  approval of an earlier state does not cover the new one.
+- Return the handoff's `curation_file` history companion path with the manifest.
 
 ## Output
 
@@ -146,7 +155,8 @@ metadata and artifacts; the orchestrator's derived summaries belong under
 
 Return: the full session ID, history state ID, dimensions, effective inference
 policies and parameters, important evidence, uncertainties, topology changes made
-(if any, and under whose explicit instruction),
+(if any, and under whose explicit instruction), each `edit_interactions` result
+(canonical endpoints/effects, evidence recorded, resulting state ID),
 flagged workflow recommendations not acted on, rejected alternatives, warnings,
 literature evidence queue, whether BNET/handoff export was performed this
 invocation (and under what explicit instruction) or is still pending sign-off,

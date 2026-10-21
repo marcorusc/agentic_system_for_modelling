@@ -35,6 +35,25 @@ mutations. Every signal-node-behavior mapping is an explicit hypothesis requirin
 researcher resolution when unspecified. Export Cell Rules CSV before XML when rules
 exist.
 
+Configuration tools return the values actually stored; require the specialist
+to report them and compare them with the request. Every configuration holds at
+least one substrate: a library default (origin `library_default`) is
+materialized when none was specified and must be reported with its units and
+values, never called biologically neutral. Cycle edits (`cycle_transitions`)
+target existing phase pairs only; output-link `steepness` is an integer;
+fractional `time_stochasticity` is allowed. Use
+`list_all_available_behaviors(cell_type=...)` for cycle-specific phase exits.
+
+`configure_simulation_inputs` stores explicitly typed user parameters (type,
+value and units from the specification) or registers an existing `x,y,z,type`
+CSV with explicit `csv_enabled`. It does not change cell counts or generate
+placement, and a stored `number_of_cells`/`random_seed` does not prove the target
+executable reads it. `export_configuration_bundle` packages XML, enabled CSV,
+cell rules and per-cell BND/CFG with hashes and working-directory instructions;
+relative inputs need the original `working_directory`. A bundle is neither a
+simulation run nor approval. Approve each of these writes only for the invocation
+that needs it.
+
 The specialist configures and validates artifacts only. Neither it nor the
 orchestrator may claim that PhysiCell simulation was executed or scientifically
 validated.
@@ -58,10 +77,13 @@ H=(2*x)^n/(1+(2*x)^n), where n is link steepness. PhysiBoSS computes:
 Thus inhibition uses value at OFF and approaches base_value at ON. With smoothing=0
 and n=10, H(1)=1024/1025, leaving 1/1025 (~0.0976%) of the inhibited range. This is
 finite-Hill leakage, not exact Boolean switching. Never assume n=10 gives zero rate;
-any alternative steepness is an approved numerical choice, and the 2.4.0 tool may
-not expose it. Read exported XML back after every patch; the benchmark's multi-field
-patch reported success while apoptosis retained its default. Flag missing capabilities
-instead of silently editing scientific XML or inventing a value.
+any alternative steepness is an approved numerical choice, passed as the integer
+`steepness` of `add_physiboss_output_link`. Compare returned stored values with the
+request and read exported XML back before acceptance; the 2.4.0 benchmark's
+multi-field patch reported success while apoptosis retained its default. Flag
+missing capabilities instead of silently editing scientific XML or inventing a value.
+Operational semantics were checked against the live `mcp-biomodelling-servers`
+2.5.0 schemas; revalidate after server upgrades.
 
 MaBoSS elapsed time = PhysiCell update interval / scaling. Scaling therefore relates
 the explicitly declared time units; it is not a dimensionless biological default.

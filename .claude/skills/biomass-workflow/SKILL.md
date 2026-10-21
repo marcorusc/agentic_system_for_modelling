@@ -30,7 +30,9 @@ independent hypothesis unless reuse or reconstruction is explicitly authorized.
 Name the objective and one authorized input kind:
 
 - `neko`: verified exported NeKo-to-BioMASS graph handoff and complete source-session
-  lineage. A BNET file or signed network is not a biochemical reaction model.
+  lineage. Version 2.0 handoffs name a `curation_file` NeKo history companion;
+  keep it with the manifest. A BNET file or signed network is not a biochemical
+  reaction model.
 - `standalone_text`: explicit standalone authorization, exact Text2Model source and
   source hash; no NeKo session or connected graph is required.
 - `reactions`: explicit standalone authorization and the exact bounded reaction
@@ -49,7 +51,8 @@ Read [reaction syntax](references/reaction_syntax.md) when authoring Text2Model,
 [editing](references/model_editing.md) before revising an existing document.
 For NeKo imports also read [network interpretation](references/network_to_reactions.md).
 [Provenance](references/provenance.json) records the exact BioMASS 0.14/server 2.3
-reference hashes. Revalidate tool semantics after upgrades.
+reference hashes; the same files and tool schemas ship unchanged in server 2.5.0.
+Revalidate tool semantics after upgrades.
 
 These upstream references describe standalone server capabilities. Their literature
 retrieval instructions mean return evidence requests to the orchestrator, which

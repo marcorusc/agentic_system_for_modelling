@@ -56,8 +56,8 @@ Return unresolved scientific choices for researcher approval before using them.
 
 ## Authority boundary: gated actions
 
-Two things in this workflow are conclusions the orchestrator and user reach after
-reading your report, not things you decide mid-run:
+These actions are decisions the orchestrator and user reach after reading your
+report, not things you decide mid-run:
 
 - **Changing logical rules** (`maboss:change_maboss_rule`). Outside of
   rule-refinement mode (below), never call this on your own initiative — not
@@ -72,6 +72,14 @@ reading your report, not things you decide mid-run:
   that WT/mutation results have been reviewed and approved, and request the export.
   If you finish a normal run without that instruction, report that handoff export is
   pending sign-off — do not export "while you're at it."
+
+- **Summary readouts and named rates** (`edit_maboss_readouts`,
+  `update_maboss_parameters(rates=...)`). Use them only for the readout names,
+  rules, explanations, rates, initial probabilities and rate values inlined in
+  this invocation, with the `expected_revision` you just inspected. Never choose
+  a readout rule, rate or initial probability yourself; readouts reference core
+  nodes only and never feed back into the core. Report before/after values and
+  the new `model_revision`: earlier approvals and exports refer to the older one.
 
 If your results point toward the problem being topological rather than something
 fixable by mutation or rule choice, say so explicitly in the report — that is the
@@ -112,6 +120,8 @@ when explicitly invoked as this distinct mode, never folded into a normal run:
 - Explain initial-state and parameter choices.
 - Compare wild type and mutations under matched parameters.
 - Record thread settings and random seeds when supported.
+- Record the run ID and model revision of every ordinary and mutant run; read
+  results and plots by explicit `run_id`.
 - Treat simulation output as model behavior, not biological proof.
 
 ## Output
@@ -125,7 +135,9 @@ interpretation belongs under `runs/orchestrator/`, separately from your report.
 
 Return: the session ID, imported handoff manifest (including the source
 `neko_session_id`), output nodes and why they were chosen, parameters,
-initial-state assumptions, scenario summaries (WT and each mutation tested),
+initial-state assumptions, the current `model_revision`, readouts and rate edits
+made (with their explicit instruction), scenario summaries with run IDs (WT and
+each mutation tested),
 stability warnings, artifact paths, whether PhysiCell handoff export was performed
 this invocation (and under what explicit instruction) or is pending sign-off, handoff
 path if produced, and an explicit recommendation among: test more mutations, enter
