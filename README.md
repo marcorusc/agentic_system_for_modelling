@@ -32,45 +32,41 @@ For the full design and runtime rationale, see
 
 ## Current implementation status
 
-Five specialist definitions are included; BioMASS setup is optional:
+Release **1.0.0**, tested with `mcp-biomodelling-servers` **2.5.0** (NeKo 1.10.2,
+PhysiCell Settings 0.6.3, bundled cmaboss and BioMASS 0.14). See
+[`CHANGELOG.md`](CHANGELOG.md). Five modelling and literature specialists are
+included; BioMASS setup is optional:
 
 | Agent | Purpose | MCP access |
 |---|---|---|
-| `network-curator` | Construct, inspect, curate, compare, and export NeKo networks | Inline NeKo server only |
+| `network-curator` | Construct, inspect, curate (including authorized manual-literature edges), compare, and export NeKo networks | Inline NeKo server only |
 | `literature-reviewer` | Review evidence for edges and assumptions and write edge reports | Configured `pubmed` server |
-| `boolean-dynamics-modeler` | Import NeKo handoffs, run MaBoSS analyses, mutations, and bounded rule refinement | Inline MaBoSS server only |
-| `multicellular-configurator` | Configure PhysiCell/PhysiBoSS domains, cells, substrates, rules, and mappings | Inline PhysiCell server only |
+| `boolean-dynamics-modeler` | Import NeKo handoffs, run durable MaBoSS runs and mutations, named readouts/rates, and bounded rule refinement | Inline MaBoSS server only |
+| `multicellular-configurator` | Configure PhysiCell/PhysiBoSS domains, cells, substrates, rules, mappings, inputs and configuration bundles | Inline PhysiCell server only |
 | `ode-modeler` | Build mechanistic ODEs from approved NeKo graphs, Text2Model or explicit reactions; preserve candidates and run approved scenarios | Optional inline BioMASS server only |
 
-The architecture also describes an independent scientific reviewer and a
-reproducibility auditor. Their agent definitions are not yet included. Claude's
-`/validate-stage` requires both and remains blocked until they are implemented.
-The Codex `skills/validate-stage` workflow instead assigns the checks to the main
-orchestrator, followed by researcher approval. It does not provide independent
-review or audit. These are different existing workflows; see
+Two read-only reviewers, `scientific-reviewer` and `reproducibility-auditor`, back
+Claude's `/validate-stage`. The Codex `skills/validate-stage` workflow instead
+assigns the checks to the main orchestrator, followed by researcher approval; see
 [validation responsibilities](docs/handoff-validation.md#validation-responsibilities).
 
 The modelling specialists start isolated inline MCP servers in Claude; Codex uses
-the shared dispatcher runtime with fixed profiles. The literature
-specialist still requires a configured literature server. Availability depends on
-your local installation.
+the shared dispatcher runtime with fixed profiles. The literature specialist still
+requires a configured literature server.
 
 ## Prerequisites
 
 - Git
 - Python 3.11 or newer (the Codex launcher uses the standard-library `tomllib`)
-- Claude Code with custom agents and skills enabled
-- A modelling environment containing the NeKo, MaBoSS, and PhysiCell MCP executables
+- Claude Code with custom agents and skills enabled, and/or Codex 0.153.0+
+- One of:
+  - [uv](https://docs.astral.sh/uv/) — the servers then start exactly like the
+    marketplace plugins, with no other installation; or
+  - a modelling environment containing the NeKo, MaBoSS, and PhysiCell MCP
+    executables (setup can create one with Conda or venv)
 - Network access to the shared PubMed MCP endpoint for literature review
-- For ODE work only, a BioMASS server with the required authoring/export capabilities
 
-The inline NeKo, MaBoSS, and PhysiCell commands must point to executables installed
-in the modelling environment. Typical locations are:
-
-```text
-<MODELLING_ENV>/bin/mcp-neko-server              # Linux/macOS
-<MODELLING_ENV>/Scripts/mcp-neko-server.exe      # Windows
-```
+No MaBoSS executable or system Graphviz is required: the 2.5.0 servers bundle both.
 
 The agents inherit whichever model is running the main Claude Code session. The
 remote Ollama/Qwen setup described in the architecture document is supported but is
@@ -78,20 +74,33 @@ not required by the repository structure.
 
 ## Automatic setup (Linux / WSL)
 
-With Python 3.11+ and Git installed, run:
+With Python 3.11+ and Git installed, run one of:
 
 ```text
-python scripts/setup.py
+python scripts/setup.py --client claude --environment-mode plugin   # uv only
+python scripts/setup.py                                              # managed environment
 ```
 
-The guided installer detects Codex/Claude, creates a dedicated modelling environment,
-updates managed paths, and runs diagnostics. Use `--client codex`, `--client claude`,
-or `--client both` to select clients; `--dry-run` previews and `--check` diagnoses
-an existing setup. See [automatic setup](docs/automatic-setup.md) for environment
-options, prerequisites, saved settings, and verification limits. Setup installs and
-verifies `mcp-biomodelling-servers==2.4.0` with `nekomata==1.10.1`. When upgrading
-an older managed installation, select a new `--env-prefix`; reuse mode only checks
-an existing environment.
+The guided installer detects Codex/Claude, prepares the servers, updates managed
+paths, and runs diagnostics. Use `--client codex`, `--client claude`, or
+`--client both` to select clients; `--dry-run` previews and `--check` diagnoses an
+existing setup. See [automatic setup](docs/automatic-setup.md) for environment
+options, saved settings, and verification limits. Setup verifies
+`mcp-biomodelling-servers==2.5.0` with `nekomata==1.10.2`. When upgrading an older
+managed installation, select a new `--env-prefix`; reuse mode only checks an
+existing environment.
+
+### Marketplace plugins
+
+The MCP servers are also published as plugins in the `marcorusc` marketplace
+(`neko@marcorusc`, `maboss@marcorusc`, `physicell@marcorusc`, `biomass@marcorusc`).
+This project uses their launch — `uvx --from mcp-biomodelling-servers==2.5.0
+mcp-<server>-server` — but **inline in each specialist only**. Do not enable the
+plugins in this project: Claude Code connects an enabled plugin's servers to the
+main session, which would give the orchestrator modelling tools. The isolation
+check (`python scripts/check_isolation.py`) and setup fail if they are enabled in
+project, local or user settings. Use the plugins directly in other projects that
+do not need orchestrator isolation.
 
 ## Optional ODE setup
 
@@ -117,23 +126,30 @@ configuration is prepared for Phase 5; live ODE readiness is not yet verified.
    cd my-biological-model
    ```
 
-2. Edit the inline `command`, `CONDA_PREFIX`, and `PATH` values in these files so
-   they point to your modelling environment:
+2. The tracked agent definitions launch each server with the marketplace plugin's
+   pinned command, so nothing needs editing when `uvx` is on PATH:
 
-   - `.claude/agents/network-curator.md`
-   - `.claude/agents/boolean-dynamics-modeler.md`
-   - `.claude/agents/multicellular-configurator.md`
+   ```yaml
+   mcpServers:
+     - neko-agent:
+         type: stdio
+         command: "uvx"
+         args: ["--from", "mcp-biomodelling-servers==2.5.0", "mcp-neko-server"]
+   ```
 
-   The tracked values are the paths for the current Linux/WSL workstation. On
-   another machine, use `<env>/bin/mcp-…-server` on Linux/macOS or
-   `<env>/Scripts/mcp-…-server.exe` on Windows. Do not put `${...}` placeholders in
-   `command`; inline command values are executed directly rather than by a shell.
+   To use an existing environment instead, replace that block in
+   `.claude/agents/{network-curator,boolean-dynamics-modeler,multicellular-configurator,ode-modeler}.md`
+   with `command: "<env>/bin/mcp-…-server"` plus `env:` entries for `CONDA_PREFIX`
+   and `PATH`, or let `scripts/setup.py --environment-mode reuse` write them. Do not
+   put `${...}` placeholders in `command`; inline command values are executed
+   directly rather than by a shell. Desktop clients may start without your login
+   shell's PATH; setup writes an absolute `uvx` path for that reason.
 
    The literature reviewer's file guard uses `python3` from your environment by
    default. If that command is unavailable, set the hook `command` in
    `.claude/agents/literature-reviewer.md` to your Python 3.11+ executable. Automatic
-   setup replaces this portable default with the selected environment's absolute
-   Python path.
+   setup with a managed or reused environment replaces this portable default with
+   the environment's absolute Python path.
 
 3. Configure the remote server named `pubmed` at
    `https://pubmed.mcp.claude.com/mcp` for Claude literature review. Codex setup
@@ -144,8 +160,9 @@ configuration is prepared for Phase 5; live ODE readiness is not yet verified.
 
 5. Run `/agents` and confirm the expected tracked agents are visible. Run `/mcp` to
    check the optional PubMed connection. Modelling servers are scoped to their
-   subagents and start only when those agents run. Configure the optional ODE agent
-   through `--with-biomass` before using it.
+   subagents and start only when those agents run; the first plugin launch may take
+   a minute while uv downloads the release. Run `--with-biomass` setup before
+   relying on the optional ODE agent, so its capabilities are verified.
 
 6. Ask the orchestrator to help populate the scientific-state files. If you have
    experimental data, place the original inputs under `inputs/` and describe their
@@ -587,11 +604,15 @@ Claude Code if the repository configuration was changed after launch.
 
 ### NeKo, MaBoSS, or PhysiCell does not start
 
-Inspect the inline `command`, `CONDA_PREFIX`, and `PATH` values in the corresponding
-file under `.claude/agents/`. Confirm that the executable exists and that the
-installed `mcp-biomodelling-servers` version matches the workflow-skill snapshot.
-Restart Claude Code after changing an inline server command or upgrading the
-environment.
+Inspect the inline transport in the corresponding file under `.claude/agents/`.
+For the plugin launch, confirm `uvx` is found (or that setup wrote its absolute
+path), and that the launch resolves:
+`uvx --from mcp-biomodelling-servers==2.5.0 python -c "import importlib.metadata as m; print(m.version('mcp-biomodelling-servers'))"`.
+The server commands themselves take no `--help`; they start a stdio server. For an
+environment, confirm `command`, `CONDA_PREFIX` and `PATH` point to an existing
+executable. The server version must match the workflow-skill snapshot; run
+`python scripts/setup.py --check` to verify. Restart Claude Code after changing an
+inline server command or upgrading the environment.
 
 ### A literature reviewer report write is rejected
 

@@ -37,6 +37,14 @@ release when it exists and revalidate the complete installation.
 
 ## Deployment prerequisite before merge
 
+Resolved for release 1.0.0 (2026-10-21): MCP 2.5.0, NeKo 1.10.2 and PhysiCell
+Settings 0.6.3 are published on PyPI (official `sysbio-curie/Neko` tag `v1.10.2`,
+`ff16c87`). `setup/dependencies.toml`, the release-version tests, the operational
+skill snapshots and the source-install example now pin that released set, and CI
+installs it from PyPI instead of `setup/requirements-wave1-review.txt` (removed).
+The historical text below describes the state before publication.
+
+
 The normal setup manifest still pins the published MCP 2.4.0 / NeKo 1.10.1 pair.
 Do not use that default setup path to deploy the v2 contract changes in this PR.
 Before marking this PR ready, publish the reviewed library releases, publish MCP
