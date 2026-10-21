@@ -38,6 +38,24 @@ remain verifiable after the original source files disappear. Existing v1 handoff
 are still accepted; ODE formats are unchanged. All capture files remain under the
 existing `runs/` lifecycle allowlist, so archives preserve them with the model.
 
+Backend 2.5.0 adds curation-bearing versions: NeKo→MaBoSS **2.1** and
+NeKo→BioMASS **2.0** require a `curation_file` (NeKo history companion), and
+MaBoSS→PhysiCell **2.1** requires `model_revision` and explicit `readouts`
+(may be `{}`). Recorders copy and hash the companion (top level, or under
+`parent/curation/` for a MaBoSS parent) and record `curation_sha256` in
+`relocation.json`. The backend binds each companion to the model artifact's
+*original absolute path*, so its own verifier, and therefore MaBoSS, BioMASS and
+PhysiCell import tools, reject every relocated copy. For these versions pass
+the original backend manifest (`backend_import_manifest` in the recorder
+output) to the downstream import tool; the project capture remains the
+immutable gate/approval record. Recorders verify the live original first and
+then the copies against the original binding; `gate.py` checks the copied
+companion bytes, state and every non-path identity field. Readouts are the only
+nodes permitted beyond the NeKo parent core; they may not reclassify core nodes
+or appear in core BND rules. Older 1.0/2.0 documents are unchanged. The ODE
+recorder accepts `--artifact-root` like the Boolean recorders, because 2.5.0
+servers write to `~/.cache/mcp-biomodelling/artifacts/<Server>` by default.
+
 A source derivative can retain a NeKo ancestor while having no accepted stage
 parent. That source record never grants approval of its changed nodes or rules.
 The current model still requires independent review and exact-revision researcher
