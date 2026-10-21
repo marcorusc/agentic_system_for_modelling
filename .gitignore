@@ -16,3 +16,6 @@ __pycache__/
 # Library diagnostics and persistent capture/index locks
 pypath_log/
 **/.*.capture.lock
+
+# Claude Code agent worktrees
+.claude/worktrees/

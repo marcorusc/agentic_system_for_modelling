@@ -313,7 +313,8 @@ class SetupTests(unittest.TestCase):
         with mock.patch.object(environment, 'run', side_effect=command) as run:
             environment.install(self.prefix, 'conda', '/tools/conda', self.manifest)
         first = run.call_args_list[0].args[0]
-        self.assertIn('graphviz', first)
+        # The released servers bundle Graphviz; conda supplies only Python.
+        self.assertNotIn('graphviz', first)
         self.assertIn('conda-forge', first)
         self.assertIn(str(self.prefix), first)
 
