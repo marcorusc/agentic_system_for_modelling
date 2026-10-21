@@ -11,6 +11,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from scripts.capture.artifact_capture import boolean_artifact_root, staged_capture
+from scripts.capture.neko_curation import CURATION_NOTE, copy_curation, verify_relocated
 from scripts.codex.launcher_config import validate_session_id
 from scripts.codex.ode_artifacts import digest, read_json, safe_file
 
@@ -31,38 +32,55 @@ def record_neko(project: Path, server_root: Path | None, manifest_path: Path, ca
     basename = network.name
     if basename in {'original.handoff.json', 'import.handoff.json', 'relocation.json', 'resource.json', 'resource.original.json'}:
         raise ValueError('BNET basename conflicts with capture metadata')
+    # Live verification of the original includes the 2.1 curation binding.
     verify_handoff_manifest(parsed)
     if bnet_node_names(network) != parsed.network.nodes:
         raise ValueError('BNET target order disagrees with manifest nodes')
+    reserved = {'original.handoff.json', 'import.handoff.json', 'relocation.json', 'resource.json', 'resource.original.json', basename}
+    curation = copy_curation(source, raw['curation_file'], reserved) if parsed.curation_file else None
     original_bytes, network_bytes = original.read_bytes(), network.read_bytes()
     if json.loads(original_bytes) != raw or hashlib.sha256(network_bytes).hexdigest() != parsed.bnet_file.sha256:
         raise ValueError('source artifacts changed during validation')
     target = project / 'runs/network-curator' / session / 'boolean-handoffs' / capture_id
     imported = copy.deepcopy(raw)
     imported['bnet_file']['path'] = str(target / basename)
+    if curation:
+        imported['curation_file']['path'] = str(target / curation[0])
     with staged_capture(project, target) as stage:
         from scripts.capture.resource import record_resource
         record_resource(stage, resource_metadata_file)
-        if parsed.schema_version == '2.0':
+        if parsed.schema_version != '1.0':
             from mcp_biomodelling_servers.import_lineage import copy_source_ancestry
             copy_source_ancestry(parsed.source_ancestry, stage / 'ancestry')
         (stage / 'original.handoff.json').write_bytes(original_bytes)
         (stage / basename).write_bytes(network_bytes)
+        if curation:
+            (stage / curation[0]).write_bytes(curation[1])
         (stage / 'import.handoff.json').write_text(json.dumps(imported, indent=2) + '\n', encoding='utf-8')
         staged = NeKoToMaBoSSHandoffManifest.model_validate(imported)
         staged.bnet_file.path = str(stage / basename)
-        verify_handoff_manifest(staged)
+        if curation:
+            staged.curation_file.path = str(stage / curation[0])
+            verify_relocated(parsed, staged, 'bnet_file', curation[1])
+        else:
+            verify_handoff_manifest(staged)
         if bnet_node_names(stage / basename) != staged.network.nodes:
             raise ValueError('captured BNET target order mismatch')
-        (stage / 'relocation.json').write_text(json.dumps({
+        relocation = {
             'original_manifest_sha256': hashlib.sha256(original_bytes).hexdigest(),
             'import_manifest_sha256': digest(stage / 'import.handoff.json'),
             'bnet_sha256': hashlib.sha256(network_bytes).hexdigest(),
             'source_manifest_path': str(original), 'source_bnet_path': str(network),
-        }, indent=2) + '\n', encoding='utf-8')
+        }
+        if curation:
+            relocation.update({'curation_sha256': hashlib.sha256(curation[1]).hexdigest(),
+                               'source_curation_path': str(curation[2]), 'curation_binding': CURATION_NOTE})
+        (stage / 'relocation.json').write_text(json.dumps(relocation, indent=2) + '\n', encoding='utf-8')
         result = {'upstream_manifest': (target / 'import.handoff.json').relative_to(project).as_posix(),
                   'artifacts': [{'path': (target / p.relative_to(stage)).relative_to(project).as_posix(), 'sha256': digest(p)}
                                 for p in sorted(stage.rglob('*')) if p.is_file()]}
+        if curation:
+            result['backend_import_manifest'] = str(original)
     from scripts.capture.index import register_capture
     register_capture(project, target)
     return result

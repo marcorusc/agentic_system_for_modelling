@@ -10,8 +10,14 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts.state import ROOT, REGISTRY, checked_artifact, identifier, records, table, validate_record
+from scripts.curation_contract import check_binding, check_parent_scope, check_readout_isolation
 
 UPSTREAM = {"boolean-dynamics": ("network-curator", "topology"), "multicellular": ("boolean-dynamics-modeler", "boolean-dynamics"), "biomass_ode": ("network-curator", "topology")}
+# Backend 2.5.0: NeKo->MaBoSS 2.1 and NeKo->BioMASS 2.0 carry curation_file;
+# MaBoSS->PhysiCell 2.1 carries model_revision and readout definitions.
+VERSIONS = {"neko-to-maboss": {"1.0", "2.0", "2.1"}, "maboss-to-physicell": {"1.0", "2.0", "2.1"},
+            "neko-to-biomass": {"1.0", "2.0"}}
+CURATED = {("neko-to-maboss", "2.1"): "bnet_file", ("neko-to-biomass", "2.0"): "network_file"}
 SPECIALIST_STAGE = {"boolean_dynamics_modeler": "boolean-dynamics", "multicellular_configurator": "multicellular", "ode_modeler": "biomass_ode"}
 
 
@@ -33,7 +39,8 @@ def _reference(root, ref, server, session, role):
     file = checked_artifact(root, {"path": path.as_posix(), "sha256": ref.get("sha256")})
     suffix, media = {"neko_bnet": (".bnet", "text/plain"), "maboss_bnd": (".bnd", "text/plain"),
                      "maboss_cfg": (".cfg", "text/plain"), "maboss_result": (".csv", "text/csv"),
-                     "parent_manifest": (".json", "application/json"), "neko_ode_network": (".json", "application/json")}[role]
+                     "parent_manifest": (".json", "application/json"), "neko_ode_network": (".json", "application/json"),
+                     "neko_history": (".json", "application/json")}[role]
     if ref.get("name") != file.name or ref.get("suffix") != suffix or file.suffix != suffix or ref.get("media_type") != media:
         raise ValueError("artifact name, suffix or media type mismatch")
     if type(ref.get("size_bytes")) is not int or ref["size_bytes"] != file.stat().st_size:
@@ -50,13 +57,15 @@ def verify_manifest(root, data, expected_type, session, outputs=None):
     if not isinstance(data, dict) or (data.get("schema_name"), data.get("handoff_type")) != ("mcp-biomodelling-handoff", expected_type):
         raise ValueError("expected typed handoff for this downstream stage")
     version = data.get("schema_version")
-    if version == "2.0" and expected_type in {"neko-to-maboss", "maboss-to-physicell"}:
+    if version not in VERSIONS[expected_type]:
+        raise ValueError("unsupported typed handoff version for this downstream stage")
+    if version != "1.0":
         from scripts.boolean_contract import validate_metadata
         validate_metadata(data)
-    elif version != "1.0":
-        raise ValueError("unsupported typed handoff version for this downstream stage")
     elif data.get("source_ancestry") is not None:
         raise ValueError("v1 handoffs cannot declare source ancestry")
+    elif any(data.get(key) is not None for key in ("curation_file", "model_revision", "readouts")):
+        raise ValueError("v1 handoffs cannot declare curation or readout metadata")
     server = "MaBoSS" if expected_type == "maboss-to-physicell" else "NeKo"
     source = data.get("source")
     if not isinstance(source, dict) or (source.get("server"), source.get("session_id")) != (server, session):
@@ -78,13 +87,30 @@ def verify_manifest(root, data, expected_type, session, outputs=None):
             raise ValueError("BNET targets do not match declared network nodes")
     elif expected_type == "neko-to-biomass":
         _reference(root, data.get("network_file"), server, session, "neko_ode_network")
-    else:
+    if (expected_type, version) in CURATED:
+        # The companion binds the original model path; every other identity
+        # field and the pinned companion bytes must still match the payload.
+        companion = _reference(root, data.get("curation_file"), "NeKo", session, "neko_history")
+        model = _reference(root, data.get(CURATED[expected_type, version]), "NeKo", session,
+                           "neko_bnet" if expected_type == "neko-to-maboss" else "neko_ode_network")
+        tree = companion.resolve().relative_to(root.resolve()).parts
+        if len(tree) < 4 or tree[0] != "runs" or tree[:3] != model.resolve().relative_to(root.resolve()).parts[:3]:
+            raise ValueError("curation companion must be recorded in the same session tree as its model")
+        check_binding(companion.read_bytes(), data[CURATED[expected_type, version]], session, data.get("history_state_id"))
+    if expected_type == "maboss-to-physicell":
         bnd = _reference(root, data.get("bnd_file"), server, session, "maboss_bnd")
         cfg = _reference(root, data.get("cfg_file"), server, session, "maboss_cfg")
         text = re.sub(r"/\*.*?\*/", "", bnd.read_text(), flags=re.S)
         text = re.sub(r"//[^\n]*", "", text)
         if re.findall(r"(?im)^\s*Node\s+([A-Za-z_][A-Za-z0-9_]*)\s*\{", text) != nodes:
             raise ValueError("BND nodes do not match declared network nodes")
+        readouts = data.get("readouts") or {}
+        if version == "2.1":
+            if not isinstance(data.get("model_revision"), str) or not re.fullmatch(r"[0-9a-f]{64}", data["model_revision"]):
+                raise ValueError("MaBoSS v2.1 handoff requires an exact model_revision")
+            if not isinstance(data.get("readouts"), dict):
+                raise ValueError("MaBoSS v2.1 handoff requires explicit readout definitions")
+        check_readout_isolation(bnd.read_text(), nodes, readouts)
         simulation = data.get("simulation")
         target = data.get("target")
         if not isinstance(simulation, dict) or not isinstance(target, dict) or not isinstance(target.get("cell_type"), str) or not target["cell_type"].strip():
@@ -105,11 +131,10 @@ def verify_manifest(root, data, expected_type, session, outputs=None):
             verify_manifest(root, parent_data, "neko-to-maboss", upstream)
             if parent_data.get("source") != lineage[0]:
                 raise ValueError("parent provenance disagrees with declared stage lineage")
-            if set(parent_data["network"]["nodes"]) != set(nodes):
-                raise ValueError("parent and current stage network nodes disagree")
-            if set(parent_data["network"]["output_nodes"]) != set(declared):
-                raise ValueError("parent and current stage output selections disagree")
-            if version == "2.0":
+            # Only declared readouts may extend the NeKo core (none before v2.1).
+            check_parent_scope(parent_data["network"]["nodes"], parent_data["network"]["output_nodes"],
+                               nodes, declared, readouts)
+            if version != "1.0":
                 inherited = [item for item in data["source_ancestry"] if item["source"]["server"] == "NeKo"]
                 if inherited != (parent_data.get("source_ancestry") or []):
                     raise ValueError("current ancestry disagrees with the exact stage parent")
@@ -145,7 +170,7 @@ def check(root, stage, session, outputs):
     verify_manifest(root, data, expected_type, session, outputs)
     if stage == "multicellular" and row["Derived from"] != "—":
         parents = {(data.get("parent_manifest") or {}).get("session_id")}
-        if data.get("schema_version") == "2.0":
+        if data.get("schema_version") != "1.0":
             # A separately approved BNET derivative retains its immediate source
             # parent without pretending it was an unchanged typed stage import.
             # Only the current session's direct NeKo parent can bind this row;

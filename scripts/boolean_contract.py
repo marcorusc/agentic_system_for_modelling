@@ -19,10 +19,15 @@ def _validate(data):
     from mcp_biomodelling_servers.handoff import (
         NeKoToMaBoSSHandoffManifest, MaBoSSToPhysiCellHandoffManifest,
     )
-    contract = {
+    contracts = {
         'neko-to-maboss': NeKoToMaBoSSHandoffManifest,
         'maboss-to-physicell': MaBoSSToPhysiCellHandoffManifest,
-    }.get(data.get('handoff_type'))
+    }
+    if data.get('handoff_type') == 'neko-to-biomass':
+        # Curation-bearing ODE graphs (v2.0) use the same backend contract package.
+        from mcp_biomodelling_servers.ode_handoff import NeKoToBioMASSHandoffManifest
+        contracts['neko-to-biomass'] = NeKoToBioMASSHandoffManifest
+    contract = contracts.get(data.get('handoff_type'))
     if contract is None:
         raise ValueError('unsupported Boolean handoff type')
     try:
