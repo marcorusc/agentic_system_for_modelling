@@ -66,8 +66,8 @@ reading your report, not things you decide mid-run:
   because the workflow skill recommends a rule form, not because a trajectory looks wrong to
   you, not because it seems like the obvious fix. If your results suggest a node's
   rule may be the problem, report that as a finding and stop there.
-- **PhysiCell handoff export** (`export_maboss_bnd_cfg` region of work, typed
-  handoff export). This is the conclusive output of this stage — what
+- **PhysiCell handoff export** (`export_maboss_handoff`, and the standalone
+  `export_maboss_bnd_cfg` file export). This is the conclusive output of this stage — what
   `multicellular-configurator` will load next. Do not export it because your
   simulations completed successfully or the dynamics look stable to you. Export only
   when the orchestrator's instructions for this specific invocation explicitly state

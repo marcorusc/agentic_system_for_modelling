@@ -5,8 +5,8 @@ description: Route authorized ODE construction, Text2Model editing, BioMASS vali
 
 # BioMASS workflow
 
-The orchestrator never calls modelling MCPs. Follow `AGENTS.md` and
-`docs/ode-contract.md`; use this route only after the configured client and
+The orchestrator never calls modelling MCPs. Follow `CLAUDE.md` (Claude) or
+`AGENTS.md` (Codex) and `docs/ode-contract.md`; use this route only after the configured client and
 specialist isolation checks have passed. New results use `ode_modeler`,
 `biomass_ode`, `schema_version=1`, and `ode.contract_version=2`.
 Read `docs/ode-workflow.md` for formulation choices and the Phase 5 live-readiness
@@ -143,9 +143,9 @@ inside an authorized whole-model draft. Load examples only when the current synt
 or mechanism needs them; read editing guidance for edits and network interpretation
 for NeKo-derived work.
 
-## CLI fallback
+## CLI fallback (Codex only)
 
-If the dispatcher is unavailable, use the same shared runtime through
+If the Codex dispatcher is unavailable, use the same shared runtime through
 `python scripts/codex/run_specialist.py ode_modeler --prompt-file
 .codex-tasks/<invocation>.txt`. Add `--record-session-id` for an existing BioMASS
 session and exact `--approve-tool` entries for already authorized writes. Preserve
