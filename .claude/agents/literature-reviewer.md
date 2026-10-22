@@ -65,8 +65,9 @@ ask the orchestrator for one rather than guessing or writing to an unversioned p
   you may make one `find_related_articles` call (link_type=`pubmed_pubmed`)
   against the most relevant known PMID to surface adjacent pathway evidence — one
   attempt, not a retry loop.
-- `get_copyright_status` and `lookup_article_by_citation` are not needed for this
-  workflow and are intentionally excluded from this agent's tools.
+- `get_copyright_status` and `lookup_article_by_citation` are available, matching the
+  shared PubMed profile, but are not part of the standard edge workflow. Use
+  `lookup_article_by_citation` only to resolve a supplied citation that lacks a PMID.
 
 ## Rules
 

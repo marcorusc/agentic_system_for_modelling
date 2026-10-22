@@ -134,7 +134,8 @@ fails on any of the following:
 - an agent file missing its expected `<server>-agent` transport.
 
 Setup runs it, and also checks that each operational skill's "Operational snapshot"
-version matches the pinned backend; CI runs `--repository-only`. A static check cannot
+version matches the pinned backend. `--repository-only` checks the repository alone,
+and the regression suites exercise the guard on fixtures. A static check cannot
 prove what a running client has already been granted, so restart clients after any
 change.
 
