@@ -9,7 +9,7 @@ from pathlib import Path
 from scripts.codex import check_environment
 from scripts import check_isolation
 from .detect import run
-from .environment import runtime_env
+from .environment import plugin_arguments, plugin_env, plugin_requirement, runtime_env
 from .state import SetupError
 
 # Shared names (run_simulation, create_session, etc.) do not establish identity.
@@ -25,8 +25,8 @@ UNIQUE_TOOLS = {"neko": "create_network", "maboss": "get_maboss_nodes",
                 "physicell": "export_xml_configuration", "biomass": "build_reactions"}
 
 
-def probe_servers(prefix: Path, *, with_biomass: bool = False,
-                  graphviz_path: str | None = None) -> dict:
+def probe_servers(prefix: Path | None, *, with_biomass: bool = False,
+                  graphviz_path: str | None = None, plugin: dict | None = None) -> dict:
     errors, inventories = [], {}
     root = Path(__file__).resolve().parents[2]
     servers = ("neko", "maboss", "physicell") + (("biomass",) if with_biomass else ())
@@ -34,9 +34,17 @@ def probe_servers(prefix: Path, *, with_biomass: bool = False,
         print(f"Checking {server} MCP startup and tool inventory…", file=sys.stderr, flush=True)
         try:
             with tempfile.TemporaryDirectory(prefix="biomodelling-probe-") as temporary:
-                result = run([str(prefix/"bin/python"), str(root/"scripts/setup_support/probe_mcp.py"),
-                              str(prefix/"bin"/f"mcp-{server}-server")],
-                             cwd=Path(temporary), env={**runtime_env(prefix, graphviz_path=graphviz_path),
+                probe = str(root/"scripts/setup_support/probe_mcp.py")
+                if plugin:
+                    # Probe with the plugin's own resolved environment and exact launch.
+                    uvx, manifest = plugin["uvx"], plugin["manifest"]
+                    argv = [uvx, "--from", plugin_requirement(manifest), "python", probe,
+                            uvx, *plugin_arguments(manifest, server)]
+                    env = plugin_env(uvx, graphviz_path=graphviz_path)
+                else:
+                    argv = [str(prefix/"bin/python"), probe, str(prefix/"bin"/f"mcp-{server}-server")]
+                    env = runtime_env(prefix, graphviz_path=graphviz_path)
+                result = run(argv, cwd=Path(temporary), env={**env,
                                  "NUMBA_CACHE_DIR": str(Path(temporary)/"numba-cache")}, timeout=90)
             data = json.loads(result.stdout)
             names = data.get("tools") if isinstance(data, dict) else None
@@ -64,11 +72,13 @@ def probe_servers(prefix: Path, *, with_biomass: bool = False,
     return {"passed": not errors, "errors": errors, "mcp": inventories}
 
 
-def verify(root: Path, prefix: Path, clients: dict, *, with_biomass: bool = False,
-           capability_report: dict | None = None, graphviz_path: str | None = None) -> dict:
+def verify(root: Path, prefix: Path | None, clients: dict, *, with_biomass: bool = False,
+           capability_report: dict | None = None, graphviz_path: str | None = None,
+           plugin: dict | None = None) -> dict:
     # Setup may already have checked capabilities before writing configuration.
     # Independent callers still perform their own complete startup check.
-    probes = capability_report if capability_report is not None else probe_servers(prefix, with_biomass=with_biomass, graphviz_path=graphviz_path)
+    probes = capability_report if capability_report is not None else probe_servers(
+        prefix, with_biomass=with_biomass, graphviz_path=graphviz_path, plugin=plugin)
     errors = list(probes["errors"])
     specialist_results = {}
     parent = None
@@ -88,7 +98,8 @@ def verify(root: Path, prefix: Path, clients: dict, *, with_biomass: bool = Fals
         if not parent["passed"]:
             errors.append("Codex parent configuration has enabled modelling MCPs")
     if "claude" in clients:
-        isolation = check_isolation.check(root, user_config=Path.home()/".claude.json")
+        isolation = check_isolation.check(root, user_config=Path.home()/".claude.json",
+                                          user_settings=Path.home()/".claude/settings.json")
         errors.extend(isolation["errors"])
         try:
             run([clients["claude"], "mcp", "list"], cwd=root, timeout=60)

@@ -84,15 +84,42 @@ Run and quote:
 ```bash
 python3 scripts/gate.py check boolean-dynamics FULL_NEKO_SESSION --outputs NODE_A NODE_B
 python3 scripts/gate.py check multicellular FULL_MABOSS_SESSION --outputs READOUT_A READOUT_B
+python3 scripts/gate.py check biomass_ode FULL_NEKO_SESSION --outputs NODE_ID_1 NODE_ID_2 ...
 ```
+
+NeKo-to-BioMASS graphs carry no output selection, so for `biomass_ode` the
+approval's `outputs` are every `node_id` in the exported `network_file`: the
+researcher approves the whole graph's species scope. The ODE dispatch itself is
+governed by the [ODE contract](ode-contract.md); the Claude dispatch hook enforces
+`STAGE_GATE` only for the MaBoSS and PhysiCell specialists.
 
 The checker requires the expected active upstream row with Handoff exactly
 `exported`, a valid typed handoff and captured dependencies, matching outputs,
 completed independent reviews and subsequent researcher approval. Changed hashes,
 missing artifacts, a superseded session, or a later blocking review fail closed.
 
-Boolean handoffs support versions 1.0 and 2.0. Version 2.0 adds verified source
-ancestry with embedded file snapshots; it does not grant approval of derivatives.
+Boolean handoffs support versions 1.0, 2.0 and 2.1. Version 2.0 adds verified
+source ancestry with embedded file snapshots; it does not grant approval of
+derivatives. Version 2.1, written by `mcp-biomodelling-servers` 2.5.0, adds a
+required `curation_file` NeKo history companion to NeKo-to-MaBoSS manifests and
+the MaBoSS model revision plus explicit readout definitions (possibly empty) to
+MaBoSS-to-PhysiCell manifests. Only declared readouts may extend the NeKo core.
+NeKo-to-BioMASS 2.0 likewise names a `curation_file`. Capture and retain every
+referenced file; approval binds to the exact NeKo state or MaBoSS revision.
+The backend binds each `curation_file` to the model file's original absolute path,
+so downstream import tools reject relocated copies: for these versions give the
+importing specialist the recorder's `backend_import_manifest` (the original server
+manifest, whose hash `relocation.json` records), while the project capture remains
+the record that the gate and approvals bind to.
+Before dispatching such an import, confirm that the manifest handed over is the
+captured original:
+
+```bash
+python3 scripts/capture/verify_import_manifest.py --capture CAPTURE_DIR --manifest ORIGINAL_BACKEND_MANIFEST
+```
+
+The NeKo Boolean recorder also copies and hashes the `*.bnet.lineage.json`
+source-lineage sidecar when the export produced one.
 `scripts/boolean_contract.py` uses the backend's pure contract reader to validate
 this metadata without following historical paths. If system Python lacks that
 package, it uses the existing workstation Python selection from
@@ -162,6 +189,10 @@ Claude hook checks no-overwrite before Write. Keep review slices non-overlapping
 the Claude preflight check is not an atomic replacement for the underlying Write.
 Every manual edge needs a dedicated report before inclusion; arbitrary backend
 imports are not rewritten or retrospectively validated by these report helpers.
+With backend 2.5.0, apply an approved manual edge or effect change through
+NeKo `edit_interactions` rather than a hand-edited SIF: NeKo records its manual
+origin, rationale and supplied PMIDs in the network history, separately from
+database evidence. A missing PMID stays empty; it is never filled in.
 
 Use provenance tags database-default, literature-derived, manual-literature,
 fitted-for-dynamics and readout as defined in CLAUDE.md. Orchestrator-authored inputs

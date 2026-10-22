@@ -10,7 +10,7 @@ from typing import Any
 
 from scripts.codex.launcher_config import SPECIALISTS, MODELLING_SERVERS, PUBMED_TOOLS, toml_literal
 from .state import SetupError
-from .environment import transport_path
+from .environment import server_transport
 
 
 # Base setup remains independent of the optional ODE environment.
@@ -161,8 +161,8 @@ def _ode_instructions(role: str, instructions: str, target: Path) -> str:
     return instructions
 
 
-def render(root: Path, prefix: Path, codex_home: Path, *, with_biomass: bool = False,
-           graphviz_path: str | None = None) -> dict[Path, str]:
+def render(root: Path, prefix: Path | None, codex_home: Path, *, with_biomass: bool = False,
+           graphviz_path: str | None = None, plugin: dict | None = None) -> dict[Path, str]:
     parent = tomllib.loads((root/".codex/config.toml").read_text())
     for server in MODELLING_SERVERS:
         if parent.get("mcp_servers", {}).get(server, {}).get("enabled") is not False:
@@ -192,11 +192,12 @@ def render(root: Path, prefix: Path, codex_home: Path, *, with_biomass: bool = F
         if server:
             transport = servers.setdefault(server, {})
             transport.pop("url", None)
-            transport.update(command=str(prefix/"bin"/f"mcp-{server}-server"), args=[],
-                             cwd=str(root), enabled=True, required=True)
+            command, args, values = server_transport(server, prefix=prefix, plugin=plugin, graphviz_path=graphviz_path)
+            transport.update(command=command, args=args, cwd=str(root), enabled=True, required=True)
             env = transport.setdefault("env", {})
-            env.update(CONDA_PREFIX=str(prefix), PATH=transport_path(prefix, graphviz_path=graphviz_path),
-                       PYTHONNOUSERSITE="1")
+            if plugin:
+                env.pop("CONDA_PREFIX", None)
+            env.update(**values, PYTHONNOUSERSITE="1")
         if server == "biomass":
             env.update(NUMBA_CACHE_DIR=str(root/".setup/cache/biomass-numba"), PYTHONDONTWRITEBYTECODE="1")
             disabled = transport.setdefault("disabled_tools", [])

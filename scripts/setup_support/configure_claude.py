@@ -6,15 +6,17 @@ import re
 from pathlib import Path
 
 from .state import SetupError
-from .environment import transport_path
+from .environment import server_transport
 
 
 ROLES = {"network-curator": "neko", "boolean-dynamics-modeler": "maboss",
          "multicellular-configurator": "physicell"}
 
 
-def render(root: Path, prefix: Path, *, with_biomass: bool = False,
-           graphviz_path: str | None = None) -> dict[Path, str]:
+def render(root: Path, prefix: Path | None, *, with_biomass: bool = False,
+           graphviz_path: str | None = None, plugin: dict | None = None) -> dict[Path, str]:
+    """Render isolated inline transports: a managed/reused environment, or the
+    marketplace plugin launch (``plugin={"uvx": path, "manifest": manifest}``)."""
     outputs = {}
     roles = {**ROLES, **({"ode-modeler": "biomass"} if with_biomass else {})}
     for role, server in roles.items():
@@ -33,30 +35,22 @@ def render(root: Path, prefix: Path, *, with_biomass: bool = False,
         block = header[begin:end]
         if re.search(r"^  - ", block, re.MULTILINE):
             raise SetupError(f"Unexpected additional inline MCP server in {path.name}")
-        values = {
-            "command": str(prefix/"bin"/f"mcp-{server}-server"),
-            "CONDA_PREFIX": str(prefix),
-            "PATH": transport_path(prefix, graphviz_path=graphviz_path),
-        }
-        for key, value in values.items():
-            indent = "      " if key == "command" else "        "
-            pattern = rf"^{indent}{key}: .+$"
-            if len(re.findall(pattern, block, re.MULTILINE)) != 1:
-                raise SetupError(f"Unsupported {key} field in {path.name}; restore the standard transport layout")
-            block = re.sub(pattern, lambda _: indent + key + ": " + json.dumps(value), block, flags=re.MULTILINE)
+        if not re.fullmatch(r"(?:      \S.*\n|        \S.*\n)+", block) or block.count("      command: ") != 1:
+            raise SetupError(f"Unsupported command field in {path.name}; restore the standard transport layout")
+        command, args, env = server_transport(server, prefix=prefix, plugin=plugin, graphviz_path=graphviz_path)
         if server == "biomass":
-            for key, value in {"NUMBA_CACHE_DIR": str(root/".setup/cache/biomass-numba"), "PYTHONDONTWRITEBYTECODE": "1"}.items():
-                pattern = rf"^        {key}: .+$"
-                line = "        " + key + ": " + json.dumps(value)
-                if re.search(pattern, block, re.MULTILINE):
-                    block = re.sub(pattern, lambda _: line, block, flags=re.MULTILINE)
-                else:
-                    block += line + "\n"
+            env.update({"NUMBA_CACHE_DIR": str(root/".setup/cache/biomass-numba"), "PYTHONDONTWRITEBYTECODE": "1"})
+        block = "      type: stdio\n" + "      command: " + json.dumps(command) + "\n"
+        if args:
+            block += "      args: " + json.dumps(args) + "\n"
+        block += "      env:\n" + "".join(f"        {key}: {json.dumps(value)}\n" for key, value in env.items())
         outputs[path] = "---\n" + header[:begin] + block + header[end:] + "---\n" + parts[2]
     hook = root/".claude/agents/literature-reviewer.md"
     text = hook.read_text(encoding="utf-8")
     pattern = r"^(          command: ).+$"
     if len(re.findall(pattern, text, re.MULTILINE)) != 1:
         raise SetupError("Unsupported literature hook command; expected one Python hook")
-    outputs[hook] = re.sub(pattern, lambda m: m[1] + json.dumps(str(prefix/"bin/python")), text, flags=re.MULTILINE)
+    # The guard is standard-library only; plugin mode keeps the portable interpreter.
+    interpreter = "python3" if plugin else str(prefix/"bin/python")
+    outputs[hook] = re.sub(pattern, lambda m: m[1] + json.dumps(interpreter), text, flags=re.MULTILINE)
     return outputs

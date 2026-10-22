@@ -22,18 +22,22 @@ from scripts.setup_support.state import SetupError, atomic_write, read_json, wri
 
 
 INPUT_KEYS = {"client", "env_prefix", "manager", "codex_path", "claude_path", "codex_home",
-              "manager_path", "package_source", "environment_mode", "biomass", "graphviz_path", "backend_sources"}
+              "manager_path", "package_source", "environment_mode", "biomass", "graphviz_path", "backend_sources",
+              "uv_path"}
+# Environment-only choices that the plugin launch does not use.
+PLUGIN_EXCLUSIVE = {"env_prefix", "manager", "manager_path", "package_source", "backend_sources"}
 
 
 def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--client", choices=("codex", "claude", "both"))
     p.add_argument("--manager", choices=("auto", "conda", "venv"))
-    p.add_argument("--environment-mode", choices=("managed", "reuse"),
-                   help="Create a managed environment (default), or verify an existing environment without installing")
+    p.add_argument("--environment-mode", choices=("managed", "reuse", "plugin"),
+                   help="Create a managed environment (default), verify an existing environment without installing, "
+                        "or launch each server with its marketplace plugin's pinned uvx command (requires uv only)")
     p.add_argument("--with-biomass", dest="biomass", action="store_const", const="enabled",
                    help="Configure optional ODE profiles and require BioMASS capabilities")
-    for name in ("env-prefix", "codex-path", "claude-path", "codex-home", "manager-path", "package-source", "graphviz-path", "backend-sources"):
+    for name in ("env-prefix", "codex-path", "claude-path", "codex-home", "manager-path", "package-source", "graphviz-path", "backend-sources", "uv-path"):
         p.add_argument("--" + name)
     p.add_argument("--config", type=Path, help="JSON path overrides; no credentials")
     p.add_argument("--non-interactive", action="store_true")
@@ -61,18 +65,32 @@ def settings(args, root: Path) -> dict:
             values[key] = getattr(args, key)
     if values.get("manager") != original_manager and "manager_path" not in supplied and args.manager_path is None:
         values.pop("manager_path", None)
+    # Saved choices from another environment mode never carry over silently;
+    # only explicitly supplied conflicting options are errors.
+    explicit = supplied.keys() | {key for key in INPUT_KEYS if getattr(args, key, None) is not None}
+    stale = PLUGIN_EXCLUSIVE if values.get("environment_mode") == "plugin" else {"uv_path"}
+    for key in stale - explicit:
+        values.pop(key, None)
     if any(not isinstance(value, str) or not value.strip() or "\x00" in value for value in values.values()):
         raise SetupError("Setup settings must be nonempty strings")
     if values.get("client") not in (None, "codex", "claude", "both"):
         raise SetupError("client must be codex, claude, or both")
     if values.get("manager", "auto") not in ("auto", "conda", "venv"):
         raise SetupError("manager must be auto, conda, or venv")
-    if values.get("environment_mode", "managed") not in {"managed", "reuse"}:
-        raise SetupError("environment_mode must be managed or reuse")
+    if values.get("environment_mode", "managed") not in {"managed", "reuse", "plugin"}:
+        raise SetupError("environment_mode must be managed, reuse, or plugin")
     if values.get("biomass", "disabled") not in {"enabled", "disabled"}:
         raise SetupError("biomass must be enabled or disabled")
     if values.get("environment_mode") == "reuse" and values.get("package_source"):
         raise SetupError("reuse mode cannot install --package-source; omit it")
+    if values.get("environment_mode") == "plugin":
+        # The plugin launch installs only the released package; nothing else applies.
+        conflicting = sorted(PLUGIN_EXCLUSIVE & values.keys())
+        if conflicting:
+            raise SetupError("plugin mode launches the released package with uvx; omit "
+                             + ", ".join("--" + key.replace("_", "-") for key in conflicting))
+    elif values.get("uv_path"):
+        raise SetupError("--uv-path applies only to --environment-mode plugin")
     if values.get("backend_sources") and values.get("package_source"):
         raise SetupError("Select --backend-sources or --package-source, not both")
     return values
@@ -126,12 +144,24 @@ def plan(args, root: Path, manifest: dict) -> tuple[dict, list[str]]:
             except SetupError as error:
                 errors.append(str(error))
     clients = {name: clients[name] for name in selected if name in clients}
-    prefix = Path(values.get("env_prefix", str(root/".setup/environment"))).expanduser().absolute()
-    reuse = values.get("environment_mode") == "reuse"
-    manager = values.get("manager", "auto")
+    mode = values.get("environment_mode", "managed")
+    plugin_mode = mode == "plugin"
+    prefix = None if plugin_mode else Path(values.get("env_prefix", str(root/".setup/environment"))).expanduser().absolute()
+    reuse = mode == "reuse"
+    manager = None if plugin_mode else values.get("manager", "auto")
     manager_path = values.get("manager_path")
     executable = None
-    if not reuse:
+    uvx = None
+    if plugin_mode:
+        try:
+            uvx = detect.discover("uvx", values.get("uv_path"))
+        except SetupError as error:
+            errors.append(str(error))
+        if not uvx and not values.get("uv_path"):
+            errors.append("uvx is missing; install uv (https://docs.astral.sh/uv/) or supply --uv-path")
+        elif uvx and Path(uvx).name != "uvx":
+            errors.append("--uv-path must name the uvx executable")
+    elif not reuse:
         if manager == "auto":
             manager = "conda" if detect.discover("conda") else "venv"
         try:
@@ -145,16 +175,14 @@ def plan(args, root: Path, manifest: dict) -> tuple[dict, list[str]]:
             version = detect.client_version("python", executable)
             if tuple(map(int, version.split("."))) < (3, 11):
                 errors.append("The selected venv Python must be 3.11 or newer")
+    # The released servers bundle Graphviz through PyGraphviz. An explicit
+    # --graphviz-path is still honoured for local overrides, never required.
     try:
-        local_dot = prefix / "bin/dot"
-        graphviz = detect.discover("dot", values["graphviz_path"]) if values.get("graphviz_path") else (
-            str(local_dot) if local_dot.is_file() and os.access(local_dot, os.X_OK) else detect.discover("dot"))
+        graphviz = detect.discover("dot", values["graphviz_path"]) if values.get("graphviz_path") else None
         graphviz = str(Path(graphviz).expanduser().absolute()) if graphviz else None
     except SetupError as error:
         errors.append(str(error))
         graphviz = None
-    if not reuse and manager == "venv" and not graphviz:
-        errors.append("Graphviz dot is missing; install Graphviz or select --manager conda")
     source = values.get("package_source")
     if source:
         source_path = Path(source).expanduser().absolute()
@@ -181,11 +209,12 @@ def plan(args, root: Path, manifest: dict) -> tuple[dict, list[str]]:
         except (OSError, ValueError, KeyError, TypeError) as error:
             errors.append(str(error))
     resolved = {"backend_sources": source_manifest, "pinned_sources": pinned_sources, "client": selection, "clients": clients, "client_versions": versions,
-                "system": system, "env_prefix": str(prefix), "manager": manager,
-                "environment_mode": "reuse" if reuse else "managed",
+                "system": system, "env_prefix": str(prefix) if prefix else None, "manager": manager,
+                "environment_mode": mode, "uv_path": uvx,
                 "biomass": values.get("biomass", "disabled"), "graphviz_path": graphviz,
                 "manager_path": executable, "codex_home": home, "package_source": source,
                 "package": f'{manifest["package"]}=={manifest["version"]}',
+                "plugin_launch": [uvx, "--from", f'{manifest["package"]}=={manifest["version"]}', "mcp-<server>-server"] if plugin_mode else None,
                 "dependency_pins": manifest.get("dependency_pins", {})}
     return resolved, errors
 
@@ -197,10 +226,13 @@ def execute(args, root: Path = ROOT) -> dict:
               "plan": resolved, "errors": errors, "passed": False}
     if errors:
         return report
-    prefix = Path(resolved["env_prefix"])
+    plugin_mode = resolved["environment_mode"] == "plugin"
+    prefix = None if plugin_mode else Path(resolved["env_prefix"])
     with_biomass = resolved["biomass"] == "enabled"
     environment_options = {"graphviz_path": resolved["graphviz_path"]} if resolved["graphviz_path"] else {}
-    options = {**environment_options, **({"with_biomass": True} if with_biomass else {})}
+    plugin = {"uvx": resolved["uv_path"], "manifest": manifest} if plugin_mode else None
+    options = {**environment_options, **({"with_biomass": True} if with_biomass else {}),
+               **({"plugin": plugin} if plugin else {})}
     outputs = {}
     if "codex" in resolved["clients"]:
         outputs.update(configure_codex.render(root, prefix, Path(resolved["codex_home"]), **options))
@@ -210,14 +242,20 @@ def execute(args, root: Path = ROOT) -> dict:
     if args.dry_run:
         report["passed"] = True
         return report
-    if not args.check and resolved["environment_mode"] != "reuse":
+    if not args.check and resolved["environment_mode"] == "managed":
         print("Preparing modelling environment…", file=sys.stderr, flush=True)
         environment.install(prefix, resolved["manager"], resolved["manager_path"], manifest, resolved["package_source"],
                             **({"backend_sources": resolved["pinned_sources"]} if resolved["pinned_sources"] else {}))
     if with_biomass:
         manifest = {**manifest, "executables": [*manifest["executables"], "mcp-biomass-server"],
                     "imports": [*manifest["imports"], "biomass", "mcp_biomodelling_servers.BioMASS"]}
-    report["environment"] = environment.verify_environment(prefix, manifest, **environment_options)
+    if plugin_mode:
+        # Resolving the launch also downloads it, so the first specialist start is fast.
+        print("Resolving the plugin launch with uvx…", file=sys.stderr, flush=True)
+        report["environment"] = environment.verify_plugin(resolved["uv_path"], manifest, **environment_options)
+        report["warnings"] = report["environment"]["warnings"]
+    else:
+        report["environment"] = environment.verify_environment(prefix, manifest, **environment_options)
     if not report["environment"]["passed"]:
         report["errors"].extend(report["environment"]["errors"])
         return report
@@ -227,7 +265,8 @@ def execute(args, root: Path = ROOT) -> dict:
             report["errors"].extend(report["backend_sources"]["errors"])
             return report
     if with_biomass:
-        report["capabilities"] = verify.probe_servers(prefix, with_biomass=True, **environment_options)
+        report["capabilities"] = verify.probe_servers(prefix, with_biomass=True, **environment_options,
+                                                       **({"plugin": plugin} if plugin else {}))
         if not report["capabilities"]["passed"]:
             report["errors"].extend(report["capabilities"]["errors"])
             return report

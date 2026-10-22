@@ -3,13 +3,21 @@ supported_systems = ["Linux"]
 python_minimum = "3.11"
 python_environment = "3.11"
 index_url = "https://pypi.org/simple"
-# Tested released backend pair; historical workflow snapshots retain their original versions.
+# Tested released backend set; historical workflow snapshots retain their original versions.
 # Source: https://github.com/marcorusc/mcp-biomodelling-servers
 package = "mcp-biomodelling-servers"
-version = "2.4.0"
-# NeKo 1.10.1 preserves SIF evidence references required by the network workflow.
-dependency_pins = { nekomata = "1.10.1" }
+version = "2.5.0"
+# NeKo 1.10.2 provides validated interaction editing and history export used by 2.5.0.
+dependency_pins = { nekomata = "1.10.2" }
 executables = ["mcp-neko-server", "mcp-maboss-server", "mcp-physicell-server"]
 imports = ["mcp", "neko", "maboss", "physicell_config"]
-# Installed through conda-forge, or required on PATH for virtualenv installs.
-system_executables = ["dot"]
+# 2.5.0 bundles cmaboss and PyGraphviz: no MaBoSS executable or Graphviz install is needed.
+
+# Marketplace plugins publishing the same servers. `--environment-mode plugin`
+# launches each specialist's server with the plugin's own pinned command, but
+# inline in that specialist only; the plugins themselves must not be enabled here.
+[plugins]
+marketplace = "marcorusc/mcp-biomodelling-servers"
+marketplace_name = "marcorusc"
+launcher = "uvx"
+servers = ["neko", "maboss", "physicell", "biomass"]

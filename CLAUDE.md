@@ -35,7 +35,9 @@ The orchestrator must have no modelling MCP tools; stop if any are visible. Run 
 setup isolation guard. Four specialist-inline *-agent transports expose only NeKo to
 network-curator, MaBoSS to boolean-dynamics-modeler, PhysiCell to
 multicellular-configurator and BioMASS to ode-modeler. No global/project modelling
-registration or project-wide allow rule is permitted. PubMed is the default literature
+registration, enabled marketplace modelling plugin (neko/maboss/physicell/biomass
+@marcorusc connect to the main session) or project-wide allow rule is permitted.
+PubMed is the default literature
 backend; web search needs explicit researcher authorization. Missing/failed required
 servers return blocked; never substitute another domain server.
 
@@ -84,11 +86,15 @@ result. Every final rule and every manual edge needs a provenance tag in DECISIO
 - `database-default`: imported database-derived rule/edge, not a literature claim.
 - `literature-derived`: specific mechanism/rule supported by dedicated cited review.
 - `manual-literature`: explicitly authorized manual edge with its own candidate
-  report, supporting PMIDs, sign/direction assessment and approval.
+  report, supporting PMIDs, sign/direction assessment and approval. Apply it with
+  NeKo `edit_interactions` between existing nodes, never by hand-editing SIF.
 - `fitted-for-dynamics`: chosen against a named validation target; no independent
   literature claim for the fitted Boolean function.
-- `readout`: derived observable; document definition, inputs and exclusivity proof.
-  It has no regulatory targets unless a separate topology change is approved.
+- `readout`: researcher-named summary node added via MaBoSS `edit_maboss_readouts`
+  with explicit rule, rates and initial probability; core regulators only, no
+  regulatory targets unless a separate topology change is approved. Document
+  definition, inputs and exclusivity proof; expression exclusivity does not prove
+  exclusive simulated readout states.
 
 ## Session registry
 
@@ -99,19 +105,26 @@ Handoff is pending during review, approved only after researcher sign-off, expor
 only after a verified conclusive artifact exists. Downstream sessions require the
 exact upstream exported session: NeKo -> MaBoSS -> PhysiCell. These approvals do not
 authorize later stages. Record full lineage, effective parameters/policies, initial
-states, mutations, units, threads/seeds, manifests/hashes, warnings and failures.
+states, mutations, units, threads/seeds, NeKo state IDs, MaBoSS model revisions and
+run IDs, manifests/hashes (including handoff `curation_file` history companions),
+warnings and failures.
 
 ## Required stage workflow
 
 Before each downstream dispatch, complete validate-stage, wait for both independent
-reviews, and obtain exact session/revision/output approval. Record review and approval
-with state.py; run and quote `python3 scripts/gate.py check <stage> <session> --outputs ...`.
+reviews, and obtain exact session/revision/output approval. Any later interaction,
+rule, readout or rate edit supersedes it: re-review and re-approve. Record review and approval
+with state.py; run and quote `python3 scripts/gate.py check <stage> <session> --outputs ...`
+(for biomass_ode the outputs are every node_id of the exported graph).
 Prefix the bounded task with `STAGE_GATE {"upstream_session_id":"...","outputs":["..."]}`.
 The dispatch hook checks the durable records again. Explicit standalone sources use
 standalone_decision_id. Never run reviews in parallel with downstream work.
 
 After authorized operations, use scripts/capture commands to validate, relocate, hash
-and index exports (docs/agentic-operations.md). Specialists write guarded immutable
+and index exports (docs/agentic-operations.md). Curation-bearing handoffs (NeKo 2.1,
+NeKo-to-BioMASS 2.0, and MaBoSS 2.1 with such a parent) are imported from the
+recorder's `backend_import_manifest`, after `scripts/capture/verify_import_manifest.py`
+passes; the capture stays the gate/approval record. Specialists write guarded immutable
 report.md; invocation records persist task, tool calls/results, final output and usage.
 Orchestrator summaries belong under runs/orchestrator. Update state using state.py,
 validate and checkpoint; every stage, including multicellular, needs independent
@@ -137,7 +150,8 @@ cannot pass. Only supported validator output updates VALIDATION_PLAN via state.p
 Use the PhysiCell workflow's explicit Boolean-to-phenotype formulas and timing
 calibration; readout layers need an exclusivity proof and approved topology scope.
 Calibration returns a proposal, requiring researcher approval of units and values.
-After each parameter patch inspect the exported value; execution success is insufficient.
+After each parameter patch compare the returned stored value and inspect the exported
+value; execution success is insufficient. A configuration bundle is not a run or approval.
 
 Checkpoint at transitions and before compact/clear/session exit via checkpoint-model.
 It contains the local model/* branch, explicit staging and two-commit procedure;

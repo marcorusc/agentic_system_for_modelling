@@ -5,8 +5,8 @@ description: Route authorized ODE construction, Text2Model editing, BioMASS vali
 
 # BioMASS workflow
 
-The orchestrator never calls modelling MCPs. Follow `AGENTS.md` and
-`docs/ode-contract.md`; use this route only after the configured client and
+The orchestrator never calls modelling MCPs. Follow `CLAUDE.md` (Claude) or
+`AGENTS.md` (Codex) and `docs/ode-contract.md`; use this route only after the configured client and
 specialist isolation checks have passed. New results use `ode_modeler`,
 `biomass_ode`, `schema_version=1`, and `ode.contract_version=2`.
 Read `docs/ode-workflow.md` for formulation choices and the Phase 5 live-readiness
@@ -30,7 +30,10 @@ independent hypothesis unless reuse or reconstruction is explicitly authorized.
 Name the objective and one authorized input kind:
 
 - `neko`: verified exported NeKo-to-BioMASS graph handoff and complete source-session
-  lineage. A BNET file or signed network is not a biochemical reaction model.
+  lineage. Version 2.0 handoffs name a `curation_file` NeKo history companion;
+  keep it with the manifest and import from the original server manifest
+  (`backend_import_manifest`), since relocated copies fail its binding check. A BNET file or signed network is not a biochemical
+  reaction model.
 - `standalone_text`: explicit standalone authorization, exact Text2Model source and
   source hash; no NeKo session or connected graph is required.
 - `reactions`: explicit standalone authorization and the exact bounded reaction
@@ -49,7 +52,8 @@ Read [reaction syntax](references/reaction_syntax.md) when authoring Text2Model,
 [editing](references/model_editing.md) before revising an existing document.
 For NeKo imports also read [network interpretation](references/network_to_reactions.md).
 [Provenance](references/provenance.json) records the exact BioMASS 0.14/server 2.3
-reference hashes. Revalidate tool semantics after upgrades.
+reference hashes; the same files and tool schemas ship unchanged in server 2.5.0.
+Revalidate tool semantics after upgrades.
 
 These upstream references describe standalone server capabilities. Their literature
 retrieval instructions mean return evidence requests to the orchestrator, which
@@ -143,9 +147,9 @@ inside an authorized whole-model draft. Load examples only when the current synt
 or mechanism needs them; read editing guidance for edits and network interpretation
 for NeKo-derived work.
 
-## CLI fallback
+## CLI fallback (Codex only)
 
-If the dispatcher is unavailable, use the same shared runtime through
+If the Codex dispatcher is unavailable, use the same shared runtime through
 `python scripts/codex/run_specialist.py ode_modeler --prompt-file
 .codex-tasks/<invocation>.txt`. Add `--record-session-id` for an existing BioMASS
 session and exact `--approve-tool` entries for already authorized writes. Preserve

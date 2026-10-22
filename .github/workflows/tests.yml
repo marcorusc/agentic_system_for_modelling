@@ -43,8 +43,8 @@ jobs:
       - run: python -c "from mcp.server import Server"
       - run: python scripts/run_tests.py
 
-  wave1-integration:
-    name: Wave 1 contracts with pinned companion sources
+  released-backends:
+    name: Contracts with the released backend set
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
@@ -60,36 +60,46 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install Graphviz runtime and headers
+      - name: Install the pinned release from setup/dependencies.toml
         run: |
-          sudo apt-get update
-          sudo apt-get install --yes --no-install-recommends graphviz libgraphviz-dev
-      - name: Install exact merged Wave 1 sources
-        run: |
-          python -m pip install -r setup/requirements-wave1-review.txt
+          python - <<'PYPINS' > released-requirements.txt
+          import tomllib
+          manifest = tomllib.load(open("setup/dependencies.toml", "rb"))
+          print(f'{manifest["package"]}=={manifest["version"]}')
+          for name, version in sorted(manifest["dependency_pins"].items()):
+              print(f"{name}=={version}")
+          PYPINS
+          cat released-requirements.txt
+          python -m pip install -r released-requirements.txt
           python -m pip check
-          python - <<'PYVERSIONS'
-          from importlib.metadata import distribution
-          import json
-          from pathlib import Path
-          for name, expected in {
-              "nekomata": "1.10.2",
-              "physicell-settings": "0.6.3",
-              "mcp-biomodelling-servers": "2.5.0",
-          }.items():
-              actual = distribution(name).version
-              assert actual == expected, (name, expected, actual)
-              print(f"{name}=={actual}")
-          for line in Path("setup/requirements-wave1-review.txt").read_text().splitlines():
-              if not line.strip() or line.startswith("#"):
-                  continue
-              name, source = line.split(" @ git+", 1)
-              url, commit = source.rsplit("@", 1)
-              installed = json.loads(distribution(name).read_text("direct_url.json") or "{}")
-              assert installed.get("url") == url, (name, installed)
-              vcs = installed.get("vcs_info", {})
-              assert vcs.get("vcs") == "git" and vcs.get("commit_id") == commit, (name, installed)
-              print(f"{name} source verified: {commit}")
-          PYVERSIONS
       - name: Run all repository regression suites with backend contracts available
         run: python scripts/run_tests.py
+
+  plugin-launch:
+    name: Marketplace plugin launch (uvx) starts every server
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      MPLBACKEND: Agg
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - run: python -m pip install uv
+      - name: Resolve the launch and list each server's tools without calling them
+        run: |
+          python - <<'PYPLUGIN'
+          import json, shutil, sys, tomllib
+          from pathlib import Path
+          sys.path.insert(0, ".")
+          from scripts.setup_support import environment, verify
+          manifest = tomllib.loads(Path("setup/dependencies.toml").read_text())
+          uvx = shutil.which("uvx")
+          resolved = environment.verify_plugin(uvx, manifest)
+          probes = verify.probe_servers(None, with_biomass=True, plugin={"uvx": uvx, "manifest": manifest})
+          print(json.dumps({"resolved": resolved, "probes": probes}, indent=2))
+          sys.exit(0 if resolved["passed"] and probes["passed"] else 1)
+          PYPLUGIN

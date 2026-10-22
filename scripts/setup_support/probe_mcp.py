@@ -10,7 +10,9 @@ from mcp.types import PaginatedRequestParams
 
 
 async def probe():
-    async with stdio_client(StdioServerParameters(command=sys.argv[1], env=dict(os.environ))) as (read, write):
+    # argv: server command, then its arguments (e.g. a uvx plugin launch).
+    params = StdioServerParameters(command=sys.argv[1], args=sys.argv[2:], env=dict(os.environ))
+    async with stdio_client(params) as (read, write):
         async with ClientSession(read, write) as session:
             async with asyncio.timeout(30):
                 await session.initialize()

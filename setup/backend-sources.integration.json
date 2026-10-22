@@ -3,15 +3,15 @@
   "packages": [
     {
       "name": "mcp-biomodelling-servers",
-      "version": "2.4.0",
+      "version": "2.5.0",
       "path": "../../mcp-biomodelling-servers",
-      "commit": "0d5af4b0be991a053f1c55aad488890783dea0b6"
+      "commit": "c7f020b35e0f83922b49c116414614d8e9baa4a5"
     },
     {
       "name": "nekomata",
-      "version": "1.10.1",
+      "version": "1.10.2",
       "path": "../../Neko",
-      "commit": "05853c05bb6a4f8892cd69fd9b392b63d5e0133a"
+      "commit": "ff16c8725fc31c77f35931c839e46205bbd4f3e9"
     }
   ]
 }
