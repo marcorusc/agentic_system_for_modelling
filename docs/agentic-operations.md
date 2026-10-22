@@ -84,7 +84,14 @@ Run and quote:
 ```bash
 python3 scripts/gate.py check boolean-dynamics FULL_NEKO_SESSION --outputs NODE_A NODE_B
 python3 scripts/gate.py check multicellular FULL_MABOSS_SESSION --outputs READOUT_A READOUT_B
+python3 scripts/gate.py check biomass_ode FULL_NEKO_SESSION --outputs NODE_ID_1 NODE_ID_2 ...
 ```
+
+NeKo-to-BioMASS graphs carry no output selection, so for `biomass_ode` the
+approval's `outputs` are every `node_id` in the exported `network_file`: the
+researcher approves the whole graph's species scope. The ODE dispatch itself is
+governed by the [ODE contract](ode-contract.md); the Claude dispatch hook enforces
+`STAGE_GATE` only for the MaBoSS and PhysiCell specialists.
 
 The checker requires the expected active upstream row with Handoff exactly
 `exported`, a valid typed handoff and captured dependencies, matching outputs,
@@ -104,6 +111,15 @@ so downstream import tools reject relocated copies: for these versions give the
 importing specialist the recorder's `backend_import_manifest` (the original server
 manifest, whose hash `relocation.json` records), while the project capture remains
 the record that the gate and approvals bind to.
+Before dispatching such an import, confirm that the manifest handed over is the
+captured original:
+
+```bash
+python3 scripts/capture/verify_import_manifest.py --capture CAPTURE_DIR --manifest ORIGINAL_BACKEND_MANIFEST
+```
+
+The NeKo Boolean recorder also copies and hashes the `*.bnet.lineage.json`
+source-lineage sidecar when the export produced one.
 `scripts/boolean_contract.py` uses the backend's pure contract reader to validate
 this metadata without following historical paths. If system Python lacks that
 package, it uses the existing workstation Python selection from
