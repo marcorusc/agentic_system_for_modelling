@@ -103,3 +103,7 @@ jobs:
           print(json.dumps({"resolved": resolved, "probes": probes}, indent=2))
           sys.exit(0 if resolved["passed"] and probes["passed"] else 1)
           PYPLUGIN
+      - name: BioMASS real-backend smoke test through the same launch
+        run: |
+          version=$(python -c 'import tomllib; m = tomllib.load(open("setup/dependencies.toml", "rb")); print(m["version"])')
+          uvx --from "mcp-biomodelling-servers==$version" python -B tests/integration/biomass_smoke.py

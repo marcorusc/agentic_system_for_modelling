@@ -178,10 +178,14 @@ to establish ownership. Do not insert the current session ID based on context.
 
 ```sh
 python scripts/codex/record_ode_artifacts.py \
-  --server-root /absolute/BioMASS/server/root \
+  --artifact-root ~/.cache/mcp-biomodelling/artifacts/BioMASS \
   --session-id SESSION --capture-id candidate \
   --invocation /absolute/project/runs/ode-modeler/SESSION/specialist-invocations/INVOCATION
 ```
+
+`--artifact-root` is the per-server directory 2.5.0 writes to
+(`$MCP_BIOMODELLING_ARTIFACT_ROOT/BioMASS`, default shown above). `--server-root`
+remains for legacy installations that kept `artifacts/` inside the package.
 
 This mode validates the recorded typed result and clean invocation provenance,
 requires the matching server catalogue, and compares every path, size and session.
@@ -189,6 +193,28 @@ The ordinary recorder then verifies all hashes and copies the artifacts. Source
 handoff/event records remain unchanged, and their hashes are linked in
 `capture.json`. Missing, conflicting or failed inventory evidence blocks recording.
 `--inventory` remains available for an already explicit, fully owned inventory.
+
+**Known backend issue (2.5.0).** BioMASS omits every file whose absolute path
+contains a `.cache` component from its job results. Because the default artifact
+root is `~/.cache/mcp-biomodelling/artifacts`, generation, simulation and export
+results list no files there, so there is no inventory to capture. Until a fixed
+release, start the BioMASS specialist with `MCP_BIOMODELLING_ARTIFACT_ROOT` set to
+an absolute directory outside any `.cache` path. The report is with the MCP
+maintainers.
+
+### Real-backend smoke test
+
+`tests/integration/biomass_smoke.py` exercises the released BioMASS backend end to
+end in temporary storage. It covers generation, simulation, bundle reproduction,
+project capture, typed v2 completion, edit preview, stale-version rejection and
+placeholder rejection. CI runs it through the plugin launch:
+
+```sh
+uvx --from mcp-biomodelling-servers==2.5.0 python -B tests/integration/biomass_smoke.py
+```
+
+It is a software regression check with the server's example values, not
+evidence for any scientific model.
 
 Recording does not rerun any specialist or simulation and does not manufacture a
 completed scientific handoff. Existing captures are never overwritten. After an

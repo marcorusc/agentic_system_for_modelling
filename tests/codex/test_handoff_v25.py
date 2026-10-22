@@ -537,3 +537,38 @@ class BackendV25CaptureTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class ODEArtifactRootTests(unittest.TestCase):
+    """BioMASS 2.5.0 writes to a per-server artifact root, not <package>/artifacts."""
+
+    def setUp(self):
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        self.base = Path(temp.name)
+        self.project = self.base / 'project'
+        self.project.mkdir()
+        self.root = self.base / 'artifacts/BioMASS'
+        self.file = self.root / 'bio-session/rev_1/model.txt'
+        self.file.parent.mkdir(parents=True)
+        self.file.write_text('A --> B\n')
+        self.entries = [{'path': str(self.file), 'session_id': 'bio-session', 'sha256': digest(self.file)}]
+
+    def test_records_from_an_explicit_artifact_root(self):
+        from scripts.capture.record_ode_artifacts import record
+        result = record(self.project, None, 'bio-session', 'c1', self.entries, artifact_root=self.root)
+        captured = self.project / result['artifacts'][0]['path']
+        self.assertEqual(captured.read_bytes(), self.file.read_bytes())
+        self.assertTrue(result['artifacts'][0]['path'].endswith('captures/c1/rev_1/model.txt'))
+
+    def test_requires_exactly_one_root_and_contained_paths(self):
+        from scripts.capture.record_ode_artifacts import record
+        for server_root, artifact_root in ((None, None), (self.base, self.root)):
+            with self.subTest(server_root=server_root), self.assertRaisesRegex(ValueError, 'exactly one'):
+                record(self.project, server_root, 'bio-session', 'c2', self.entries, artifact_root=artifact_root)
+        outside = self.base / 'elsewhere/model.txt'
+        outside.parent.mkdir()
+        outside.write_text('A --> B\n')
+        entries = [{'path': str(outside), 'session_id': 'bio-session', 'sha256': digest(outside)}]
+        with self.assertRaises(ValueError):
+            record(self.project, None, 'bio-session', 'c3', entries, artifact_root=self.root)

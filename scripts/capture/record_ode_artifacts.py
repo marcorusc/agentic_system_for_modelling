@@ -10,17 +10,20 @@ import shutil
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from scripts.capture.artifact_capture import reject_symlinks, staged_capture
+from scripts.capture.artifact_capture import boolean_artifact_root, reject_symlinks, staged_capture
 from scripts.codex.launcher_config import validate_session_id
 from scripts.codex.ode_artifacts import SHA, digest, safe_file
 
 
-def record(project: Path, server_root: Path, session_id: str, capture_id: str, entries: list, *, invocation_provenance: dict | None = None) -> dict:
+def record(project: Path, server_root: Path | None, session_id: str, capture_id: str, entries: list, *,
+           invocation_provenance: dict | None = None, artifact_root: Path | None = None) -> dict:
     validate_session_id(session_id)
     validate_session_id(capture_id)
     project = project.resolve(strict=True)
-    # Source is the explicitly selected installation, never inferred from chat or CWD.
-    source = server_root.absolute() / 'artifacts' / session_id
+    # Source is the explicitly selected storage, never inferred from chat or CWD:
+    # a legacy installation's artifacts/, or the per-server root 2.5.0 writes to
+    # (MCP_BIOMODELLING_ARTIFACT_ROOT/BioMASS, default ~/.cache/mcp-biomodelling/artifacts/BioMASS).
+    source = boolean_artifact_root(server_root, artifact_root) / session_id
     reject_symlinks(source)
     if not isinstance(entries, list) or not entries:
         raise ValueError('provide a nonempty array of explicitly returned server artifacts')
@@ -74,7 +77,9 @@ def record(project: Path, server_root: Path, session_id: str, capture_id: str, e
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--server-root', required=True, type=Path)
+    roots = parser.add_mutually_exclusive_group(required=True)
+    roots.add_argument('--server-root', type=Path, help='Legacy installation containing artifacts/')
+    roots.add_argument('--artifact-root', type=Path, help='Explicit per-server artifact directory containing session directories')
     parser.add_argument('--session-id', required=True)
     parser.add_argument('--capture-id', required=True)
     source = parser.add_mutually_exclusive_group(required=True)
@@ -90,7 +95,7 @@ def main() -> int:
         else:
             entries = json.loads(arguments.inventory.read_text(encoding='utf-8'))
         result = record(project, arguments.server_root, arguments.session_id, arguments.capture_id,
-                        entries, invocation_provenance=provenance)
+                        entries, invocation_provenance=provenance, artifact_root=arguments.artifact_root)
     except (OSError, ValueError, KeyError, TypeError) as error:
         print(f'ODE artifact recording failed: {error}', file=sys.stderr)
         return 2
