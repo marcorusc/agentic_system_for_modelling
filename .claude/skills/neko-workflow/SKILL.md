@@ -52,7 +52,7 @@ Boolean-model simulation, `export_neko_handoff` hands off to
 
 ## Tool categories
 
-- **Sessions:** `create_session`, `list_sessions`, `list_artifact_sessions` (sessions with files on disk, including past server runs), `set_default_session`, `delete_session`, `status`, `reset_network`
+- **Sessions:** `create_session`, `list_sessions`, `list_artifact_sessions` (sessions with files on disk, including past server runs), `set_default_session`, `status`, `reset_network`. `delete_session` and `clean_generated_files` exist on the server but are blocked for this specialist: deleting sessions or artifacts needs explicit researcher approval and is not done here
 - **Construction:** `create_network`, `add_nodes` (batch, optional cheap direct-neighbour autoconnect; reports refused and already-present nodes), `remove_gene`, `remove_interaction`
 - **Authorized curation:** `edit_interactions` (atomic `add` / `set_effect` batches between existing nodes)
 - **Connectivity diagnostics:** `analyze_connectivity` (isolated nodes + component partition), `analyze_gene_set` (requested-gene resolution, internal/boundary edges), `preview_connection_impact` (non-mutating scout)
