@@ -49,6 +49,17 @@ First tagged release. Tested with `mcp-biomodelling-servers` **2.5.0**
   absolute path, so import tools reject relocated copies. Specialists import the
   recorder's `backend_import_manifest`; the project capture stays the record that
   gates and approvals bind to.
+- `scripts/capture/verify_import_manifest.py` confirms, before dispatch, that the
+  backend manifest handed to a specialist is byte-identical to the captured
+  original and that its payloads are unchanged. All three recorders return
+  `backend_import_manifest` when a curation binding applies.
+- The NeKo Boolean recorder captures the `<bnet>.lineage.json` source-lineage
+  sidecar unchanged when present, after checking it describes exactly this BNET and
+  history companion.
+- `gate.py check biomass_ode` now works for real NeKo→BioMASS manifests: the
+  approval's `--outputs` must name every `node_id` of the exported graph (the
+  whole-graph scope), in addition to the hash, companion, review and registry
+  checks. Previously this stage could never pass.
 - The ODE recorder accepts `--artifact-root`. 2.5.0 servers write to
   `~/.cache/mcp-biomodelling/artifacts/<Server>` by default.
 
@@ -90,16 +101,12 @@ First tagged release. Tested with `mcp-biomodelling-servers` **2.5.0**
 
 ### Known limitations
 
-- `gate.py check biomass_ode` cannot pass for real NeKo→BioMASS manifests. The
-  gate requires a Boolean-style `network` object those manifests do not carry,
-  and the defect predates this release. Fixing it needs a decision on what
-  `--outputs` means for an ODE stage. Scientific ODE execution also remains gated
-  on Phase 5 live isolation verification (`docs/ode-workflow.md`).
-- The gate does not compare the original backend manifest a specialist imports
-  with the captured `original.handoff.json` beyond the hash in `relocation.json`.
-  The NeKo source-lineage sidecar (`*.bnet.lineage.json`) is not captured.
 - Headless runs (`claude -p`, SDK) and untrusted folders skip inline subagent MCP
   servers. Verify specialists interactively (`/agents`, then a read-only task).
+- Codex: the parent-isolation check blocks enabled servers named `neko`, `maboss`,
+  `physicell` or `biomass` in `codex mcp list`. Whether Codex lists servers from an
+  installed plugin there is unverified, so do not `codex plugin add` the modelling
+  plugins for this project.
 - The plugin launch pins only the server package. For an exact installed snapshot
   (`resolved-requirements.txt`), use a managed environment.
 - Deferred Wave 2 items remain deferred: the NeKo→MaBoSS import investigation

@@ -93,6 +93,8 @@ def record_neko(project: Path, server_root: Path | None, manifest_path: Path, ca
                 for path in sorted(stage.iterdir())
             ],
         }
+        if curation:
+            result['backend_import_manifest'] = str(original)
     from scripts.capture.index import register_capture
     register_capture(project, target)
     return result

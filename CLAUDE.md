@@ -114,7 +114,8 @@ warnings and failures.
 Before each downstream dispatch, complete validate-stage, wait for both independent
 reviews, and obtain exact session/revision/output approval. Any later interaction,
 rule, readout or rate edit supersedes it: re-review and re-approve. Record review and approval
-with state.py; run and quote `python3 scripts/gate.py check <stage> <session> --outputs ...`.
+with state.py; run and quote `python3 scripts/gate.py check <stage> <session> --outputs ...`
+(for biomass_ode the outputs are every node_id of the exported graph).
 Prefix the bounded task with `STAGE_GATE {"upstream_session_id":"...","outputs":["..."]}`.
 The dispatch hook checks the durable records again. Explicit standalone sources use
 standalone_decision_id. Never run reviews in parallel with downstream work.
@@ -122,7 +123,8 @@ standalone_decision_id. Never run reviews in parallel with downstream work.
 After authorized operations, use scripts/capture commands to validate, relocate, hash
 and index exports (docs/agentic-operations.md). Curation-bearing handoffs (NeKo 2.1,
 NeKo-to-BioMASS 2.0, and MaBoSS 2.1 with such a parent) are imported from the
-recorder's `backend_import_manifest`; the capture stays the gate/approval record. Specialists write guarded immutable
+recorder's `backend_import_manifest`, after `scripts/capture/verify_import_manifest.py`
+passes; the capture stays the gate/approval record. Specialists write guarded immutable
 report.md; invocation records persist task, tool calls/results, final output and usage.
 Orchestrator summaries belong under runs/orchestrator. Update state using state.py,
 validate and checkpoint; every stage, including multicellular, needs independent

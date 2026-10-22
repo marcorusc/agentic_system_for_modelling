@@ -48,6 +48,18 @@ def _reference(root, ref, server, session, role):
     return file
 
 
+def ode_graph_nodes(file):
+    """Node IDs of an exported NeKo-to-BioMASS graph, which must be unique."""
+    try:
+        graph = json.loads(file.read_text())
+    except ValueError:
+        raise ValueError("ODE network_file is not valid JSON") from None
+    items = graph.get("nodes") if isinstance(graph, dict) else None
+    if not isinstance(items, list) or any(not isinstance(item, dict) for item in items):
+        raise ValueError("ODE network_file must contain a node list")
+    return _names([item.get("node_id") for item in items], "ODE graph node IDs")
+
+
 def verify_manifest(root, data, expected_type, session, outputs=None):
     """Verify the versioned identity, required payloads and complete parent chain.
 
@@ -70,13 +82,23 @@ def verify_manifest(root, data, expected_type, session, outputs=None):
     source = data.get("source")
     if not isinstance(source, dict) or (source.get("server"), source.get("session_id")) != (server, session):
         raise ValueError("handoff source server/session mismatch")
-    network = data.get("network")
-    if not isinstance(network, dict):
-        raise ValueError("handoff network is missing")
-    nodes = _names(network.get("nodes"), "network nodes")
-    declared = _names(network.get("output_nodes"), "declared outputs")
-    if not set(declared) <= set(nodes) or (outputs is not None and declared != outputs):
-        raise ValueError("declared outputs do not match exported network")
+    if expected_type == "neko-to-biomass":
+        # An ODE graph has no output selection: its approval names the complete
+        # node inventory of the exact exported graph.
+        if data.get("network") is not None or data.get("lineage", []):
+            raise ValueError("NeKo-to-BioMASS handoffs declare only their network_file graph")
+        graph = _reference(root, data.get("network_file"), server, session, "neko_ode_network")
+        nodes = ode_graph_nodes(graph)
+        if outputs is not None and set(outputs) != set(nodes):
+            raise ValueError("ODE approval outputs must name every node_id of the exported graph")
+    else:
+        network = data.get("network")
+        if not isinstance(network, dict):
+            raise ValueError("handoff network is missing")
+        nodes = _names(network.get("nodes"), "network nodes")
+        declared = _names(network.get("output_nodes"), "declared outputs")
+        if not set(declared) <= set(nodes) or (outputs is not None and declared != outputs):
+            raise ValueError("declared outputs do not match exported network")
     if expected_type == "neko-to-maboss":
         if data.get("lineage", []):
             raise ValueError("NeKo source cannot declare upstream lineage")
@@ -85,8 +107,6 @@ def verify_manifest(root, data, expected_type, session, outputs=None):
                   if line.strip() and not line.lstrip().startswith("#") and "," in line and line.split(",", 1)[0].strip().lower() != "targets"]
         if actual != nodes:
             raise ValueError("BNET targets do not match declared network nodes")
-    elif expected_type == "neko-to-biomass":
-        _reference(root, data.get("network_file"), server, session, "neko_ode_network")
     if (expected_type, version) in CURATED:
         # The companion binds the original model path; every other identity
         # field and the pinned companion bytes must still match the payload.

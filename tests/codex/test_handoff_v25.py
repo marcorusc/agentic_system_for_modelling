@@ -185,6 +185,42 @@ class ODECurationTests(unittest.TestCase):
         ode_refresh(self.root, self.h)
         return validate_handoff(self.h, project_root=self.root)
 
+    def test_gate_binds_ode_approval_to_every_graph_node(self):
+        # A v1.0 graph keeps this dependency-free; v2.0 adds the backend contract.
+        folder = self.root / 'runs/network-curator' / SESSION
+        folder.mkdir(parents=True)
+        network = folder / self.network.name
+        network.write_bytes(self.network.read_bytes())
+        ref = artifact_ref(network, 'neko_ode_network')
+        ref['path'] = str(network.relative_to(self.root))
+        data = {key: value for key, value in self.manifest.items() if key != 'curation_file'}
+        data.update(schema_version='1.0', network_file=ref)
+        data.pop('history_state_id')
+        gate.verify_manifest(self.root, data, 'neko-to-biomass', SESSION, ['B', 'A'])
+        for outputs in (['A'], ['A', 'B', 'C']):
+            with self.subTest(outputs=outputs), self.assertRaisesRegex(ValueError, 'every node_id'):
+                gate.verify_manifest(self.root, data, 'neko-to-biomass', SESSION, outputs)
+        with self.assertRaisesRegex(ValueError, 'declare only their network_file'):
+            gate.verify_manifest(self.root, dict(data, network={'nodes': ['A']}), 'neko-to-biomass', SESSION, ['A', 'B'])
+        network.write_text(json.dumps({'nodes': [{'node_id': 'A'}, {'node_id': 'A'}], 'edges': []}))
+        data['network_file'] = dict(ref, sha256=digest(network), size_bytes=network.stat().st_size)
+        with self.assertRaisesRegex(ValueError, 'unique string list'):
+            gate.verify_manifest(self.root, data, 'neko-to-biomass', SESSION, ['A'])
+
+    @unittest.skipUnless(BACKEND, 'requires the backend contract package')
+    def test_gate_accepts_a_captured_curated_ode_graph(self):
+        # Complete source provenance, as a 2.5.0 NeKo export writes it.
+        self.manifest['source'].update(
+            mcp_package={'name': 'mcp-biomodelling-servers', 'version': '2.5.0'},
+            modelling_package={'name': 'nekomata', 'version': '1.10.2'},
+            operation='export_biomass_handoff', recorded_at='2026-10-21T11:06:40Z')
+        self.path.write_text(json.dumps(self.manifest))
+        copied = self.record()
+        data = json.loads((self.root / copied['upstream_manifest']).read_text())
+        gate.verify_manifest(self.root, data, 'neko-to-biomass', SESSION, ['A', 'B'])
+        with self.assertRaisesRegex(ValueError, 'every node_id'):
+            gate.verify_manifest(self.root, data, 'neko-to-biomass', SESSION, ['A'])
+
     def test_capture_copies_and_pins_the_companion(self):
         copied = self.record()
         target = self.root / copied['upstream_manifest']
@@ -315,6 +351,62 @@ class BackendV25CaptureTests(unittest.TestCase):
         from scripts.capture.record_maboss_physicell_handoff import record_maboss
         record_maboss(self.project, None, path, capture, parent_root=self.neko_root, artifact_root=self.maboss_root)
         return self.project / 'runs/boolean-dynamics-modeler/maboss-session/physicell-handoffs' / capture / 'import.handoff.json'
+
+    def test_source_lineage_sidecar_is_captured_unchanged_and_must_match(self):
+        from mcp_biomodelling_servers.import_lineage import capture_import, write_source_export
+        path, model = self.neko()
+        sif = path.with_name('source.sif')
+        sif.write_text('A\t1\tB\n')
+        imported = capture_import(sif, server='NeKo', session_id=SESSION)
+        sidecar = write_source_export(Path(model.bnet_file.path), server='NeKo', session_id=SESSION,
+                                      imports=[imported], curation_file=model.curation_file)
+        self.assertEqual(sidecar, path.with_name('export.bnet.lineage.json'))
+        result = self.capture_neko(path)
+        folder = (self.project / result['upstream_manifest']).parent
+        self.assertEqual((folder / sidecar.name).read_bytes(), sidecar.read_bytes())
+        relocation = json.loads((folder / 'relocation.json').read_text())
+        self.assertEqual(relocation['source_lineage_sha256'], hashlib.sha256(sidecar.read_bytes()).hexdigest())
+        original = sidecar.read_bytes()
+        changed = json.loads(original)
+        changed['artifact']['sha256'] = '0' * 64
+        sidecar.write_text(json.dumps(changed))
+        with self.assertRaisesRegex(ValueError, 'invalid source-lineage sidecar'):
+            self.capture_neko(path, 'c2')
+        # A valid sidecar for another BNET must not be attributed to this export.
+        other = path.with_name('other.bnet')
+        other.write_text('targets, factors\nA, A\n')
+        written = write_source_export(other, server='NeKo', session_id=SESSION, imports=[imported])
+        sidecar.write_bytes(written.read_bytes())
+        with self.assertRaisesRegex(ValueError, 'describes another BNET'):
+            self.capture_neko(path, 'c3')
+        sidecar.write_bytes(original)
+
+    def test_import_manifest_check_accepts_only_the_captured_original(self):
+        from scripts.capture.verify_import_manifest import verify
+        path, model = self.neko()
+        result = self.capture_neko(path)
+        folder = (self.project / result['upstream_manifest']).parent
+        checked = verify(self.project, folder, Path(result['backend_import_manifest']))
+        self.assertEqual(checked['payloads_checked'], ['bnet_file', 'curation_file'])
+        with self.assertRaisesRegex(ValueError, 'differ from the captured original'):
+            verify(self.project, folder, folder / 'import.handoff.json')
+        copy_path = path.with_name('copy.handoff.json')
+        copy_path.write_bytes(path.read_bytes())
+        with self.assertRaisesRegex(ValueError, 'not the recorded source manifest'):
+            verify(self.project, folder, copy_path)
+        with self.assertRaisesRegex(ValueError, 'under the project'):
+            verify(self.project, self.neko_root, path)
+        Path(model.bnet_file.path).write_text('targets, factors\nA, A\nB, A\n')
+        with self.assertRaisesRegex(ValueError, 'bnet_file payload changed'):
+            verify(self.project, folder, path)
+
+    def test_maboss_recorder_returns_original_for_a_curated_parent(self):
+        from scripts.capture.record_maboss_physicell_handoff import record_maboss
+        parent_path, parent = self.neko()
+        self.capture_neko(parent_path)
+        path, _ = self.maboss(parent_path, parent)
+        result = record_maboss(self.project, None, path, 'c1', parent_root=self.neko_root, artifact_root=self.maboss_root)
+        self.assertEqual(result['backend_import_manifest'], str(path))
 
     def test_neko_21_capture_is_gate_verifiable_but_backend_bound_to_original(self):
         path, _ = self.neko()

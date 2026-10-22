@@ -56,6 +56,23 @@ or appear in core BND rules. Older 1.0/2.0 documents are unchanged. The ODE
 recorder accepts `--artifact-root` like the Boolean recorders, because 2.5.0
 servers write to `~/.cache/mcp-biomodelling/artifacts/<Server>` by default.
 
+Before dispatching an import from `backend_import_manifest`, confirm it is the
+exact captured original and that its payloads are unchanged:
+
+```sh
+python3 scripts/capture/verify_import_manifest.py \
+  --capture runs/network-curator/SESSION/boolean-handoffs/CAPTURE \
+  --manifest /cache/mcp-biomodelling/artifacts/NeKo/SESSION/export.handoff.json
+```
+
+It compares the manifest bytes with `original.handoff.json`, the hash and source
+path in `relocation.json`, and the size/SHA-256 of every referenced payload; it is
+read-only and grants no approval. When a NeKo Boolean export has a sibling
+`<bnet>.lineage.json` source-lineage sidecar, the recorder validates it with the
+backend model, requires it to describe exactly this manifest's BNET and history
+companion, copies it unchanged (its paths are identity labels) and records
+`source_lineage_sha256`.
+
 A source derivative can retain a NeKo ancestor while having no accepted stage
 parent. That source record never grants approval of its changed nodes or rules.
 The current model still requires independent review and exact-revision researcher
@@ -95,7 +112,8 @@ This must be an explicit server/cache record containing `name`, `version`, and
 `cache_timestamp` (timezone-aware ISO 8601); unknown fields may be null. Original
 bytes and their digest are preserved with the capture. Without such a record the
 index reports these fields as null and records that the backend did not supply
-metadata. Backend 2.4.0 cannot supply missing resource versions automatically.
+metadata. Backend 2.5.0 records only the resource database name (W2-D007); it
+cannot supply resource versions or acquisition times automatically.
 
 ## Claude reports and invocation records
 

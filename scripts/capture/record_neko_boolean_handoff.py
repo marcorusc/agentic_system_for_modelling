@@ -16,6 +16,28 @@ from scripts.codex.launcher_config import validate_session_id
 from scripts.codex.ode_artifacts import digest, read_json, safe_file
 
 
+def source_lineage(source: Path, network: Path, raw: dict) -> tuple[bytes, Path] | None:
+    """The export's sibling ``<bnet>.lineage.json`` source-lineage sidecar, if any.
+
+    It must describe exactly this manifest's BNET and history companion; older
+    exports without a sidecar are captured as before.
+    """
+    from mcp_biomodelling_servers.import_lineage import SourceExport
+    candidate = network.with_name(network.name + '.lineage.json')
+    if not candidate.exists():
+        return None
+    path = safe_file(source, candidate.relative_to(source).as_posix())
+    data = path.read_bytes()
+    try:
+        record = SourceExport.model_validate_json(data).model_dump(mode='json')
+    except ValueError as error:
+        detail = error.errors()[0]['msg'] if hasattr(error, 'errors') else str(error)
+        raise ValueError(f'invalid source-lineage sidecar {candidate.name}: {detail}') from None
+    if record['artifact'] != raw['bnet_file'] or record.get('curation_file') != raw.get('curation_file'):
+        raise ValueError('source-lineage sidecar describes another BNET or history companion')
+    return data, path
+
+
 def record_neko(project: Path, server_root: Path | None, manifest_path: Path, capture_id: str, *, resource_metadata_file: Path | None = None, artifact_root: Path | None = None) -> dict:
     # Pure backend contract readers only; an absent backend fails explicitly.
     from mcp_biomodelling_servers.handoff import NeKoToMaBoSSHandoffManifest, bnet_node_names, verify_handoff_manifest
@@ -36,8 +58,11 @@ def record_neko(project: Path, server_root: Path | None, manifest_path: Path, ca
     verify_handoff_manifest(parsed)
     if bnet_node_names(network) != parsed.network.nodes:
         raise ValueError('BNET target order disagrees with manifest nodes')
-    reserved = {'original.handoff.json', 'import.handoff.json', 'relocation.json', 'resource.json', 'resource.original.json', basename}
+    lineage_name = basename + '.lineage.json'
+    reserved = {'original.handoff.json', 'import.handoff.json', 'relocation.json', 'resource.json', 'resource.original.json',
+                basename, lineage_name}
     curation = copy_curation(source, raw['curation_file'], reserved) if parsed.curation_file else None
+    lineage = source_lineage(source, network, raw)
     original_bytes, network_bytes = original.read_bytes(), network.read_bytes()
     if json.loads(original_bytes) != raw or hashlib.sha256(network_bytes).hexdigest() != parsed.bnet_file.sha256:
         raise ValueError('source artifacts changed during validation')
@@ -56,6 +81,9 @@ def record_neko(project: Path, server_root: Path | None, manifest_path: Path, ca
         (stage / basename).write_bytes(network_bytes)
         if curation:
             (stage / curation[0]).write_bytes(curation[1])
+        if lineage:
+            # Identity record of the original export: copied unchanged, never relocated.
+            (stage / lineage_name).write_bytes(lineage[0])
         (stage / 'import.handoff.json').write_text(json.dumps(imported, indent=2) + '\n', encoding='utf-8')
         staged = NeKoToMaBoSSHandoffManifest.model_validate(imported)
         staged.bnet_file.path = str(stage / basename)
@@ -75,6 +103,9 @@ def record_neko(project: Path, server_root: Path | None, manifest_path: Path, ca
         if curation:
             relocation.update({'curation_sha256': hashlib.sha256(curation[1]).hexdigest(),
                                'source_curation_path': str(curation[2]), 'curation_binding': CURATION_NOTE})
+        if lineage:
+            relocation.update({'source_lineage_sha256': hashlib.sha256(lineage[0]).hexdigest(),
+                               'source_lineage_path': str(lineage[1])})
         (stage / 'relocation.json').write_text(json.dumps(relocation, indent=2) + '\n', encoding='utf-8')
         result = {'upstream_manifest': (target / 'import.handoff.json').relative_to(project).as_posix(),
                   'artifacts': [{'path': (target / p.relative_to(stage)).relative_to(project).as_posix(), 'sha256': digest(p)}

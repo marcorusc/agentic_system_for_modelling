@@ -141,7 +141,9 @@ def record_maboss(project, server_root, manifest_path, capture_id, *, parent_roo
         if parent_curation:
             relocation['parent_curation_binding'] = CURATION_NOTE
         (stage / 'relocation.json').write_text(json.dumps(relocation, indent=2) + '\n')
-    return register_capture(project, target)
+    record = register_capture(project, target)
+    # A curated NeKo parent is bound to its original paths: PhysiCell imports the original.
+    return {**record, 'backend_import_manifest': str(original)} if parent_curation else record
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
