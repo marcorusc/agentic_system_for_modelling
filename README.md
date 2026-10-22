@@ -105,8 +105,8 @@ claude
 ```
 
 Inside Claude Code, run `/agents` to confirm the agents, and `/mcp` to confirm the
-`pubmed` server. Modelling servers do not appear in `/mcp`: they are scoped to their
-specialists and start only when a specialist runs (the first start may take a minute
+`pubmed` server. Modelling servers are not connected to the main session: they are
+scoped to their specialists and start only when a specialist runs (the first start may take a minute
 while uv downloads the release). Add `--with-biomass` to setup before using the ODE
 agent. Then describe your question:
 
