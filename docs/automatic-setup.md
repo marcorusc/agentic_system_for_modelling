@@ -7,11 +7,14 @@ python scripts/setup.py
 ```
 
 The guided command detects Codex and Claude, asks which client to configure when
-needed, and asks for missing executable paths. It creates a dedicated modelling
-environment, generates client configuration, and verifies the result. It never
-installs or signs into a coding client automatically.
+needed, and asks for missing executable paths. By default it creates a dedicated
+modelling environment; with `--environment-mode plugin` it instead uses the
+marketplace plugins' uvx launch and needs only uv (see [Plugin mode](#plugin-mode-uv-only)).
+It generates client configuration and verifies the result. It never installs or
+signs into a coding client automatically.
 
 ```text
+python scripts/setup.py --client claude --environment-mode plugin
 python scripts/setup.py --client codex
 python scripts/setup.py --client claude
 python scripts/setup.py --client both

@@ -353,6 +353,25 @@ the latest full suite run.
   legacy prompts. Do not remove unmatched prompts or scientific artifacts.
 - **Rollback:** disable the dispatcher transport, retain disabled root modelling
   servers, and use the CLI. Keep profiles, sessions, histories, and task records.
+- **WSL launch fails:** confirm every value in `.codex/launcher.local.json`, run the
+  configured Python and Codex executables directly inside that distribution, and keep
+  task paths repository-relative.
+- **A specialist reports a missing MCP:** verify its ignored user-local profile and
+  rerun `python scripts/codex/check_environment.py`. Never put a local executable path
+  in tracked configuration.
+- **Inventory stale after a configuration change:** fully reload VS Code and start a
+  fresh Codex session before retesting.
+- **A recorded session ID no longer exists:** treat it as provenance; rebuild runtime
+  state from the validated handoff and artifacts. Never silently reuse another session.
+- **Task prompts remain after checkpointing:** run `cleanup_tasks.py` without
+  `--apply` and inspect the `unmatched` reasons. A missing invocation record is a
+  provenance problem, not permission to delete the prompt.
+- **ChatGPT Windows parent:** unsupported unless an external policy can prove it has
+  no modelling MCP tools; the WSL bridge isolates the child, not the parent app.
+- **Marketplace plugins:** do not `codex plugin add` the `neko`/`maboss`/`physicell`/
+  `biomass` plugins for this workspace; they would give the orchestrator modelling
+  tools. `check_environment.py` blocks enabled root servers with those exact names in
+  `codex mcp list`; whether Codex lists plugin-provided servers there is not verified.
 
 The bounded test's run artifacts remain local under the recorded session paths;
 committed validation records pin their hashes. They are not bundled into the code

@@ -1,5 +1,11 @@
 # Agentic Bio-Modelling Project Architecture
 
+**As built (release 1.0.0):** this document records the original design rationale,
+including the optional remote Ollama/Qwen backend. The current layout, agents, setup
+and procedures are described in the [README](../README.md), [setup](automatic-setup.md)
+and [agentic operations](agentic-operations.md); where they differ, those and the
+code are authoritative. Sections 4 and 11 below are updated to match the code.
+
 **ODE integration update:** The optional BioMASS route is documented in
 [ODE workflow](ode-workflow.md) and [version-2 artifact contract](ode-contract.md).
 It adds NeKo-graph, standalone-text and bounded-reaction inputs through an isolated
@@ -167,53 +173,34 @@ Scientific reviewer uses Qwen
 
 Only inference is serialized.
 
-## 4. Recommended project repository
+## 4. Project repository layout
 
 ```text
 biological-project/
-├── CLAUDE.md
-├── CLAUDE.local.md
-├── MODEL_SPEC.md
-├── DATA_DICTIONARY.md
-├── ASSUMPTIONS.md
-├── DECISIONS.md
-├── CURRENT_STATE.md
-├── VALIDATION_PLAN.md
-│
+├── CLAUDE.md / AGENTS.md          # orchestrator policy (Claude / Codex)
+├── MODEL_SPEC.md  DATA_DICTIONARY.md  ASSUMPTIONS.md  DECISIONS.md
+├── CURRENT_STATE.md               # active stage + append-only session registry
+├── VALIDATION_PLAN.md  VALIDATION_CRITERIA.yaml
 ├── .claude/
-│   ├── agents/
-│   │   ├── network-curator.md
-│   │   ├── boolean-dynamics-modeler.md
-│   │   ├── multicellular-configurator.md
-│   │   ├── literature-reviewer.md
-│   │   ├── scientific-reviewer.md
-│   │   └── reproducibility-auditor.md
-│   └── skills/
-│       ├── checkpoint-model/SKILL.md
-│       ├── review-literature-evidence/SKILL.md
-│       └── validate-stage/SKILL.md
-│
-├── docs/
-│   ├── agentic-biomodelling-architecture.md
-│   ├── subagent-workflow.mmd
-│   └── runtime-deployment.mmd
-│
-├── inputs/
-├── evidence/
-│   ├── literature_queue.json
-│   ├── evidence_matrix.json
-│   └── literature_review.md
+│   ├── agents/                    # network-curator, boolean-dynamics-modeler,
+│   │                              # multicellular-configurator, ode-modeler,
+│   │                              # literature-reviewer, scientific-reviewer,
+│   │                              # reproducibility-auditor
+│   ├── skills/                    # checkpoint-model, validate-stage, model-*,
+│   │                              # review-literature-evidence, *-workflow
+│   └── scripts/                   # hooks and guards
+├── skills/  .codex/  .codex-plugin/   # Codex plugin and profiles
+├── scripts/                       # setup, state.py, gate.py, capture/, validate/
+├── setup/dependencies.toml        # pinned backend release
+├── templates/  .model/            # lifecycle templates and configuration
+├── inputs/                        # user source data
+├── evidence/reports/<neko_session_id>/<source>__<target>.md
 ├── runs/
 │   ├── index.json
-│   └── run-0001/
-│       ├── manifest.json
-│       ├── assumptions.md
-│       ├── decisions.md
-│       ├── summary.md
-│       ├── diagnostics.json
-│       ├── operation_log.jsonl
-│       └── artifacts/
-└── src/
+│   ├── <specialist>/<full_session_id>/   # immutable artifacts, captures, report.md
+│   └── orchestrator/<purpose>/           # summaries, reviews, manual inputs
+├── memory/  src/
+└── docs/
 ```
 
 Auto-memory is machine-local and may help with convenience, but scientific state must be committed to project files.
@@ -465,18 +452,23 @@ Do not enable `OLLAMA_NUM_PARALLEL=2` without realistic long-context testing and
 
 ## 11. MCP allocation
 
-The implemented arrangement defines NeKo, MaBoSS, and PhysiCell inline in their
-specialist agent frontmatter, then narrows callable operations with `tools` and
-`disallowedTools`. Claude Code connects an inline server when the subagent starts and
-disconnects it when that invocation finishes; the main orchestrator does not receive
-its modelling tools.
+The implemented arrangement defines NeKo, MaBoSS, PhysiCell and (optionally) BioMASS
+inline in their specialist agent frontmatter, then narrows callable operations with
+`tools` and `disallowedTools`. Claude Code connects an inline server when the
+subagent starts and disconnects it when that invocation finishes; the main
+orchestrator does not receive its modelling tools.
+
+The tracked default launch is the marketplace plugin's own command,
+`uvx --from mcp-biomodelling-servers==2.5.0 mcp-<server>-server`; setup can instead
+point it at a managed or reused environment. The marketplace plugins themselves are
+not enabled in this project, because an enabled plugin's servers connect to the main
+session. `scripts/check_isolation.py` enforces both rules.
 
 Each modelling specialist preloads a versioned workflow skill from `.claude/skills/`.
 This replaces MCP-resource manuals because Claude Code background subagents retain
 MCP tools and `ToolSearch` but not the host resource-listing/resource-reading bridge.
-Command values are not a shell and must not rely on `${...}` expansion. Use a tested,
-platform-appropriate executable path or launcher, and refresh the matching workflow
-skill when the MCP server package changes.
+Command values are not a shell and must not rely on `${...}` expansion. Refresh the
+matching workflow skill when the MCP server package changes.
 
 ## 12. Failure rules
 
