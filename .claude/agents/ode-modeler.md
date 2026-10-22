@@ -6,7 +6,7 @@ mcpServers:
   - biomass-agent:
       type: stdio
       command: "uvx"
-      args: ["--from", "mcp-biomodelling-servers==2.5.0", "mcp-biomass-server"]
+      args: ["--from", "mcp-biomodelling-servers==2.5.1", "mcp-biomass-server"]
 tools:
   - Write
   - Read

@@ -3,13 +3,14 @@
 
 Run with the released backend, e.g. the plugin launch:
 
-    uvx --from mcp-biomodelling-servers==2.5.0 python -B tests/integration/biomass_smoke.py
+    uvx --from mcp-biomodelling-servers==2.5.1 python -B tests/integration/biomass_smoke.py
 
 Sessions and artifacts live in a temporary directory (MCP_BIOMODELLING_ARTIFACT_ROOT
 is pointed there). No scientific model, MCP connection, existing session,
 environment package or source checkout is modified. The enzyme values are the
-server's shipped software example, not biological claims. TMPDIR must not contain a
-`.cache` path component: BioMASS 2.5.0 drops such paths from its file listings.
+server's shipped software example, not biological claims. The artifact root
+deliberately sits under a `.cache` directory, like the default root: BioMASS 2.5.0
+dropped such paths from its listings and integrity inventories (fixed in 2.5.1).
 """
 from __future__ import annotations
 
@@ -50,7 +51,9 @@ def main():
         server_root = temporary/'server'
         # Backend 2.5.0 resolves storage under MCP_BIOMODELLING_ARTIFACT_ROOT (default:
         # the user's cache); keep every session and artifact inside this temp directory.
-        os.environ['MCP_BIOMODELLING_ARTIFACT_ROOT'] = str(temporary/'artifacts')
+        # A `.cache` component, as in the default root, guards the 2.5.1 listing fix.
+        artifact_root = temporary/'.cache'/'artifacts'
+        os.environ['MCP_BIOMODELLING_ARTIFACT_ROOT'] = str(artifact_root)
         # Explicit test double for storage only; authoring and worker code remain real.
         server.session_manager = BioMASSSessionManager(server_root)
         session = server.create_session(label='Software integration fixture only').session_id
@@ -58,8 +61,8 @@ def main():
         validation = server.validate_model(check_generation=True, session_id=session)
         assert validation.syntax_valid and validation.generation_valid, validation.model_dump_json()
         generated = server.generate_model(session_id=session)
-        assert generated.files, ('BioMASS listed no generated files; 2.5.0 drops artifact paths '
-                                 'containing a .cache component, so keep TMPDIR outside one')
+        assert generated.files, ('BioMASS listed no generated files under a .cache artifact '
+                                 'root; this is the 2.5.0 bug fixed in 2.5.1')
         simulation = server.run_simulation(SimulationScenario(name='enzyme'), session_id=session)
         assert simulation.details['numerical_valid']
         bundle_result = server.export_model_bundle(session_id=session)
@@ -86,7 +89,7 @@ def main():
                 entries[file.path] = {'path': file.path, 'session_id': session, 'sha256': digest(Path(file.path))}
         # 2.5.0 per-server storage: <MCP_BIOMODELLING_ARTIFACT_ROOT>/<server directory name>.
         captured = record(project, None, session, 'fixture', list(entries.values()),
-                          artifact_root=temporary/'artifacts'/server_root.name)
+                          artifact_root=artifact_root/server_root.name)
         run = project/'runs/ode-modeler'/session
         base = run/'captures/fixture'
         decisions = project/'DECISIONS.md'

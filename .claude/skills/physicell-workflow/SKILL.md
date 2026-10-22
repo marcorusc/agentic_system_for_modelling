@@ -5,8 +5,8 @@ description: "Operational guide for the PhysiCell MCP server — domain, substra
 
 # PhysiCell Simulation Configuration Workflow
 
-Operational snapshot for `mcp-biomodelling-servers` 2.5.0. Tool names and
-parameters were checked against the live 2.5.0 schemas (released package with
+Operational snapshot for `mcp-biomodelling-servers` 2.5.1. Tool names and
+parameters were checked against the live 2.5.1 schemas (released package with
 `physicell-settings` 0.6.3). Behaviour the schemas do not describe follows the
 2.5.0 server documentation. Recheck this skill when the server package is upgraded.
 

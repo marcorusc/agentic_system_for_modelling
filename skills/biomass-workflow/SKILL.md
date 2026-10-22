@@ -52,7 +52,7 @@ Read [reaction syntax](references/reaction_syntax.md) when authoring Text2Model,
 [editing](references/model_editing.md) before revising an existing document.
 For NeKo imports also read [network interpretation](references/network_to_reactions.md).
 [Provenance](references/provenance.json) records the exact BioMASS 0.14/server 2.3
-reference hashes; the same files and tool schemas ship unchanged in server 2.5.0.
+reference hashes; the same files and tool schemas ship unchanged in server 2.5.1.
 Revalidate tool semantics after upgrades.
 
 These upstream references describe standalone server capabilities. Their literature

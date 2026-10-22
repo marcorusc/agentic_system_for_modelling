@@ -5,9 +5,9 @@ description: "Operational guide for the NeKo MCP server — session/network crea
 
 # NeKo Signalling Network Workflow
 
-Operational snapshot for `mcp-biomodelling-servers` 2.5.0. Tool names and
-parameters were checked against the live 2.5.0 schemas (released package with
-NeKo `nekomata` 1.10.2). Behaviour the schemas do not describe follows the 2.5.0
+Operational snapshot for `mcp-biomodelling-servers` 2.5.1. Tool names and
+parameters were checked against the live 2.5.1 schemas (released package with
+NeKo `nekomata` 1.10.2). Behaviour the schemas do not describe follows the 2.5.x
 server documentation. Recheck this skill when the server package is upgraded.
 
 NeKo builds and curates molecular signalling networks (OmniPath and similar

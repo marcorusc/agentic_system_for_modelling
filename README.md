@@ -10,7 +10,7 @@ each modelling operation to a restricted specialist agent, reviews what comes ba
 and stops for your approval at every consequential biological choice. Scientific
 state lives in version-controlled files, not in chat history.
 
-Release **1.0.0**, tested with `mcp-biomodelling-servers` **2.5.0** (NeKo
+Release **1.0.1**, tested with `mcp-biomodelling-servers` **2.5.1** (NeKo
 `nekomata` 1.10.2, PhysiCell Settings 0.6.3, bundled cmaboss, BioMASS 0.14). See
 [`CHANGELOG.md`](CHANGELOG.md) for changes and known limitations.
 
@@ -91,7 +91,7 @@ The policy the orchestrator follows is [`CLAUDE.md`](CLAUDE.md) (Claude) and
   - a Conda/venv environment created or reused by setup
 - Network access to the shared PubMed MCP endpoint (`https://pubmed.mcp.claude.com/mcp`)
 
-No MaBoSS executable or system Graphviz is needed; the 2.5.0 servers bundle both.
+No MaBoSS executable or system Graphviz is needed; the 2.5.x servers bundle both.
 The agents inherit the model running the main session.
 
 ## Quick start (Claude Code)
@@ -124,7 +124,7 @@ Setup options (managed Conda/venv environment, reuse of an existing environment,
 The same servers are published as plugins in the `marcorusc` marketplace
 (`neko@marcorusc`, `maboss@marcorusc`, `physicell@marcorusc`, `biomass@marcorusc`).
 This project uses their launch command,
-`uvx --from mcp-biomodelling-servers==2.5.0 mcp-<server>-server`, **inline in each
+`uvx --from mcp-biomodelling-servers==2.5.1 mcp-<server>-server`, **inline in each
 specialist only**. Do not enable the plugins in this project: Claude Code connects
 an enabled plugin's servers to the main session, which would give the orchestrator
 modelling tools. Setup and `scripts/check_isolation.py` fail if they are enabled in
@@ -141,7 +141,7 @@ mcpServers:
   - neko-agent:
       type: stdio
       command: "uvx"
-      args: ["--from", "mcp-biomodelling-servers==2.5.0", "mcp-neko-server"]
+      args: ["--from", "mcp-biomodelling-servers==2.5.1", "mcp-neko-server"]
 ```
 
 Setup rewrites this to an absolute `uvx` and a fixed PATH, because desktop clients
@@ -326,7 +326,7 @@ a restore; specialists rebuild runtime state from handoffs and artifacts.
   Code after configuration changes.
 - **A modelling server does not start:** check the agent's inline transport. For the
   plugin launch confirm `uvx` is found and the launch resolves:
-  `uvx --from mcp-biomodelling-servers==2.5.0 python -c "import importlib.metadata as m; print(m.version('mcp-biomodelling-servers'))"`
+  `uvx --from mcp-biomodelling-servers==2.5.1 python -c "import importlib.metadata as m; print(m.version('mcp-biomodelling-servers'))"`
   (the server commands have no `--help`; they start a stdio server). Run
   `python scripts/setup.py --check`. Inline servers are skipped in untrusted folders
   and headless (`claude -p`/SDK) runs.
@@ -353,7 +353,7 @@ python scripts/run_tests.py
 
 Runs the Codex, Claude and setup suites (120 s limit each) with no modelling server,
 credentials or third-party packages; backend-dependent contract tests skip. With the
-released backend installed (`pip install mcp-biomodelling-servers==2.5.0
+released backend installed (`pip install mcp-biomodelling-servers==2.5.1
 nekomata==1.10.2`) they run as well. CI runs both on Python 3.11 and 3.13, plus a job
 that starts every server through the plugin launch.
 
