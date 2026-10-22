@@ -1,5 +1,36 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- `scripts/capture/record_ode_artifacts.py` accepts `--artifact-root` (exactly one
+  of it or `--server-root`). Without it, v1.0.0 could not capture BioMASS
+  artifacts from the 2.5.0 default storage
+  `~/.cache/mcp-biomodelling/artifacts/BioMASS`.
+
+### Added
+
+- `tests/integration/biomass_smoke.py`: a real-backend BioMASS end-to-end smoke
+  test, ported from the retired `ODE-specialist` branch. It covers generation,
+  simulation, bundle reproduction, project capture, typed v2 completion, edit
+  preview, stale-version rejection and placeholder rejection. CI runs it through
+  the plugin launch.
+- The 2026-09-15 Claude ODE integration validation record is preserved under
+  `docs/audits/2026-09-15-ode-claude-integration/`.
+
+### Known issue (backend)
+
+- BioMASS 2.5.0 lists no files when its artifact paths contain a `.cache`
+  component, which includes the default root. Start the BioMASS specialist with
+  `MCP_BIOMODELLING_ARTIFACT_ROOT` outside `.cache` until a fixed release. This is
+  reported to the MCP maintainers.
+
+### Removed
+
+- `docs/agentic-biomodelling-architecture.pdf`. The Markdown document, which
+  GitHub renders with its diagrams, is the single source.
+
 ## 1.0.0 — 2026-10-21
 
 First tagged release. Tested with `mcp-biomodelling-servers` **2.5.0**

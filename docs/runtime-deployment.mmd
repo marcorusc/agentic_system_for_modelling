@@ -1,28 +1,28 @@
 flowchart LR
-    subgraph CC["Claude Code on Windows/macOS"]
-        MAIN[Main context]
-        A1[NeKo subagent context]
-        A2[MaBoSS subagent context]
-        A3[PhysiCell subagent context]
-        A4[Literature subagent context]
-        A5[Reviewer context]
-        QUEUE[Claude Code task scheduling]
-
-        MAIN --> QUEUE
-        A1 --> QUEUE
-        A2 --> QUEUE
-        A3 --> QUEUE
-        A4 --> QUEUE
-        A5 --> QUEUE
+    subgraph HOST["Workstation (Linux or WSL)"]
+        subgraph CC["Claude Code project"]
+            MAIN["Main session<br/>orchestrator, no modelling tools"]
+            NC[network-curator]
+            BD[boolean-dynamics-modeler]
+            MC[multicellular-configurator]
+            OD[ode-modeler, optional]
+            LR[literature-reviewer]
+            REV["scientific-reviewer<br/>reproducibility-auditor"]
+        end
+        NEKO["NeKo MCP<br/>uvx … mcp-neko-server"]
+        MAB["MaBoSS MCP<br/>bundled cmaboss"]
+        PHY["PhysiCell MCP<br/>configuration only"]
+        BIO["BioMASS MCP"]
+        FILES[("Repository files<br/>state, runs/, evidence/")]
+        ART[("Server artifact root<br/>~/.cache/mcp-biomodelling/artifacts")]
+        NC -- stdio, inline --> NEKO
+        BD -- stdio, inline --> MAB
+        MC -- stdio, inline --> PHY
+        OD -- stdio, inline --> BIO
+        NEKO & MAB & PHY & BIO --> ART
+        MAIN -- capture scripts --> FILES
+        ART -. recorders copy and hash .-> FILES
+        REV -- read-only --> FILES
     end
-
-    QUEUE -->|requests through SSH| OLLAMA[Ollama request queue]
-
-    subgraph GPU["Remote GPU"]
-        WEIGHTS[One Qwen3.6 27B weight set]
-        SLOT[One active inference/context slot]
-        VRAM[Approximately 34 GB observed at 262K]
-        OLLAMA --> WEIGHTS --> SLOT --> VRAM
-    end
-
-    OLLAMA -. OLLAMA_NUM_PARALLEL=1 .-> WAIT[Other requests wait]
+    LR -- HTTPS --> PUB["PubMed MCP<br/>pubmed.mcp.claude.com"]
+    CC -- model requests --> LLM["Model provider<br/>Anthropic API, or optional backend (appendix A)"]

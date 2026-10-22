@@ -122,7 +122,7 @@ Provisional and conclusive ZIPs receive the same checks: valid ZIP/CRC, unique s
 Supply an explicit returned server inventory; do not discover scientific state by scanning arbitrary installations:
 
 ```text
-python scripts/codex/record_ode_artifacts.py --server-root INSTALLATION --session-id SESSION --capture-id UNIQUE --inventory inventory.json
+python scripts/codex/record_ode_artifacts.py --artifact-root ARTIFACTS/BioMASS --session-id SESSION --capture-id UNIQUE --inventory inventory.json
 python scripts/codex/record_neko_ode_handoff.py --server-root NEKO_INSTALLATION --manifest EXPORTED_MANIFEST --capture-id UNIQUE
 ```
 

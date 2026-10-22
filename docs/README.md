@@ -30,7 +30,7 @@ Related guides outside `docs/`:
 | [ode-contract.md](ode-contract.md) | ODE result and artifact contract (version 2), evidence and export states |
 | [codex-phase4-enforcement.md](codex-phase4-enforcement.md) | How each Claude enforcement is mapped for Codex |
 | [codex-phase3-plugin.md](codex-phase3-plugin.md) | The repository Codex plugin and the CLI fallback route |
-| [agentic-biomodelling-architecture.md](agentic-biomodelling-architecture.md) | Original design rationale (roles, stages, context and parallelism policy, optional Ollama backend); the `.pdf` is an older (2026-08) export and predates the ODE and Wave 1 updates |
+| [agentic-biomodelling-architecture.md](agentic-biomodelling-architecture.md) | System architecture and design rationale: roles, isolation, stages, approvals, provenance, context and parallelism policy |
 | [subagent-workflow.mmd](subagent-workflow.mmd), [runtime-deployment.mmd](runtime-deployment.mmd) | Workflow and deployment diagrams (Mermaid) |
 
 The orchestrator policies themselves are [`CLAUDE.md`](../CLAUDE.md) and
@@ -49,4 +49,4 @@ The orchestrator policies themselves are [`CLAUDE.md`](../CLAUDE.md) and
 | [phase7-benchmark-proposal.md](phase7-benchmark-proposal.md), `phase7-construction-request.json`, `phase7-gene-pool.csv`, `phase7-reference-manifest.json` | De novo construction benchmark proposal and its inputs |
 | `specialist-dispatcher-phase*-validation.json` | Dispatcher phase validation records |
 | [integration/](integration/) | ODE-into-dispatcher integration plan, phase decisions and validation |
-| [audits/](audits/) | Dated audits: branch comparison, system retrospective and diagnostic, toy cell-cycle benchmark, Point A, Wave 1 lineage/error fixes and installed baseline |
+| [audits/](audits/) | Dated audits: the 2026-09-15 Claude ODE integration validation, branch comparison, system retrospective and diagnostic, toy cell-cycle benchmark, Point A, Wave 1 lineage/error fixes and installed baseline |
