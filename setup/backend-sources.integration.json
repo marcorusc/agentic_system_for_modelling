@@ -3,9 +3,9 @@
   "packages": [
     {
       "name": "mcp-biomodelling-servers",
-      "version": "2.5.0",
+      "version": "2.5.1",
       "path": "../../mcp-biomodelling-servers",
-      "commit": "c7f020b35e0f83922b49c116414614d8e9baa4a5"
+      "commit": "50d34c8efe5d47c1666ccfadeb045c27cd8c6d9b"
     },
     {
       "name": "nekomata",

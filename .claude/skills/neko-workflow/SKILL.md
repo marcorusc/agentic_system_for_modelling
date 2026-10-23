@@ -5,9 +5,9 @@ description: "Operational guide for the NeKo MCP server — session/network crea
 
 # NeKo Signalling Network Workflow
 
-Operational snapshot for `mcp-biomodelling-servers` 2.5.0. Tool names and
-parameters were checked against the live 2.5.0 schemas (released package with
-NeKo `nekomata` 1.10.2). Behaviour the schemas do not describe follows the 2.5.0
+Operational snapshot for `mcp-biomodelling-servers` 2.5.1. Tool names and
+parameters were checked against the live 2.5.1 schemas (released package with
+NeKo `nekomata` 1.10.2). Behaviour the schemas do not describe follows the 2.5.x
 server documentation. Recheck this skill when the server package is upgraded.
 
 NeKo builds and curates molecular signalling networks (OmniPath and similar
@@ -52,7 +52,7 @@ Boolean-model simulation, `export_neko_handoff` hands off to
 
 ## Tool categories
 
-- **Sessions:** `create_session`, `list_sessions`, `list_artifact_sessions` (sessions with files on disk, including past server runs), `set_default_session`, `delete_session`, `status`, `reset_network`
+- **Sessions:** `create_session`, `list_sessions`, `list_artifact_sessions` (sessions with files on disk, including past server runs), `set_default_session`, `status`, `reset_network`. `delete_session` and `clean_generated_files` exist on the server but are blocked for this specialist: deleting sessions or artifacts needs explicit researcher approval and is not done here
 - **Construction:** `create_network`, `add_nodes` (batch, optional cheap direct-neighbour autoconnect; reports refused and already-present nodes), `remove_gene`, `remove_interaction`
 - **Authorized curation:** `edit_interactions` (atomic `add` / `set_effect` batches between existing nodes)
 - **Connectivity diagnostics:** `analyze_connectivity` (isolated nodes + component partition), `analyze_gene_set` (requested-gene resolution, internal/boundary edges), `preview_connection_impact` (non-mutating scout)

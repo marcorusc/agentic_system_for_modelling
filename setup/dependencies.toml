@@ -6,12 +6,12 @@ index_url = "https://pypi.org/simple"
 # Tested released backend set; historical workflow snapshots retain their original versions.
 # Source: https://github.com/marcorusc/mcp-biomodelling-servers
 package = "mcp-biomodelling-servers"
-version = "2.5.0"
-# NeKo 1.10.2 provides validated interaction editing and history export used by 2.5.0.
+version = "2.5.1"
+# NeKo 1.10.2 provides validated interaction editing and history export used since 2.5.0.
 dependency_pins = { nekomata = "1.10.2" }
 executables = ["mcp-neko-server", "mcp-maboss-server", "mcp-physicell-server"]
 imports = ["mcp", "neko", "maboss", "physicell_config"]
-# 2.5.0 bundles cmaboss and PyGraphviz: no MaBoSS executable or Graphviz install is needed.
+# 2.5.x bundles cmaboss and PyGraphviz: no MaBoSS executable or Graphviz install is needed.
 
 # Marketplace plugins publishing the same servers. `--environment-mode plugin`
 # launches each specialist's server with the plugin's own pinned command, but

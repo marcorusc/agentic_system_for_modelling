@@ -36,7 +36,7 @@ important-paths summary, bounded literature queue, effective policies, history
 state, dimensions, warnings, and exact artifacts.
 
 The operational tool semantics were checked against the live
-`mcp-biomodelling-servers` 2.5.0 schemas and must be revalidated after server
+`mcp-biomodelling-servers` 2.5.1 schemas and must be revalidated after server
 upgrades. Expensive all-pairs or open-ended
 connection strategies require size inspection and a non-mutating preview; prefer a
 targeted strategy when it answers the scientific question.

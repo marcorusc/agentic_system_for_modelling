@@ -51,7 +51,7 @@ class ReleaseVersionTests(unittest.TestCase):
                 environment.install(self.prefix, "venv", "python", self.manifest, source)
             command = next(call.args[0] for call in run.call_args_list if "install" in call.args[0])
             self.assertIn("nekomata==1.10.2", command)
-            self.assertIn(source or "mcp-biomodelling-servers==2.5.0", command)
+            self.assertIn(source or "mcp-biomodelling-servers==2.5.1", command)
 
     def test_changed_dependency_pin_requires_new_environment(self):
         with mock.patch.object(environment, "run", side_effect=self.fake_run):

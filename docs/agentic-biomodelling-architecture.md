@@ -1,8 +1,8 @@
 # Agentic biological-modelling system: architecture
 
-**Document status:** describes release 1.0.0 and the unreleased fixes listed in
-[`CHANGELOG.md`](../CHANGELOG.md) (2026-10-22), tested with
-`mcp-biomodelling-servers` 2.5.0. For usage, see the [README](../README.md); for
+**Document status:** describes release 1.0.1 (see
+[`CHANGELOG.md`](../CHANGELOG.md), 2026-10-22), tested with
+`mcp-biomodelling-servers` 2.5.1. For usage, see the [README](../README.md); for
 day-to-day procedures, see [agentic operations](agentic-operations.md). Where this
 document and the code disagree, the code is authoritative.
 
@@ -99,7 +99,7 @@ modelling tools.
 The tracked default launch is the marketplace plugins' own command:
 
 ```text
-uvx --from mcp-biomodelling-servers==2.5.0 mcp-<server>-server
+uvx --from mcp-biomodelling-servers==2.5.1 mcp-<server>-server
 ```
 
 `scripts/setup.py` can rewrite this block in two ways:
@@ -526,11 +526,11 @@ locations.
 ## 10. Setup and deployment
 
 `setup/dependencies.toml` pins the tested backend set: `mcp-biomodelling-servers`
-2.5.0 and `nekomata` 1.10.2. `scripts/setup.py` offers three modes:
+2.5.1 and `nekomata` 1.10.2. `scripts/setup.py` offers three modes:
 
 | Mode | What runs the servers | Trade-off |
 |---|---|---|
-| `--environment-mode plugin` | `uvx --from mcp-biomodelling-servers==2.5.0 …`. Needs only uv | Simplest. Only the server package is pinned; resolved dependency drift is reported as a warning |
+| `--environment-mode plugin` | `uvx --from mcp-biomodelling-servers==2.5.1 …`. Needs only uv | Simplest. Only the server package is pinned; resolved dependency drift is reported as a warning |
 | `managed` (default) | A setup-owned Conda or venv environment | Exact installed snapshot (`resolved-requirements.txt`) |
 | `reuse` | An existing environment, verified but not modified | No installation |
 
@@ -601,10 +601,9 @@ user-invoked only. `/checkpoint-model` records stage checkpoints on the current 
 
 See [`CHANGELOG.md`](../CHANGELOG.md) for the current list. At the time of writing:
 
-- **BioMASS 2.5.0 `.cache` bug.** BioMASS drops artifact paths containing a `.cache`
-  component from its job file listings, and the default artifact root is under
-  `~/.cache`. Until a fixed release, run the BioMASS specialist with
-  `MCP_BIOMODELLING_ARTIFACT_ROOT` outside any `.cache` path.
+- **BioMASS revisions from 2.5.0.** 2.5.0 sealed empty integrity inventories under
+  the default `~/.cache` artifact root (fixed in 2.5.1). Such revisions fail
+  verification and must be regenerated, not captured.
 - **Headless runs.** Untrusted folders and headless runs (`claude -p`, SDK) skip
   inline subagent MCP servers. Verify specialists interactively.
 - **Codex plugins.** Whether `codex mcp list` shows servers from an installed plugin

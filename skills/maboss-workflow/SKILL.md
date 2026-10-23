@@ -90,4 +90,4 @@ a proof. scripts/validate/README.md specifies the criteria contract. Capture the
 researcher-approved PhysiCell handoff with
 scripts/capture/record_maboss_physicell_handoff.py; keep upstream lineage intact.
 Operational semantics were checked against the live `mcp-biomodelling-servers`
-2.5.0 schemas; revalidate after server upgrades.
+2.5.1 schemas; revalidate after server upgrades.

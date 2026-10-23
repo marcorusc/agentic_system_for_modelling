@@ -6,7 +6,7 @@ mcpServers:
   - neko-agent:
       type: stdio
       command: "uvx"
-      args: ["--from", "mcp-biomodelling-servers==2.5.0", "mcp-neko-server"]
+      args: ["--from", "mcp-biomodelling-servers==2.5.1", "mcp-neko-server"]
 tools:
   - Write
   - Read

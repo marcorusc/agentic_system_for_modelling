@@ -6,7 +6,7 @@ mcpServers:
   - physicell-agent:
       type: stdio
       command: "uvx"
-      args: ["--from", "mcp-biomodelling-servers==2.5.0", "mcp-physicell-server"]
+      args: ["--from", "mcp-biomodelling-servers==2.5.1", "mcp-physicell-server"]
 tools:
   - Write
   - Read

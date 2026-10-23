@@ -5,9 +5,9 @@ description: "Operational guide for the MaBoSS MCP server — sessions, loading 
 
 # MaBoSS Simulation Workflow
 
-Operational snapshot for `mcp-biomodelling-servers` 2.5.0. Tool names and
-parameters were checked against the live 2.5.0 schemas. Behaviour the schemas do
-not describe follows the 2.5.0 server documentation. Recheck this skill when the
+Operational snapshot for `mcp-biomodelling-servers` 2.5.1. Tool names and
+parameters were checked against the live 2.5.1 schemas. Behaviour the schemas do
+not describe follows the 2.5.x server documentation. Recheck this skill when the
 server package is upgraded.
 
 MaBoSS runs stochastic simulations of Boolean models. It's a complete tool
@@ -57,9 +57,8 @@ executable is installed or needed.
    - State-vector order must match the order of the `nodes` argument
      you pass; probabilities must sum to 1; only use returned node names.
 8. **Run:** `run_simulation()` — preserves the run under a unique run ID and
-   returns it. Read results with `get_simulation_result()`, not the
-   `maboss://` resource the tool description mentions (resources are
-   unavailable to subagents).
+   returns it. Read results with `get_simulation_result(run_id=...)`, never
+   a `maboss://` resource (resources are unavailable to subagents).
 9. **Analyse:** `get_simulation_result(run_id=...)` — final snapshot by
    default; `final_only=false` pages the trajectory (`offset`, `limit` ≤ 100).
 10. **Visualise:** `visualize_network_trajectories(run_id=..., until=...)` —

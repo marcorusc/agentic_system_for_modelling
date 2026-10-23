@@ -83,7 +83,7 @@ request and read exported XML back before acceptance; the 2.4.0 benchmark's
 multi-field patch reported success while apoptosis retained its default. Flag
 missing capabilities instead of silently editing scientific XML or inventing a value.
 Operational semantics were checked against the live `mcp-biomodelling-servers`
-2.5.0 schemas; revalidate after server upgrades.
+2.5.1 schemas; revalidate after server upgrades.
 
 MaBoSS elapsed time = PhysiCell update interval / scaling. Scaling therefore relates
 the explicitly declared time units; it is not a dimensionless biological default.
