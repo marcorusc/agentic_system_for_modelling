@@ -286,10 +286,9 @@ a new environment prefix. The legacy `--package-source` option cannot be combine
 with `--backend-sources`; it remains a version-only development path.
 
 The receipt detects recorded-file drift; it is not an adversarial attestation or a
-proof of scientific correctness. The audits in `docs/integration/post-smoke/`
-describe earlier source snapshots and retain their historical findings. The current
-release pair still requires environment and capability checks; source setup does
-not install into the shared modelling environment implicitly.
+proof of scientific correctness. The current release pair still requires
+environment and capability checks; source setup does not install into the shared
+modelling environment implicitly.
 
 Setup rejects a Codex home or plugin-cache location that overlaps the plugin
 source before rendering/writing configuration or invoking plugin installation.

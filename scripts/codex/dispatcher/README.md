@@ -1,8 +1,9 @@
 # Specialist dispatcher (local stdio)
 
 This package provides a technical MCP interface to the existing isolated runtime.
-It does not read or update scientific state or select stages. See
-[architecture and migration gates](../../../docs/specialist-dispatcher.md).
+It does not read or update scientific state or select stages. See the
+[specialist dispatcher guide](../../../docs/specialist-dispatcher.md) for isolation
+invariants, the task lifecycle and troubleshooting.
 
 Requires Linux/WSL, Python 3.11+, and the official MCP SDK 2.x. Reuse a compatible
 existing environment or install `requirements.txt` into a dedicated environment.
@@ -46,28 +47,22 @@ and stdio tests. The stdlib-only job skips protocol tests; a separate CI job
 installs the SDK and runs the full suite. Real model calls are never part of CI.
 The runner fails a suite after 120 seconds and continues the remaining suites.
 If a protocol test prints `ok` but hangs during shutdown, check whether the host
-sandbox denies Python's local asyncio wake-up socket. A minimal reproduction and
-the verified environment are in the [integration baseline report](../../../docs/integration/phase1-validation.md).
-Individual `ok` lines do not establish successful process termination.
+sandbox denies Python's local asyncio wake-up socket. Individual `ok` lines do not
+establish successful process termination.
 
-The live isolation and equivalence gate passed in Phase 4. Phase 5 routes
-specialist work through this dispatcher; `scripts/codex/run_specialist.py` remains
-the supported fallback/debug interface. Scientific approval gates are unchanged.
-Phases 6–7 verified same-conversation
-progress and a real 60-gene construction in this WSL workspace. The parent verified
-and persisted its review artifacts; biological approval remains pending. See
+The orchestrator routes specialist work through this dispatcher;
+`scripts/codex/run_specialist.py` remains the supported fallback and debugging
+interface. Scientific approval gates are unchanged. See
 [troubleshooting and recovery](../../../docs/specialist-dispatcher.md#troubleshooting-and-recovery).
 
 ## ODE integration route
 
-Integration Phase 3 adds `start_ode_modeler` through the same runtime as the CLI.
-It uses the fixed `biomodel-ode-modeler` profile and permits only BioMASS. The
-profile must already exist; missing configuration fails before child execution.
-The other specialists disable BioMASS, including installations without an optional
-BioMASS transport. No additional scientific workflow is activated by this endpoint.
-Phase 4 supplies profiles, skills and optional setup; live ODE verification is
-still required before scientific activation. In particular, the original dispatcher's live
-migration checks above are historical and do not establish live ODE readiness.
+`start_ode_modeler` runs through the same runtime as the CLI. It uses the fixed
+`biomodel-ode-modeler` profile and permits only BioMASS. The profile must already
+exist (`scripts/setup.py --with-biomass`); missing configuration fails before child
+execution. The other specialists disable BioMASS, including installations without an
+optional BioMASS transport. Scientific ODE work also requires the
+[ODE readiness check](../../../docs/ode-workflow.md#ode-readiness-check).
 
 Literature review defaults to `review_kind="edge"`. Use `review_kind="ode"` for
 bounded mechanism, kinetic-law and quantity claims, together with the BioMASS
@@ -84,9 +79,8 @@ and session even if preflight fails. ODE review invocations use `runs/ode-modele
 edge review invocations retain `runs/network-curator/`. Evidence reports keep
 their contract-defined locations under `evidence/reports/`.
 
-See the [ODE contract](../../../docs/ode-contract.md) and
-[Phase 3 validation](../../../docs/integration/phase3-validation.md) for the
-software test coverage and remaining live-verification limits.
+See the [ODE contract](../../../docs/ode-contract.md) for the result and artifact
+contract.
 
 ## Workstation startup
 

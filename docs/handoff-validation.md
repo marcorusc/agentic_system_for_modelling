@@ -82,8 +82,8 @@ must still succeed. Parent desktop-tool isolation remains an external requiremen
 See the [ODE artifact contract](ode-contract.md) for `ode_modeler`,
 `ode.contract_version=2`, provisional preservation, revision approval, capture
 publication and ODE claim evidence. The common envelope and existing Boolean/
-PhysiCell contracts remain version 1. These Phase 2 helpers do not activate a
-new dispatcher route or change scientific stage policy.
+PhysiCell contracts remain version 1. The ODE helpers do not change scientific
+stage policy.
 
 ## Capture an existing NeKo Boolean export
 
