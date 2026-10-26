@@ -2,12 +2,29 @@
 
 ## Availability
 
-The ODE route uses the richer `ode_modeler` contract and the dispatcher's shared
-runtime. Phase 4 prepares skills, profiles and optional setup; live installation
-and ODE process verification remain a Phase 5 deployment gate. Do not start
-scientific ODE work in this integration worktree before that gate is verified.
-A source profile or passing software fixture is not proof of installed readiness.
-See [setup](automatic-setup.md) and [integration plan](integration/ode-dispatcher-plan.md).
+The ODE route uses the richer `ode_modeler` contract (Claude: the `ode-modeler`
+agent; Codex: the dispatcher's shared runtime). Configure it with
+`python scripts/setup.py --with-biomass` (see [setup](automatic-setup.md)).
+
+### ODE readiness check
+
+Start scientific ODE work only while this check passes for the backend version pinned
+in `setup/dependencies.toml`. Rerun it after any backend upgrade or transport change.
+A source profile or a passing software fixture alone is not proof of readiness.
+
+1. **Real-backend smoke test:**
+   `uvx --from mcp-biomodelling-servers==<pinned> python -B tests/integration/biomass_smoke.py`
+   must report all eight checks passed.
+2. **Live isolation check:** dispatch `ode-modeler` with a read-only infrastructure
+   task: list its `mcp__biomass-agent__*` tools with ToolSearch, call only
+   `list_sessions`, and report any other visible modelling or delegation tools. It must
+   see BioMASS tools only (without the blocked `close_session` and
+   `clean_generated_files`), no NeKo, MaBoSS or PhysiCell tools and no Task/Agent tool,
+   and `list_sessions` must answer. The orchestrator itself must show no modelling tools.
+
+**Last verified:** 2026-10-26 with `mcp-biomodelling-servers` 2.5.1 (plugin launch).
+The smoke test passed all eight checks. `ode-modeler` saw 20 BioMASS tools, no other
+modelling or delegation tools, and `list_sessions` answered.
 
 ## Formulation and inputs
 

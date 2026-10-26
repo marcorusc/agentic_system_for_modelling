@@ -244,11 +244,10 @@ repositories and mocked installers/clients. Live package installation, authentic
 and platform-specific MCP smoke testing are separate deployment checks.
 
 
-The Phase 4 integration tests use temporary setup fixtures and leave installed
-profiles, package environments and the active plugin untouched. Phase 5 deployment
-verification must establish actual client/process isolation before scientific ODE
-work begins; source configuration and tools/list checks alone do not establish
-what an LLM invocation can see or perform.
+The setup tests use temporary fixtures and leave installed profiles, package
+environments and the active plugin untouched. Before scientific ODE work, run the
+ODE readiness check in [ODE workflow](ode-workflow.md): source configuration and
+tools/list probes alone do not establish what an LLM invocation can see or perform.
 
 ## Pinned local backend development sources
 
@@ -287,10 +286,9 @@ a new environment prefix. The legacy `--package-source` option cannot be combine
 with `--backend-sources`; it remains a version-only development path.
 
 The receipt detects recorded-file drift; it is not an adversarial attestation or a
-proof of scientific correctness. The audits in `docs/integration/post-smoke/`
-describe earlier source snapshots and retain their historical findings. The current
-release pair still requires environment and capability checks; source setup does
-not install into the shared modelling environment implicitly.
+proof of scientific correctness. The current release pair still requires
+environment and capability checks; source setup does not install into the shared
+modelling environment implicitly.
 
 Setup rejects a Codex home or plugin-cache location that overlaps the plugin
 source before rendering/writing configuration or invoking plugin installation.

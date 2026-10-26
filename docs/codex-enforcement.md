@@ -1,7 +1,7 @@
 # Codex enforcement mapping
 
-This mapping records how the existing Claude-specific enforcement is preserved or
-adapted for the local Codex workflow. The Claude files remain authoritative for
+This mapping shows how each Claude-specific enforcement is preserved or adapted for
+the local Codex workflow ([specialist dispatcher](specialist-dispatcher.md)). The Claude files remain authoritative for
 Claude Code and are not modified.
 
 | Existing file or mechanism | Classification | Codex treatment |
@@ -12,6 +12,9 @@ Claude Code and are not modified.
 | `.claude/scripts/test_model_lifecycle.py` | Portable unchanged | Run as part of the existing Python regression suite. |
 | `.claude/scripts/test_literature_file_guard.py` | Portable regression for Claude behavior | Continue running it to prove the Claude guard remains intact. |
 | `.claude/scripts/test_agent_mcp_access.py` | Claude-specific regression | Retained for Claude configuration; separate-process Codex isolation has its own tests. |
+| `.claude/scripts/specialist_report_guard.py` (agent `PreToolUse` Write guard) | Claude-specific | Codex specialists run in a read-only sandbox; the parent persists their reports under the [artifact contract](handoff-validation.md). |
+| `.claude/scripts/stage_gate_guard.py` (`PreToolUse` Agent/Task hook) | Re-implemented in the runtime | The shared runtime (`scripts/codex/specialist_runtime/executor.py`) calls `scripts/gate.py` `check_task` before launching a Boolean or multicellular child, so a missing or stale `STAGE_GATE` blocks the dispatch. |
+| `.claude/scripts/record_specialist_invocation.py` (`SubagentStop` hook) | Re-implemented in the launcher | Every Codex invocation records task, output, handoff, events and provenance itself (`scripts/codex/launcher_provenance.py`). |
 | `.claude/settings.json` and `.claude/settings.local.json` | Claude-only configuration | Preserved and ignored by the Codex workflow. |
 
 Codex supports command hooks, but project/plugin hooks require local trust and do

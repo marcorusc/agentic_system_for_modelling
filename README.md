@@ -10,6 +10,10 @@ each modelling operation to a restricted specialist agent, reviews what comes ba
 and stops for your approval at every consequential biological choice. Scientific
 state lives in version-controlled files, not in chat history.
 
+> **Biologists bringing their own project:** start with the
+> [user guide](docs/user-guide.md). It explains what the framework can do for your
+> question, how a session goes, which decisions you make and how to read the results.
+
 Release **1.0.1**, tested with `mcp-biomodelling-servers` **2.5.1** (NeKo
 `nekomata` 1.10.2, PhysiCell Settings 0.6.3, bundled cmaboss, BioMASS 0.14). See
 [`CHANGELOG.md`](CHANGELOG.md) for changes and known limitations.
@@ -29,8 +33,8 @@ Release **1.0.1**, tested with `mcp-biomodelling-servers` **2.5.1** (NeKo
 What it does **not** do: it does not run PhysiCell simulations (it produces
 configuration for an existing executable), it does not treat successful execution
 as biological validation, and it never invents units, parameter values or citations.
-ODE scientific work is additionally gated on a live isolation check
-([ODE workflow](docs/ode-workflow.md)).
+ODE work additionally requires the ODE readiness check to pass for the pinned
+backend; it passed on 2026-10-26 with 2.5.1 ([ODE workflow](docs/ode-workflow.md#ode-readiness-check)).
 
 ## How it works
 
@@ -99,7 +103,7 @@ The agents inherit the model running the main session.
 ```text
 git clone <repository-url> my-model && cd my-model
 curl -LsSf https://astral.sh/uv/install.sh | sh          # if uv is not installed
-python scripts/setup.py --client claude --environment-mode plugin
+python scripts/setup.py --client claude --environment-mode plugin --with-biomass
 python scripts/check_isolation.py
 claude
 ```
@@ -107,8 +111,9 @@ claude
 Inside Claude Code, run `/agents` to confirm the agents, and `/mcp` to confirm the
 `pubmed` server. Modelling servers are not connected to the main session: they are
 scoped to their specialists and start only when a specialist runs (the first start may take a minute
-while uv downloads the release). Add `--with-biomass` to setup before using the ODE
-agent. Then describe your question:
+while uv downloads the release). `--with-biomass` configures and verifies the
+optional ODE specialist; omit it if you only need the Boolean path. Then describe your
+question:
 
 ```text
 I want to model how EGFR inhibition changes apoptosis in this cell type. Help me
@@ -289,7 +294,7 @@ same-process files under `.codex/agents/`; they cannot enforce per-child isolati
 Details: [specialist dispatcher](docs/specialist-dispatcher.md),
 [dispatcher README](scripts/codex/dispatcher/README.md),
 [handoff validation](docs/handoff-validation.md),
-[enforcement mapping](docs/codex-phase4-enforcement.md).
+[enforcement mapping](docs/codex-enforcement.md).
 
 | Claude | Codex |
 |---|---|
@@ -355,13 +360,14 @@ Runs the Codex, Claude and setup suites (120 s limit each) with no modelling ser
 credentials or third-party packages; backend-dependent contract tests skip. With the
 released backend installed (`pip install mcp-biomodelling-servers==2.5.1
 nekomata==1.10.2`) they run as well. CI runs both on Python 3.11 and 3.13, plus a job
-that starts every server through the plugin launch.
+that starts every server through the plugin launch and runs the real-backend BioMASS
+smoke test (`tests/integration/biomass_smoke.py`).
 
 ## Documentation map
 
-See [`docs/README.md`](docs/README.md) for every guide, reference contract and
-historical record. Most used:
+See [`docs/README.md`](docs/README.md) for every guide and reference contract. Most used:
 
+- [User guide](docs/user-guide.md) — for biologists using the framework on their project
 - [Automatic setup](docs/automatic-setup.md) — install modes, plugin launch, verification
 - [Agentic operations](docs/agentic-operations.md) — records, gates, captures, reviews
 - [Handoff validation](docs/handoff-validation.md) — provider-neutral handoff contract

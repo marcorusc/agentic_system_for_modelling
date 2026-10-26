@@ -2,7 +2,7 @@
 
 ## Availability and scope
 
-The integration branch validates the richer `ode_modeler` result and records BioMASS artifacts through filesystem-only helpers. Phase 3 adds the shared CLI/dispatcher execution route and explicit ODE evidence mode. The artifact helpers do not call BioMASS, generate or execute a model, advance a scientific stage, or update shared scientific records. Phase 4 adds specialist instructions, profiles and optional setup. Live installation and client/process verification remain a Phase 5 gate before scientific ODE execution in this integration worktree; see [the workflow](ode-workflow.md).
+This contract defines what a completed or blocked `ode_modeler` result must contain and how BioMASS artifacts are recorded into the project. It is used by both clients: Claude's `ode-modeler` agent and the Codex dispatcher's `start_ode_modeler`. The recording and validation helpers work on files only. They never call BioMASS, generate or execute a model, advance a scientific stage, or update shared scientific records. Scientific ODE work also requires the [ODE readiness check](ode-workflow.md#ode-readiness-check) for the pinned backend; see [the workflow](ode-workflow.md).
 
 Scientific ODE results use the common `schema_version=1` envelope with `specialist=ode_modeler` and `stage=biomass_ode`, plus complete `ode` metadata containing **`ode.contract_version=2`**. Artifacts belong to `runs/ode-modeler/{session_id}/`. Historical unversioned ODE payloads and the experiment's `ode_dynamics_modeler` format require their original verifier. The new validator does not rewrite or alias them.
 

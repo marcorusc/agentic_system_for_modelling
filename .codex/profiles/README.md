@@ -56,8 +56,8 @@ prohibited modelling namespace is visible.
 The dispatcher receives the bounded task directly and uses these same profiles.
 Fixed runtime overrides also disable `specialist_dispatcher` and built-in app
 connectors (`features.apps=false`) in children. See
-`docs/specialist-dispatcher-phase4-validation.json` for the passed live namespace
-checks, including the explicitly authorized literature web-search inventory test.
+[the specialist dispatcher guide](../../docs/specialist-dispatcher.md) for the
+isolation invariants and troubleshooting.
 
 The ODE profile uses the canonical `ode_modeler` role and `biomass_ode` stage with
 `ode.contract_version=2`; see `skills/biomass-workflow/SKILL.md` and
