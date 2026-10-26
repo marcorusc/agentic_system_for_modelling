@@ -55,7 +55,7 @@ parameters, with two MaBoSS descriptions updated.
   preview, stale-version rejection and placeholder rejection. CI runs it through
   the plugin launch.
 - The 2026-09-15 Claude ODE integration validation record is preserved under
-  `docs/audits/2026-09-15-ode-claude-integration/`.
+  `docs/audits/2026-09-15-ode-claude-integration/` (removed later; at tag v1.0.1).
 
 ### Resolved backend issues (MCP 2.5.1)
 
@@ -93,8 +93,9 @@ First tagged release. Tested with `mcp-biomodelling-servers` **2.5.0**
   records, `scripts/state.py` / `scripts/gate.py` stage approvals bound to exact
   reviewed outputs, structured immutable edge evidence, read-only artifact
   validators (`scripts/validate/`), shared PubMed access and the setup isolation
-  guard. See `docs/agentic-operations.md` and `docs/wave1-pr-review.md`.
-- **Wave 2 adoption of the 2.5.0 servers** (`docs/wave2-design-decisions.md`):
+  guard. See `docs/agentic-operations.md` and
+  [`docs/wave1-pr-review.md`](https://github.com/marcorusc/agentic_system_for_modelling/blob/v1.0.1/docs/wave1-pr-review.md) (at tag v1.0.1).
+- **Wave 2 adoption of the 2.5.0 servers** ([`docs/wave2-design-decisions.md`](https://github.com/marcorusc/agentic_system_for_modelling/blob/v1.0.1/docs/wave2-design-decisions.md), at tag v1.0.1):
   - NeKo `edit_interactions` for explicitly authorized `manual-literature` edges
     between existing nodes, never hand-edited SIF; paged history and history export.
   - MaBoSS `edit_maboss_readouts` for researcher-named `readout` nodes, per-node
