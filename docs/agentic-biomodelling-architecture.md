@@ -612,8 +612,10 @@ See [`CHANGELOG.md`](../CHANGELOG.md) for the current list. At the time of writi
 - **Plugin mode pinning.** Plugin mode pins only the server package.
 - **ODE readiness.** ODE work requires the readiness check to pass for the pinned
   backend; it must be rerun after any backend or transport change.
-- **Deferred items.** The Wave 2 items deferred by researcher decision
-  (`docs/wave2-design-decisions.md`) remain deferred.
+- **Deferred items.** The Wave 2 items deferred by researcher decision remain
+  deferred: the NeKo-to-MaBoSS import investigation, MaBoSS_test integration, new
+  analysis algorithms and a broader testing campaign. The decision record is at tag
+  [`v1.0.1`](https://github.com/marcorusc/agentic_system_for_modelling/blob/v1.0.1/docs/wave2-design-decisions.md).
 
 ## Appendix A. Optional remote model backend (historical, not re-verified)
 
