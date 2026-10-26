@@ -1,6 +1,6 @@
 # Agentic biological-modelling system: architecture
 
-**Document status:** describes release 1.0.1 (see
+**Document status:** describes release 1.0.2 (see
 [`CHANGELOG.md`](../CHANGELOG.md), 2026-10-22), tested with
 `mcp-biomodelling-servers` 2.5.1. For usage, see the [README](../README.md); for
 day-to-day procedures, see [agentic operations](agentic-operations.md). Where this

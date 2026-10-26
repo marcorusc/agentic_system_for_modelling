@@ -14,7 +14,7 @@ state lives in version-controlled files, not in chat history.
 > [user guide](docs/user-guide.md). It explains what the framework can do for your
 > question, how a session goes, which decisions you make and how to read the results.
 
-Release **1.0.1**, tested with `mcp-biomodelling-servers` **2.5.1** (NeKo
+Release **1.0.2**, tested with `mcp-biomodelling-servers` **2.5.1** (NeKo
 `nekomata` 1.10.2, PhysiCell Settings 0.6.3, bundled cmaboss, BioMASS 0.14). See
 [`CHANGELOG.md`](CHANGELOG.md) for changes and known limitations.
 

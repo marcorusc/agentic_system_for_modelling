@@ -1,6 +1,20 @@
 # Changelog
 
-## Unreleased
+## 1.0.2 — 2026-10-26
+
+Documentation and governance release for handing the framework to biologists.
+Tested with `mcp-biomodelling-servers` **2.5.1** (NeKo `nekomata` 1.10.2); the code
+and backend pins are unchanged from 1.0.1.
+
+### Added
+
+- `docs/user-guide.md`, for biologists who are not developers: capabilities and
+  limits, how a session goes, the decisions asked at each stage, bringing data and
+  papers, the state files, reading results, checkpoints, an example first
+  conversation and an FAQ.
+- The developer docs now describe only the current system. The dispatcher guide is
+  rewritten, `docs/codex-enforcement.md` replaces the two Codex phase notes, and
+  `docs/README.md` is a documentation map.
 
 ### Changed
 
