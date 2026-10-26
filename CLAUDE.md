@@ -162,8 +162,10 @@ infrastructure/inputs, and never delete MCP sessions. Archived session IDs are
 provenance only. Clear conversation context before modelling a restarted/restored model.
 
 For ODE work load biomass-workflow, docs/ode-workflow.md and docs/ode-contract.md.
-Preserve the Phase 5 live-isolation readiness gate, distinct sessions and approved
-sources. Provisional preservation within existing workflow authorization is not
+Start ODE work only while the ODE readiness check in docs/ode-workflow.md passes for
+the pinned backend (BioMASS smoke test plus a live read-only ode-modeler isolation
+check); rerun it after any backend or transport change. Keep distinct sessions and
+approved sources. Provisional preservation within existing workflow authorization is not
 scientific acceptance, simulation permission or conclusive export. Respect whole-model
 review; exact session/revision acceptance is required. No ODE calibration, sensitivity
 analysis or ODE-to-PhysiCell coupling is included. Universal approval, evidence,

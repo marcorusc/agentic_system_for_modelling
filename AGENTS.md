@@ -304,10 +304,10 @@ stop and request researcher direction.
 ## Optional mechanistic ODE branch
 
 Follow docs/ode-workflow.md for formulation, readiness, input and authoring workflow,
-and docs/ode-contract.md for the authoritative version-2 artifact contract. Phase 4
-prepares this route; scientific ODE execution in the integration worktree waits for
-Phase 5 live isolation/deployment verification. Source configuration alone is not
-proof that the current parent or specialist has the required tool inventory.
+and docs/ode-contract.md for the authoritative version-2 artifact contract. Scientific
+ODE work requires the ODE readiness check in docs/ode-workflow.md to pass for the pinned
+backend; rerun it after any backend or transport change. Source configuration alone is
+not proof that the current parent or specialist has the required tool inventory.
 
 The sequential stages above remain the Boolean branch. For researcher-approved ODE
 work, use an approved exported NeKo-to-BioMASS graph or explicitly authorized

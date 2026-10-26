@@ -291,8 +291,9 @@ from scientific acceptance. Conclusive export needs an exact session/revision
 decision. ODE claim reviews are filed under
 `evidence/reports/<biomass_session_id>/ode/<claim_id>.md`.
 
-Scientific ODE work remains gated on the live-isolation readiness check (Phase 5,
-[ODE workflow](ode-workflow.md)).
+Scientific ODE work requires the ODE readiness check (real-backend smoke test plus a
+live read-only `ode-modeler` isolation check) to pass for the pinned backend; see the
+[ODE workflow](ode-workflow.md).
 
 ## 6. Typed handoffs
 
@@ -609,7 +610,8 @@ See [`CHANGELOG.md`](../CHANGELOG.md) for the current list. At the time of writi
 - **Codex plugins.** Whether `codex mcp list` shows servers from an installed plugin
   is unverified. Do not add the modelling plugins to Codex for this project.
 - **Plugin mode pinning.** Plugin mode pins only the server package.
-- **ODE readiness.** Scientific ODE work awaits the Phase 5 live-isolation check.
+- **ODE readiness.** ODE work requires the readiness check to pass for the pinned
+  backend; it must be rerun after any backend or transport change.
 - **Deferred items.** The Wave 2 items deferred by researcher decision
   (`docs/wave2-design-decisions.md`) remain deferred.
 

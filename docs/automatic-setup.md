@@ -244,11 +244,10 @@ repositories and mocked installers/clients. Live package installation, authentic
 and platform-specific MCP smoke testing are separate deployment checks.
 
 
-The Phase 4 integration tests use temporary setup fixtures and leave installed
-profiles, package environments and the active plugin untouched. Phase 5 deployment
-verification must establish actual client/process isolation before scientific ODE
-work begins; source configuration and tools/list checks alone do not establish
-what an LLM invocation can see or perform.
+The setup tests use temporary fixtures and leave installed profiles, package
+environments and the active plugin untouched. Before scientific ODE work, run the
+ODE readiness check in [ODE workflow](ode-workflow.md): source configuration and
+tools/list probes alone do not establish what an LLM invocation can see or perform.
 
 ## Pinned local backend development sources
 

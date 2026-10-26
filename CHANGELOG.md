@@ -1,5 +1,27 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- **ODE readiness gate made concrete.** The "Phase 5 live-isolation" wording came
+  from the integration worktree. It is replaced by a repeatable check in
+  `docs/ode-workflow.md`: the real-backend BioMASS smoke test, plus a live read-only
+  `ode-modeler` isolation check, both against the pinned backend and rerun after
+  any backend or transport change. CLAUDE.md, AGENTS.md and both BioMASS skills
+  point to it. Verified on 2026-10-26 with 2.5.1: the smoke test passed all eight
+  checks; `ode-modeler` saw 20 BioMASS tools and no other modelling or delegation
+  tools. ODE work is available.
+
+### Removed
+
+- Development records written while building and upgrading the system: the
+  improvement and code-review plans, the Wave 1/2 records, the Codex 0.153
+  isolation note, the Phase 7 benchmark files and timeout diagnosis, the
+  dispatcher phase validation JSONs, `docs/integration/` and `docs/audits/` (89
+  files). They remain in Git history and at tag
+  [`v1.0.1`](https://github.com/marcorusc/agentic_system_for_modelling/tree/v1.0.1/docs).
+
 ## 1.0.1 — 2026-10-22
 
 Tested with `mcp-biomodelling-servers` **2.5.1** (NeKo `nekomata` 1.10.2). The

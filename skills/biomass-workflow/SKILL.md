@@ -9,9 +9,9 @@ The orchestrator never calls modelling MCPs. Follow `CLAUDE.md` (Claude) or
 `AGENTS.md` (Codex) and `docs/ode-contract.md`; use this route only after the configured client and
 specialist isolation checks have passed. New results use `ode_modeler`,
 `biomass_ode`, `schema_version=1`, and `ode.contract_version=2`.
-Read `docs/ode-workflow.md` for formulation choices and the Phase 5 live-readiness
-gate. Template installation or passing software tests alone does not activate live
-ODE modelling.
+Read `docs/ode-workflow.md` for formulation choices and the ODE readiness check.
+Template installation or passing software tests alone does not activate live ODE
+modelling; the live isolation check must also pass for the pinned backend.
 
 ## Delegation and inputs
 
@@ -159,9 +159,9 @@ permit another backend, a same-process modelling agent, or automatic retry.
 ## Optional mechanistic ODE branch
 
 Follow docs/ode-workflow.md and the version-2 artifact contract in docs/ode-contract.md.
-Phase 4 prepares the definitions; scientific ODE execution in the integration
-worktree waits for Phase 5 live/client isolation verification. An inline server
-entry alone does not establish that the parent has no modelling tools.
+Scientific ODE execution requires the ODE readiness check in docs/ode-workflow.md
+to pass for the pinned backend. An inline server entry alone does not establish
+that the parent has no modelling tools.
 
 Use `ode-modeler` with BioMASS only and local `biomass-workflow` references. No other
 specialist or orchestrator receives BioMASS. Choose ODE formulation with the
