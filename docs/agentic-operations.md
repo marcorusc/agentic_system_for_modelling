@@ -118,6 +118,16 @@ captured original:
 python3 scripts/capture/verify_import_manifest.py --capture CAPTURE_DIR --manifest ORIGINAL_BACKEND_MANIFEST
 ```
 
+Pass that manifest as `manifest_path`. Backend 2.5.2 also offers
+`export_handoff_bundle` and a `handoff_bundle` import argument, plus `sif_text` and
+`bnet_text` inputs, for hosts that give each server a private filesystem. All
+specialists here share one host filesystem, so this project does not use them: a
+bundle import reads copies from the consumer's `handoff-blobs/` store instead of
+the original paths verified above, the bundle carries every referenced file
+inline through the agent's context, and inline text replaces the preserved source
+file as the recorded input. A
+"manifest does not exist" error is a transport blocker to report.
+
 The NeKo Boolean recorder also copies and hashes the `*.bnet.lineage.json`
 source-lineage sidecar when the export produced one.
 `scripts/boolean_contract.py` uses the backend's pure contract reader to validate

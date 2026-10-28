@@ -14,8 +14,8 @@ state lives in version-controlled files, not in chat history.
 > [user guide](docs/user-guide.md). It explains what the framework can do for your
 > question, how a session goes, which decisions you make and how to read the results.
 
-Release **1.0.2**, tested with `mcp-biomodelling-servers` **2.5.1** (NeKo
-`nekomata` 1.10.2, PhysiCell Settings 0.6.3, bundled cmaboss, BioMASS 0.14). See
+Release **1.0.3**, tested with `mcp-biomodelling-servers` **2.5.2** (NeKo
+`nekomata` 1.10.3, PhysiCell Settings 0.6.3, bundled cmaboss, BioMASS 0.14). See
 [`CHANGELOG.md`](CHANGELOG.md) for changes and known limitations.
 
 ## What it can help you do
@@ -34,7 +34,7 @@ What it does **not** do: it does not run PhysiCell simulations (it produces
 configuration for an existing executable), it does not treat successful execution
 as biological validation, and it never invents units, parameter values or citations.
 ODE work additionally requires the ODE readiness check to pass for the pinned
-backend; it passed on 2026-10-26 with 2.5.1 ([ODE workflow](docs/ode-workflow.md#ode-readiness-check)).
+backend; it passed on 2026-10-28 with 2.5.2 ([ODE workflow](docs/ode-workflow.md#ode-readiness-check)).
 
 ## How it works
 
@@ -129,7 +129,7 @@ Setup options (managed Conda/venv environment, reuse of an existing environment,
 The same servers are published as plugins in the `marcorusc` marketplace
 (`neko@marcorusc`, `maboss@marcorusc`, `physicell@marcorusc`, `biomass@marcorusc`).
 This project uses their launch command,
-`uvx --from mcp-biomodelling-servers==2.5.1 mcp-<server>-server`, **inline in each
+`uvx --from mcp-biomodelling-servers==2.5.2 mcp-<server>-server`, **inline in each
 specialist only**. Do not enable the plugins in this project: Claude Code connects
 an enabled plugin's servers to the main session, which would give the orchestrator
 modelling tools. Setup and `scripts/check_isolation.py` fail if they are enabled in
@@ -146,7 +146,7 @@ mcpServers:
   - neko-agent:
       type: stdio
       command: "uvx"
-      args: ["--from", "mcp-biomodelling-servers==2.5.1", "mcp-neko-server"]
+      args: ["--from", "mcp-biomodelling-servers==2.5.2", "mcp-neko-server"]
 ```
 
 Setup rewrites this to an absolute `uvx` and a fixed PATH, because desktop clients
@@ -331,7 +331,7 @@ a restore; specialists rebuild runtime state from handoffs and artifacts.
   Code after configuration changes.
 - **A modelling server does not start:** check the agent's inline transport. For the
   plugin launch confirm `uvx` is found and the launch resolves:
-  `uvx --from mcp-biomodelling-servers==2.5.1 python -c "import importlib.metadata as m; print(m.version('mcp-biomodelling-servers'))"`
+  `uvx --from mcp-biomodelling-servers==2.5.2 python -c "import importlib.metadata as m; print(m.version('mcp-biomodelling-servers'))"`
   (the server commands have no `--help`; they start a stdio server). Run
   `python scripts/setup.py --check`. Inline servers are skipped in untrusted folders
   and headless (`claude -p`/SDK) runs.
@@ -358,8 +358,8 @@ python scripts/run_tests.py
 
 Runs the Codex, Claude and setup suites (120 s limit each) with no modelling server,
 credentials or third-party packages; backend-dependent contract tests skip. With the
-released backend installed (`pip install mcp-biomodelling-servers==2.5.1
-nekomata==1.10.2`) they run as well. CI runs both on Python 3.11 and 3.13, plus a job
+released backend installed (`pip install mcp-biomodelling-servers==2.5.2
+nekomata==1.10.3`) they run as well. CI runs both on Python 3.11 and 3.13, plus a job
 that starts every server through the plugin launch and runs the real-backend BioMASS
 smoke test (`tests/integration/biomass_smoke.py`).
 

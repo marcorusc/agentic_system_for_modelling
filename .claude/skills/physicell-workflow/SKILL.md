@@ -5,8 +5,8 @@ description: "Operational guide for the PhysiCell MCP server — domain, substra
 
 # PhysiCell Simulation Configuration Workflow
 
-Operational snapshot for `mcp-biomodelling-servers` 2.5.1. Tool names and
-parameters were checked against the live 2.5.1 schemas (released package with
+Operational snapshot for `mcp-biomodelling-servers` 2.5.2. Tool names and
+parameters were checked against the live 2.5.2 schemas (released package with
 `physicell-settings` 0.6.3). Behaviour the schemas do not describe follows the
 2.5.0 server documentation. Recheck this skill when the server package is upgraded.
 
@@ -106,7 +106,9 @@ Preferred typed workflow:
 1. Export a `maboss-to-physicell` handoff from MaBoSS (see `maboss-workflow`).
 2. `import_maboss_handoff()` — verifies and copies the NeKo/MaBoSS
    lineage, attaches the model atomically. Use the original server manifest
-   path the orchestrator supplies; relocated copies fail the curation binding. Version 2.1 manifests carry the
+   path the orchestrator supplies; relocated copies fail the curation binding.
+   Never use the `handoff_bundle` argument (a route for hosts that sandbox
+   each server); a missing manifest is a blocker to report. Version 2.1 manifests carry the
    MaBoSS model revision and readout definitions; only declared readouts may
    extend the NeKo core. Report the imported revision and readout names.
 3. `configure_physiboss_settings()` — timing and inheritance.
