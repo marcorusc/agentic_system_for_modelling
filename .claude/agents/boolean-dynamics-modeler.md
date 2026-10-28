@@ -6,7 +6,7 @@ mcpServers:
   - maboss-agent:
       type: stdio
       command: "uvx"
-      args: ["--from", "mcp-biomodelling-servers==2.5.1", "mcp-maboss-server"]
+      args: ["--from", "mcp-biomodelling-servers==2.5.2", "mcp-maboss-server"]
 tools:
   - Write
   - Read

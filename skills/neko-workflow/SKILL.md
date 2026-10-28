@@ -36,10 +36,15 @@ important-paths summary, bounded literature queue, effective policies, history
 state, dimensions, warnings, and exact artifacts.
 
 The operational tool semantics were checked against the live
-`mcp-biomodelling-servers` 2.5.1 schemas and must be revalidated after server
-upgrades. Expensive all-pairs or open-ended
-connection strategies require size inspection and a non-mutating preview; prefer a
-targeted strategy when it answers the scientific question.
+`mcp-biomodelling-servers` 2.5.2 schemas and must be revalidated after server
+upgrades. Bimodal edges block BNET export; resolving them (`set_effect` under
+manual-literature authorization, or `remove_bimodal_interactions`, which deletes
+them with their references and can disconnect the network) is a topology
+decision. Inputs and handoffs travel by path: do not request `sif_text` or
+`export_handoff_bundle`, which serve hosts that sandbox each server. Expensive
+all-pairs or open-ended connection strategies require size inspection and a
+non-mutating preview; prefer a targeted strategy when it answers the scientific
+question.
 
 ## Authorized interaction edits
 

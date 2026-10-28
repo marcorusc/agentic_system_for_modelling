@@ -3,7 +3,7 @@
 
 Run with the released backend, e.g. the plugin launch:
 
-    uvx --from mcp-biomodelling-servers==2.5.1 python -B tests/integration/biomass_smoke.py
+    uvx --from mcp-biomodelling-servers==2.5.2 python -B tests/integration/biomass_smoke.py
 
 Sessions and artifacts live in a temporary directory (MCP_BIOMODELLING_ARTIFACT_ROOT
 is pointed there). No scientific model, MCP connection, existing session,

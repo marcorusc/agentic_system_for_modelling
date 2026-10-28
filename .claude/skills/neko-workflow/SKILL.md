@@ -5,9 +5,9 @@ description: "Operational guide for the NeKo MCP server — session/network crea
 
 # NeKo Signalling Network Workflow
 
-Operational snapshot for `mcp-biomodelling-servers` 2.5.1. Tool names and
-parameters were checked against the live 2.5.1 schemas (released package with
-NeKo `nekomata` 1.10.2). Behaviour the schemas do not describe follows the 2.5.x
+Operational snapshot for `mcp-biomodelling-servers` 2.5.2. Tool names and
+parameters were checked against the live 2.5.2 schemas (released package with
+NeKo `nekomata` 1.10.3). Behaviour the schemas do not describe follows the 2.5.x
 server documentation. Recheck this skill when the server package is upgraded.
 
 NeKo builds and curates molecular signalling networks (OmniPath and similar
@@ -23,7 +23,17 @@ Boolean-model simulation, `export_neko_handoff` hands off to
    only_signed=True, consensus=True)`. Always create a session before
    creating a network; pass `session_id` explicitly with multiple networks.
 2. **Build:** `create_network([...list_of_initial_genes...], database='omnipath')`
-3. **Curate:** `remove_bimodal_interactions()` → `remove_undefined_interactions()`
+   or `create_network(sif_file=...)` with the path the orchestrator names.
+   Seeds missing from the database are dropped without appearing in the
+   tool result; check coverage with `analyze_gene_set(genes=[...])` and
+   report every requested gene that is absent.
+3. **Curate (only as the invocation authorizes):** bimodal edges block BNET
+   export. Resolving one to a sign is `edit_interactions(operation='set_effect')`
+   under manual-literature authorization (section below);
+   `remove_bimodal_interactions()` deletes every bimodal edge with its
+   references and can disconnect the network. Then
+   `remove_undefined_interactions()`. Without authorization, report the
+   bimodal and undefined edges instead.
 4. **Audit connectivity:** `analyze_connectivity()` — isolated (0-edge) nodes
    + full connected-component partition, in one call.
    - Disconnected → `preview_connection_impact()` → apply a connection tool
@@ -44,8 +54,9 @@ Boolean-model simulation, `export_neko_handoff` hands off to
      nodes, declared outputs, package versions, history state, artifact
      digests and a typed history companion (`curation_file`).
    - `export_network(format='bnet')` — standalone BNET only, no provenance.
-     Fails unless the network is fully connected; run
-     `analyze_connectivity()` first. `format='sif'` has no such requirement.
+     Fails unless the network is fully connected and has no bimodal
+     interactions; run `analyze_connectivity()` first. `format='sif'` has no
+     such requirement.
    - `export_network(format='history')` — all retained snapshots, structured
      explanations and branch relationships for reproducibility review. It is
      not a handoff and approves nothing.
@@ -59,7 +70,7 @@ Boolean-model simulation, `export_neko_handoff` hands off to
 - **Connection strategies:** `connect_targeted_nodes`, `bridge_components`, `apply_global_connection` — see the [strategy reference](https://github.com/sysbio-curie/Neko/blob/development/docs_mkdocs/strategies/index.md)
 - **Inspection:** `list_genes_and_interactions`, `find_paths`, `get_references`, `filter_interactions`
 - **History:** `list_network_history`, `navigate_network_history`, `compare_network_states`, `set_network_history_limit`
-- **Export and handoff:** `export_network` (SIF/BNET/history), `list_bnet_files`, `export_neko_handoff`, `export_biomass_handoff`
+- **Export and handoff:** `export_network` (SIF/BNET/history), `list_bnet_files`, `export_neko_handoff`, `export_biomass_handoff`. `export_handoff_bundle` exists for hosts that sandbox each server; it is not used here (see Critical rules)
 
 ## Authorized interaction edits (`edit_interactions`)
 
@@ -119,6 +130,12 @@ only if it fails. Costs assume seed/group sizes of a few dozen genes.
   omitted, MaBoSS must select outputs itself before it can run.
 - **Token frugality:** use `verbosity='summary'` in iterative
   inspection/edit loops.
+- **Files by path only:** pass SIF inputs as `sif_file`; never send file
+  content through `sif_text`, which would make the transcribed text the
+  recorded source. All specialists share this host's filesystem, so handoffs
+  travel by manifest path: do not call `export_handoff_bundle` (it returns
+  every referenced file inline). A missing file or manifest is a blocker to
+  report, not a reason to switch to a text or bundle route.
 
 ## Troubleshooting
 
@@ -129,6 +146,10 @@ only if it fails. Costs assume seed/group sizes of a few dozen genes.
   partition, then `analyze_gene_set()` on the originally requested genes.
 - **Comparing history states before reverting** → `compare_network_states()`
   first; don't checkout blind.
+- **"Generated multiple BNET models"** → bimodal interactions remain (one
+  model per sign assignment, 2^n). The error lists them; connectivity is not
+  the cause. Report the listed edges as a topology question; resolve them
+  only as the orchestrator authorizes (set_effect with evidence, or removal).
 
 
 ## NeKo-to-BioMASS export

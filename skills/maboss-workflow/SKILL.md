@@ -90,4 +90,7 @@ a proof. scripts/validate/README.md specifies the criteria contract. Capture the
 researcher-approved PhysiCell handoff with
 scripts/capture/record_maboss_physicell_handoff.py; keep upstream lineage intact.
 Operational semantics were checked against the live `mcp-biomodelling-servers`
-2.5.1 schemas; revalidate after server upgrades.
+2.5.2 schemas; revalidate after server upgrades. Handoffs and BNET inputs travel
+by path: do not request `handoff_bundle`, `bnet_text` or `export_handoff_bundle`,
+which serve hosts that sandbox each server. Require any heavy-workload warning to
+be quoted; `max_time` and `sample_count` changes need researcher-approved values.

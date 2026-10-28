@@ -1,8 +1,8 @@
 # Agentic biological-modelling system: architecture
 
-**Document status:** describes release 1.0.2 (see
+**Document status:** describes release 1.0.3 (see
 [`CHANGELOG.md`](../CHANGELOG.md), 2026-10-22), tested with
-`mcp-biomodelling-servers` 2.5.1. For usage, see the [README](../README.md); for
+`mcp-biomodelling-servers` 2.5.2. For usage, see the [README](../README.md); for
 day-to-day procedures, see [agentic operations](agentic-operations.md). Where this
 document and the code disagree, the code is authoritative.
 
@@ -99,7 +99,7 @@ modelling tools.
 The tracked default launch is the marketplace plugins' own command:
 
 ```text
-uvx --from mcp-biomodelling-servers==2.5.1 mcp-<server>-server
+uvx --from mcp-biomodelling-servers==2.5.2 mcp-<server>-server
 ```
 
 `scripts/setup.py` can rewrite this block in two ways:
@@ -527,11 +527,11 @@ locations.
 ## 10. Setup and deployment
 
 `setup/dependencies.toml` pins the tested backend set: `mcp-biomodelling-servers`
-2.5.1 and `nekomata` 1.10.2. `scripts/setup.py` offers three modes:
+2.5.2 and `nekomata` 1.10.3. `scripts/setup.py` offers three modes:
 
 | Mode | What runs the servers | Trade-off |
 |---|---|---|
-| `--environment-mode plugin` | `uvx --from mcp-biomodelling-servers==2.5.1 …`. Needs only uv | Simplest. Only the server package is pinned; resolved dependency drift is reported as a warning |
+| `--environment-mode plugin` | `uvx --from mcp-biomodelling-servers==2.5.2 …`. Needs only uv | Simplest. Only the server package is pinned; resolved dependency drift is reported as a warning |
 | `managed` (default) | A setup-owned Conda or venv environment | Exact installed snapshot (`resolved-requirements.txt`) |
 | `reuse` | An existing environment, verified but not modified | No installation |
 

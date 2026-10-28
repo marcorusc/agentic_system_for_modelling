@@ -22,9 +22,11 @@ A source profile or a passing software fixture alone is not proof of readiness.
    `clean_generated_files`), no NeKo, MaBoSS or PhysiCell tools and no Task/Agent tool,
    and `list_sessions` must answer. The orchestrator itself must show no modelling tools.
 
-**Last verified:** 2026-10-26 with `mcp-biomodelling-servers` 2.5.1 (plugin launch).
+**Last verified:** 2026-10-28 with `mcp-biomodelling-servers` 2.5.2 (plugin launch).
 The smoke test passed all eight checks. `ode-modeler` saw 20 BioMASS tools, no other
-modelling or delegation tools, and `list_sessions` answered.
+modelling or delegation tools, and `list_sessions` answered. Its `import_neko_handoff`
+schema showed the 2.5.2 `handoff_bundle` parameter, confirming the upgraded launch;
+the check must run in a client session started after the launches were configured.
 
 ## Formulation and inputs
 
@@ -227,7 +229,7 @@ project capture, typed v2 completion, edit preview, stale-version rejection and
 placeholder rejection. CI runs it through the plugin launch:
 
 ```sh
-uvx --from mcp-biomodelling-servers==2.5.1 python -B tests/integration/biomass_smoke.py
+uvx --from mcp-biomodelling-servers==2.5.2 python -B tests/integration/biomass_smoke.py
 ```
 
 It is a software regression check with the server's example values, not

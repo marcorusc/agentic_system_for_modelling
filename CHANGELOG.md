@@ -1,5 +1,56 @@
 # Changelog
 
+## 1.0.3 — 2026-10-28
+
+Tested with `mcp-biomodelling-servers` **2.5.2** (NeKo `nekomata` **1.10.3**).
+Handoff manifest versions, path-based calls, scientific defaults and engine
+behaviour are unchanged from 2.5.1, so the governance, capture and gate scripts
+are unchanged.
+
+### Changed
+
+- Pinned backend raised to 2.5.2 and `nekomata` to 1.10.3:
+  `setup/dependencies.toml`, the four specialist launches
+  (`uvx --from mcp-biomodelling-servers==2.5.2 …`), install and documentation
+  strings, the release-version tests and the source-install example (`v2.5.2`,
+  `d9079ee`; NeKo `v1.10.3`, `9429581`). A managed environment needs a new
+  `--env-prefix`; plugin mode needs only the regenerated launches.
+- Skill snapshots checked against the live 2.5.2 schemas. Compared with 2.5.1:
+  new read-only `export_handoff_bundle` on NeKo and MaBoSS; optional
+  `handoff_bundle` on MaBoSS/BioMASS `import_neko_handoff` and PhysiCell
+  `import_maboss_handoff` (so `manifest_path` is no longer schema-required);
+  optional `sif_text` on NeKo `create_network` and `bnet_text` on MaBoSS
+  `bnet_to_bnd_and_cfg`; updated NeKo `create_network`, `export_network` and
+  `remove_bimodal_interactions` descriptions. No tool was removed.
+- The bundle and inline-text routes serve hosts that sandbox each server. All
+  specialists here share one filesystem, so the skills and
+  `docs/agentic-operations.md` keep handoffs and inputs on paths (the verified
+  `backend_import_manifest`, preserved SIF/BNET files) and treat a missing file
+  as a blocker to report.
+- NeKo skill: bimodal edges block BNET export; resolving them (`set_effect`
+  under manual-literature authorization, or `remove_bimodal_interactions`,
+  which deletes them with their references) happens only as the invocation
+  authorizes. The new "generated multiple BNET models" error lists them.
+  Seeds missing from the database are dropped without appearing in the tool
+  result (NeKo 1.10.3 issues a warning instead of printing), so coverage is
+  checked with `analyze_gene_set`.
+- MaBoSS skill: quote the new heavy-workload warning (nodes × `max_time` ×
+  `sample_count` / `thread_count` above 10⁸); change those settings only to
+  supplied, approved values.
+
+- ODE readiness re-verified on 2026-10-28 with 2.5.2: the BioMASS smoke test
+  passed all eight checks; the setup check (plugin mode) found 2.5.2 with
+  `nekomata` 1.10.3 on all four servers; `ode-modeler` saw 20 BioMASS tools
+  (including the 2.5.2 `handoff_bundle` argument), no other modelling or
+  delegation tools, and `list_sessions` answered. ODE work remains available.
+
+### Not affected
+
+- NeKo 1.10.3's stricter parsing of custom interaction tables does not reach this
+  system: the servers load only the built-in OmniPath and SIGNOR resources, and
+  SIF import uses its own parser. The new `seed_mapping` field in the initial
+  history state is accepted by the `curation_file` checks.
+
 ## 1.0.2 — 2026-10-26
 
 Documentation and governance release for handing the framework to biologists.

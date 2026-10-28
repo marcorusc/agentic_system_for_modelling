@@ -49,7 +49,7 @@ auto-discovers `dot`, does not copy the calling IDE's full PATH, and does not ru
 sudo or alter system packages.
 
 `setup/dependencies.toml` pins the released pair
-`mcp-biomodelling-servers==2.5.1` and `nekomata==1.10.2`. The MCP release includes
+`mcp-biomodelling-servers==2.5.2` and `nekomata==1.10.3`. The MCP release includes
 BioMASS support and the Wave 2 interfaces (NeKo interaction curation and history
 export, MaBoSS readouts, rates and durable runs, PhysiCell inputs and configuration
 bundles). Setup passes both pins to pip and checks both installed versions before
@@ -64,7 +64,7 @@ versions to `resolved-requirements.txt` inside the environment. This is an insta
 version snapshot, not a committed cross-platform lock with artifact hashes. Later
 runs reuse the environment and validate it; they do not silently upgrade it.
 To upgrade from an older setup, select a new environment prefix, for example
-`--env-prefix "$PWD/.setup/environment-mcp-2.5.1-neko-1.10.2"`. An old ownership
+`--env-prefix "$PWD/.setup/environment-mcp-2.5.2-neko-1.10.3"`. An old ownership
 marker or changed dependency pins require a new prefix; reuse mode verifies an
 existing environment and cannot upgrade it. If the pinned release is unavailable,
 setup fails rather than substituting another release. A local source checkout of
@@ -99,7 +99,7 @@ Instead, `--environment-mode plugin` gives each specialist the plugin's own laun
 inline and visible only to that specialist:
 
 ```text
-uvx --from mcp-biomodelling-servers==2.5.1 mcp-<server>-server
+uvx --from mcp-biomodelling-servers==2.5.2 mcp-<server>-server
 ```
 
 [uv](https://docs.astral.sh/uv/) is the only prerequisite: no Conda, venv, MaBoSS
@@ -122,7 +122,7 @@ warning in the report rather than failing. Use a managed environment when an exa
 installed snapshot (`resolved-requirements.txt`) matters more than install
 simplicity. Capture helpers that read handoff contracts need the package too; in
 plugin mode run them with the same release, for example
-`uvx --from mcp-biomodelling-servers==2.5.1 python scripts/capture/<helper>.py …`.
+`uvx --from mcp-biomodelling-servers==2.5.2 python scripts/capture/<helper>.py …`.
 
 The tracked agent definitions ship this launch with a bare `uvx`, so a checkout with
 uv on PATH works before setup runs. Setup rewrites it to the absolute `uvx` path and
@@ -258,7 +258,7 @@ requires `name`, `version`, `path` and a full Git `commit`. Relative paths resol
 from the manifest's directory. The selected checkout must be its repository root,
 clean, and at that commit. Both package versions must also match
 `setup/dependencies.toml`. The example `setup/backend-sources.integration.json`
-now pins the released MCP 2.5.1 (`v2.5.1`) and NeKo 1.10.2 (`v1.10.2`) source revisions. Adjust its paths
+now pins the released MCP 2.5.2 (`v2.5.2`) and NeKo 1.10.3 (`v1.10.3`) source revisions. Adjust its paths
 to clean checkouts at those exact commits; a newer checkout is not interchangeable.
 The NeKo revision comes from [sysbio-curie/Neko](https://github.com/sysbio-curie/Neko),
 so an older personal fork may need that upstream revision fetched first.

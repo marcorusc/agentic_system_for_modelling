@@ -5,8 +5,8 @@ description: "Operational guide for the MaBoSS MCP server — sessions, loading 
 
 # MaBoSS Simulation Workflow
 
-Operational snapshot for `mcp-biomodelling-servers` 2.5.1. Tool names and
-parameters were checked against the live 2.5.1 schemas. Behaviour the schemas do
+Operational snapshot for `mcp-biomodelling-servers` 2.5.2. Tool names and
+parameters were checked against the live 2.5.2 schemas. Behaviour the schemas do
 not describe follows the 2.5.x server documentation. Recheck this skill when the
 server package is upgraded.
 
@@ -28,7 +28,13 @@ executable is installed or needed.
    NeKo transfer). For a 2.1 manifest use the original server manifest path
    the orchestrator supplies; relocated project copies fail the `curation_file`
    binding check. Standalone BNET: `bnet_to_bnd_and_cfg(bnet_path)` →
-   `build_simulation()`.
+   `build_simulation()`. Pass files by path only: never use `bnet_text` or
+   `handoff_bundle` (routes for hosts that sandbox each server; this host
+   shares one filesystem). A missing manifest or BNET is a blocker to report.
+   If the load returns a heavy-workload warning (nodes × `max_time` ×
+   `sample_count` / `thread_count` above 10⁸, e.g. pyMaBoSS's BNET defaults
+   `max_time = 1000`, `sample_count = 10000`), quote it and change those
+   settings only to values the orchestrator supplies.
 3. **Inspect nodes — mandatory:** `get_maboss_nodes()` lists every valid
    node name. Required before any configuration step; downstream tools
    (`set_maboss_output_nodes`, `set_maboss_initial_state`,
@@ -73,7 +79,7 @@ executable is installed or needed.
 
 - **Session management:** `create_session`, `list_sessions`, `list_artifact_sessions` (sessions with files on disk, including past server runs), `set_default_session`, `delete_session`
 - **Pipeline:** `import_neko_handoff`, `bnet_to_bnd_and_cfg`, `build_simulation`, `run_simulation`
-- **Handoff and export:** `import_neko_handoff`, `export_maboss_handoff`, `export_maboss_bnd_cfg`
+- **Handoff and export:** `import_neko_handoff`, `export_maboss_handoff`, `export_maboss_bnd_cfg`. `export_handoff_bundle` (inline copy of a manifest and its files) is not used here
 - **Inspection (read-only):** `get_maboss_nodes` (with `selected_nodes` for rules/rates/revision), `get_maboss_initial_state`, `get_maboss_logical_rules`, `get_maboss_mutations`, `update_maboss_parameters` (no args)
 - **Configuration:** `update_maboss_parameters` (global `parameters`, or per-node `rates` with `expected_revision`), `set_maboss_output_nodes`, `set_maboss_initial_state`, `change_maboss_rule` (validates the new rule and restores the previous one if invalid)
 - **Summary readouts:** `edit_maboss_readouts` (`add` / `set_rule`; see below)
@@ -146,7 +152,9 @@ does not prove exclusive simulated readout states. Their provenance tag is
 
 - **Simulation hangs / never returns** → check whether
   `set_maboss_output_nodes` was called. Unrestricted runs above ~20 nodes
-  enumerate a state space in the billions.
+  enumerate a state space in the billions. Also check for an earlier
+  heavy-workload warning: large `max_time` × `sample_count` runs can outlast
+  the tool timeout. Report it; do not pick smaller values yourself.
 - **Node name rejected** → re-run `get_maboss_nodes()` — names are
   sanitized during NeKo/BNET import.
 - **Initial-state probabilities rejected** → confirm state-vector order
