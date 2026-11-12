@@ -89,11 +89,61 @@ class RecordDataInvocationTests(unittest.TestCase):
         payload = self.payload(transcript_events(self.sid, self.digest))
         first = record(self.root, payload)
         verdict = self.integrity()
-        (self.root / "DECISIONS.md").write_text("tampered later\n", encoding="utf-8")
         second = record(self.root, payload)
         self.assertEqual(first, second)
         self.assertEqual(self.integrity(), verdict)
         self.assertTrue(verdict["passed"])
+
+    test_retry_index_only_change_excused = test_retry_is_idempotent
+
+    def test_retry_with_other_change_fails(self):
+        payload = self.payload(transcript_events(self.sid, self.digest))
+        record(self.root, payload)
+        (self.root / "DECISIONS.md").write_text("tampered later\n", encoding="utf-8")
+        with self.assertRaises(ValueError):
+            record(self.root, payload)
+        integrity = self.integrity()
+        self.assertFalse(integrity["passed"])
+        self.assertIn("verdict changed on retry", integrity["error"])
+
+    def test_retry_after_register_failure_recovers(self):
+        payload = self.payload(transcript_events(self.sid, self.digest))
+        with mock.patch("scripts.capture.record_invocation.register_capture", side_effect=ValueError("boom")):
+            with self.assertRaises(ValueError):
+                record(self.root, payload)
+        first = self.integrity()
+        result = record(self.root, payload)
+        self.assertEqual(self.integrity(), first)
+        self.assertTrue(first["passed"])
+        index = json.loads((self.root / "runs" / "index.json").read_text())
+        self.assertEqual(len(index["runs"]), 1)
+        self.assertEqual(result["session_id"], self.sid)
+
+    def test_forged_index_does_not_skip_verification(self):
+        import hashlib
+        (self.root / "DECISIONS.md").write_text("tampered\n", encoding="utf-8")
+        forged = {"integrity": {"schema_version": 1, "session_id": self.sid, "invocation_id": "agent-1",
+                                "checked_at": "x", "passed": True, "changed": [], "identity_intact": True}}
+        rel = f"runs/data-analyst/{self.sid}/invocation/agent-1"
+        (self.root / rel).mkdir(parents=True)
+        raw = json.dumps(forged).encode()
+        (self.root / rel / "invocation.json").write_bytes(raw)
+        (self.root / "runs" / "index.json").write_text(json.dumps({"runs": [{
+            "capture_path": rel, "artifacts": [{"path": rel + "/invocation.json",
+                                                "sha256": hashlib.sha256(raw).hexdigest()}]}]}))
+        with self.assertRaises(ValueError):
+            record(self.root, self.payload(transcript_events(self.sid, self.digest)))
+        integrity = self.integrity()
+        self.assertFalse(integrity["passed"])
+        self.assertIn("DECISIONS.md", integrity["changed"])
+
+    def test_symlinked_integrity_replaced(self):
+        target = self.outside / "elsewhere.json"
+        target.write_text("keep")
+        (session_dir(self.root, self.sid) / "integrity.json").symlink_to(target)
+        record(self.root, self.payload(transcript_events(self.sid, self.digest)))
+        self.assertEqual(target.read_text(), "keep")
+        self.assertTrue(self.integrity()["passed"])
 
     def forge(self, invocation="agent-1"):
         (session_dir(self.root, self.sid) / "integrity.json").write_text(json.dumps({

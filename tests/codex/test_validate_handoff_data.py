@@ -134,6 +134,24 @@ class DataHandoffTests(unittest.TestCase):
         with self.assertRaisesRegex(HandoffValidationError, "differs"):
             self.check(payload)
 
+    def test_forged_record_with_tamper_rejected(self):
+        payload = self.handoff()
+        (self.root / "DECISIONS.md").write_text("tampered\n", encoding="utf-8")
+        rel = f"runs/data-analyst/{self.sid}/invocation/agent-1"
+        forged = (self.root / rel / "invocation.json")
+        index = self.root / "runs" / "index.json"
+        data = json.loads(index.read_text())
+        raw = forged.read_bytes()
+        for item in data["runs"]:  # keep the forged record registered with a matching hash
+            for artifact in item["artifacts"]:
+                if artifact["path"] == rel + "/invocation.json":
+                    artifact["sha256"] = hashlib.sha256(raw).hexdigest()
+        index.write_text(json.dumps(data))
+        with self.assertRaises(ValueError):
+            self.record_integrity()
+        with self.assertRaises(HandoffValidationError):
+            self.check(payload)
+
     def test_manifest_error_rejected(self):
         payload = self.handoff()
         data = json.loads((self.dir / "manifest.json").read_text())

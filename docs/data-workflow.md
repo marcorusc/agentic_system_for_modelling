@@ -37,3 +37,7 @@ Inline subagent behaviour needs an interactive Claude Code session.
 - [ ] `integrity.json`, written by the SubagentStop recorder, has `passed: true`.
 - [ ] The main session running a vendored script is denied.
 - [ ] The main session running `scripts/data/session.py` is denied.
+
+## Threat model
+
+The write guard, the protected-state snapshot and the recorder's integrity record defend against accidental and undisciplined writes. They do not defend against a deliberately adversarial agent forging provenance files: the agent runs user-level Python with no OS sandbox, so every on-disk anchor (integrity.json, runs/index.json, invocation records) is forgeable. OS-level confinement, such as the Claude Code sandbox filesystem write allowlist or a container, is the follow-up.

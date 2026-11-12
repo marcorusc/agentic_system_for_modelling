@@ -54,59 +54,64 @@ def publish_invocation(project, target, files):
             if not path.is_file() or path.read_bytes() != content:
                 raise ValueError('existing invocation content changed; refusing overwrite')
 
-def data_integrity(project, transcript, session, invocation):
-    """Verify the protected snapshot before any write; fail closed on any error.
+# Files the recorder itself creates when registering a capture (index + its lock).
+RECORDER_FILES = {'runs/index.json', 'runs/.index.capture.lock'}
 
-    The result is written to integrity.json by the recorder (system code); the
-    agent write guard forbids that file name.
+def _index_registers(project, relative):
+    try:
+        index = json.loads((project / 'runs' / 'index.json').read_text(encoding='utf-8'))
+        return any(item.get('capture_path') == relative for item in index.get('runs', []))
+    except Exception:
+        return False
+
+def _write_integrity(path, integrity):
+    if os.path.lexists(path): os.unlink(path)  # never follow a planted symlink
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(integrity, indent=2) + '\n', encoding='utf-8')
+
+def data_integrity(project, transcript, session, invocation):
+    """Always verify the protected snapshot before any recorder write; fail closed.
+
+    integrity.json is written by the recorder (system code); the agent write guard
+    forbids that name. A retry of an invocation already on disk must reproduce the
+    stored verdict, in which case the stored bytes (and timestamp) are reused.
     """
     base = project / 'runs' / 'data-analyst' / session
     path = base / 'integrity.json'
-    reject_symlinks(base); reject_symlinks(path)
-    integrity = registered_integrity(project, session, invocation)
-    if integrity is None:
-        # integrity.json is agent-writable; never trust or reuse a pre-existing copy.
-        if path.is_file() or path.is_symlink(): path.unlink()
-        try:
-            bound = _data_guard().transcript_data_session(transcript, root=project)
-            if bound is None or bound[0] != session: raise ValueError('transcript session binding changed')
-            result = data_snapshot.verify_session(project, session, bound[1])
-            passed, changed, intact = result['passed'], list(result['changed']), result['identity_intact']
-            error = None
-        except Exception as exc:  # fail closed on any malformed state
-            passed, changed, intact, error = False, [], False, str(exc) or type(exc).__name__
-        integrity = {'schema_version': 1, 'session_id': session, 'invocation_id': invocation,
-                     'checked_at': utc_now(), 'passed': bool(passed and not changed and intact),
-                     'changed': changed, 'identity_intact': bool(intact)}
-        if error is not None: integrity['error'] = error
-    base.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(integrity, indent=2) + '\n', encoding='utf-8')
-    return integrity
-
-def registered_integrity(project, session, invocation):
-    """Return the integrity verdict from this invocation's indexed record, if any.
-
-    Trust anchor: runs/index.json (outside the session, covered by the snapshot)
-    registers invocation.json with its sha256; the verdict is read only if the
-    on-disk bytes still match.
-    """
+    reject_symlinks(base)
+    relative = f'runs/data-analyst/{session}/invocation/{invocation}'
+    stored = None
+    stored_file = base / 'invocation' / invocation / 'invocation.json'
+    if stored_file.is_file() and not stored_file.is_symlink():
+        try: stored = json.loads(stored_file.read_text(encoding='utf-8')).get('integrity')
+        except (OSError, ValueError, AttributeError): stored = None
     try:
-        index = json.loads((project / 'runs' / 'index.json').read_text(encoding='utf-8'))
-        relative = f'runs/data-analyst/{session}/invocation/{invocation}'
-        for item in index.get('runs', []):
-            if item.get('capture_path') != relative: continue
-            for artifact in item.get('artifacts', []):
-                if artifact.get('path') == relative + '/invocation.json':
-                    file = project / artifact['path']
-                    reject_symlinks(file)
-                    raw = file.read_bytes()
-                    if hashlib.sha256(raw).hexdigest() != artifact.get('sha256'): return None
-                    value = json.loads(raw).get('integrity')
-                    if isinstance(value, dict) and value.get('session_id') == session \
-                            and value.get('invocation_id') == invocation: return value
-        return None
-    except Exception:
-        return None
+        bound = _data_guard().transcript_data_session(transcript, root=project)
+        if bound is None or bound[0] != session: raise ValueError('transcript session binding changed')
+        result = data_snapshot.verify_session(project, session, bound[1])
+        changed, intact, error = list(result['changed']), bool(result['identity_intact']), None
+        if stored is not None and changed and set(changed) <= RECORDER_FILES and _index_registers(project, relative):
+            changed = []  # only the first recording's own index registration
+        passed = intact and not changed
+    except Exception as exc:  # fail closed on any malformed state
+        passed, changed, intact, error = False, [], False, str(exc) or type(exc).__name__
+    verdict = {'passed': bool(passed), 'changed': changed, 'identity_intact': intact, 'error': error}
+    if stored is not None:
+        if not isinstance(stored, dict) or verdict != {
+                'passed': stored.get('passed'), 'changed': stored.get('changed'),
+                'identity_intact': stored.get('identity_intact'), 'error': stored.get('error')}:
+            _write_integrity(path, {'schema_version': 1, 'session_id': session, 'invocation_id': invocation,
+                                    'checked_at': utc_now(), 'passed': False, 'changed': changed,
+                                    'identity_intact': False, 'error': 'verdict changed on retry'})
+            raise ValueError('verdict changed on retry; refusing to alter recorded integrity')
+        _write_integrity(path, stored)
+        return stored
+    integrity = {'schema_version': 1, 'session_id': session, 'invocation_id': invocation,
+                 'checked_at': utc_now(), 'passed': verdict['passed'], 'changed': changed,
+                 'identity_intact': intact}
+    if error is not None: integrity['error'] = error
+    _write_integrity(path, integrity)
+    return integrity
 
 def record(project, payload):
     if not isinstance(payload, dict): raise ValueError('hook payload must be an object')
