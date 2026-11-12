@@ -83,7 +83,9 @@ class DataHandoffTests(unittest.TestCase):
     def handoff(self, status="completed", decisions=()):
         manifest.build(self.root, self.sid, [])
         base = f"runs/data-analyst/{self.sid}"
-        names = ["manifest.json", "report.md", "outputs/de.csv"]
+        # Real handoff.py output: report.md is written by the recorder after the
+        # final message, so it is never a handoff artifact.
+        names = ["manifest.json", "outputs/de.csv"]
         artifacts = [{"path": f"{base}/{n}",
                       "sha256": hashlib.sha256((self.root / base / n).read_bytes()).hexdigest()}
                      for n in names]
@@ -173,7 +175,7 @@ class DataHandoffTests(unittest.TestCase):
 
     def test_completed_requires_output_artifact(self):
         payload = self.handoff()
-        payload["artifacts"] = payload["artifacts"][:2]
+        payload["artifacts"] = [a for a in payload["artifacts"] if "/outputs/" not in a["path"]]
         with self.assertRaisesRegex(HandoffValidationError, "outputs/ or proposals/"):
             self.check(payload)
 

@@ -11,8 +11,9 @@ from pathlib import Path
 from unittest import mock
 
 from scripts.capture.record_invocation import record
+from scripts.codex.validate_handoff import validate_handoff
 from scripts.data import handoff, manifest, receive, session
-from scripts.data.common import session_dir
+from scripts.data.common import session_dir, sha256_file
 from tests.data.test_record_invocation_data import transcript_events
 
 AID = "a1b2c3"
@@ -52,9 +53,16 @@ class ReceiveTests(unittest.TestCase):
         directory = self.troot / receive.project_slug(self.root) / main_session / "subagents"
         directory.mkdir(parents=True, exist_ok=True)
         path = directory / f"agent-{AID}.jsonl"
-        path.write_text("".join(json.dumps(e) + "\n" for e in transcript_events(self.sid, self.digest)),
-                        encoding="utf-8")
+        path.write_text("".join(json.dumps(e) + "\n" for e in self.events()), encoding="utf-8")
         return path
+
+    def events(self):
+        """The session.py new call, then the final report ending in the Handoff line."""
+        rel = f"runs/data-analyst/{self.sid}/handoff.json"
+        report = f"# Report\n\nDone.\n\nHandoff: {rel} sha256={sha256_file(self.root / rel)}"
+        return transcript_events(self.sid, self.digest) + [
+            {"type": "assistant", "message": {"role": "assistant", "content": [
+                {"type": "tool_use", "id": "t9", "name": "SubagentHandback", "input": {"message": report}}]}}]
 
     def hook_record(self):
         record(self.root, {"agent_type": "data-analyst", "agent_id": AID,
@@ -76,6 +84,29 @@ class ReceiveTests(unittest.TestCase):
         lines = out.getvalue().splitlines()
         self.assertTrue(lines[0].startswith("P1 | seed_genes | neko | "))
         self.assertEqual(lines[-1], f"RECEIVED {self.sid} OK")
+
+    def test_completed_handoff_end_to_end(self):
+        """C1: handoff.py completed (outputs only) -> recorder -> validate_handoff and receive.py."""
+        (self.dir / "proposals" / "P1_seed_genes.csv").unlink()
+        (self.dir / "proposals" / "index.json").write_text("[]", encoding="utf-8")
+        (self.dir / "outputs" / "de.csv").write_text("gene,padj\nA,0.01\n", encoding="utf-8")
+        (self.dir / "outputs" / "index.json").write_text(json.dumps([{
+            "path": "outputs/de.csv", "description": "DE", "units": {"padj": "dimensionless"},
+            "identifiers": "HGNC symbol"}]), encoding="utf-8")
+        manifest.build(self.root, self.sid, [])
+        path, _ = handoff.build(self.root, self.sid, "completed", "handoff_notes.json")
+        data = json.loads(path.read_text(encoding="utf-8"))
+        self.assertEqual(data["status"], "completed")
+        self.assertNotIn("report.md", " ".join(a["path"] for a in data["artifacts"]))
+        self.place_transcript("uuid-1")
+        self.hook_record()
+        validate_handoff(data, project_root=self.root, expected_specialist="data_analyst",
+                         expected_session_id=self.sid)
+        out, err = io.StringIO(), io.StringIO()
+        with redirect_stdout(out), redirect_stderr(err):
+            code = receive.main(["--session", self.sid, "--agent-id", AID, "--transcript-root", str(self.troot)])
+        self.assertEqual(code, 0, err.getvalue())
+        self.assertEqual(out.getvalue().splitlines()[-1], f"RECEIVED {self.sid} OK")
 
     def test_recovers_missing_capture(self):
         self.assertFalse((self.dir / "integrity.json").exists())

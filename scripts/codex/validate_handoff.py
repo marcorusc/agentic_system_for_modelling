@@ -212,7 +212,11 @@ def _completed_artifacts(handoff: dict[str, Any], project: Path) -> None:
     for field in ("schema_version", "specialist", "stage", "session_id", "derived_from_session_id"):
         if field not in manifest or manifest[field] != handoff[field]:
             raise HandoffValidationError(f"stage manifest identity mismatch: {field}")
-    if not any(file.suffix == ".md" and file.name != "important_paths.md" for file in files.values()):
+    # data_analyst: the recorder writes report.md after the final message, so it can
+    # never be a handoff artifact; _data_session_checks already requires it and
+    # verifies it byte-for-byte against the recorded final report.
+    if specialist != "data_analyst" and not any(
+            file.suffix == ".md" and file.name != "important_paths.md" for file in files.values()):
         raise HandoffValidationError("completed modelling stage requires a Markdown report")
     if specialist == "network_curator":
         if not {"important_paths.md", "literature_queue.json"} <= names or ".sif" not in suffixes:
