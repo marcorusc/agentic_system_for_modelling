@@ -63,9 +63,9 @@ MAX_DEPTH = 4
 MAX_GLOB = 2000
 MAX_BRACES = 64
 MAX_HASHED_BYTES = 8 << 20
-DATA_TOOLS = frozenset({"session.py", "fetch.py", "manifest.py"})
-DATA_MODULE_RE = re.compile(r"\Ascripts\.data\.(session|fetch|manifest)\Z", re.IGNORECASE)
-DATA_TEXT_RE = re.compile(r"scripts[./]data[./](?:session|fetch|manifest(?!\.py\s+verify\b))", re.IGNORECASE)
+DATA_TOOLS = frozenset({"session.py", "fetch.py", "manifest.py", "handoff.py"})
+DATA_MODULE_RE = re.compile(r"\Ascripts\.data\.(session|fetch|manifest|handoff)\Z", re.IGNORECASE)
+DATA_TEXT_RE = re.compile(r"scripts[./]data[./](?:session|fetch|handoff|manifest(?!\.py\s+verify\b))", re.IGNORECASE)
 DELEGATE = ("data work (vendored scientific-agent-skills scripts, .venv-data, .venv-cellprofiler) "
             "is delegated to the data-analyst subagent")
 

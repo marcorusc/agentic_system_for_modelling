@@ -32,7 +32,7 @@ class OrchestratorGuardTests(unittest.TestCase):
         (self.root / ".venv-data" / "bin").mkdir(parents=True)
         (self.root / ".venv-data" / "bin" / "python").write_text("")
         (self.root / "scripts" / "data").mkdir(parents=True)
-        for name in ("vendor_lock.py", "session.py", "fetch.py", "manifest.py"):
+        for name in ("vendor_lock.py", "session.py", "fetch.py", "manifest.py", "handoff.py"):
             (self.root / "scripts" / "data" / name).write_text("")
 
     def tearDown(self) -> None:
@@ -211,6 +211,15 @@ class OrchestratorGuardTests(unittest.TestCase):
             with self.subTest(extra=extra):
                 self.assert_denied(f".venv-data/bin/python -E -s {VENDOR_SCRIPT}", **extra)
                 self.assert_denied(f"python3 {VENDOR_SCRIPT}", **extra)
+
+    def test_orchestrator_handoff_build_denied(self) -> None:
+        for command in (
+            "python3 scripts/data/handoff.py build --session x --status completed --notes n.json",
+            "python3 -m scripts.data.handoff build --session x --status completed --notes n.json",
+            "python3 scripts/data/handoff.py --help",
+        ):
+            with self.subTest(command=command):
+                self.assert_denied(command)
 
     def test_main_session_data_tools_denied(self) -> None:
         session = "data-20261112T120000Z-0123abcd"

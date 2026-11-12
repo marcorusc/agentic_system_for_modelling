@@ -62,7 +62,7 @@ class GuardFixture(unittest.TestCase):
             python.symlink_to(sys.executable)  # venv interpreters are symlinks
         except OSError:
             python.write_text("")
-        for name in ("session.py", "fetch.py", "manifest.py", *OTHER_DATA_MODULES):
+        for name in ("session.py", "fetch.py", "manifest.py", "handoff.py", *OTHER_DATA_MODULES):
             (root / "scripts" / "data").mkdir(parents=True, exist_ok=True)
             (root / "scripts" / "data" / name).write_text("")
         (root / "scripts" / "data" / "notes.txt").write_text("")
@@ -117,10 +117,13 @@ class BashAllowlistTests(GuardFixture):
         self.allowed(f"{PY} scripts/data/manifest.py verify --session={ACTIVE}")
         self.allowed(f"{PY} scripts/data/fetch.py --session {ACTIVE} --url https://x.org/a.csv --release r1")
 
+    def test_handoff_script_allowed(self) -> None:
+        self.allowed(f"{PY} scripts/data/handoff.py build --session {ACTIVE} --status completed --notes handoff_notes.json")
+
     def test_other_scripts_data_modules_denied(self) -> None:
         for name in OTHER_DATA_MODULES:
             with self.subTest(name=name):
-                self.denied(f"{PY} scripts/data/{name}", contains="session.py, fetch.py or manifest.py")
+                self.denied(f"{PY} scripts/data/{name}", contains="session.py, fetch.py, manifest.py or handoff.py")
                 self.denied(f"{PY} scripts/data/{name} --session {ACTIVE}")
         self.denied(f"{PY} scripts/data/vendor_lock.py build --upstream x")
         self.denied(f"{PY} scripts/data/vendor_lock.py verify")
@@ -281,6 +284,11 @@ class WriteGuardTests(GuardFixture):
         for name in ("identity.json", "manifest.json", "integrity.json", "sources.jsonl",
                      "outputs/manifest.json", "Identity.JSON", "raw/SOURCES.JSONL", "identity.json.",
                      "manifest.json "):
+            with self.subTest(name=name):
+                self.write_denied(self.session / name, contains="protected")
+
+    def test_write_handoff_json_denied(self) -> None:
+        for name in ("handoff.json", "Handoff.JSON", "handoff.json."):
             with self.subTest(name=name):
                 self.write_denied(self.session / name, contains="protected")
 

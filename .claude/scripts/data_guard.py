@@ -35,13 +35,14 @@ CREATED_RE = re.compile(r"Data session created: (\S+) \(snapshot sha256=([0-9a-f
 FORBIDDEN = frozenset(";|&<>$`\\\n\r")
 # Expansion syntax that bash acts on only outside quotes.
 UNQUOTED_FORBIDDEN = frozenset("*?[]{}~()#!")
-PROTECTED_NAMES = frozenset({"identity.json", "manifest.json", "integrity.json", "sources.jsonl", "report.md"})
+PROTECTED_NAMES = frozenset({"identity.json", "manifest.json", "integrity.json", "sources.jsonl", "report.md",
+                              "handoff.json"})
 # Recorder-owned invocation records (runs/data-analyst/<id>/invocation/...).
 PROTECTED_DIR = "invocation"
 INTERPRETER = Path(".venv-data/bin/python")
-SESSION_FLAG_SCRIPTS = frozenset({"fetch.py", "manifest.py"})
+SESSION_FLAG_SCRIPTS = frozenset({"fetch.py", "manifest.py", "handoff.py"})
 # R12: the only scripts/data entry points the agent may run.
-DATA_SCRIPTS = frozenset({"session.py", "fetch.py", "manifest.py"})
+DATA_SCRIPTS = frozenset({"session.py", "fetch.py", "manifest.py", "handoff.py"})
 ALLOWED_FORMS = ("only `.venv-data/bin/python -E -s <script> [args]`, `ls` and `head` "
                  "single commands are allowed")
 
@@ -121,7 +122,7 @@ def _script_kind(path: Path, root: Path, active: str | None) -> str:
     parts = path.relative_to(root).parts
     if len(parts) == 3 and parts[:2] == ("scripts", "data"):
         if parts[2] not in DATA_SCRIPTS:
-            raise ValueError("only scripts/data/session.py, fetch.py or manifest.py may be run")
+            raise ValueError("only scripts/data/session.py, fetch.py, manifest.py or handoff.py may be run")
         return "data"
     if len(parts) == 5 and parts[:2] == ("vendor", "scientific-agent-skills") and parts[3] == "scripts":
         return "vendor"
