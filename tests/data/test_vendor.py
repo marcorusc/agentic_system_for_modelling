@@ -20,7 +20,9 @@ ROOT = REPO / VENDOR_ROOT
 
 class VendorTests(unittest.TestCase):
     def test_all_skills_present(self):
-        self.assertEqual(len(VENDORED_SKILLS), 10)
+        self.assertEqual(len(VENDORED_SKILLS), 12)
+        self.assertIn("scientific-visualization", VENDORED_SKILLS)
+        self.assertIn("seaborn", VENDORED_SKILLS)
         for name in VENDORED_SKILLS:
             skill = ROOT / name / "SKILL.md"
             self.assertTrue(skill.is_file(), name)
@@ -67,6 +69,8 @@ class VendorTests(unittest.TestCase):
         self.assertIn("Copyright (c) 2025 K-Dense Inc.", text)
         self.assertIn("BSD 2-Clause License", text)
         self.assertIn("BSD 3-Clause License", text)
+        self.assertIn("seaborn: BSD 3-Clause License", text)
+        self.assertIn("scientific-visualization", text)
 
     def test_not_under_skill_discovery(self):
         for base in (".claude/skills", "skills"):

@@ -28,7 +28,35 @@ the commands below; it delegates to `data-analyst`.
 5. Finalize and verify:
    `.venv-data/bin/python -E -s scripts/data/manifest.py build --session <id> --skills <guide> ...`
    `.venv-data/bin/python -E -s scripts/data/manifest.py verify --session <id>`
-6. Write `report.md`, then return the handoff envelope (see the agent definition).
+6. Write `handoff_notes.json` in the session root (schema below), then build the handoff:
+   `.venv-data/bin/python -E -s scripts/data/handoff.py build --session <id> --status <needs_approval|completed|blocked|failed> --notes handoff_notes.json`
+   The last stdout line is `Handoff written: runs/data-analyst/<id>/handoff.json sha256=<hex>`.
+7. Final message: the human-readable report (headings in section 7), whose last line is
+   exactly `Handoff: runs/data-analyst/<id>/handoff.json sha256=<64hex>`. The recorder saves
+   that message as `report.md`; do not write `report.md` or `handoff.json` yourself and
+   never hand-write a JSON envelope.
+
+Lifecycle summary: `manifest.py build` -> `manifest.py verify` -> write
+`handoff_notes.json` -> `handoff.py build` -> final message with the report and the
+exact `Handoff:` line.
+
+`handoff_notes.json` (unknown keys are rejected; `artifact` is optional):
+
+```json
+{"actions": ["..."], "assumptions": ["..."], "validation_checks": ["..."],
+ "decisions": [{"id": "D1", "question": "...", "artifact": "outputs/x.csv"}],
+ "blocked": [{"what": "...", "why": "...", "remediation": "..."}]}
+```
+
+`handoff.py` generates the envelope fields, the artifact hashes and one decision per
+manifest proposal. Status rules (the script refuses violations):
+
+| Situation | Status |
+|---|---|
+| Any proposal, including partial results with blocked parts | `needs_approval`; blocked parts are decision items |
+| Outputs only, no proposals, nothing blocked | `completed` |
+| No outputs and no proposals | `blocked` |
+| Verification failed or a script crashed | `failed` |
 
 If `.venv-data` is missing, return `blocked` with remediation `python3 scripts/setup.py --with-data`.
 
@@ -39,10 +67,11 @@ Only these Bash forms are accepted by the guard:
 - Interpreter form is exactly `.venv-data/bin/python -E -s <script> [args]`.
 - Allowed scripts: `runs/data-analyst/<id>/scripts/*.py`,
   `vendor/scientific-agent-skills/*/scripts/*.py` (invoked by path, never copied), and
-  `scripts/data/session.py`, `scripts/data/fetch.py`, `scripts/data/manifest.py`.
+  `scripts/data/session.py`, `scripts/data/fetch.py`, `scripts/data/manifest.py`,
+  `scripts/data/handoff.py`.
   Other `scripts/data` modules (`ledger`, `common`, ...) are imported from saved scripts.
 - Plain `ls` and `head` inside the repository.
-- `fetch.py` and `manifest.py` must always pass `--session <active>`.
+- `fetch.py`, `manifest.py` and `handoff.py` must always pass `--session <active>`.
 - The command line may not contain `;` `|` `&` `<` `>` `$` backticks, backslash, newlines
   or non-ASCII; unquoted globs, braces and `~` are rejected. URLs with `?` or `&` cannot
   be passed on the command line: fetch them from a saved script with
@@ -89,8 +118,13 @@ Read the guide's `SKILL.md` first, then only the references you need. Paths are 
 | Statistical tests, effect sizes | `statistical-analysis/SKILL.md`, `statistical-analysis/references/` |
 | Machine learning, clustering | `scikit-learn/SKILL.md`, `scikit-learn/references/` |
 | Units, uncertainty, plausibility | `uncertainty-and-units/SKILL.md`, `uncertainty-and-units/references/` |
+| Publication figures, style, palettes | `scientific-visualization/SKILL.md`, `scientific-visualization/references/`, `scientific-visualization/assets/` |
+| Statistical plots (distributions, heatmaps, categorical) | `seaborn/SKILL.md`, `seaborn/references/` |
 
-## 4. DepMap access notes
+## 4. Data-source notes
+
+### DepMap
+
 
 - The DepMap portal catalogue may return a verification page instead of data. Do not
   scrape around it. Ask the researcher to download the file into `inputs/` and register
@@ -98,7 +132,37 @@ Read the guide's `SKILL.md` first, then only the references you need. Paths are 
 - For single-gene questions, the Open Targets `depMapEssentiality` GraphQL field may be
   used (see `database-lookup/references/opentargets.md`).
 
-## 5. Scientific rules
+### cBioPortal datahub
+
+The datahub git-LFS / S3 download can fail (LFS pointer files or S3 errors instead of
+data). Do not retry blindly. Fall back to the cBioPortal API and reconcile record
+counts: compare the number of samples/patients/mutations retrieved against the study
+summary count and report any discrepancy in the Sources and Limitations sections.
+
+### Ledger `terms`
+
+The `terms` value in `sources.jsonl` must be `""`, `"unverified"`, or `"quoted: "`
+followed by text copied verbatim from the source's own terms page. Never paraphrase or
+invent licence terms; use `"unverified"` when you did not read them.
+
+## 5. Figures
+
+- **Location and format:** figures go in `outputs/figures/`, as PNG (300 dpi) plus SVG. Each is listed in `outputs/index.json` with `units: "none"`, an `identifiers` value, and a one-sentence caption in `description`. The final report references every figure by path.
+- **Style:** use `vendor/scientific-agent-skills/scientific-visualization/assets/publication.mplstyle` and its colour-blind-safe palettes. Run `palette_audit.py` on custom palettes.
+- **Required figure sets** (produce those that apply):
+
+  | Analysis | Figures |
+  |---|---|
+  | Cohort / mutation | Alteration landscape (genes × samples or frequency bars by cohort); co-occurrence / mutual-exclusivity heatmap with q-values |
+  | Expression QC | Library sizes; PCA coloured by condition/batch |
+  | Differential expression | Volcano (labelled top genes, thresholds drawn); MA plot; heatmap of top genes (z-scored) |
+  | Enrichment | GSEA dot plot (NES, q); running-score plots for sets cited in the report |
+  | DepMap / dependencies | Gene-effect distributions by stratum (violin or box plus points); dependency ranking |
+  | Proposal summary | One figure per proposal showing the evidence behind each seed or target (e.g. per-gene evidence tiles) |
+
+- **Honesty rules:** state n per group in the figure or caption; never truncate axes without marking it; show uncertainty where it exists.
+
+## 6. Scientific rules
 
 - Network scope: only documented database APIs and download endpoints named in the
   vendored guides, or URLs the researcher supplied. No general web search or scraping.
@@ -107,7 +171,7 @@ Read the guide's `SKILL.md` first, then only the references you need. Paths are 
   `literature-reviewer`.
 - Every data-to-model choice is a proposal, never a decision. Report limitations.
 
-## 6. Templates
+## 7. Templates
 
 Both index files are a bare JSON list of objects (no wrapping object).
 
@@ -132,7 +196,7 @@ identifiers type or `"none"`):
 of `seed_genes`, `initial_states`, `mutations`, `validation_targets`, `parameters`,
 `time_course`. Use exactly one value each.
 
-`report.md` headings:
+Report headings (final message, saved by the recorder as `report.md`):
 
 ```markdown
 # <title>
@@ -144,7 +208,7 @@ of `seed_genes`, `initial_states`, `mutations`, `validation_targets`, `parameter
 ## 6. Proposals and decisions required from the researcher
 ```
 
-## 7. Citation reminder
+## 8. Citation reminder
 
 Pass every vendored guide that informed the analysis to `manifest.py build --skills`
 (for example `--skills pydeseq2 pathway-enrichment`) and list them in the report Methods,

@@ -69,15 +69,27 @@ excerpt rather than loading whole state files.
 
 ## Handoff
 
-Return one typed handoff envelope with: `schema_version`, `specialist: data_analyst`,
-`status`, `stage: data`, `session_id`, `derived_from_session_id`, `actions`,
-`assumptions`, `decisions_required`, `artifacts` (path + sha256), `validation.checks`,
-`validation.passed`, `recommended_next_stage`.
+Finish with `manifest.py build`, `manifest.py verify`, then write `handoff_notes.json` in
+your session root (actions, assumptions, validation_checks, decisions, blocked; see
+`data-workflow`) and run:
 
-- Any proposal exists: `status: needs_approval`, one `decisions_required` entry per
-  proposal, `recommended_next_stage: null`.
-- Analysis only and `verify` passed: `completed`.
-- `.venv-data`, a source, a required input or the CellProfiler install is missing or
-  unreachable: `blocked`, with concrete remediation (for example
-  `python3 scripts/setup.py --with-data`, or the input the researcher must supply).
-- Tamper check or `verify` failure: `failed`.
+`.venv-data/bin/python -E -s scripts/data/handoff.py build --session <id> --status <status> --notes handoff_notes.json`
+
+`handoff.py` generates the envelope, artifact hashes and one decision per proposal.
+Hand-written JSON envelopes are forbidden; never write `handoff.json` yourself.
+
+Status rules (the script refuses violations):
+
+- Any proposal exists, including partial results with blocked parts: `needs_approval`
+  (blocked parts become decision items).
+- Outputs only, no proposals, nothing blocked: `completed`.
+- No outputs and no proposals (`.venv-data`, a source, a required input or the
+  CellProfiler install is missing or unreachable): `blocked`, with concrete remediation
+  (for example `python3 scripts/setup.py --with-data`, or the input the researcher must
+  supply).
+- Verification failure, tamper check or a crashed script: `failed`.
+
+Your final message is the human-readable report (headings in `data-workflow`; it
+references every figure by path and contains no inline JSON). Its last line is exactly
+`Handoff: runs/data-analyst/<id>/handoff.json sha256=<64hex>`, copied from the
+`Handoff written:` line of `handoff.py`.

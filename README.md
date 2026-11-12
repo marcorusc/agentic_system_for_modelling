@@ -371,7 +371,7 @@ smoke test (`tests/integration/biomass_smoke.py`).
 
 ## Citation and third-party skills
 
-The `data-analyst` specialist uses ten skills vendored from
+The `data-analyst` specialist uses twelve skills vendored from
 [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) at commit `2d2065fb4520fa3f3f2bcf61cff26ec8b7eba4b5`,
 stored under `vendor/scientific-agent-skills/` with a hash lock. Licenses and
 attributions are in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md); local changes are

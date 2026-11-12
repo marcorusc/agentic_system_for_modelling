@@ -11,7 +11,7 @@ CP_ENV = Path(".venv-cellprofiler")
 DATA_PYTHON_VERSION = "3.12"
 LOCK = Path("setup/data-requirements.lock")
 CP_REQUIREMENTS = Path("setup/data-requirements-cellprofiler.txt")
-IMPORT_PROBE = "import pydeseq2, gseapy, anndata, decoupler, sklearn, statsmodels, pint, uncertainties, gget"
+IMPORT_PROBE = "import pydeseq2, gseapy, anndata, decoupler, sklearn, statsmodels, pint, uncertainties, gget, seaborn, matplotlib"
 
 
 def data_python(root: Path) -> Path:

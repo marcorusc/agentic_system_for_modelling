@@ -12,3 +12,4 @@ pint==0.26.2
 uncertainties==3.2.3
 gget==0.30.8
 requests==2.34.2
+seaborn==0.13.2

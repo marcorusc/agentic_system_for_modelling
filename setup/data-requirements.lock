@@ -226,7 +226,9 @@ scipy==1.18.1
 scverse-misc==0.1.8
     # via anndata
 seaborn==0.13.2
-    # via marsilea
+    # via
+    #   -r setup/data-requirements.txt
+    #   marsilea
 session-info==1.0.1
     # via formulaic-contrasts
 session-info2==0.4.2

@@ -2,7 +2,7 @@
 
 ## K-Dense-AI/scientific-agent-skills
 
-Ten skills are vendored unmodified (except where listed in
+Twelve skills are vendored unmodified (except where listed in
 `vendor/scientific-agent-skills/VENDOR.md`) under `vendor/scientific-agent-skills/`.
 
 - Source: https://github.com/K-Dense-AI/scientific-agent-skills
@@ -21,6 +21,8 @@ Per-skill license and author (from each SKILL.md frontmatter):
 - `statistical-analysis`: MIT; author K-Dense Inc.
 - `scikit-learn`: BSD-3-Clause; author K-Dense Inc.
 - `uncertainty-and-units`: MIT; author K-Dense Inc.
+- `scientific-visualization`: MIT; author K-Dense Inc.
+- `seaborn`: BSD-3-Clause; author K-Dense Inc.
 
 For local changes to the vendored files see `vendor/scientific-agent-skills/VENDOR.md`.
 
@@ -74,6 +76,35 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ### scikit-learn: BSD 3-Clause License
+
+Copyright (c) 2025 K-Dense Inc.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+3. Neither the name of the copyright holder nor the names of its
+   contributors may be used to endorse or promote products derived from
+   this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+### seaborn: BSD 3-Clause License
 
 Copyright (c) 2025 K-Dense Inc.
 

@@ -23,6 +23,8 @@ auto-load them. Treat their scripts as untrusted until run by the guarded specia
 | `statistical-analysis` | MIT | K-Dense Inc. |
 | `scikit-learn` | BSD-3-Clause | K-Dense Inc. |
 | `uncertainty-and-units` | MIT | K-Dense Inc. |
+| `scientific-visualization` | MIT | K-Dense Inc. |
+| `seaborn` | BSD-3-Clause | K-Dense Inc. |
 
 Each skill keeps its own license; see `THIRD_PARTY_NOTICES.md` at the repository root.
 
@@ -38,7 +40,7 @@ also record `local_sha256`, reason and date.
 ## Re-sync procedure
 
 1. Clone upstream into a new empty directory outside this repository and check out the new commit.
-2. Copy the ten `skills/<name>/` directories, `LICENSE.md` and `CITATION.cff` over this tree (copy files only; do not execute upstream code).
+2. Copy the twelve `skills/<name>/` directories, `LICENSE.md` and `CITATION.cff` over this tree (copy files only; do not execute upstream code).
 3. Re-apply every modification listed above.
 4. Update `UPSTREAM_COMMIT` in `scripts/data/vendor_lock.py`, this file, `THIRD_PARTY_NOTICES.md` and the README.
 5. Rebuild the lock: `python3 scripts/data/vendor_lock.py build --upstream <clean checkout> --modified-reason PATH=REASON` (once per modified file).

@@ -25,6 +25,8 @@ VENDORED_SKILLS: tuple[str, ...] = (
     "statistical-analysis",
     "scikit-learn",
     "uncertainty-and-units",
+    "scientific-visualization",
+    "seaborn",
 )
 VENDOR_ROOT = Path("vendor/scientific-agent-skills")
 UPSTREAM_URL = "https://github.com/K-Dense-AI/scientific-agent-skills"

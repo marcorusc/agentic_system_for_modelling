@@ -35,6 +35,38 @@ sign, `manifest.py verify` passes, the real SubagentStop recorder writes
 `integrity.json` with `passed: true`, `validate_handoff` accepts a `needs_approval`
 handoff, and a later edit to `DECISIONS.md` is detected. It ends with `DATA SMOKE PASSED`.
 
+## Handoff, report and receive procedure
+
+The agent finishes with `manifest.py build` and `verify`, writes `handoff_notes.json`
+and runs `handoff.py build`, which generates `handoff.json` (artifact hashes, one
+decision per proposal, status rules enforced). Its final message is the report and ends
+with `Handoff: runs/data-analyst/<id>/handoff.json sha256=<64hex>`. The SubagentStop
+recorder saves that final message as `report.md`; the agent never writes it.
+
+After each data-analyst completion the orchestrator runs:
+
+```bash
+python3 scripts/data/receive.py --session <id> --agent-id <agent-id>
+```
+
+If the integrity record or the `runs/index.json` registration is missing (the hook did
+not fire), `receive.py` recovers the capture from the subagent transcript, then runs
+`manifest.verify` and `validate_handoff` and prints the decision table. Proposals are
+presented or acted on only after it prints `RECEIVED ... OK`. `receive.py` never edits
+shared state.
+
+Figures go in `outputs/figures/` (PNG 300 dpi plus SVG, indexed in `outputs/index.json`)
+using the vendored `scientific-visualization` style; see the `data-workflow` skill.
+
+### Source notes
+
+- cBioPortal datahub git-LFS/S3 downloads can fail; the agent falls back to the API and
+  reconciles record counts.
+- The DepMap portal requires human verification: download the release files yourself
+  into `inputs/`; the agent registers them with `fetch.py --input`. Open Targets is for
+  single-gene queries.
+- Setup re-renders the `ode-modeler` agent only with `--with-biomass`.
+
 ## Provenance checks
 
 - `sources.jsonl` paths are project-root-relative (`data-cache/sha256/<hex>`,
@@ -87,6 +119,8 @@ Inline subagent behaviour needs an interactive Claude Code session. Items marked
       silently). Approving a prompt with "always" writes `.claude/settings.local.json`;
       that file is excluded from the snapshot, so the run's `integrity.json` must still
       report `passed: true` afterwards.
+- [ ] (h) A data run ends with `receive.py` → `RECEIVED … OK` and `report.md` written
+      by the recorder.
 
 ## Threat model
 
