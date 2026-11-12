@@ -117,6 +117,36 @@ class HandoffTests(unittest.TestCase):
             {"id": "B2", "question": "w2 — y2; remediation: r2"}])
         self.assertFalse(data["validation"]["passed"])
 
+    def test_blocked_without_reason_refused(self):
+        """G10: blocked needs a blocked item or a decision so the researcher sees why."""
+        with self.assertRaisesRegex(ValueError, "status blocked needs a blocked item or a decision"):
+            self.finish({}, "blocked")
+        self.assertFalse((self.dir / "handoff.json").exists())
+
+    def test_blocked_with_only_decision_accepted(self):
+        self.finish({"decisions": [{"id": "D1", "question": "which release?"}]}, "blocked")
+        self.assertEqual(self.load()["decisions_required"], [{"id": "D1", "question": "which release?"}])
+
+    def test_needs_approval_without_proposals_accepted(self):
+        """F4: notes decisions or blocked items alone justify needs_approval."""
+        self.add_outputs()
+        self.finish({"decisions": [{"id": "D1", "question": "accept the figure?"}]}, "needs_approval")
+        self.assertEqual([d["id"] for d in self.load()["decisions_required"]], ["D1"])
+        self.finish({"blocked": [{"what": "w", "why": "y", "remediation": "r"}]}, "needs_approval")
+        self.assertEqual([d["id"] for d in self.load()["decisions_required"]], ["B1"])
+
+    def test_needs_approval_without_anything_refused(self):
+        self.add_outputs()
+        with self.assertRaisesRegex(ValueError, "needs_approval needs a proposal, a decision or a blocked item"):
+            self.finish({}, "needs_approval")
+
+    def test_completed_with_blocked_items_refused(self):
+        """F4: completed is refused while blocked items exist."""
+        self.add_outputs()
+        with self.assertRaisesRegex(ValueError, "completed needs outputs and no blocked items"):
+            self.finish({"blocked": [{"what": "w", "why": "y", "remediation": "r"}]}, "completed")
+        self.assertFalse((self.dir / "handoff.json").exists())
+
     def test_decision_artifact_hashed(self):
         self.add_outputs()
         self.finish({"decisions": [{"id": "D1", "question": "q", "artifact": "outputs/de.csv"}]},

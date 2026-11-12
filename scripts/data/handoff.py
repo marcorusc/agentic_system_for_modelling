@@ -145,6 +145,9 @@ def build(root: Path, session_id: str, status: str, notes_rel: str) -> tuple[Pat
             raise ValueError("status completed needs outputs and no blocked items")
         if status == "needs_approval" and not (proposals or notes["decisions"] or blocked):
             raise ValueError("status needs_approval needs a proposal, a decision or a blocked item")
+        if status == "blocked" and not (notes["decisions"] or blocked):
+            raise ValueError("status blocked needs a blocked item or a decision in the notes "
+                             "(the researcher must see why)")
         if not proposals and not outputs and status != "blocked":
             raise ValueError("no outputs and no proposals; status must be blocked")
 
