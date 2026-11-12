@@ -51,6 +51,7 @@ in provenance; convert before comparing dates across midnight.
 | `validation-declare` | Criterion, Method, Required evidence; creates a unique pending criterion |
 | `validation` | Supported artifact-validator JSON output; only updates already declared criterion IDs |
 | `checkpoint` | Full content-commit SHA and `summary`; no self-referential metadata commit |
+| `data-product` | Exactly `name`, `type`, `meaning`, `unit`, `identifiers`, `source_session` (data session ID), `path`, `sha256` (verified), `release`, `decision_id`, `notes`; appends a `DATA_DICTIONARY.md` row. `decision_id` must be the `id` of an existing governance record, so first `record` the researcher's `stage_approval` (stage `data`) after `receive.py` prints `RECEIVED <id> OK` (see [data workflow](data-workflow.md)) |
 
 An artifact reference is `{"path":"repository/relative/file","sha256":"..."}`.
 Hashes are verified, not accepted as annotations. A validation result contains
@@ -213,8 +214,9 @@ reproducible command or patch. Biological values are not inferred from signed ed
 ## Capture and validation
 
 See [capture commands](../scripts/capture/README.md) for one-command handoff/package
-capture, guarded reports, immutable invocation records, resource metadata, index
-recovery and usage tables. The server still chooses its original artifact root;
+capture, recorder-written reports (the SubagentStop recorder saves each specialist's
+final message as the immutable `report.md`), immutable invocation records, resource
+metadata, index recovery and usage tables. The server still chooses its original artifact root;
 these repository helpers capture exports without fixing category B server behavior.
 Missing usage/resource fields remain null, not invented. Artifact copy and index
 publication are separate recoverable operations.

@@ -58,4 +58,4 @@ For a scientific ODE result awaiting parent capture, return a metadata-only need
 
 Claude background specialists must use the bundled local references; do not attempt MCP resource bridge calls.
 
-Return the full report as your final message; the recorder saves it as `runs/ode-modeler/{biomass_session_id}/report.md`. Do not Write report files (Claude Code blocks subagent Writes to report-style .md names). (when a session exists). A pre-session blocker remains in the invocation record. Capture tools write verified artifacts and metadata; orchestrator interpretations belong under `runs/orchestrator/`. Preserve the distinction between provisional capture and scientific approval.
+Return the full report as your final message; when a session exists, the recorder saves it as `runs/ode-modeler/{biomass_session_id}/report.md`. Do not Write report files (Claude Code blocks subagent Writes to report-style .md names). A pre-session blocker remains in the invocation record. Capture tools write verified artifacts and metadata; orchestrator interpretations belong under `runs/orchestrator/`. Preserve the distinction between provisional capture and scientific approval.

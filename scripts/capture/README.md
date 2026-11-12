@@ -128,12 +128,17 @@ hooks:
           command: 'python3 "$CLAUDE_PROJECT_DIR/.claude/scripts/specialist_report_guard.py" network-curator'
 ```
 
-Use the matching agent name for each agent. `Write` must be allowed by that agent
-and removed from its `disallowedTools`. Only its own
-`runs/<specialist>/<session>/report.md` is writable. The session must appear in the
-current invocation's modelling MCP calls/results. Reports cannot be overwritten;
-later full reports remain in their separate invocation records. The guard may use
-`--session-id` only when the dispatcher has an explicit session binding.
+Use the matching agent name for each agent. The guard denies every Write except the
+agent's own `runs/<specialist>/<session>/report.md`, whose session must appear in the
+current invocation's modelling MCP calls/results; it may use `--session-id` only when
+the dispatcher has an explicit session binding. Specialists do not write reports
+themselves (Claude Code blocks subagent Writes to report-style `.md` names): each
+returns its full report as its final message (or `SubagentHandback` message), and the
+SubagentStop recorder below writes it once, atomically, as
+`runs/<specialist>/<session>/report.md`. Reports are never overwritten: an existing
+`report.md` is kept and later full reports remain in their separate invocation records
+(`invocation.json` `report_md` is `written`, `identical` or `kept-first`). data-analyst
+uses its own guard (`.claude/scripts/data_guard.py`), which forbids writing `report.md`.
 
 The project `SubagentStop` command is:
 
@@ -146,7 +151,8 @@ fields. Nonmodelling agents are ignored. A unique modelling-session identity is
 required for scientific attribution; ambiguous identities fail with an actionable
 error, preserving the original Claude transcript. The immutable `invocation/<agent_id>/` record
 contains the task text, sanitized transcript, tool arguments/results, final full
-report, source transcript digest, and usage summary. Common credential fields are
+report (`final_report.md`, also materialized as the session `report.md`), source
+transcript digest, and usage summary. Common credential fields are
 redacted using the same sanitizer as the Codex runtime.
 
 Attempts that stop before creating a scientific session are preserved under

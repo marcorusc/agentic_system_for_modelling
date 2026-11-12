@@ -55,20 +55,65 @@ decision per proposal, status rules enforced). Its final message is the report a
 with `Handoff: runs/data-analyst/<id>/handoff.json sha256=<64hex>`. The SubagentStop
 recorder saves that final message as `report.md`; the agent never writes it.
 
-After each data-analyst completion the orchestrator runs:
+Immediately after each data-analyst completion notification, before any state write,
+the orchestrator runs:
 
 ```bash
 python3 scripts/data/receive.py --session <id> --agent-id <agent-id>
 ```
 
 If the integrity record or the `runs/index.json` registration is missing (the hook did
-not fire), `receive.py` recovers the capture from the subagent transcript, then runs
-`manifest.verify` and `validate_handoff` and prints the decision table. Proposals are
-presented or acted on only after it prints `RECEIVED ... OK`. `receive.py` never edits
-shared state.
+not fire), `receive.py` first checks that the agent transcript created exactly that
+session (a wrong `--agent-id` is refused before anything is recorded), then recovers the
+capture from the transcript. It runs `manifest.verify` and `validate_handoff`, requires
+the recorded final report to end with `Handoff: runs/data-analyst/<id>/handoff.json
+sha256=<hex>` matching the current `handoff.json`, and prints one row per decision
+(`id | kind | layer | path | sha256 prefix`; note decisions show their artifact path),
+`Handoff status: <status>` and `RECEIVED <id> OK`. Proposals are presented or acted on
+only after `RECEIVED ... OK`. `receive.py` never edits shared state.
+
+- `RECEIVE FAILED: <reason>`: relay the reason to the researcher verbatim, do not repair,
+  rebuild or edit any file, and ask the researcher how to proceed. `failed`-status runs
+  are expected to fail here.
+- No session (for example `.venv-data` missing): the agent's final message reports
+  `blocked` with the reason and remediation and has no `Handoff:` line. There is nothing
+  to receive; skip `receive.py` and relay the reason.
+
+### Recording an approved data product
+
+After `RECEIVED ... OK` and the researcher's explicit decision:
+
+1. Record the approval as a governance record (`python3 scripts/state.py record --input
+   approval.json`), stage `data`:
+
+   ```json
+   {"id": "data-approval-1", "kind": "stage_approval", "stage": "data",
+    "session_id": "<data session id>", "approved_by": "researcher",
+    "authorization": "<exact quotation or durable request reference>",
+    "outputs": ["P1"],
+    "artifact": {"path": "runs/data-analyst/<id>/handoff.json", "sha256": "<hex>"}}
+   ```
+
+2. Register each approved product in `DATA_DICTIONARY.md` (`python3 scripts/state.py
+   data-product --input product.json`). All keys are required strings; `path`/`sha256`
+   are verified and `decision_id` must be the `id` of a governance record in
+   `DECISIONS.md`:
+
+   ```json
+   {"name": "seed_genes_P1", "type": "gene list", "meaning": "...", "unit": "none",
+    "identifiers": "HGNC symbol", "source_session": "<data session id>",
+    "path": "runs/data-analyst/<id>/proposals/P1_seed_genes.csv", "sha256": "<hex>",
+    "release": "<source release>", "decision_id": "data-approval-1", "notes": "..."}
+   ```
+
+Model use of an approved proposal is then tagged `data-derived` in `DECISIONS.md`
+(data session ID, proposal id and SHA256).
 
 Figures go in `outputs/figures/` (PNG 300 dpi plus SVG, indexed in `outputs/index.json`)
-using the vendored `scientific-visualization` style; see the `data-workflow` skill.
+using the vendored `scientific-visualization` style. The vendored skill's `uv run` and
+skill-directory instructions do not apply under the data guard; the `data-workflow`
+skill gives the runnable form (saved session script run with `.venv-data/bin/python -E -s`,
+`Agg` backend, vendored style and palettes by repository path, `palette_audit.py`).
 
 ### Source notes
 

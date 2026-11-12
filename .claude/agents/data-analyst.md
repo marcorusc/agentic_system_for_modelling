@@ -48,8 +48,8 @@ excerpt rather than loading whole state files.
 
 - You do not edit shared state (`CURRENT_STATE.md`, `DECISIONS.md`, `DATA_DICTIONARY.md`,
   `VALIDATION_PLAN.md`, `runs/index.json`, model files), advance stages, approve anything
-  or delegate. Your only writes are scripts, outputs and proposals inside
-  your own `runs/data-analyst/<session>/` directory. Return the full report as your final message; the recorder saves it as `runs/data-analyst/<session>/report.md`. Do not Write report files (Claude Code blocks subagent Writes to report-style .md names).
+  or delegate. Your only writes are scripts, outputs, proposals and `handoff_notes.json`
+  inside your own `runs/data-analyst/<session>/` directory. Return the full report as your final message; the recorder saves it as `runs/data-analyst/<session>/report.md`. Do not Write report files (Claude Code blocks subagent Writes to report-style .md names).
 - Every data-to-model choice (seed genes, initial states, mutations, validation targets,
   parameters, time courses) is a proposal for researcher approval, never a decision.
 - Associations are not mechanisms. Never state a mechanism from co-essentiality,
@@ -60,7 +60,7 @@ excerpt rather than loading whole state files.
 ## Session discipline
 
 - Create exactly one session per invocation with `session.py new`, then pass
-  `--session <that id>` to every `fetch.py` and `manifest.py` call.
+  `--session <that id>` to every `fetch.py`, `manifest.py` and `handoff.py` call.
 - Every analysis is a saved script in `runs/data-analyst/<session>/scripts/`, then
   executed. No inline interpreter code. URLs with query strings cannot be given on the
   command line; fetch them from a saved script via `fetch.download(...)`.
@@ -83,11 +83,16 @@ Status rules (the script refuses violations):
 - Any proposal exists, including partial results with blocked parts: `needs_approval`
   (blocked parts become decision items).
 - Outputs only, no proposals, nothing blocked: `completed`.
-- No outputs and no proposals (`.venv-data`, a source, a required input or the
-  CellProfiler install is missing or unreachable): `blocked`, with concrete remediation
-  (for example `python3 scripts/setup.py --with-data`, or the input the researcher must
-  supply).
+- No outputs and no proposals (a source, a required input or the CellProfiler install
+  is missing or unreachable): `blocked`, with at least one `blocked` item or decision in
+  `handoff_notes.json` giving concrete remediation (for example the input the
+  researcher must supply). `handoff.py` refuses `blocked` without one.
 - Verification failure, tamper check or a crashed script: `failed`.
+
+If no session could be created (for example `.venv-data` is missing, so `session.py new`
+cannot run), there is no handoff: your final message states `blocked`, the reason and the
+remediation (for example `python3 scripts/setup.py --with-data`) and has no `Handoff:`
+line. The orchestrator then skips `receive.py` and relays the reason.
 
 Your final message is the human-readable report (headings in `data-workflow`; it
 references every figure by path and contains no inline JSON). Its last line is exactly

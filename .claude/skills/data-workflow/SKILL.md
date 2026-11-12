@@ -31,6 +31,8 @@ the commands below; it delegates to `data-analyst`.
 6. Write `handoff_notes.json` in the session root (schema below), then build the handoff:
    `.venv-data/bin/python -E -s scripts/data/handoff.py build --session <id> --status <needs_approval|completed|blocked|failed> --notes handoff_notes.json`
    The last stdout line is `Handoff written: runs/data-analyst/<id>/handoff.json sha256=<hex>`.
+   Run it last: rebuilding `handoff.json` after you copy that line makes the orchestrator's
+   `receive.py` fail.
 7. Final message: the human-readable report (headings in section 7), whose last line is
    exactly `Handoff: runs/data-analyst/<id>/handoff.json sha256=<64hex>`. The recorder saves
    that message as `report.md`; do not write `report.md` or `handoff.json` yourself and
@@ -55,10 +57,13 @@ manifest proposal. Status rules (the script refuses violations):
 |---|---|
 | Any proposal, including partial results with blocked parts | `needs_approval`; blocked parts are decision items |
 | Outputs only, no proposals, nothing blocked | `completed` |
-| No outputs and no proposals | `blocked` |
+| No outputs and no proposals | `blocked`; needs at least one `blocked` item or decision (the reason) |
 | Verification failed or a script crashed | `failed` |
 
-If `.venv-data` is missing, return `blocked` with remediation `python3 scripts/setup.py --with-data`.
+No session (for example `.venv-data` is missing, so `session.py new` cannot run): there is
+nothing to hand off. Your final message states `blocked`, the reason and the remediation
+(`python3 scripts/setup.py --with-data`) and has no `Handoff:` line; the orchestrator
+skips `receive.py` and relays the reason.
 
 ## 2. Command rules
 
@@ -125,7 +130,6 @@ Read the guide's `SKILL.md` first, then only the references you need. Paths are 
 
 ### DepMap
 
-
 - The DepMap portal catalogue may return a verification page instead of data. Do not
   scrape around it. Ask the researcher to download the file into `inputs/` and register
   it with `fetch.py --input`; it is then referenced by hash.
@@ -149,6 +153,54 @@ invent licence terms; use `"unverified"` when you did not read them.
 
 - **Location and format:** figures go in `outputs/figures/`, as PNG (300 dpi) plus SVG. Each is listed in `outputs/index.json` with `units: "none"`, an `identifiers` value, and a one-sentence caption in `description`. The final report references every figure by path.
 - **Style:** use `vendor/scientific-agent-skills/scientific-visualization/assets/publication.mplstyle` and its colour-blind-safe palettes. Run `palette_audit.py` on custom palettes.
+- **The vendored skill's run instructions do not apply here.** Its `uv run --isolated ...`
+  commands, running from the skill directory, and `Path.cwd()` as the skill root (in
+  `references/matplotlib_examples.md`) are all refused by the guard or resolve wrongly:
+  `uv` and `cd` are not allowed, and every command runs from the repository root. Read
+  its guidance; run figures as below.
+- **How to make a figure:** save a script as `runs/data-analyst/<id>/scripts/NN_figures.py`
+  and run `.venv-data/bin/python -E -s runs/data-analyst/<id>/scripts/NN_figures.py`.
+  Reach vendored assets and helper modules by repository-relative path through
+  `sys.path`, never by copying them:
+
+  ```python
+  #!/usr/bin/env python3
+  import sys
+  from pathlib import Path
+
+  SESSION = Path(__file__).resolve().parents[1]   # runs/data-analyst/<id>
+  ROOT = Path(__file__).resolve().parents[4]      # repository root
+  VIS = ROOT / "vendor" / "scientific-agent-skills" / "scientific-visualization"
+  sys.path[:0] = [str(VIS / "assets"), str(VIS / "scripts")]
+
+  import matplotlib  # noqa: E402
+  matplotlib.use("Agg")  # headless, no display
+  import matplotlib.pyplot as plt  # noqa: E402
+  from color_palettes import OKABE_ITO_ON_WHITE  # noqa: E402
+
+  plt.style.use(VIS / "assets" / "publication.mplstyle")
+  figdir = SESSION / "outputs" / "figures"
+  figdir.mkdir(parents=True, exist_ok=True)
+  fig, ax = plt.subplots()
+  ...  # plot with OKABE_ITO_ON_WHITE; label axes with units and n per group
+  for ext in ("png", "svg"):
+      fig.savefig(figdir / f"volcano.{ext}", dpi=300)
+  plt.close(fig)
+  ```
+
+  Then list each file in `outputs/index.json` (see section 7).
+- **Palette audit** (bundled palette, or repeat `--color` with a quoted hex per colour):
+
+  `.venv-data/bin/python -E -s vendor/scientific-agent-skills/scientific-visualization/scripts/palette_audit.py --palette okabe_ito_on_white --role graphical --output runs/data-analyst/<id>/outputs/figures/palette_audit.json`
+
+  `--color "#0072B2" --color "#D55E00"` replaces `--palette`; `--list-palettes` prints the
+  bundled names. It refuses to overwrite an existing `--output` unless `--force` is given.
+  Index `palette_audit.json` in `outputs/index.json` too: `manifest.py verify` fails on any
+  unindexed file under `outputs/`.
+  Report `contrast_screen.review_count` and `grayscale_screen.review_count`; a review
+  finding means adding redundant encodings (markers, line styles, direct labels) or
+  stating it under Limitations. `--fail-on background|grayscale|any` makes it exit 1 on
+  such findings.
 - **Required figure sets** (produce those that apply):
 
   | Analysis | Figures |

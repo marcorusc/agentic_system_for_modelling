@@ -32,14 +32,19 @@ cannot delegate, alter shared state or advance stages. Specialists return their 
 
 Data retrieval and analysis are delegated to `data-analyst`. The orchestrator never
 runs `vendor/scientific-agent-skills` scripts or `.venv-data`. data-analyst invocations
-never run concurrently with other specialists or state writes. The orchestrator
-registers each approved data product in `DATA_DICTIONARY.md` (name, identifiers, units,
-source release, data session ID).
-After each data-analyst completion notification, run
+never run concurrently with other specialists or state writes.
+Immediately after each data-analyst completion notification, before any state write, run
 `python3 scripts/data/receive.py --session <id> --agent-id <agentId>`; it recovers a
-missing SubagentStop capture and validates the handoff. Never present or act on
-proposals before it prints `RECEIVED <session> OK`. Data briefs list every upstream
-artifact the analyst may read, with its path and sha256.
+missing SubagentStop capture and validates the handoff and the final report's `Handoff:`
+line. Never present or act on proposals before it prints `RECEIVED <session> OK`. On
+`RECEIVE FAILED` relay the reason verbatim, never repair files, and ask the researcher.
+A run with no session (final message `blocked` without a `Handoff:` line, e.g.
+`.venv-data` missing) has nothing to receive: skip receive.py and relay the reason.
+After researcher approval, record it with `state.py record` (`stage_approval`, stage
+`data`, the handoff.json as `artifact`), then register each approved product in
+`DATA_DICTIONARY.md` with `state.py data-product` (its `decision_id` is that record's
+`id`); see docs/data-workflow.md. Data briefs list every upstream artifact the analyst
+may read, with its path and sha256.
 
 The orchestrator must have no modelling MCP tools; stop if any are visible. Run the
 setup isolation guard. Four specialist-inline *-agent transports expose only NeKo to
