@@ -29,11 +29,23 @@ Offline, in a temporary repo copy. The real `.venv-data` is not copied: the copy
 real `.venv-data/` directory with a copied `pyvenv.cfg` and a real `bin/` whose entries
 are symlinks into the real venv (the data guard rejects a symlinked venv). It prints
 `SKIP: .venv-data not installed` and exits 0 when `.venv-data` is absent. It creates a session,
-runs the vendored PyDESeq2 and GSEA scripts on a synthetic 4-vs-4 dataset, and checks
-`deseq_dataset.h5ad` exists, `SET_UP`/`SET_DOWN` come out significant with the right NES
-sign, `manifest.py verify` passes, the real SubagentStop recorder writes
-`integrity.json` with `passed: true`, `validate_handoff` accepts a `needs_approval`
-handoff, and a later edit to `DECISIONS.md` is detected. It ends with `DATA SMOKE PASSED`.
+runs the vendored PyDESeq2 and GSEA scripts on a synthetic 4-vs-4 dataset and proves:
+
+- `deseq_dataset.h5ad` exists and `SET_UP`/`SET_DOWN` come out significant with the right NES sign;
+- a session script renders `outputs/figures/volcano` and `gsea_dotplot` (PNG and SVG) with the
+  vendored `publication.mplstyle`; each PNG carries a 300 dpi `pHYs` chunk (11811 px/m), each SVG
+  is non-empty, and all are indexed in `outputs/index.json` with a caption and `units: "none"`;
+- `manifest.py verify` passes;
+- `handoff.py build --status needs_approval` writes `handoff.json` and prints
+  `Handoff written: ... sha256=<hex>`;
+- the real SubagentStop recorder writes `integrity.json` with `passed: true`, takes the report
+  from the final `SubagentHandback` message into `report.md`, and `validate_handoff` accepts the handoff;
+- after deleting `integrity.json`, `invocation/`, `report.md` and the index entry (hook never fired),
+  `receive.py --transcript-root` recovers the capture, prints `RECEIVED <id> OK`, and `report.md`
+  equals `final_report.md`;
+- a later edit to `DECISIONS.md` is detected.
+
+It ends with `DATA SMOKE PASSED`.
 
 ## Handoff, report and receive procedure
 

@@ -13,7 +13,9 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import shutil
+import struct
 import subprocess
 import sys
 import tempfile
@@ -70,6 +72,45 @@ ledger.append(session, {"kind": "input", "uri": "synthetic:sets.gmt", "release":
                         "path": gmt.relative_to(root).as_posix()})
 '''
 
+FIGURES = '''\
+import csv, sys
+from pathlib import Path
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import numpy as np
+
+session, style = Path(sys.argv[1]), sys.argv[2]
+plt.style.use(style)
+figdir = session / "outputs" / "figures"
+figdir.mkdir(parents=True, exist_ok=True)
+with (session / "outputs" / "de" / "deseq2_results_unshrunken.csv").open(newline="") as h:
+    res = [r for r in csv.DictReader(h) if r["padj"] not in ("", "NA") and r["log2FoldChange"] not in ("", "NA")]
+lfc = np.array([float(r["log2FoldChange"]) for r in res])
+padj = np.array([float(r["padj"]) for r in res])
+nlp = -np.log10(np.clip(padj, 1e-300, None))
+sig = (padj < 0.05) & (np.abs(lfc) > 1)
+fig, ax = plt.subplots()
+ax.scatter(lfc[~sig], nlp[~sig], s=6, color="0.6")
+ax.scatter(lfc[sig], nlp[sig], s=8, color="C3")
+ax.set_xlabel("log2 fold change (treated vs control)")
+ax.set_ylabel("-log10 adjusted p-value")
+for ext in ("png", "svg"):
+    fig.savefig(figdir / f"volcano.{ext}", dpi=300)
+plt.close(fig)
+with (session / "outputs" / "gsea" / "gsea_significant.csv").open(newline="") as h:
+    rows = list(csv.DictReader(h))
+rows.sort(key=lambda r: float(r["NES"]))
+fig, ax = plt.subplots()
+ax.scatter([float(r["NES"]) for r in rows], range(len(rows)),
+           c=[-np.log10(max(float(r["FDR q-val"]), 1e-4)) for r in rows])
+ax.set_yticks(range(len(rows)), [r["Term"] for r in rows])
+ax.set_xlabel("normalised enrichment score")
+for ext in ("png", "svg"):
+    fig.savefig(figdir / f"gsea_dotplot.{ext}", dpi=300, bbox_inches="tight")
+plt.close(fig)
+'''
+
 # Units per known numeric column. Unknown numeric columns fail loudly.
 UNITS = {
     "baseMean": "normalised read counts", "log2FoldChange": "log2 ratio", "lfcSE": "log2 ratio",
@@ -84,6 +125,14 @@ for _s in range(1, 5):
 UNITS["Gene_set_size"] = "genes"
 
 
+CAPTIONS = {
+    "volcano.png": "Volcano plot of DESeq2 results (treated vs control), 300 dpi",
+    "volcano.svg": "Volcano plot of DESeq2 results (treated vs control), vector",
+    "gsea_dotplot.png": "GSEA dotplot of significant gene sets by NES, 300 dpi",
+    "gsea_dotplot.svg": "GSEA dotplot of significant gene sets by NES, vector",
+}
+
+
 def step(msg: str) -> None:
     print(f"[ok] {msg}", flush=True)
 
@@ -95,7 +144,7 @@ def build_outputs_index(session: Path, manifest) -> None:
         rel = path.relative_to(session).as_posix()
         if rel == "outputs/index.json":
             continue
-        entry = {"path": rel, "description": f"smoke output {path.name}",
+        entry = {"path": rel, "description": CAPTIONS.get(path.name, f"smoke output {path.name}"),
                  "identifiers": "synthetic gene IDs GENE0001-GENE0600", "units": "none"}
         if path.suffix.lower() in (".csv", ".tsv"):
             delim = "," if path.suffix.lower() == ".csv" else "\t"
@@ -108,6 +157,19 @@ def build_outputs_index(session: Path, manifest) -> None:
             entry["units"] = units
         entries.append(entry)
     (out / "index.json").write_text(json.dumps(entries, indent=2), encoding="utf-8")
+
+
+def png_dpi_chunk(path: Path) -> tuple[int, int, int]:
+    """Return (x pixels/metre, y pixels/metre, unit) from the PNG pHYs chunk (stdlib only)."""
+    data = path.read_bytes()
+    assert data[:8] == b"\x89PNG\r\n\x1a\n", f"{path.name} is not a PNG"
+    pos = 8
+    while pos + 8 <= len(data):
+        length, kind = struct.unpack(">I4s", data[pos:pos + 8])
+        if kind == b"pHYs":
+            return struct.unpack(">IIB", data[pos + 8:pos + 17])
+        pos += 12 + length
+    raise AssertionError(f"{path.name} has no pHYs chunk")
 
 
 def link_venv(target: Path) -> None:
@@ -175,7 +237,8 @@ def run(tmp: Path) -> None:
     os.environ["CLAUDE_PROJECT_DIR"] = str(root)
     from scripts.capture.record_invocation import record
     from scripts.codex.validate_handoff import validate_handoff
-    from scripts.data import manifest, snapshot
+    from scripts.data import manifest, receive, snapshot
+    from scripts.data.common import sha256_file
 
     # 2. DESeq2
     (session / "scripts" / "01_synthetic.py").write_text(SYNTHETIC, encoding="utf-8")
@@ -206,6 +269,20 @@ def run(tmp: Path) -> None:
     assert down and all(v < 0 for v in down), f"SET_DOWN not significant with NES<0: {down}"
     step(f"GSEA significant: SET_UP NES={up}, SET_DOWN NES={down}")
 
+    # figures (session script, run in the data venv with the vendored publication style)
+    style = root / "vendor/scientific-agent-skills/scientific-visualization/assets/publication.mplstyle"
+    assert style.is_file(), style
+    (session / "scripts" / "02_figures.py").write_text(FIGURES, encoding="utf-8")
+    sh(str(session / "scripts" / "02_figures.py"), str(session), str(style))
+    figdir = session / "outputs" / "figures"
+    for name in ("volcano", "gsea_dotplot"):
+        for ext in ("png", "svg"):
+            assert (figdir / f"{name}.{ext}").stat().st_size > 0, f"{name}.{ext} missing or empty"
+        x, y, unit = png_dpi_chunk(figdir / f"{name}.png")
+        assert unit == 1 and abs(x - 11811) <= 1 and abs(y - 11811) <= 1, (name, x, y, unit)
+        assert b"<svg" in (figdir / f"{name}.svg").read_bytes()
+    step("figures rendered: PNG 300 dpi (pHYs) and non-empty SVG for volcano and GSEA dotplot")
+
     # proposals + indexes + manifest
     with (de / "deseq2_results_unshrunken.csv").open(newline="", encoding="utf-8") as h:
         rows = list(csv.DictReader(h))
@@ -218,45 +295,85 @@ def run(tmp: Path) -> None:
          "path": "proposals/P1_seed_genes.csv", "method": "top 10 genes by DESeq2 Wald stat",
          "thresholds": {}}]), encoding="utf-8")
     build_outputs_index(session, manifest)
-    (session / "report.md").write_text("# Smoke report\n\nSynthetic analysis.\n", encoding="utf-8")
     sh("scripts/data/manifest.py", "build", "--session", sid, "--skills", "pydeseq2", "pathway-enrichment")
     verify = sh("scripts/data/manifest.py", "verify", "--session", sid, check=False)
     assert verify.returncode == 0, verify.stdout + verify.stderr
     step("manifest.py verify exit 0")
 
-    # 4. recorder (real) with a synthetic transcript
+    # 4. handoff (mechanical, from notes)
+    (session / "handoff_notes.json").write_text(json.dumps({
+        "actions": ["synthetic DESeq2 and GSEA", "volcano and GSEA dotplot figures"],
+        "assumptions": ["synthetic negative-binomial counts"],
+        "validation_checks": ["planted SET_UP/SET_DOWN recovered by GSEA"],
+        "decisions": [{"id": "D1", "question": "accept the figures as publication quality?",
+                       "artifact": "outputs/figures/volcano.png"}]}), encoding="utf-8")
+    hproc = sh("scripts/data/handoff.py", "build", "--session", sid, "--status", "needs_approval",
+               "--notes", "handoff_notes.json")
+    hline = hproc.stdout.strip().splitlines()[-1]
+    hrel = f"runs/data-analyst/{sid}/handoff.json"
+    assert re.fullmatch(re.escape(f"Handoff written: {hrel} sha256=") + r"[0-9a-f]{64}", hline), hline
+    hdigest = hline.rsplit("sha256=", 1)[1]
+    assert hdigest == sha256_file(session / "handoff.json")
+    handoff = json.loads((session / "handoff.json").read_text(encoding="utf-8"))
+    assert handoff["status"] == "needs_approval"
+    assert [d["id"] for d in handoff["decisions_required"]] == ["P1", "D1"], handoff["decisions_required"]
+    step("handoff.py build wrote handoff.json")
+
+    # 5. recorder (real) with a synthetic transcript ending in SubagentHandback
+    report_text = ("# Smoke report\n\nSynthetic analysis.\n\n"
+                   f"Handoff: {hrel} sha256={hdigest}")
     events = [
         {"type": "assistant", "message": {"role": "assistant", "content": [
             {"type": "tool_use", "id": "t1", "name": "Bash", "input": {"command": command}}]}},
         {"type": "user", "message": {"role": "user", "content": [
             {"type": "tool_result", "tool_use_id": "t1", "content": proc.stdout.strip()}]}},
         {"type": "assistant", "message": {"role": "assistant", "content": [
-            {"type": "text", "text": "# Smoke report\n\nSynthetic analysis."}]}}]
-    transcripts = tmp / "transcripts"
-    transcripts.mkdir()
-    tpath = transcripts / "agent-1.jsonl"
+            {"type": "tool_use", "id": "t2", "name": "SubagentHandback",
+             "input": {"message": report_text}}]}}]
+    agent_id = "agent-1"
+    # The hook never firing leaves runs/index.json and its lock exactly as before the
+    # capture (they are snapshot-protected), so remember their pre-record state.
+    shared = [root / "runs" / "index.json", root / "runs" / ".index.capture.lock"]
+    before = {f: (f.read_bytes() if f.exists() else None) for f in shared}
+    tpath = tmp / f"{agent_id}.jsonl"
     tpath.write_text("".join(json.dumps(e) + "\n" for e in events), encoding="utf-8")
-    record(root, {"agent_type": "data-analyst", "agent_id": "agent-1",
+    record(root, {"agent_type": "data-analyst", "agent_id": agent_id,
                   "agent_transcript_path": str(tpath)})
     integrity = json.loads((session / "integrity.json").read_text(encoding="utf-8"))
     assert integrity["passed"] is True, integrity
-    step("recorder integrity passed: true")
+    validate_handoff(handoff, project_root=root, expected_specialist="data_analyst",
+                     expected_session_id=sid)
+    final_report = session / "invocation" / agent_id / "final_report.md"
+    assert (session / "report.md").read_bytes() == final_report.read_bytes()
+    assert final_report.read_text(encoding="utf-8").rstrip().endswith(f"Handoff: {hrel} sha256={hdigest}")
+    step("recorder integrity passed: true; validate_handoff accepted handoff; report.md written from SubagentHandback")
 
-    # 5. handoff
-    base = f"runs/data-analyst/{sid}"
-    artifacts = [{"path": f"{base}/{n}",
-                  "sha256": hashlib.sha256((root / base / n).read_bytes()).hexdigest()}
-                 for n in ("manifest.json", "report.md", "proposals/P1_seed_genes.csv")]
-    handoff = {"schema_version": 1, "specialist": "data_analyst", "status": "needs_approval",
-               "stage": "data", "session_id": sid, "derived_from_session_id": None,
-               "actions": ["synthetic DESeq2 and GSEA"], "assumptions": [],
-               "decisions_required": [{"id": "P1", "question": "approve P1 seed genes?",
-                                   "path": f"runs/data-analyst/{sid}/proposals/P1_seed_genes.csv",
-                                   "sha256": hashlib.sha256((root / base / "proposals/P1_seed_genes.csv").read_bytes()).hexdigest()}], "artifacts": artifacts,
-               "validation": {"checks": ["manifest verified"], "passed": True},
-               "recommended_next_stage": None}
-    validate_handoff(handoff, project_root=root, expected_specialist="data_analyst")
-    step("validate_handoff accepted needs_approval handoff")
+    # 5b. simulate the hook never firing, then recover with receive.py
+    (session / "integrity.json").unlink()
+    shutil.rmtree(session / "invocation")
+    (session / "report.md").unlink()
+    index = json.loads((root / "runs" / "index.json").read_text(encoding="utf-8"))
+    assert any(r.get("capture_path") == f"runs/data-analyst/{sid}/invocation/{agent_id}"
+               for r in index["runs"]), index
+    for f, content in before.items():  # drop the capture's index entry
+        if content is None:
+            f.unlink(missing_ok=True)
+        else:
+            f.write_bytes(content)
+    troot = tmp / "transcripts"
+    tdir = troot / receive.project_slug(root) / "uuid-1" / "subagents"
+    tdir.mkdir(parents=True)
+    shutil.copy2(tpath, tdir / f"agent-{agent_id}.jsonl")
+    rproc = subprocess.run(
+        ["python3", "scripts/data/receive.py", "--session", sid, "--agent-id", agent_id,
+         "--transcript-root", str(troot)], cwd=root, env=env, text=True, capture_output=True)
+    assert rproc.returncode == 0, rproc.stdout + rproc.stderr
+    assert rproc.stdout.strip().splitlines()[-1] == f"RECEIVED {sid} OK", rproc.stdout
+    assert (session / "report.md").is_file()
+    assert (session / "report.md").read_bytes() == final_report.read_bytes()
+    integrity = json.loads((session / "integrity.json").read_text(encoding="utf-8"))
+    assert integrity["passed"] is True, integrity
+    step("receive.py recovered the missing capture: RECEIVED OK, report.md == final_report.md")
 
     # 6. negative check
     decisions.write_text("# Decisions\ntampered\n", encoding="utf-8")
