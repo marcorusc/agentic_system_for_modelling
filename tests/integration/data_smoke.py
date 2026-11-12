@@ -66,7 +66,7 @@ for k in range(1, 19):
 gmt = session / "raw" / "sets.gmt"
 gmt.write_text("".join(f"{n}\\tsynthetic\\t" + "\\t".join(v) + "\\n" for n, v in sets.items()))
 ledger.append(session, {"kind": "input", "uri": "synthetic:sets.gmt", "release": "synthetic",
-                        "retrieved_at": utc_now(), "sha256": sha256_file(gmt), "terms": "synthetic",
+                        "retrieved_at": utc_now(), "sha256": sha256_file(gmt), "terms": "unverified",
                         "path": gmt.relative_to(root).as_posix()})
 '''
 
@@ -229,7 +229,9 @@ def run(tmp: Path) -> None:
         {"type": "assistant", "message": {"role": "assistant", "content": [
             {"type": "tool_use", "id": "t1", "name": "Bash", "input": {"command": command}}]}},
         {"type": "user", "message": {"role": "user", "content": [
-            {"type": "tool_result", "tool_use_id": "t1", "content": proc.stdout.strip()}]}}]
+            {"type": "tool_result", "tool_use_id": "t1", "content": proc.stdout.strip()}]}},
+        {"type": "assistant", "message": {"role": "assistant", "content": [
+            {"type": "text", "text": "# Smoke report\n\nSynthetic analysis."}]}}]
     transcripts = tmp / "transcripts"
     transcripts.mkdir()
     tpath = transcripts / "agent-1.jsonl"
@@ -248,7 +250,9 @@ def run(tmp: Path) -> None:
     handoff = {"schema_version": 1, "specialist": "data_analyst", "status": "needs_approval",
                "stage": "data", "session_id": sid, "derived_from_session_id": None,
                "actions": ["synthetic DESeq2 and GSEA"], "assumptions": [],
-               "decisions_required": ["approve P1 seed genes?"], "artifacts": artifacts,
+               "decisions_required": [{"id": "P1", "question": "approve P1 seed genes?",
+                                   "path": f"runs/data-analyst/{sid}/proposals/P1_seed_genes.csv",
+                                   "sha256": hashlib.sha256((root / base / "proposals/P1_seed_genes.csv").read_bytes()).hexdigest()}], "artifacts": artifacts,
                "validation": {"checks": ["manifest verified"], "passed": True},
                "recommended_next_stage": None}
     validate_handoff(handoff, project_root=root, expected_specialist="data_analyst")

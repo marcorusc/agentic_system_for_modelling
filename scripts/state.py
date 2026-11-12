@@ -20,6 +20,8 @@ ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = ["Specialist", "Session ID", "Stage", "Status", "Derived from", "Handoff", "Artifacts"]
 DECISIONS = ["Date", "Decision", "Alternatives considered", "Rationale", "Evidence", "Approved by"]
 VALIDATION = ["Criterion", "Method", "Required evidence", "Status", "Result"]
+DATA_DICTIONARY = ["Name", "Type", "Biological meaning", "Unit", "Source", "Version", "Notes"]
+DATA_PRODUCT_KEYS = {"name", "type", "meaning", "unit", "identifiers", "source_session", "path", "sha256", "release", "decision_id", "notes"}
 RECORD = re.compile(r"<!-- governance-record -->\s*```json\n(.*?)\n```", re.S)
 ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 ROLES = {"network-curator": "topology", "boolean-dynamics-modeler": "boolean-dynamics", "multicellular-configurator": "multicellular", "ode-modeler": "biomass_ode", "data-analyst": "data"}
@@ -179,7 +181,7 @@ def update(root, operation, item):
         raise ValueError("state update must be a JSON object")
     root = root.resolve()
     with locked(root):
-        name = "DECISIONS.md" if operation in {"decision", "record"} else "VALIDATION_PLAN.md" if operation in {"validation", "validation-declare"} else "CURRENT_STATE.md"
+        name = "DECISIONS.md" if operation in {"decision", "record"} else "DATA_DICTIONARY.md" if operation == "data-product" else "VALIDATION_PLAN.md" if operation in {"validation", "validation-declare"} else "CURRENT_STATE.md"
         path = root / name
         text = path.read_text(encoding="utf-8")
         if operation == "decision":
@@ -257,6 +259,26 @@ def update(root, operation, item):
             if not seen:
                 raise ValueError("validator output has no results")
             text = replace_table(text, VALIDATION, rows)
+        elif operation == "data-product":
+            if set(item) != DATA_PRODUCT_KEYS or any(not isinstance(v, str) for v in item.values()):
+                raise ValueError("data-product requires exactly: " + ", ".join(sorted(DATA_PRODUCT_KEYS)))
+            from scripts.data.common import SESSION_RE
+            if SESSION_RE.fullmatch(item["source_session"]) is None:
+                raise ValueError("source_session is not a data session ID")
+            if not item["name"].strip() or not item["release"].strip():
+                raise ValueError("data product needs a name and release")
+            checked_artifact(root, {"path": item["path"], "sha256": item["sha256"]})
+            decisions = {r["id"] for r in records((root / "DECISIONS.md").read_text(encoding="utf-8"))}
+            if item["decision_id"] not in decisions:
+                raise ValueError("decision_id not found in DECISIONS.md governance records")
+            rows = table(text, DATA_DICTIONARY)[3]
+            if any(r["Name"] == item["name"] for r in rows):
+                raise ValueError("data product name already registered")
+            rows.append({"Name": item["name"], "Type": item["type"], "Biological meaning": item["meaning"], "Unit": item["unit"],
+                         "Source": f"`{item['source_session']}` `{item['path']}` sha256 `{item['sha256'][:12]}`",
+                         "Version": item["release"],
+                         "Notes": f"identifiers: {item['identifiers']}; decision {item['decision_id']}; {item['notes']}"})
+            text = replace_table(text, DATA_DICTIONARY, rows)
         elif operation == "checkpoint":
             commit = item.get("commit", "")
             if not re.fullmatch(r"[a-f0-9]{40}", commit) or not item.get("summary"):
@@ -270,7 +292,7 @@ def update(root, operation, item):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("operation", choices=["decision", "record", "registry-add", "registry-supersede", "registry-handoff", "validation-declare", "validation", "checkpoint"])
+    parser.add_argument("operation", choices=["decision", "record", "registry-add", "registry-supersede", "registry-handoff", "validation-declare", "validation", "checkpoint", "data-product"])
     parser.add_argument("--input", required=True, type=Path)
     parser.add_argument("--root", type=Path, default=ROOT)
     args = parser.parse_args()

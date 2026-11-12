@@ -34,8 +34,11 @@ def validate_entry(entry: dict) -> None:
     sha = entry.get("sha256")
     if not isinstance(sha, str) or _SHA_RE.fullmatch(sha) is None:
         raise ValueError("ledger sha256 must be 64 lowercase hex characters")
-    if not isinstance(entry.get("terms"), str):
-        raise ValueError("ledger terms must be a string")
+    terms = entry.get("terms")
+    if not isinstance(terms, str) or not (
+        terms in ("", "unverified") or (terms.startswith("quoted: ") and terms[len("quoted: "):].strip())
+    ):
+        raise ValueError('ledger terms must be "", "unverified" or "quoted: <text>"')
 
 
 def append(session: Path, entry: dict) -> None:
