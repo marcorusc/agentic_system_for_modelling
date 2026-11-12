@@ -60,6 +60,14 @@ class VendorTests(unittest.TestCase):
         ):
             self.assertIn(needle, text)
 
+    def test_bsd_license_texts_present(self):
+        text = (REPO / "THIRD_PARTY_NOTICES.md").read_text(encoding="utf-8")
+        self.assertIn("Redistribution and use in source and binary forms", text)
+        self.assertIn("Neither the name of", text)
+        self.assertIn("Copyright (c) 2025 K-Dense Inc.", text)
+        self.assertIn("BSD 2-Clause License", text)
+        self.assertIn("BSD 3-Clause License", text)
+
     def test_not_under_skill_discovery(self):
         for base in (".claude/skills", "skills"):
             for name in VENDORED_SKILLS:
