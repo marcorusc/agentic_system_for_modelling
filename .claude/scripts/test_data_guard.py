@@ -430,6 +430,23 @@ class CliTests(GuardFixture):
         result = self.run_cli("write", self.write(self.session / "outputs" / "x.csv", transcript_path=bound))
         self.assertEqual(result.returncode, 0, result.stderr)
 
+    def test_cli_binds_from_agent_id_subagent_transcript(self) -> None:
+        # PreToolUse events from a subagent carry the main transcript_path plus agent_id;
+        # the subagent's own transcript is <main without .jsonl>/subagents/agent-<id>.jsonl.
+        main = self.transcript("sess.jsonl")
+        (self.root / "sess" / "subagents").mkdir(parents=True)
+        self.transcript("sess/subagents/agent-abc123.jsonl", tool_use("t1", NEW), tool_result("t1", created()))
+        script = f"{PY} runs/data-analyst/{ACTIVE}/scripts/analysis.py"
+        result = self.run_cli("bash", self.bash(script, transcript_path=main, agent_id="abc123"))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        result = self.run_cli("write", self.write(self.session / "outputs" / "x.csv",
+                                                  transcript_path=main, agent_id="abc123"))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        for agent_id in ("missing", "../sess/subagents/agent-abc123", "abc/123", "", 7):
+            with self.subTest(agent_id=agent_id):
+                self.assert_blocked(self.run_cli("bash", self.bash(script, transcript_path=main,
+                                                                   agent_id=agent_id)), "Bash")
+
     def test_cli_missing_transcript_means_no_session(self) -> None:
         for extra in ({}, {"transcript_path": str(self.root / "missing.jsonl")}, {"transcript_path": 5}):
             with self.subTest(extra=extra):

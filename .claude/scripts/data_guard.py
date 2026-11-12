@@ -29,6 +29,7 @@ except Exception as _import_error:  # pragma: no cover - fail closed as a hook
         raise SystemExit(2)
     raise
 
+AGENT_ID_RE = re.compile(r"[A-Za-z0-9_-]{1,128}")
 CREATED_RE = re.compile(r"Data session created: (\S+) \(snapshot sha256=([0-9a-f]{64})\)")
 # Shell syntax rejected anywhere in the raw command, quoted or not (R2).
 FORBIDDEN = frozenset(";|&<>$`\\\n\r")
@@ -286,10 +287,28 @@ def transcript_data_session(transcript: Path, *, root: Path | None = None) -> tu
     return next(iter(sessions.items()), None)
 
 
+def _event_transcript(event: dict) -> str | None:
+    """agent_transcript_path, else the subagent transcript derived from agent_id, else
+    transcript_path. PreToolUse events from a subagent carry the main session's
+    transcript_path plus agent_id; the subagent's own transcript is
+    ``<transcript_path without .jsonl>/subagents/agent-<agent_id>.jsonl``."""
+    if "agent_transcript_path" in event:
+        return event["agent_transcript_path"]
+    main = event.get("transcript_path")
+    if "agent_id" in event:
+        agent_id = event["agent_id"]
+        if not isinstance(agent_id, str) or AGENT_ID_RE.fullmatch(agent_id) is None:
+            return None
+        if not isinstance(main, str) or not main.endswith(".jsonl"):
+            return None
+        return str(Path(main[: -len(".jsonl")]) / "subagents" / f"agent-{agent_id}.jsonl")
+    return main
+
+
 def bound_session(event: dict, root: Path) -> str | None:
-    """R10: prefer agent_transcript_path; a missing/unreadable transcript is no session."""
-    key = "agent_transcript_path" if "agent_transcript_path" in event else "transcript_path"
-    path = event.get(key)
+    """R10: bind only from this invocation's own transcript (see _event_transcript);
+    a missing/unreadable transcript is no session."""
+    path = _event_transcript(event)
     if not isinstance(path, str) or not path:
         return None
     try:

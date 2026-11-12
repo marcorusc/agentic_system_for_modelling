@@ -138,6 +138,7 @@ def record(project, payload):
     if specialist == 'data-analyst' and session is not None:
         integrity = data_integrity(project, transcript, session, invocation)
     calls, prompts, final, usage_rows, timestamps = [], [], [], {}, []
+    handback = None  # Claude Code SubagentHandback tool_use carries the final report
     for event in events:
         if not isinstance(event, dict): raise ValueError('transcript events must be objects')
         if event.get('timestamp'):
@@ -155,9 +156,15 @@ def record(project, payload):
             for block in content:
                 if not isinstance(block, dict): raise ValueError('transcript blocks must be objects')
                 if block.get('type') in {'tool_use', 'tool_result'}: calls.append(block)
+                if (event.get('type') == 'assistant' and block.get('type') == 'tool_use'
+                        and block.get('name') == 'SubagentHandback'
+                        and isinstance(block.get('input'), dict)
+                        and isinstance(block['input'].get('message'), str)):
+                    handback = block['input']['message']
                 elif block.get('type') == 'text': text.append(block.get('text', ''))
             if event.get('type') == 'assistant' and text: final = text
             if event.get('type') == 'user' and text: prompts.extend(text)
+    if handback is not None: final = [handback]
     def total(key):
         values = [row.get(key) for row in usage_rows.values()]
         return sum(values) if values and all(type(v) is int and v >= 0 for v in values) else None

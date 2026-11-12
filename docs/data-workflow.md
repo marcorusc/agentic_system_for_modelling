@@ -75,8 +75,9 @@ Inline subagent behaviour needs an interactive Claude Code session. Items marked
 
 - [ ] (a) `/agents` shows `data-analyst`.
 - [ ] (b) **MERGE GATE.** A data-analyst invocation can create a session and then run
-      `ls`. This confirms the guard reads the right transcript field
-      (`agent_transcript_path` versus `transcript_path`).
+      `ls`. Fixed in code; re-verify. Subagent PreToolUse events carry the main
+      `transcript_path` plus `agent_id`, and the guard derives
+      `<transcript without .jsonl>/subagents/agent-<agent_id>.jsonl` (R10).
 - [ ] (c) A read-only task works end to end and `manifest.py verify` passes.
 - [ ] (d) `integrity.json`, written by the SubagentStop recorder, has `passed: true`.
 - [ ] (e) **MERGE GATE.** The main session running a vendored script is denied.
