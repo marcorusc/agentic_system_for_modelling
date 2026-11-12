@@ -20,7 +20,7 @@ from pathlib import Path
 if __package__ in (None, ""):  # run as a script: make the repo importable
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from scripts.capture.record_invocation import _index_registers, record
+from scripts.capture.record_invocation import _data_guard, _index_registers, record
 from scripts.codex.validate_handoff import HandoffValidationError, validate_handoff
 from scripts.data import manifest
 from scripts.data.common import RUNS_ROOT, project_root, session_dir
@@ -55,6 +55,20 @@ def find_transcript(root: Path, agent_id: str, transcript_root: Path) -> Path:
     return matches[0]
 
 
+def _check_binding(root: Path, transcript: Path, agent_id: str, session_id: str) -> None:
+    """Refuse recovery unless the transcript binds exactly --session (never record another session)."""
+    try:
+        bound = _data_guard().transcript_data_session(transcript, root=root)
+    except (OSError, ValueError) as exc:
+        raise ValueError(f"cannot bind a data session from the transcript of agent {agent_id}: {exc}; "
+                         "check --agent-id") from exc
+    if bound is None:
+        raise ValueError(f"the transcript of agent {agent_id} binds no data session; check --agent-id")
+    if bound[0] != session_id:
+        raise ValueError(f"the transcript of agent {agent_id} binds data session {bound[0]}, not {session_id}; "
+                         "check --agent-id (nothing was recorded)")
+
+
 def receive(root: Path, session_id: str, agent_id: str, transcript_root: Path | None) -> dict:
     _check_agent_id(agent_id)
     root = Path(root).resolve()
@@ -63,6 +77,7 @@ def receive(root: Path, session_id: str, agent_id: str, transcript_root: Path | 
     recovered = False
     if not (session / "integrity.json").is_file() or not _index_registers(root, relative):
         transcript = find_transcript(root, agent_id, transcript_root or default_transcript_root())
+        _check_binding(root, transcript, agent_id, session_id)
         record(root, {"agent_type": "data-analyst", "agent_id": agent_id,
                       "agent_transcript_path": str(transcript), "stop_hook_active": False,
                       "hook_event_name": "SubagentStop"})

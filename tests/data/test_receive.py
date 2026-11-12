@@ -108,6 +108,28 @@ class ReceiveTests(unittest.TestCase):
         self.assertEqual(code, 0, err.getvalue())
         self.assertEqual(out.getvalue().splitlines()[-1], f"RECEIVED {self.sid} OK")
 
+    def test_wrong_agent_id_never_records_another_session(self):
+        """I2: an --agent-id whose transcript binds an earlier session must not touch it."""
+        self.hook_record()
+        receive.receive(self.root, self.sid, AID, self.troot)
+        earlier = (self.dir / "integrity.json").read_bytes()
+        (self.root / "DECISIONS.md").write_text("changed after the earlier run\n", encoding="utf-8")
+        sid2, _ = session.new_session(self.root, "y", None)
+        with self.assertRaisesRegex(ValueError, f"binds data session {self.sid}, not {sid2}.*--agent-id"):
+            receive.receive(self.root, sid2, AID, self.troot)
+        self.assertEqual((self.dir / "integrity.json").read_bytes(), earlier)
+        with mock.patch("scripts.data.receive.record") as recorder:
+            with self.assertRaises(ValueError):
+                receive.receive(self.root, sid2, AID, self.troot)
+            recorder.assert_not_called()
+        self.assertFalse((session_dir(self.root, sid2) / "invocation").exists())
+
+    def test_transcript_without_session_refused(self):
+        self.transcript.write_text("", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "binds no data session"):
+            receive.receive(self.root, self.sid, AID, self.troot)
+        self.assertFalse((self.dir / "invocation").exists())
+
     def test_recovers_missing_capture(self):
         self.assertFalse((self.dir / "integrity.json").exists())
         result = receive.receive(self.root, self.sid, AID, self.troot)
