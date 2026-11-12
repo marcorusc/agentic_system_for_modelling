@@ -40,7 +40,6 @@ class DataHandoffTests(unittest.TestCase):
         (self.dir / "outputs" / "index.json").write_text(json.dumps([
             {"path": "outputs/de.csv", "description": "DE", "units": {"padj": "dimensionless"},
              "identifiers": "HGNC symbol"}]), encoding="utf-8")
-        (self.dir / "report.md").write_text("# Report\n", encoding="utf-8")
         manifest.build(self.root, self.sid, [])
         self.record_integrity()
 
@@ -52,7 +51,9 @@ class DataHandoffTests(unittest.TestCase):
                 {"type": "tool_use", "id": "t1", "name": "Bash", "input": {"command": command}}]}},
             {"type": "user", "message": {"role": "user", "content": [
                 {"type": "tool_result", "tool_use_id": "t1",
-                 "content": f"Data session created: {self.sid} (snapshot sha256={self.digest})"}]}}]
+                 "content": f"Data session created: {self.sid} (snapshot sha256={self.digest})"}]}},
+            {"type": "assistant", "message": {"role": "assistant", "content": [
+                {"type": "text", "text": "# Report\nDone."}]}}]
         path = self.outside / "agent-1.jsonl"
         path.write_text("".join(json.dumps(e) + "\n" for e in events), encoding="utf-8")
         record(self.root, {"agent_type": "data-analyst", "agent_id": "agent-1",
@@ -70,6 +71,15 @@ class DataHandoffTests(unittest.TestCase):
             {"id": "P1", "target_layer": "neko", "kind": "seed_genes",
              "path": "proposals/P1_seed_genes.csv", "method": "m", "thresholds": {}}]), encoding="utf-8")
 
+    def p1_decision(self, **override):
+        manifest.build(self.root, self.sid, [])
+        entry = json.loads((self.dir / "manifest.json").read_text())["proposals"][0]
+        decision = {"id": "P1", "kind": "seed_genes", "target_layer": "neko",
+                    "path": f"runs/data-analyst/{self.sid}/{entry['path']}", "sha256": entry["sha256"],
+                    "question": "Approve P1?"}
+        decision.update(override)
+        return decision
+
     def handoff(self, status="completed", decisions=()):
         manifest.build(self.root, self.sid, [])
         base = f"runs/data-analyst/{self.sid}"
@@ -81,7 +91,7 @@ class DataHandoffTests(unittest.TestCase):
                 "session_id": self.sid, "derived_from_session_id": None, "actions": ["analysed"],
                 "assumptions": [], "decisions_required": list(decisions), "artifacts": artifacts,
                 "validation": {"checks": ["manifest verified"], "passed": True},
-                "recommended_next_stage": None if status == "needs_approval" else "researcher_approval"}
+                "recommended_next_stage": "researcher_approval" if status == "completed" else None}
 
     def check(self, payload):
         return validate_handoff(payload, project_root=self.root, expected_specialist="data_analyst")
@@ -96,7 +106,7 @@ class DataHandoffTests(unittest.TestCase):
 
     def test_needs_approval_with_proposals_accepted(self):
         self.add_proposal()
-        self.check(self.handoff("needs_approval", ["approve P1?"]))
+        self.check(self.handoff("needs_approval", [self.p1_decision()]))
 
     def test_needs_approval_requires_decision_per_proposal(self):
         self.add_proposal()
@@ -169,12 +179,12 @@ class DataHandoffTests(unittest.TestCase):
 
     def test_needs_approval_fabricated_sha_and_missing_artifact_rejected(self):
         self.add_proposal()
-        payload = self.handoff("needs_approval", ["approve P1?"])
+        payload = self.handoff("needs_approval", [self.p1_decision()])
         for artifact in payload["artifacts"]:
             artifact["sha256"] = "0" * 64
         with self.assertRaisesRegex(HandoffValidationError, "sha256 mismatch"):
             self.check(payload)
-        payload = self.handoff("needs_approval", ["approve P1?"])
+        payload = self.handoff("needs_approval", [self.p1_decision()])
         payload["artifacts"].append({"path": f"runs/data-analyst/{self.sid}/proposals/does_not_exist.csv",
                                      "sha256": "0" * 64})
         with self.assertRaisesRegex(HandoffValidationError, "not an existing regular file"):
@@ -182,14 +192,14 @@ class DataHandoffTests(unittest.TestCase):
 
     def test_needs_approval_requires_object_artifacts_with_sha(self):
         self.add_proposal()
-        payload = self.handoff("needs_approval", ["approve P1?"])
+        payload = self.handoff("needs_approval", [self.p1_decision()])
         payload["artifacts"][0] = payload["artifacts"][0]["path"]
         with self.assertRaisesRegex(HandoffValidationError, "requires sha256"):
             self.check(payload)
 
     def test_proposal_artifact_sha_must_equal_manifest(self):
         self.add_proposal()
-        payload = self.handoff("needs_approval", ["approve P1?"])
+        payload = self.handoff("needs_approval", [self.p1_decision()])
         rel = f"runs/data-analyst/{self.sid}/proposals/P1_seed_genes.csv"
         payload["artifacts"].append({"path": rel, "sha256": hashlib.sha256(
             (self.root / rel).read_bytes()).hexdigest()})
@@ -202,6 +212,59 @@ class DataHandoffTests(unittest.TestCase):
         with mock.patch("scripts.data.manifest.verify", return_value=[]):
             with self.assertRaisesRegex(HandoffValidationError, "proposal artifact sha256 differs"):
                 self.check(payload)
+
+    def test_blocked_with_proposals_rejected(self):
+        self.add_proposal()
+        payload = self.handoff("blocked", [self.p1_decision()])
+        with self.assertRaisesRegex(HandoffValidationError, "proposals require needs_approval"):
+            self.check(payload)
+
+    def test_data_checks_run_for_blocked_with_artifacts(self):
+        payload = self.handoff("blocked")
+        (self.dir / "integrity.json").unlink()
+        with self.assertRaisesRegex(HandoffValidationError, "integrity"):
+            self.check(payload)
+
+    def test_decision_missing_question_rejected(self):
+        self.add_proposal()
+        decision = self.p1_decision()
+        del decision["question"]
+        with self.assertRaisesRegex(HandoffValidationError, "question"):
+            self.check(self.handoff("needs_approval", [decision]))
+        with self.assertRaisesRegex(HandoffValidationError, "decision"):
+            self.check(self.handoff("needs_approval", [self.p1_decision(), "approve?"]))
+
+    def test_proposal_decision_matched_by_id(self):
+        self.add_proposal()
+        with self.assertRaisesRegex(HandoffValidationError, "P1"):
+            self.check(self.handoff("needs_approval", [self.p1_decision(id="D1")]))
+
+    def test_proposal_decision_sha_mismatch_rejected(self):
+        self.add_proposal()
+        with self.assertRaisesRegex(HandoffValidationError, "sha256"):
+            self.check(self.handoff("needs_approval", [self.p1_decision(sha256="2" * 64)]))
+        with self.assertRaisesRegex(HandoffValidationError, "path"):
+            self.check(self.handoff("needs_approval", [self.p1_decision(path="proposals/x.csv")]))
+
+    def test_missing_report_md_rejected(self):
+        payload = self.handoff()
+        (self.dir / "report.md").unlink()
+        payload["artifacts"] = [a for a in payload["artifacts"] if not a["path"].endswith("report.md")]
+        with self.assertRaisesRegex(HandoffValidationError, "report.md"):
+            self.check(payload)
+
+    def test_report_md_mismatch_rejected(self):
+        (self.dir / "report.md").write_text("# Other\n", encoding="utf-8")
+        with self.assertRaisesRegex(HandoffValidationError, "report.md"):
+            self.check(self.handoff())
+
+    def test_handoff_py_output_validates(self):
+        from scripts.data import handoff as handoff_py
+        self.add_proposal()
+        manifest.build(self.root, self.sid, [])
+        (self.dir / "notes.json").write_text(json.dumps({"actions": ["analysed"]}), encoding="utf-8")
+        path, _ = handoff_py.build(self.root, self.sid, "needs_approval", "notes.json")
+        self.check(json.loads(path.read_text(encoding="utf-8")))
 
     def test_state_registry_accepts_data_analyst(self):
         self.assertEqual(state.ROLES["data-analyst"], "data")

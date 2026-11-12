@@ -295,6 +295,17 @@ def _data_session_checks(handoff: dict[str, Any], project: Path) -> None:
         raise HandoffValidationError("integrity.json has no registered recorder invocation record") from error
     if embedded != integrity:
         raise HandoffValidationError("integrity.json differs from the recorder invocation record")
+    # report.md must be the recorder's copy of the final report, not agent-authored.
+    report, final = base / "report.md", base / "invocation" / invocation / "final_report.md"
+    if report.is_symlink() or (handoff["status"] in {"completed", "needs_approval"} and not report.is_file()):
+        raise HandoffValidationError("data session report.md is missing (the recorder writes it)")
+    if report.exists():
+        try:
+            same = report.read_bytes() == final.read_bytes()
+        except OSError as error:
+            raise HandoffValidationError("cannot compare report.md with the recorded final report") from error
+        if not same:
+            raise HandoffValidationError("report.md differs from the recorded final report")
     try:
         errors = data_manifest.verify(project, session)
     except (OSError, ValueError, KeyError, TypeError) as error:
@@ -315,10 +326,25 @@ def _data_session_checks(handoff: dict[str, Any], project: Path) -> None:
         path = _artifact_path(entry, index)
         if path in proposal_sha and entry["sha256"].lower() != proposal_sha[path]:
             raise HandoffValidationError(f"proposal artifact sha256 differs from the manifest: {path}")
-    if handoff["status"] == "completed" and proposals:
+    if handoff["status"] in {"completed", "blocked"} and proposals:
         raise HandoffValidationError("proposals require needs_approval")
-    if handoff["status"] == "needs_approval" and len(handoff["decisions_required"]) < len(proposals):
-        raise HandoffValidationError("needs_approval requires a decision for each proposal")
+    decisions = handoff["decisions_required"]
+    for item in decisions:
+        if (not isinstance(item, dict) or not isinstance(item.get("id"), str) or not item["id"].strip()
+                or not isinstance(item.get("question"), str) or not item["question"].strip()):
+            raise HandoffValidationError("each decision must be an object with non-empty id and question")
+    by_id = {item["id"]: item for item in decisions}
+    for entry in proposals:
+        if not isinstance(entry, dict):
+            continue
+        pid = entry.get("id")
+        decision = by_id.get(pid)
+        if decision is None:
+            raise HandoffValidationError(f"needs_approval requires a decision for proposal {pid}")
+        if decision.get("path") != f"runs/data-analyst/{session}/{entry.get('path')}":
+            raise HandoffValidationError(f"decision for proposal {pid} has a wrong path")
+        if decision.get("sha256") != entry.get("sha256"):
+            raise HandoffValidationError(f"decision for proposal {pid} has a sha256 differing from the manifest")
 
 
 def validate_handoff(
@@ -420,7 +446,7 @@ def validate_handoff(
             session_id=session_id,
             path=_artifact_path(entry, index),
         )
-    if specialist == "data_analyst" and status in {"completed", "needs_approval"}:
+    if specialist == "data_analyst" and (status in {"completed", "needs_approval"} or artifacts):
         _data_session_checks(handoff, project)
     # ODE preservation claims require the same checks even while scientific
     # approval is pending. Metadata-only drafts remain possible before capture.
