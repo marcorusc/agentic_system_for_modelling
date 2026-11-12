@@ -19,6 +19,20 @@ installs CellProfiler 4.2.8.1 into `.venv-cellprofiler` (Python 3.9). It require
 packages providing `mysql_config` (for example `libmysqlclient-dev`) and a JDK. This
 install was not verified on the development machine.
 
+## Smoke test
+
+```bash
+python3 tests/integration/data_smoke.py
+```
+
+Offline, in a temporary repo copy (the real `.venv-data` is linked in, not copied; it
+prints `SKIP: .venv-data not installed` and exits 0 when absent). It creates a session,
+runs the vendored PyDESeq2 and GSEA scripts on a synthetic 4-vs-4 dataset, and checks
+`deseq_dataset.h5ad` exists, `SET_UP`/`SET_DOWN` come out significant with the right NES
+sign, `manifest.py verify` passes, the real SubagentStop recorder writes
+`integrity.json` with `passed: true`, `validate_handoff` accepts a `needs_approval`
+handoff, and a later edit to `DECISIONS.md` is detected. It ends with `DATA SMOKE PASSED`.
+
 ## Guard limits
 
 The orchestrator guard (`.claude/scripts/data_orchestrator_guard.py`) is a tripwire
