@@ -82,6 +82,7 @@ The policy the orchestrator follows is [`CLAUDE.md`](CLAUDE.md) (Claude) and
 | `boolean-dynamics-modeler` | Import NeKo handoffs, durable MaBoSS runs and mutations, named readouts/rates, bounded rule refinement | Inline MaBoSS server only |
 | `multicellular-configurator` | PhysiCell/PhysiBoSS domain, cells, substrates, rules, mappings, inputs and configuration bundles | Inline PhysiCell server only |
 | `ode-modeler` | Optional mechanistic ODEs; preserve candidates and run approved scenarios | Inline BioMASS server only |
+| `data-analyst` | Retrieve and analyse data; return hashed data products and proposals (Claude only) | None (guarded Bash/Write) |
 | `scientific-reviewer` | Independent review of a bounded stage against its specification and evidence | None (Read/Grep/Glob) |
 | `reproducibility-auditor` | Independent audit of provenance, lineage and recorded verification | None (Read/Grep/Glob) |
 
@@ -362,6 +363,17 @@ released backend installed (`pip install mcp-biomodelling-servers==2.5.2
 nekomata==1.10.3`) they run as well. CI runs both on Python 3.11 and 3.13, plus a job
 that starts every server through the plugin launch and runs the real-backend BioMASS
 smoke test (`tests/integration/biomass_smoke.py`).
+
+## Citation and third-party skills
+
+The `data-analyst` specialist uses ten skills vendored from
+[K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) at commit `2d2065fb4520fa3f3f2bcf61cff26ec8b7eba4b5`,
+stored under `vendor/scientific-agent-skills/` with a hash lock. Licenses and
+attributions are in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md); local changes are
+in [`vendor/scientific-agent-skills/VENDOR.md`](vendor/scientific-agent-skills/VENDOR.md).
+If you use these skills, please cite:
+
+> Timothy Kassis, Vinayak Agarwal, Yuhuan He, Darshil Patel, Aubrey M. Brueckner. *Scientific Agent Skills: A Library of Procedural Knowledge for Research Agents*. arXiv:2609.00065 (2026). https://arxiv.org/abs/2609.00065
 
 ## Documentation map
 

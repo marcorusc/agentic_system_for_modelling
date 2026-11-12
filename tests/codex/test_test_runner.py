@@ -15,9 +15,9 @@ from scripts.codex import launcher_config
 
 class TestRunnerTests(unittest.TestCase):
     def test_failure_is_propagated_and_both_suites_run(self) -> None:
-        with mock.patch.object(run_tests, "run_suite", side_effect=[1, 0, 0]) as command:
+        with mock.patch.object(run_tests, "run_suite", side_effect=[1] + [0] * (len(run_tests.SUITES) - 1)) as command:
             self.assertEqual(run_tests.main(), 1)
-        self.assertEqual(command.call_count, 3)
+        self.assertEqual(command.call_count, len(run_tests.SUITES))
         self.assertEqual(command.call_args_list, [mock.call(suite) for suite in run_tests.SUITES])
 
     def test_unsupported_python_is_rejected_before_running_tests(self) -> None:
