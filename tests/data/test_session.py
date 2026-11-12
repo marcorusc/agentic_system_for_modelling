@@ -106,6 +106,37 @@ class SessionTests(unittest.TestCase):
         self.assertFalse(result["identity_intact"])
         self.assertFalse(result["passed"])
 
+    def test_settings_local_json_change_not_reported(self):
+        local = self.root / ".claude" / "settings.local.json"
+        local.parent.mkdir()
+        local.write_text("{}\n", encoding="utf-8")
+        sid, digest = self.new_session()
+        local.write_text('{"permissions": {"allow": ["Bash(ls:*)"]}}\n', encoding="utf-8")
+        self.assertEqual(snapshot.verify_session(self.root, sid, digest),
+                         {"passed": True, "changed": [], "identity_intact": True})
+        local.unlink()
+        self.assertEqual(snapshot.verify_session(self.root, sid, digest)["changed"], [])
+        (self.root / ".claude" / "settings.json").write_text("{}\n", encoding="utf-8")
+        self.assertEqual(snapshot.verify_session(self.root, sid, digest)["changed"],
+                         [".claude/settings.json"])
+
+    def test_dist_info_change_reported(self):
+        site = self.root / ".venv-data" / "lib" / "python3.12" / "site-packages"
+        (site / "numpy-2.0.0.dist-info").mkdir(parents=True)
+        (site / "numpy").mkdir()
+        sid, digest = self.new_session()
+        identity = json.loads((self.root / "runs/data-analyst" / sid / "identity.json").read_text())
+        self.assertIn(".venv-data#dist-info", identity["protected_snapshot"])
+        (site / "numpy" / "extra.py").write_text("x", encoding="utf-8")
+        self.assertTrue(snapshot.verify_session(self.root, sid, digest)["passed"])
+        (site / "requests-2.0.dist-info").mkdir()
+        result = snapshot.verify_session(self.root, sid, digest)
+        self.assertFalse(result["passed"])
+        self.assertEqual(result["changed"], [".venv-data#dist-info"])
+
+    def test_absent_env_has_no_dist_info_entry(self):
+        self.assertNotIn(".venv-data#dist-info", snapshot.take(self.root, "data-x"))
+
     def test_symlink_recorded_and_diff(self):
         (self.root / "link").symlink_to("DECISIONS.md")
         snap = snapshot.take(self.root, "data-x")

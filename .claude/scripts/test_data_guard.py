@@ -285,6 +285,13 @@ class WriteGuardTests(GuardFixture):
             with self.subTest(name=name):
                 self.write_denied(self.session / name, contains="protected")
 
+    def test_write_under_invocation_denied(self) -> None:
+        for name in ("invocation/agent-1/invocation.json", "invocation/x.md",
+                     "Invocation/agent-1/notes.md", "invocation"):
+            with self.subTest(name=name):
+                self.write_denied(self.session / name, contains="invocation")
+        self.write_allowed(self.session / "outputs" / "invocation" / "x.csv")
+
     def test_write_through_symlink_denied(self) -> None:
         self.symlink(self.session / "linked", self.outside)
         self.write_denied(self.session / "linked" / "x.csv", contains="symlink")

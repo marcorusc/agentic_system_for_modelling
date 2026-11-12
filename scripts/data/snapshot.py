@@ -10,6 +10,20 @@ from pathlib import Path
 from scripts.data.common import RUNS_ROOT, session_dir, sha256_file
 
 EXCLUDED_DIRS = (".git", ".venv-data", ".venv-cellprofiler", "data-cache", "__pycache__")
+# R22: machine-local Claude Code permission state, written by the harness when the
+# user approves a tool "always"; check_isolation still inspects it.
+EXCLUDED_FILES = (".claude/settings.local.json",)
+# R23: pseudo-entry for the installed-package set of .venv-data.
+DIST_INFO_KEY = ".venv-data#dist-info"
+
+
+def dist_info_digest(root: Path) -> str | None:
+    """sha256 of the sorted .venv-data dist-info names; None when the env is absent."""
+    venv = Path(root) / ".venv-data"
+    if not venv.is_dir():
+        return None
+    names = sorted(p.name for p in venv.glob("lib/python*/site-packages/*.dist-info"))
+    return hashlib.sha256("\n".join(names).encode("utf-8")).hexdigest()
 
 
 def digest_of(snapshot: dict[str, str]) -> str:
@@ -38,10 +52,15 @@ def take(root: Path, session_id: str) -> dict[str, str]:
         for name in filenames:
             path = current / name
             rel = path.relative_to(root).as_posix()
+            if rel in EXCLUDED_FILES:
+                continue
             if path.is_symlink():
                 result[rel] = "symlink:" + os.readlink(path)
             elif path.is_file():
                 result[rel] = sha256_file(path)
+    env = dist_info_digest(root)
+    if env is not None:
+        result[DIST_INFO_KEY] = env
     return result
 
 

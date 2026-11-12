@@ -55,8 +55,14 @@ def enabled_modelling_plugins(data: dict) -> list[str]:
                   if enabled is not False and str(key).split('@', 1)[0].lower() in MODELLING_SERVERS)
 
 
+def user_skills_dir() -> Path:
+    """User-level Claude Code skills dir: $CLAUDE_CONFIG_DIR/skills or ~/.claude/skills."""
+    config = os.environ.get('CLAUDE_CONFIG_DIR')
+    return Path(config)/'skills' if config else Path.home()/'.claude/skills'
+
+
 def check(root: Path, *, user_config: Path | None = None, codex_configs: tuple[Path, ...] = (),
-          user_settings: Path | None = None) -> dict:
+          user_settings: Path | None = None, user_skills: Path | None = None) -> dict:
     errors = []
     settings = [root/'.claude/settings.json', root/'.claude/settings.local.json']
     for path in settings + ([user_settings] if user_settings is not None else []):
@@ -87,17 +93,25 @@ def check(root: Path, *, user_config: Path | None = None, codex_configs: tuple[P
             header = path.read_text().split('---', 2)[1]
             if f'  - {server}-agent:\n' not in header or f'mcp__{server}-agent__*' not in header:
                 errors.append(f'{path}: expected isolated {server}-agent transport and tool selector')
-    errors.extend(data_analyst_errors(root))
+    errors.extend(data_analyst_errors(root, user_skills))
     return {'passed': not errors, 'errors': errors, 'live_inventory_verified': False}
 
 
-def data_analyst_errors(root: Path) -> list[str]:
+def data_analyst_errors(root: Path, user_skills: Path | None = None) -> list[str]:
     """Vendored skills stay out of skill dirs; data-analyst has no MCP and is guarded."""
     errors = []
     for base in ('.claude/skills', 'skills'):
         for name in VENDORED_SKILLS:
             if (root/base/name).exists():
                 errors.append(f'{root/base/name}: vendored skill must not be exposed as a skill; keep it under vendor/')
+    # R26: detection only. A user-level copy is visible to the orchestrator in every
+    # project; removing it is the researcher's decision, so nothing is deleted here.
+    for name in VENDORED_SKILLS if user_skills is not None else ():
+        path = user_skills/name
+        if os.path.lexists(path):
+            errors.append(f'{path}: vendored skill {name} is exposed to the orchestrator as a user-level skill; '
+                          f'the data-analyst reads it from vendor/scientific-agent-skills/. To fix, remove or '
+                          f'move it out of {user_skills} yourself (check_isolation does not delete it)')
     agent = root/'.claude/agents/data-analyst.md'
     if not agent.exists():
         return errors
@@ -188,8 +202,10 @@ def main(argv=None) -> int:
         user = None if args.repository_only else args.user_config
         if args.repository_only and (args.apply or args.preview):
             raise SetupError('Migration requires explicit user configuration scope')
+        skills = None if args.repository_only else user_skills_dir()
         result = check(args.root, user_config=user, codex_configs=tuple(args.codex_config),
-                       user_settings=None if args.repository_only else args.user_settings)
+                       user_settings=None if args.repository_only else args.user_settings,
+                       user_skills=skills)
         if args.preview or args.apply:
             outputs = migration(user, tuple(args.codex_config), args.literature_profile, args.root)
             result['planned_files'] = [str(path) for path in outputs]
@@ -197,7 +213,8 @@ def main(argv=None) -> int:
                 backups = args.root/'.setup/backups/isolation'
                 result['writes'] = [write_config(path, text, backups) for path,text in outputs.items()]
                 result.update(check(args.root, user_config=user, codex_configs=tuple(args.codex_config),
-                                    user_settings=None if args.repository_only else args.user_settings))
+                                    user_settings=None if args.repository_only else args.user_settings,
+                                    user_skills=skills))
         print(json.dumps(result, indent=2))
         return 0 if result['passed'] else 2
     except (OSError, ValueError, TypeError, KeyError) as error:

@@ -35,6 +35,8 @@ FORBIDDEN = frozenset(";|&<>$`\\\n\r")
 # Expansion syntax that bash acts on only outside quotes.
 UNQUOTED_FORBIDDEN = frozenset("*?[]{}~()#!")
 PROTECTED_NAMES = frozenset({"identity.json", "manifest.json", "integrity.json", "sources.jsonl"})
+# Recorder-owned invocation records (runs/data-analyst/<id>/invocation/...).
+PROTECTED_DIR = "invocation"
 INTERPRETER = Path(".venv-data/bin/python")
 SESSION_FLAG_SCRIPTS = frozenset({"fetch.py", "manifest.py"})
 # R12: the only scripts/data entry points the agent may run.
@@ -200,6 +202,8 @@ def check_write(file_path: str, root: Path, active: str | None) -> None:
         raise ValueError(f"Write is allowed only inside {RUNS_ROOT / active}/") from None
     if not relative.parts:
         raise ValueError("file_path must name a file inside the session directory")
+    if relative.parts[0].casefold().rstrip(". ") == PROTECTED_DIR:
+        raise ValueError(f"{PROTECTED_DIR}/ is protected and is written only by the SubagentStop recorder")
     reject_symlinks(path, root)
     if not session.is_dir():
         raise ValueError(f"data session directory {RUNS_ROOT / active} does not exist")
