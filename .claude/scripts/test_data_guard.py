@@ -276,12 +276,16 @@ class WriteGuardTests(GuardFixture):
         self.write_allowed(self.session / "scripts" / "analysis2.py")
         self.write_allowed(self.session / "outputs" / "table.csv")
         self.write_allowed(self.session / "proposals" / "new" / "nested" / "p.md")
-        self.write_allowed(self.session / "report.md")
 
     def test_write_identity_denied(self) -> None:
         for name in ("identity.json", "manifest.json", "integrity.json", "sources.jsonl",
                      "outputs/manifest.json", "Identity.JSON", "raw/SOURCES.JSONL", "identity.json.",
                      "manifest.json "):
+            with self.subTest(name=name):
+                self.write_denied(self.session / name, contains="protected")
+
+    def test_write_report_md_denied(self) -> None:
+        for name in ("report.md", "Report.MD", "report.md."):
             with self.subTest(name=name):
                 self.write_denied(self.session / name, contains="protected")
 

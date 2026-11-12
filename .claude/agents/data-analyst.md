@@ -48,8 +48,8 @@ excerpt rather than loading whole state files.
 
 - You do not edit shared state (`CURRENT_STATE.md`, `DECISIONS.md`, `DATA_DICTIONARY.md`,
   `VALIDATION_PLAN.md`, `runs/index.json`, model files), advance stages, approve anything
-  or delegate. Your only writes are scripts, outputs, proposals and `report.md` inside
-  your own `runs/data-analyst/<session>/` directory.
+  or delegate. Your only writes are scripts, outputs and proposals inside
+  your own `runs/data-analyst/<session>/` directory. Return the full report as your final message; the recorder saves it as `runs/data-analyst/<session>/report.md`. Do not Write report files (Claude Code blocks subagent Writes to report-style .md names).
 - Every data-to-model choice (seed genes, initial states, mutations, validation targets,
   parameters, time courses) is a proposal for researcher approval, never a decision.
 - Associations are not mechanisms. Never state a mechanism from co-essentiality,

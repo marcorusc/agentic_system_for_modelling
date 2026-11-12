@@ -145,9 +145,8 @@ BNET export is pending orchestrator sign-off — do not export "while you're at 
 
 ## Output
 
-Write the full immutable specialist report using the guarded Write tool at
-`runs/network-curator/{neko_session_id}/report.md`. Include the important-paths
-summary and literal literature queue in your report and structured result. Return
+Include the important-paths summary and literal literature queue in your report and
+structured result. Return the full report as your final message; the recorder saves it as `runs/network-curator/{neko_session_id}/report.md`. Do not Write report files (Claude Code blocks subagent Writes to report-style .md names). Return
 exact server SIF and authorized BNET/handoff paths for verified capture; do not
 assume the server writes directly into the repository. Capture helpers persist
 metadata and artifacts; the orchestrator's derived summaries belong under

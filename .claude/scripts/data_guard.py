@@ -35,7 +35,7 @@ CREATED_RE = re.compile(r"Data session created: (\S+) \(snapshot sha256=([0-9a-f
 FORBIDDEN = frozenset(";|&<>$`\\\n\r")
 # Expansion syntax that bash acts on only outside quotes.
 UNQUOTED_FORBIDDEN = frozenset("*?[]{}~()#!")
-PROTECTED_NAMES = frozenset({"identity.json", "manifest.json", "integrity.json", "sources.jsonl"})
+PROTECTED_NAMES = frozenset({"identity.json", "manifest.json", "integrity.json", "sources.jsonl", "report.md"})
 # Recorder-owned invocation records (runs/data-analyst/<id>/invocation/...).
 PROTECTED_DIR = "invocation"
 INTERPRETER = Path(".venv-data/bin/python")

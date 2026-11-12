@@ -13,6 +13,7 @@ import json
 import os
 from pathlib import Path
 import sys
+import tempfile
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from scripts.capture.artifact_capture import staged_capture, reject_symlinks
 from scripts.capture.index import register_capture, SPECIALISTS
@@ -113,6 +114,32 @@ def data_integrity(project, transcript, session, invocation):
     _write_integrity(path, integrity)
     return integrity
 
+def _report_state(project, specialist, session, final_report):
+    """Read-only: classify the session report.md against final_report; refuse symlinks."""
+    base = project / 'runs' / specialist / session
+    reject_symlinks(base)
+    path = base / 'report.md'
+    if os.path.lexists(path):
+        if path.is_symlink() or not path.is_file(): raise ValueError('report.md is a symlink or not a regular file; refusing')
+        return base, path, ('identical' if path.read_bytes() == final_report else 'kept-first')
+    return base, path, 'written'
+
+def materialize_report(project, specialist, session, final_report):
+    """Write runs/<specialist>/<session>/report.md once, atomically; never overwrite."""
+    base, path, state = _report_state(project, specialist, session, final_report)
+    if state != 'written': return state
+    base.mkdir(parents=True, exist_ok=True)
+    reject_symlinks(base)
+    fd, temp = tempfile.mkstemp(prefix='.report.md.', dir=base)
+    try:
+        with os.fdopen(fd, 'wb') as handle: handle.write(final_report)
+        if os.path.lexists(path): raise ValueError('report.md appeared concurrently; refusing overwrite')
+        os.replace(temp, path)
+    except BaseException:
+        if os.path.lexists(temp): os.unlink(temp)
+        raise
+    return 'written'
+
 def record(project, payload):
     if not isinstance(payload, dict): raise ValueError('hook payload must be an object')
     project = project.resolve(strict=True)
@@ -178,6 +205,15 @@ def record(project, payload):
         'invocation_id': invocation, 'source_transcript_sha256': hashlib.sha256(raw).hexdigest(),
         'credentials_redacted': True, 'usage': usage}
     if integrity is not None: metadata['integrity'] = integrity
+    final_bytes = ('\n\n'.join(final) + '\n').encode('utf-8')
+    if session is not None:
+        stored_meta = target / 'invocation.json'
+        stored_report = None
+        if stored_meta.is_file() and not stored_meta.is_symlink():
+            try: stored_report = json.loads(stored_meta.read_text(encoding='utf-8')).get('report_md')
+            except (OSError, ValueError, AttributeError): stored_report = None
+        # Retries must reproduce the stored invocation.json byte for byte.
+        metadata['report_md'] = stored_report or _report_state(project, specialist, session, final_bytes)[2]
     if session is None:
         metadata.update(record_type='unbound-invocation', scientific_status='unresolved')
     files = {
@@ -193,7 +229,9 @@ def record(project, payload):
                 'invocation_path': target.relative_to(project).as_posix(),
                 'systemMessage': 'Specialist attempt preserved without a scientific session. '
                                  'This technical record cannot authorize stage advancement.'}
-    return register_capture(project, target, usage=usage)
+    materialize_report(project, specialist, session, final_bytes)
+    # Report the recorded status so identical hook retries return identical results.
+    return {**register_capture(project, target, usage=usage), 'report_md': metadata['report_md']}
 
 def main():
     payload = None

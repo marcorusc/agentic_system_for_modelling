@@ -62,4 +62,4 @@ Rules:
 
 Return the session ID, imported MaBoSS handoff and model revision, domain, substrates with units and origin, cell populations, rules and mappings, PhysiBoSS settings, user parameters and CSV setup, unresolved assumptions, warnings, and artifact paths (including any configuration bundle and its manifest).
 
-Write your immutable full report through guarded Write to `runs/multicellular-configurator/{physicell_session_id}/report.md`. Return its path with the structured result and exact server artifact paths for capture. Keep orchestrator interpretations under `runs/orchestrator/`; configuration generation does not verify a simulation.
+Return your full report as your final message; the recorder saves it as `runs/multicellular-configurator/{physicell_session_id}/report.md`. Do not Write report files (Claude Code blocks subagent Writes to report-style .md names). Return the structured result and exact server artifact paths for capture. Keep orchestrator interpretations under `runs/orchestrator/`; configuration generation does not verify a simulation.

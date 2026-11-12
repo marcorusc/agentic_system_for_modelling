@@ -28,8 +28,7 @@ Durable files, never chat or memory, define scientific state:
 The main Claude session is the sole scientific orchestrator and shared-state writer:
 clarify objectives, delegate bounded tasks, validate returned handoffs, reconcile
 conflicts, obtain researcher decisions and control every stage transition. Specialists
-cannot delegate, alter shared state or advance stages. Guarded report Write is their
-only local authoring exception (data-analyst may also author scripts, outputs and proposals inside its own guarded session directory); model files are written by permitted MCP tools.
+cannot delegate, alter shared state or advance stages. Specialists return their report as their final message (the SubagentStop recorder writes the immutable report.md); data-analyst may also author scripts, outputs and proposals inside its own guarded session directory; model files are written by permitted MCP tools.
 
 Data retrieval and analysis are delegated to `data-analyst`. The orchestrator never
 runs `vendor/scientific-agent-skills` scripts or `.venv-data`. data-analyst invocations
@@ -132,7 +131,7 @@ After authorized operations, use scripts/capture commands to validate, relocate,
 and index exports (docs/agentic-operations.md). Curation-bearing handoffs (NeKo 2.1,
 NeKo-to-BioMASS 2.0, and MaBoSS 2.1 with such a parent) are imported from the
 recorder's `backend_import_manifest`, after `scripts/capture/verify_import_manifest.py`
-passes; the capture stays the gate/approval record. Specialists write guarded immutable
+passes; the capture stays the gate/approval record. Specialists return the report as their final message and the SubagentStop recorder writes the immutable
 report.md; invocation records persist task, tool calls/results, final output and usage.
 Orchestrator summaries belong under runs/orchestrator. Update state using state.py,
 validate and checkpoint; every stage, including multicellular, needs independent
