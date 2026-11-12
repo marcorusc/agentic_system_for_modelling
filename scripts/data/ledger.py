@@ -103,13 +103,20 @@ def record_input(
     root = Path(root)
     path = Path(path)
     inputs = root / "inputs"
+    if ".." in path.parts:
+        raise ValueError(f"'..' not allowed in input path: {path}")
     try:
         path.relative_to(inputs)
     except ValueError as exc:
         raise ValueError(f"input must be under {inputs}: {path}") from exc
     reject_symlinks(path, root)
-    if not path.is_file():
-        raise ValueError(f"input is not a file: {path}")
+    try:
+        resolved = path.resolve(strict=True)
+        resolved.relative_to(inputs.resolve())
+    except (ValueError, OSError) as exc:
+        raise ValueError(f"input must be a file under {inputs}: {path}") from exc
+    if not resolved.is_file():
+        raise ValueError(f"input is not a regular file: {path}")
     entry = {
         "kind": "input",
         "uri": path.relative_to(root).as_posix(),

@@ -135,6 +135,23 @@ class FetchTests(unittest.TestCase):
             ledger.record_input(self.session, bad, self.root)
         self.assertEqual(len(self.lines()), 1)
 
+    def test_input_dotdot_escape_rejected(self):
+        (self.root / "inputs").mkdir()
+        (self.root / "other.csv").write_bytes(BODY)
+        with self.assertRaises(ValueError):
+            ledger.record_input(
+                self.session, self.root / "inputs" / ".." / "other.csv", self.root)
+        self.assertEqual(self.lines(), [])
+
+    def test_input_symlink_escape_rejected(self):
+        (self.root / "inputs").mkdir()
+        (self.root / "other.csv").write_bytes(BODY)
+        link = self.root / "inputs" / "link.csv"
+        link.symlink_to(self.root / "other.csv")
+        with self.assertRaises(ValueError):
+            ledger.record_input(self.session, link, self.root)
+        self.assertEqual(self.lines(), [])
+
     def test_ledger_rejects_missing_release(self):
         entry = {"kind": "api", "uri": "u", "release": "", "retrieved_at": "t",
                  "sha256": "0" * 64, "terms": "", "path": "p"}
