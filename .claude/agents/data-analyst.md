@@ -79,5 +79,5 @@ Return one typed handoff envelope with: `schema_version`, `specialist: data_anal
 - Analysis only and `verify` passed: `completed`.
 - `.venv-data`, a source, a required input or the CellProfiler install is missing or
   unreachable: `blocked`, with concrete remediation (for example
-  `python3 setup.py --with-data`, or the input the researcher must supply).
+  `python3 scripts/setup.py --with-data`, or the input the researcher must supply).
 - Tamper check or `verify` failure: `failed`.

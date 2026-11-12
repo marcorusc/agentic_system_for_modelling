@@ -21,13 +21,16 @@ the commands below; it delegates to `data-analyst`.
 3. Register researcher-supplied files:
    `.venv-data/bin/python -E -s scripts/data/fetch.py --session <id> --input inputs/<file> --release "<text>"`
 4. Download a plain URL (no query string):
-   `.venv-data/bin/python -E -s scripts/data/fetch.py --session <id> --url <URL> --name <file> --release "<release>" [--terms "<terms>"] [--expect binary|tabular|json] [--max-bytes N]`
+   `.venv-data/bin/python -E -s scripts/data/fetch.py --session <id> --url <URL> --name <file> --release "<release>" [--terms "<terms>"] [--expect tabular] [--max-bytes N]`
+
+   `--expect` takes one of `binary` (default), `tabular` or `json`; pass exactly one
+   value, for example `--expect tabular`.
 5. Finalize and verify:
    `.venv-data/bin/python -E -s scripts/data/manifest.py build --session <id> --skills <guide> ...`
    `.venv-data/bin/python -E -s scripts/data/manifest.py verify --session <id>`
 6. Write `report.md`, then return the handoff envelope (see the agent definition).
 
-If `.venv-data` is missing, return `blocked` with remediation `python3 setup.py --with-data`.
+If `.venv-data` is missing, return `blocked` with remediation `python3 scripts/setup.py --with-data`.
 
 ## 2. Command rules
 
@@ -46,7 +49,14 @@ Only these Bash forms are accepted by the guard:
   `fetch.download(session_dir, url=..., name=..., release=..., terms=..., expect=...)`,
   and record API calls with `ledger.record_api(...)`.
 - Write only inside `runs/data-analyst/<id>/`. Never write `identity.json`,
-  `manifest.json`, `integrity.json` or `sources.jsonl`.
+  `manifest.json`, `integrity.json`, `sources.jsonl` or anything under `invocation/`.
+- Never modify a recorded source (`raw/` files, `data-cache/`, `inputs/`): `manifest.py
+  verify` re-hashes every ledgered source path. Write derived data under `outputs/`.
+- Vendored scripts: always pass explicit output paths inside
+  `runs/data-analyst/<id>/outputs/...`. Defaults write relative to the repository root:
+  `pydeseq2` `--output` (default `results`), `pathway-enrichment` `--outdir` (default
+  `enrichment_results`), `bulk-rnaseq` `--output-dir` (default `counts`). For example
+  `--output runs/data-analyst/<id>/outputs/de`. Never rely on a default output path.
 - Every analysis is a saved script, then executed. Script header template:
 
 ```python
@@ -99,23 +109,28 @@ Read the guide's `SKILL.md` first, then only the references you need. Paths are 
 
 ## 6. Templates
 
+Both index files are a bare JSON list of objects (no wrapping object).
+
 `outputs/index.json` (one entry per output; units per numeric column or `"dimensionless"`;
 identifiers type or `"none"`):
 
 ```json
-{"outputs": [{"path": "outputs/de.csv", "description": "DESeq2 results",
-              "units": {"log2FoldChange": "log2 ratio", "padj": "dimensionless"},
-              "identifiers": "HGNC symbol"}]}
+[{"path": "outputs/de.csv", "description": "DESeq2 results",
+  "units": {"log2FoldChange": "log2 ratio", "padj": "dimensionless"},
+  "identifiers": "HGNC symbol"}]
 ```
 
 `proposals/index.json`:
 
 ```json
-{"proposals": [{"id": "P1", "target_layer": "spec|neko|maboss|biomass|physicell",
-                "kind": "seed_genes|initial_states|mutations|validation_targets|parameters|time_course",
-                "path": "proposals/P1_seed_genes.csv", "method": "what was done",
-                "thresholds": {"padj": 0.05}, "status": "proposed"}]}
+[{"id": "P1", "target_layer": "neko", "kind": "seed_genes",
+  "path": "proposals/P1_seed_genes.csv", "method": "what was done",
+  "thresholds": {"padj": 0.05}, "status": "proposed"}]
 ```
+
+`target_layer` is one of `spec`, `neko`, `maboss`, `biomass`, `physicell`; `kind` is one
+of `seed_genes`, `initial_states`, `mutations`, `validation_targets`, `parameters`,
+`time_course`. Use exactly one value each.
 
 `report.md` headings:
 

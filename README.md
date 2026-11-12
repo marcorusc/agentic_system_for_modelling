@@ -125,6 +125,11 @@ Setup options (managed Conda/venv environment, reuse of an existing environment,
 `--dry-run`, `--check`, source installs) are in
 [automatic setup](docs/automatic-setup.md). For Codex, see [Codex](#codex) below.
 
+For the `data-analyst` specialist, add `--with-data` (creates `.venv-data`, needs `uv`);
+`--with-cellprofiler` additionally installs CellProfiler into `.venv-cellprofiler` and
+implies `--with-data`. See [data workflow](docs/data-workflow.md) for prerequisites,
+the smoke test and the manual verification checklist.
+
 ### Marketplace plugins
 
 The same servers are published as plugins in the `marcorusc` marketplace
@@ -384,6 +389,7 @@ See [`docs/README.md`](docs/README.md) for every guide and reference contract. M
 - [Agentic operations](docs/agentic-operations.md) — records, gates, captures, reviews
 - [Handoff validation](docs/handoff-validation.md) — provider-neutral handoff contract
 - [ODE workflow](docs/ode-workflow.md) and [ODE contract](docs/ode-contract.md)
+- [Data workflow](docs/data-workflow.md) — data-analyst setup, provenance checks, verification checklist
 - [Specialist dispatcher](docs/specialist-dispatcher.md) — Codex runtime
 - [Architecture](docs/agentic-biomodelling-architecture.md) — design rationale
 
