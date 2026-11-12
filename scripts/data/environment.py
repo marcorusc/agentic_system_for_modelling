@@ -36,14 +36,16 @@ def ensure(root: Path, uv: str, *, check: bool, with_cellprofiler: bool) -> dict
     result = {"passed": False, "errors": [], "python": None, "lock_sha256": lock_sha256(root), "cellprofiler": None}
     try:
         if not check:
-            subprocess.run([uv, "venv", str(root/DATA_ENV), "--python", DATA_PYTHON_VERSION], check=True)
+            if not python.exists():  # uv venv refuses an existing environment
+                subprocess.run([uv, "venv", str(root/DATA_ENV), "--python", DATA_PYTHON_VERSION], check=True)
             subprocess.run([uv, "pip", "sync", "--python", str(python), str(root/LOCK)], check=True)
         subprocess.run([str(python), "-E", "-s", "-c", IMPORT_PROBE], check=True)
         result["python"] = str(python)
         if with_cellprofiler:
             cp = root/CP_ENV
             if not check:
-                subprocess.run([uv, "venv", str(cp), "--python", _cellprofiler_python(root)], check=True)
+                if not (cp/"bin/python").exists():
+                    subprocess.run([uv, "venv", str(cp), "--python", _cellprofiler_python(root)], check=True)
                 subprocess.run([uv, "pip", "install", "--python", str(cp/"bin/python"), "-r",
                                 str(root/CP_REQUIREMENTS)], check=True)
             subprocess.run([str(cp/"bin/cellprofiler"), "--version"], check=True)

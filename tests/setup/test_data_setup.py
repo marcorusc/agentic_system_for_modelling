@@ -54,6 +54,31 @@ class DataSetupTests(unittest.TestCase):
             [str(cp/'bin/cellprofiler'), '--version']])
         self.assertTrue(result['passed'])
 
+    def _touch(self, env):
+        python = self.root/env/'bin/python'; python.parent.mkdir(parents=True); python.touch()
+
+    def test_existing_env_skips_venv_creation(self):
+        self._touch('.venv-data')
+        with mock.patch('subprocess.run') as run:
+            result = data_env.ensure(self.root, '/bin/uv', check=False, with_cellprofiler=False)
+        py = str(self.root/'.venv-data/bin/python')
+        self.assertEqual([c.args[0] for c in run.call_args_list], [
+            ['/bin/uv', 'pip', 'sync', '--python', py, str(self.root/'setup/data-requirements.lock')],
+            [py, '-E', '-s', '-c', IMPORT_PROBE]])
+        self.assertTrue(result['passed'])
+
+    def test_existing_cellprofiler_env_skips_venv_creation(self):
+        self._touch('.venv-data'); self._touch('.venv-cellprofiler')
+        with mock.patch('subprocess.run') as run:
+            data_env.ensure(self.root, '/bin/uv', check=False, with_cellprofiler=True)
+        cp = self.root/'.venv-cellprofiler'
+        argv = [c.args[0] for c in run.call_args_list]
+        self.assertFalse(any(a[1:2] == ['venv'] for a in argv))
+        self.assertEqual(argv[-2:], [
+            ['/bin/uv', 'pip', 'install', '--python', str(cp/'bin/python'), '-r',
+             str(self.root/'setup/data-requirements-cellprofiler.txt')],
+            [str(cp/'bin/cellprofiler'), '--version']])
+
     def test_check_mode_runs_no_install(self):
         with mock.patch('subprocess.run') as run:
             result = data_env.ensure(self.root, '/bin/uv', check=True, with_cellprofiler=False)
