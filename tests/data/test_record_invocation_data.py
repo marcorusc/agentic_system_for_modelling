@@ -87,8 +87,47 @@ class RecordDataInvocationTests(unittest.TestCase):
 
     def test_retry_is_idempotent(self):
         payload = self.payload(transcript_events(self.sid, self.digest))
-        record(self.root, payload)
-        record(self.root, payload)
+        first = record(self.root, payload)
+        verdict = self.integrity()
+        (self.root / "DECISIONS.md").write_text("tampered later\n", encoding="utf-8")
+        second = record(self.root, payload)
+        self.assertEqual(first, second)
+        self.assertEqual(self.integrity(), verdict)
+        self.assertTrue(verdict["passed"])
+
+    def forge(self, invocation="agent-1"):
+        (session_dir(self.root, self.sid) / "integrity.json").write_text(json.dumps({
+            "schema_version": 1, "session_id": self.sid, "invocation_id": invocation,
+            "checked_at": "2026-11-12T00:00:00+00:00", "passed": True, "changed": [],
+            "identity_intact": True}), encoding="utf-8")
+
+    def test_forged_integrity_same_invocation_not_reused(self):
+        self.forge("agent-1")
+        (self.root / "DECISIONS.md").write_text("tampered\n", encoding="utf-8")
+        record(self.root, self.payload(transcript_events(self.sid, self.digest)))
+        integrity = self.integrity()
+        self.assertFalse(integrity["passed"])
+        self.assertEqual(integrity["changed"], ["DECISIONS.md"])
+
+    def test_preexisting_integrity_other_invocation_overwritten(self):
+        self.forge("someone-else")
+        (self.root / "DECISIONS.md").write_text("tampered\n", encoding="utf-8")
+        record(self.root, self.payload(transcript_events(self.sid, self.digest)))
+        integrity = self.integrity()
+        self.assertEqual(integrity["invocation_id"], "agent-1")
+        self.assertFalse(integrity["passed"])
+
+    def test_malformed_identity_fails_closed(self):
+        self.forge("agent-1")
+        path = session_dir(self.root, self.sid) / "identity.json"
+        data = json.loads(path.read_text())
+        data["protected_snapshot"] = []
+        path.write_text(json.dumps(data))
+        record(self.root, self.payload(transcript_events(self.sid, self.digest)))
+        integrity = self.integrity()
+        self.assertFalse(integrity["passed"])
+        self.assertFalse(integrity["identity_intact"])
+        self.assertIn("error", integrity)
 
     def test_recorder_ignores_unbound_data_invocation(self):
         result = record(self.root, self.payload([], name="agent-2"))

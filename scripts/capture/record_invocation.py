@@ -63,28 +63,50 @@ def data_integrity(project, transcript, session, invocation):
     base = project / 'runs' / 'data-analyst' / session
     path = base / 'integrity.json'
     reject_symlinks(base); reject_symlinks(path)
-    if path.is_file():
-        try: previous = json.loads(path.read_text(encoding='utf-8'))
-        except (OSError, ValueError): previous = None
-        # A hook retry for the same invocation keeps the first verdict: the first
-        # recording itself changes runs/index.json, so re-verifying would differ.
-        if isinstance(previous, dict) and previous.get('invocation_id') == invocation and previous.get('session_id') == session:
-            return previous
-    try:
-        bound = _data_guard().transcript_data_session(transcript, root=project)
-        if bound is None or bound[0] != session: raise ValueError('transcript session binding changed')
-        result = data_snapshot.verify_session(project, session, bound[1])
-        passed, changed, intact = result['passed'], list(result['changed']), result['identity_intact']
-        error = None
-    except (OSError, ValueError) as exc:  # includes json.JSONDecodeError
-        passed, changed, intact, error = False, [], False, str(exc) or type(exc).__name__
-    integrity = {'schema_version': 1, 'session_id': session, 'invocation_id': invocation,
-                 'checked_at': utc_now(), 'passed': bool(passed and not changed and intact),
-                 'changed': changed, 'identity_intact': bool(intact)}
-    if error is not None: integrity['error'] = error
+    integrity = registered_integrity(project, session, invocation)
+    if integrity is None:
+        # integrity.json is agent-writable; never trust or reuse a pre-existing copy.
+        if path.is_file() or path.is_symlink(): path.unlink()
+        try:
+            bound = _data_guard().transcript_data_session(transcript, root=project)
+            if bound is None or bound[0] != session: raise ValueError('transcript session binding changed')
+            result = data_snapshot.verify_session(project, session, bound[1])
+            passed, changed, intact = result['passed'], list(result['changed']), result['identity_intact']
+            error = None
+        except Exception as exc:  # fail closed on any malformed state
+            passed, changed, intact, error = False, [], False, str(exc) or type(exc).__name__
+        integrity = {'schema_version': 1, 'session_id': session, 'invocation_id': invocation,
+                     'checked_at': utc_now(), 'passed': bool(passed and not changed and intact),
+                     'changed': changed, 'identity_intact': bool(intact)}
+        if error is not None: integrity['error'] = error
     base.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(integrity, indent=2) + '\n', encoding='utf-8')
     return integrity
+
+def registered_integrity(project, session, invocation):
+    """Return the integrity verdict from this invocation's indexed record, if any.
+
+    Trust anchor: runs/index.json (outside the session, covered by the snapshot)
+    registers invocation.json with its sha256; the verdict is read only if the
+    on-disk bytes still match.
+    """
+    try:
+        index = json.loads((project / 'runs' / 'index.json').read_text(encoding='utf-8'))
+        relative = f'runs/data-analyst/{session}/invocation/{invocation}'
+        for item in index.get('runs', []):
+            if item.get('capture_path') != relative: continue
+            for artifact in item.get('artifacts', []):
+                if artifact.get('path') == relative + '/invocation.json':
+                    file = project / artifact['path']
+                    reject_symlinks(file)
+                    raw = file.read_bytes()
+                    if hashlib.sha256(raw).hexdigest() != artifact.get('sha256'): return None
+                    value = json.loads(raw).get('integrity')
+                    if isinstance(value, dict) and value.get('session_id') == session \
+                            and value.get('invocation_id') == invocation: return value
+        return None
+    except Exception:
+        return None
 
 def record(project, payload):
     if not isinstance(payload, dict): raise ValueError('hook payload must be an object')

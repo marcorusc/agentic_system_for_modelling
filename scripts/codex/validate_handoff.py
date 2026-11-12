@@ -258,9 +258,34 @@ def _data_session_checks(handoff: dict[str, Any], project: Path) -> None:
         integrity = json.loads((base / "integrity.json").read_text(encoding="utf-8"))
     except (OSError, UnicodeError, ValueError) as error:
         raise HandoffValidationError(f"data session integrity.json is missing or unreadable: {error}") from error
-    if not isinstance(integrity, dict) or integrity.get("passed") is not True \
-            or integrity.get("session_id") != session:
+    if (not isinstance(integrity, dict) or integrity.get("passed") is not True
+            or integrity.get("changed") != [] or integrity.get("identity_intact") is not True
+            or integrity.get("session_id") != session):
         raise HandoffValidationError("data session integrity check did not pass")
+    # integrity.json is agent-writable; it counts only if it equals the verdict in
+    # the recorder's own indexed invocation record.
+    invocation = integrity.get("invocation_id")
+    if not isinstance(invocation, str) or SESSION_ID.fullmatch(invocation) is None:
+        raise HandoffValidationError("integrity.json lacks a valid invocation_id")
+    relative = f"runs/data-analyst/{session}/invocation/{invocation}/invocation.json"
+    try:
+        index = json.loads((project / "runs" / "index.json").read_text(encoding="utf-8"))
+        registered = {
+            artifact["path"]: artifact["sha256"]
+            for item in index["runs"] if item.get("capture_path") == relative.rsplit("/", 1)[0]
+            for artifact in item["artifacts"]
+        }
+        record_file = project / relative
+        if record_file.is_symlink() or not record_file.is_file():
+            raise ValueError("missing")
+        raw = record_file.read_bytes()
+        if registered.get(relative) != hashlib.sha256(raw).hexdigest():
+            raise ValueError("unregistered")
+        embedded = json.loads(raw).get("integrity")
+    except (OSError, UnicodeError, ValueError, KeyError, TypeError, AttributeError) as error:
+        raise HandoffValidationError("integrity.json has no registered recorder invocation record") from error
+    if embedded != integrity:
+        raise HandoffValidationError("integrity.json differs from the recorder invocation record")
     try:
         errors = data_manifest.verify(project, session)
     except (OSError, ValueError, KeyError, TypeError) as error:

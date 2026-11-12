@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import hashlib
+import shutil
 import json
 import os
+import sys
 import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
 
+from scripts.capture.record_invocation import record
 from scripts.codex.validate_handoff import HandoffValidationError, validate_handoff
 from scripts.data import manifest, session
 from scripts.data.common import session_dir
@@ -18,25 +21,46 @@ class DataHandoffTests(unittest.TestCase):
     def setUp(self):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
-        self.root = Path(tmp.name).resolve()
+        base = Path(tmp.name).resolve()
+        self.root, self.outside = base / "project", base / "transcripts"
+        self.root.mkdir(); self.outside.mkdir()
         patcher = mock.patch.dict(os.environ, {"CLAUDE_PROJECT_DIR": str(self.root)})
         patcher.start()
         self.addCleanup(patcher.stop)
         (self.root / "DECISIONS.md").write_text("x\n", encoding="utf-8")
         (self.root / "setup").mkdir()
         (self.root / "setup" / "data-requirements.lock").write_text("pkg==1\n", encoding="utf-8")
-        self.sid, _ = session.new_session(self.root, "t", None)
+        (self.root / ".venv-data" / "bin").mkdir(parents=True)
+        (self.root / ".venv-data" / "bin" / "python").symlink_to(sys.executable)
+        (self.root / "scripts" / "data").mkdir(parents=True)
+        (self.root / "scripts" / "data" / "session.py").write_text("")
+        self.sid, self.digest = session.new_session(self.root, "t", None)
         self.dir = session_dir(self.root, self.sid)
         (self.dir / "outputs" / "de.csv").write_text("gene,padj\nA,0.01\n", encoding="utf-8")
         (self.dir / "outputs" / "index.json").write_text(json.dumps([
             {"path": "outputs/de.csv", "description": "DE", "units": {"padj": "dimensionless"},
              "identifiers": "HGNC symbol"}]), encoding="utf-8")
         (self.dir / "report.md").write_text("# Report\n", encoding="utf-8")
-        self.write_integrity(True)
+        manifest.build(self.root, self.sid, [])
+        self.record_integrity()
+
+    def record_integrity(self):
+        """Produce integrity.json and the indexed invocation record via the real recorder."""
+        command = ".venv-data/bin/python -E -s scripts/data/session.py new --purpose x"
+        events = [
+            {"type": "assistant", "message": {"role": "assistant", "content": [
+                {"type": "tool_use", "id": "t1", "name": "Bash", "input": {"command": command}}]}},
+            {"type": "user", "message": {"role": "user", "content": [
+                {"type": "tool_result", "tool_use_id": "t1",
+                 "content": f"Data session created: {self.sid} (snapshot sha256={self.digest})"}]}}]
+        path = self.outside / "agent-1.jsonl"
+        path.write_text("".join(json.dumps(e) + "\n" for e in events), encoding="utf-8")
+        record(self.root, {"agent_type": "data-analyst", "agent_id": "agent-1",
+                           "agent_transcript_path": str(path)})
 
     def write_integrity(self, passed):
         (self.dir / "integrity.json").write_text(json.dumps({
-            "schema_version": 1, "session_id": self.sid, "invocation_id": "a1",
+            "schema_version": 1, "session_id": self.sid, "invocation_id": "agent-1",
             "checked_at": "2026-11-12T00:00:00+00:00", "passed": passed,
             "changed": [] if passed else ["DECISIONS.md"], "identity_intact": True}), encoding="utf-8")
 
@@ -80,7 +104,11 @@ class DataHandoffTests(unittest.TestCase):
             self.check(self.handoff("needs_approval", []))
 
     def test_failed_integrity_rejected(self):
-        self.write_integrity(False)
+        (self.root / "DECISIONS.md").write_text("tampered\n", encoding="utf-8")
+        (self.dir / "integrity.json").unlink()
+        shutil.rmtree(self.dir / "invocation")
+        (self.root / "runs" / "index.json").unlink()
+        self.record_integrity()
         with self.assertRaisesRegex(HandoffValidationError, "integrity"):
             self.check(self.handoff())
 
@@ -88,6 +116,22 @@ class DataHandoffTests(unittest.TestCase):
         payload = self.handoff()
         (self.dir / "integrity.json").unlink()
         with self.assertRaisesRegex(HandoffValidationError, "integrity"):
+            self.check(payload)
+
+    def test_validator_rejects_integrity_without_registered_record(self):
+        payload = self.handoff()
+        (self.root / "runs" / "index.json").unlink()
+        self.write_integrity(True)
+        with self.assertRaisesRegex(HandoffValidationError, "registered"):
+            self.check(payload)
+
+    def test_validator_rejects_integrity_mismatch_with_record(self):
+        payload = self.handoff()
+        path = self.dir / "integrity.json"
+        data = json.loads(path.read_text())
+        data["checked_at"] = "2030-01-01T00:00:00+00:00"
+        path.write_text(json.dumps(data))
+        with self.assertRaisesRegex(HandoffValidationError, "differs"):
             self.check(payload)
 
     def test_manifest_error_rejected(self):
