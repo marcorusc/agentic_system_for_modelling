@@ -19,3 +19,8 @@ pypath_log/
 
 # Claude Code agent worktrees
 .claude/worktrees/
+
+# Data analyst environments and cache
+.venv-data/
+.venv-cellprofiler/
+data-cache/

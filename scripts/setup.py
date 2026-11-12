@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
 import sys
 from pathlib import Path
 
@@ -16,6 +17,7 @@ if sys.version_info < (3, 11):
     raise SystemExit("Setup requires Python 3.11+; on Windows run it inside WSL.")
 
 import tomllib
+from scripts.data import environment as data_environment
 from scripts.check_isolation import snapshot_errors
 from scripts.setup_support import backend_sources, configure_claude, configure_codex, detect, environment, verify
 from scripts.setup_support.state import SetupError, atomic_write, read_json, write_config
@@ -28,8 +30,15 @@ INPUT_KEYS = {"client", "env_prefix", "manager", "codex_path", "claude_path", "c
 PLUGIN_EXCLUSIVE = {"env_prefix", "manager", "manager_path", "package_source", "backend_sources"}
 
 
+class _Parser(argparse.ArgumentParser):
+    def parse_args(self, *args, **kwargs):
+        namespace = super().parse_args(*args, **kwargs)
+        namespace.with_data = namespace.with_data or namespace.with_cellprofiler
+        return namespace
+
+
 def parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(description=__doc__)
+    p = _Parser(description=__doc__)
     p.add_argument("--client", choices=("codex", "claude", "both"))
     p.add_argument("--manager", choices=("auto", "conda", "venv"))
     p.add_argument("--environment-mode", choices=("managed", "reuse", "plugin"),
@@ -37,6 +46,10 @@ def parser() -> argparse.ArgumentParser:
                         "or launch each server with its marketplace plugin's pinned uvx command (requires uv only)")
     p.add_argument("--with-biomass", dest="biomass", action="store_const", const="enabled",
                    help="Configure optional ODE profiles and require BioMASS capabilities")
+    p.add_argument("--with-data", action="store_true",
+                   help="Create the pinned .venv-data environment for the data-analyst specialist (requires uv)")
+    p.add_argument("--with-cellprofiler", action="store_true",
+                   help="Also create .venv-cellprofiler; implies --with-data")
     for name in ("env-prefix", "codex-path", "claude-path", "codex-home", "manager-path", "package-source", "graphviz-path", "backend-sources", "uv-path"):
         p.add_argument("--" + name)
     p.add_argument("--config", type=Path, help="JSON path overrides; no credentials")
@@ -45,6 +58,17 @@ def parser() -> argparse.ArgumentParser:
     mode.add_argument("--dry-run", action="store_true")
     mode.add_argument("--check", action="store_true")
     return p
+
+
+def data_uv(uv_path: str | None) -> str | None:
+    """Locate uv; a plugin-mode uvx path resolves to its sibling uv."""
+    if uv_path:
+        path = Path(uv_path)
+        if path.name == "uvx" and (path.parent/"uv").is_file():
+            return str(path.parent/"uv")
+        if path.name == "uv":
+            return uv_path
+    return shutil.which("uv")
 
 
 def settings(args, root: Path) -> dict:
@@ -269,6 +293,16 @@ def execute(args, root: Path = ROOT) -> dict:
                                                        **({"plugin": plugin} if plugin else {}))
         if not report["capabilities"]["passed"]:
             report["errors"].extend(report["capabilities"]["errors"])
+            return report
+    if args.with_data:
+        uv = data_uv(resolved["uv_path"])
+        if not uv:
+            report["errors"].append("uv is required for --with-data; install uv (https://docs.astral.sh/uv/)")
+            return report
+        print("Preparing data-analyst environment…", file=sys.stderr, flush=True)
+        report["data_environment"] = data_environment.ensure(root, uv, check=args.check, with_cellprofiler=args.with_cellprofiler)
+        if not report["data_environment"]["passed"]:
+            report["errors"].extend(report["data_environment"]["errors"])
             return report
     if args.check:
         for path, text in outputs.items():
