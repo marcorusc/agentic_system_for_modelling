@@ -17,6 +17,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+from scripts.data.vendor_lock import VENDORED_SKILLS
 from scripts.codex.launcher_config import MODELLING_SERVERS, PUBMED_TOOLS, toml_literal
 from scripts.setup_support.configure_codex import PUBMED_URL
 from scripts.setup_support.state import SetupError, read_json, write_config
@@ -86,7 +87,40 @@ def check(root: Path, *, user_config: Path | None = None, codex_configs: tuple[P
             header = path.read_text().split('---', 2)[1]
             if f'  - {server}-agent:\n' not in header or f'mcp__{server}-agent__*' not in header:
                 errors.append(f'{path}: expected isolated {server}-agent transport and tool selector')
+    errors.extend(data_analyst_errors(root))
     return {'passed': not errors, 'errors': errors, 'live_inventory_verified': False}
+
+
+def data_analyst_errors(root: Path) -> list[str]:
+    """Vendored skills stay out of skill dirs; data-analyst has no MCP and is guarded."""
+    errors = []
+    for base in ('.claude/skills', 'skills'):
+        for name in VENDORED_SKILLS:
+            if (root/base/name).exists():
+                errors.append(f'{root/base/name}: vendored skill must not be exposed as a skill; keep it under vendor/')
+    agent = root/'.claude/agents/data-analyst.md'
+    if not agent.exists():
+        return errors
+    header = agent.read_text().split('---', 2)[1]
+    if 'mcpServers' in header:
+        errors.append(f'{agent}: data-analyst must not declare mcpServers')
+    items, inside = set(), False
+    for line in header.splitlines():
+        if line.startswith('disallowedTools:'):
+            inside = True
+        elif inside and line.startswith(' ') and line.strip().startswith('- '):
+            items.add(line.strip()[2:].strip().strip('\'"'))
+        elif inside:
+            inside = False
+    for required in ('mcp__*', 'Skill', 'Agent', 'Edit'):
+        if required not in items:
+            errors.append(f'{agent}: data-analyst disallowedTools must include {required}')
+    path = root/'.claude/settings.json'
+    hooks = read_json(path).get('hooks', {}).get('PreToolUse', []) if path.exists() else []
+    if not any(group.get('matcher') == 'Bash' and any('data_orchestrator_guard.py' in str(h.get('command', ''))
+               for h in group.get('hooks', [])) for group in hooks if isinstance(group, dict)):
+        errors.append(f'{path}: no PreToolUse Bash hook runs data_orchestrator_guard.py')
+    return errors
 
 
 def snapshot_errors(root: Path, expected: str) -> list[str]:

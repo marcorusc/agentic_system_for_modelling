@@ -390,3 +390,6 @@ the recorder's `backend_import_manifest`; the project capture remains the record
 that gates and approvals bind to.
 Marketplace modelling plugins must not be enabled in this project: they would
 expose modelling tools to the orchestrator.
+
+The `data-analyst` specialist is Claude-only until Codex parity. Codex orchestrators must
+not run vendored scripts under `vendor/scientific-agent-skills` or use `.venv-data`.

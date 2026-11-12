@@ -13,7 +13,7 @@ Durable files, never chat or memory, define scientific state:
 - VALIDATION_CRITERIA.yaml: explicit executable criteria; initialize from its empty
   template only when starting a model.
 - runs/<specialist>/<full-session-id>/: immutable artifacts, specialist report,
-  capture/invocation records. Each MCP issues its own ID; no pipeline-wide run ID.
+  capture/invocation records. Each MCP issues its own ID; data-analyst IDs are issued by scripts/data/session.py; no pipeline-wide run ID.
 - runs/orchestrator/<purpose>/: orchestrator-authored summaries, analyses and inputs.
   Manual inputs require CHANGES.md: base path+SHA256, ordered exact edits,
   evidence+supporting PMIDs, authorization, output path+SHA256, reproduction command
@@ -29,7 +29,13 @@ The main Claude session is the sole scientific orchestrator and shared-state wri
 clarify objectives, delegate bounded tasks, validate returned handoffs, reconcile
 conflicts, obtain researcher decisions and control every stage transition. Specialists
 cannot delegate, alter shared state or advance stages. Guarded report Write is their
-only local authoring exception; model files are written by permitted MCP tools.
+only local authoring exception (data-analyst may also author scripts, outputs and proposals inside its own guarded session directory); model files are written by permitted MCP tools.
+
+Data retrieval and analysis are delegated to `data-analyst`. The orchestrator never
+runs `vendor/scientific-agent-skills` scripts or `.venv-data`. data-analyst invocations
+never run concurrently with other specialists or state writes. The orchestrator
+registers each approved data product in `DATA_DICTIONARY.md` (name, identifiers, units,
+source release, data session ID).
 
 The orchestrator must have no modelling MCP tools; stop if any are visible. Run the
 setup isolation guard. Four specialist-inline *-agent transports expose only NeKo to
@@ -88,6 +94,8 @@ result. Every final rule and every manual edge needs a provenance tag in DECISIO
 - `manual-literature`: explicitly authorized manual edge with its own candidate
   report, supporting PMIDs, sign/direction assessment and approval. Apply it with
   NeKo `edit_interactions` between existing nodes, never by hand-editing SIF.
+- `data-derived`: an approved data-analyst proposal, citing data session ID, proposal id
+  and SHA256; an association, never a mechanism claim.
 - `fitted-for-dynamics`: chosen against a named validation target; no independent
   literature claim for the fitted Boolean function.
 - `readout`: researcher-named summary node added via MaBoSS `edit_maboss_readouts`

@@ -161,5 +161,29 @@ class SpecialistMcpAccessTests(unittest.TestCase):
                 self.assertNotIn("docs://physicell/agent_manual", text)
 
 
+class DataAnalystAccessTests(unittest.TestCase):
+    def setUp(self):
+        self.text = agent_text("data-analyst.md")
+        self.metadata = frontmatter(self.text)
+
+    def test_data_analyst_has_no_mcp_and_denies_mcp(self):
+        self.assertNotIn("mcpServers", self.metadata)
+        deny = self.metadata.split("disallowedTools:\n", 1)[1].split("\npermissionMode:", 1)[0]
+        for item in ("Edit", "Skill", "Agent", "'mcp__*'"):
+            self.assertIn(f"  - {item}\n", deny + "\n")
+
+    def test_data_analyst_preloads_data_workflow(self):
+        self.assertIn("skills:\n  - data-workflow\n", self.metadata)
+        self.assertTrue((ROOT / ".claude" / "skills" / "data-workflow" / "SKILL.md").is_file())
+
+    def test_data_analyst_hooks_reference_data_guard(self):
+        for matcher, mode in (("Bash", "bash"), ("Write", "write")):
+            self.assertIn(f'matcher: "{matcher}"', self.metadata)
+            self.assertIn(
+                'python3 \\"$CLAUDE_PROJECT_DIR/.claude/scripts/data_guard.py\\" ' + mode,
+                self.metadata,
+            )
+
+
 if __name__ == "__main__":
     unittest.main()
