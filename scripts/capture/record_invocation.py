@@ -18,8 +18,18 @@ from scripts.capture.artifact_capture import staged_capture, reject_symlinks
 from scripts.capture.index import register_capture, SPECIALISTS
 from scripts.codex.launcher_config import validate_session_id
 from scripts.codex.launcher_process import sanitize_json_value
+from scripts.data import snapshot as data_snapshot
+from scripts.data.common import utc_now
 
-def session_ids(path, specialist):
+def _data_guard():
+    spec = importlib.util.spec_from_file_location('data_guard', Path(__file__).resolve().parents[2] / '.claude/scripts/data_guard.py')
+    module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+    return module
+
+def session_ids(path, specialist, root=None):
+    if specialist == 'data-analyst':
+        bound = _data_guard().transcript_data_session(Path(path), root=root)
+        return {bound[0]} if bound else set()
     spec = importlib.util.spec_from_file_location('report_guard', Path(__file__).resolve().parents[2] / '.claude/scripts/specialist_report_guard.py')
     module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
     return module.transcript_sessions(path, specialist)
@@ -44,6 +54,38 @@ def publish_invocation(project, target, files):
             if not path.is_file() or path.read_bytes() != content:
                 raise ValueError('existing invocation content changed; refusing overwrite')
 
+def data_integrity(project, transcript, session, invocation):
+    """Verify the protected snapshot before any write; fail closed on any error.
+
+    The result is written to integrity.json by the recorder (system code); the
+    agent write guard forbids that file name.
+    """
+    base = project / 'runs' / 'data-analyst' / session
+    path = base / 'integrity.json'
+    reject_symlinks(base); reject_symlinks(path)
+    if path.is_file():
+        try: previous = json.loads(path.read_text(encoding='utf-8'))
+        except (OSError, ValueError): previous = None
+        # A hook retry for the same invocation keeps the first verdict: the first
+        # recording itself changes runs/index.json, so re-verifying would differ.
+        if isinstance(previous, dict) and previous.get('invocation_id') == invocation and previous.get('session_id') == session:
+            return previous
+    try:
+        bound = _data_guard().transcript_data_session(transcript, root=project)
+        if bound is None or bound[0] != session: raise ValueError('transcript session binding changed')
+        result = data_snapshot.verify_session(project, session, bound[1])
+        passed, changed, intact = result['passed'], list(result['changed']), result['identity_intact']
+        error = None
+    except (OSError, ValueError) as exc:  # includes json.JSONDecodeError
+        passed, changed, intact, error = False, [], False, str(exc) or type(exc).__name__
+    integrity = {'schema_version': 1, 'session_id': session, 'invocation_id': invocation,
+                 'checked_at': utc_now(), 'passed': bool(passed and not changed and intact),
+                 'changed': changed, 'identity_intact': bool(intact)}
+    if error is not None: integrity['error'] = error
+    base.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(integrity, indent=2) + '\n', encoding='utf-8')
+    return integrity
+
 def record(project, payload):
     if not isinstance(payload, dict): raise ValueError('hook payload must be an object')
     project = project.resolve(strict=True)
@@ -55,7 +97,7 @@ def record(project, payload):
     reject_symlinks(transcript)
     raw = transcript.read_bytes()
     events = [sanitize_json_value(json.loads(line)) for line in raw.splitlines() if line.strip()]
-    sessions = session_ids(transcript, specialist)
+    sessions = session_ids(transcript, specialist, project)
     if transcript.read_bytes() != raw:
         raise ValueError('transcript changed while recording; preserve source and retry explicitly')
     if len(sessions) > 1:
@@ -65,6 +107,9 @@ def record(project, payload):
         target = project / 'runs/orchestrator/unbound-invocations' / specialist / invocation
     else:
         target = project / 'runs' / specialist / session / 'invocation' / invocation
+    integrity = None
+    if specialist == 'data-analyst' and session is not None:
+        integrity = data_integrity(project, transcript, session, invocation)
     calls, prompts, final, usage_rows, timestamps = [], [], [], {}, []
     for event in events:
         if not isinstance(event, dict): raise ValueError('transcript events must be objects')
@@ -98,6 +143,7 @@ def record(project, payload):
     metadata = {'specialist': specialist, 'session_id': session,
         'invocation_id': invocation, 'source_transcript_sha256': hashlib.sha256(raw).hexdigest(),
         'credentials_redacted': True, 'usage': usage}
+    if integrity is not None: metadata['integrity'] = integrity
     if session is None:
         metadata.update(record_type='unbound-invocation', scientific_status='unresolved')
     files = {

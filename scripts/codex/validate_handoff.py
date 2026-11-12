@@ -22,6 +22,7 @@ SPECIALIST_STAGES = {
     "literature_reviewer": "literature_review",
     "boolean_dynamics_modeler": "maboss_dynamics",
     "multicellular_configurator": "physicell_configuration",
+    "data_analyst": "data",
 }
 SAFE_NEXT_STAGES = {
     "biomass_ode": {None, "researcher_approval"},
@@ -29,6 +30,7 @@ SAFE_NEXT_STAGES = {
     "literature_review": {None, "researcher_approval"},
     "maboss_dynamics": {None, "researcher_approval"},
     "physicell_configuration": {None, "researcher_approval"},
+    "data": {None, "researcher_approval"},
 }
 ARTIFACT_ROOTS = {
     "ode_modeler": ("runs/ode-modeler",),
@@ -36,6 +38,7 @@ ARTIFACT_ROOTS = {
     "literature_reviewer": ("evidence/reports",),
     "boolean_dynamics_modeler": ("runs/boolean-dynamics-modeler",),
     "multicellular_configurator": ("runs/multicellular-configurator",),
+    "data_analyst": ("runs/data-analyst",),
 }
 REQUIRED_FIELDS = {
     "schema_version",
@@ -230,6 +233,10 @@ def _completed_artifacts(handoff: dict[str, Any], project: Path) -> None:
             validate_completion(handoff, project, files)
         except (OSError, ValueError, KeyError, TypeError) as error:
             raise HandoffValidationError(str(error)) from error
+    elif specialist == "data_analyst":
+        session_prefix = f"runs/data-analyst/{handoff['session_id']}/"
+        if not any(p.startswith((session_prefix + "outputs/", session_prefix + "proposals/")) for p in files):
+            raise HandoffValidationError("data stage requires at least one artifact under outputs/ or proposals/")
     elif ".xml" not in suffixes:
         raise HandoffValidationError("PhysiCell stage requires an XML configuration export")
     if specialist == "multicellular_configurator":
@@ -240,6 +247,36 @@ def _completed_artifacts(handoff: dict[str, Any], project: Path) -> None:
                     ET.parse(file)
                 except (OSError, ET.ParseError) as error:
                     raise HandoffValidationError(f"invalid configuration XML: {file.name}") from error
+
+
+def _data_session_checks(handoff: dict[str, Any], project: Path) -> None:
+    """Check recorder integrity, manifest consistency and proposal gating."""
+    from scripts.data import manifest as data_manifest
+    session = handoff["session_id"]
+    base = project / "runs" / "data-analyst" / session
+    try:
+        integrity = json.loads((base / "integrity.json").read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, ValueError) as error:
+        raise HandoffValidationError(f"data session integrity.json is missing or unreadable: {error}") from error
+    if not isinstance(integrity, dict) or integrity.get("passed") is not True \
+            or integrity.get("session_id") != session:
+        raise HandoffValidationError("data session integrity check did not pass")
+    try:
+        errors = data_manifest.verify(project, session)
+    except (OSError, ValueError, KeyError, TypeError) as error:
+        raise HandoffValidationError(f"data manifest verification failed: {error}") from error
+    if errors:
+        raise HandoffValidationError("data manifest verification failed: " + "; ".join(errors))
+    try:
+        proposals = json.loads((base / "manifest.json").read_text(encoding="utf-8")).get("proposals", [])
+    except (OSError, UnicodeError, ValueError, AttributeError) as error:
+        raise HandoffValidationError("data manifest is unreadable") from error
+    if not isinstance(proposals, list):
+        raise HandoffValidationError("data manifest proposals must be a list")
+    if handoff["status"] == "completed" and proposals:
+        raise HandoffValidationError("proposals require needs_approval")
+    if handoff["status"] == "needs_approval" and len(handoff["decisions_required"]) < len(proposals):
+        raise HandoffValidationError("needs_approval requires a decision for each proposal")
 
 
 def validate_handoff(
@@ -341,6 +378,8 @@ def validate_handoff(
             session_id=session_id,
             path=_artifact_path(entry, index),
         )
+    if specialist == "data_analyst" and status in {"completed", "needs_approval"}:
+        _data_session_checks(handoff, project)
     # ODE preservation claims require the same checks even while scientific
     # approval is pending. Metadata-only drafts remain possible before capture.
     ode = handoff.get("ode", {}) if specialist == "ode_modeler" else {}

@@ -22,7 +22,7 @@ DECISIONS = ["Date", "Decision", "Alternatives considered", "Rationale", "Eviden
 VALIDATION = ["Criterion", "Method", "Required evidence", "Status", "Result"]
 RECORD = re.compile(r"<!-- governance-record -->\s*```json\n(.*?)\n```", re.S)
 ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
-ROLES = {"network-curator": "topology", "boolean-dynamics-modeler": "boolean-dynamics", "multicellular-configurator": "multicellular", "ode-modeler": "biomass_ode"}
+ROLES = {"network-curator": "topology", "boolean-dynamics-modeler": "boolean-dynamics", "multicellular-configurator": "multicellular", "ode-modeler": "biomass_ode", "data-analyst": "data"}
 
 
 def now():

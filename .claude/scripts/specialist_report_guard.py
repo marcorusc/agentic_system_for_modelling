@@ -91,7 +91,7 @@ def transcript_sessions(path, specialist):
     return sessions
 
 def validate(payload, project, specialist, expected_session=None):
-    if specialist not in SPECIALISTS or payload.get('tool_name') != 'Write':
+    if specialist not in SPECIALISTS or specialist not in PREFIXES or payload.get('tool_name') != 'Write':
         raise ValueError('expected an agent-scoped specialist Write')
     request = payload.get('tool_input', {})
     path = Path(request.get('file_path', ''))
@@ -115,7 +115,7 @@ def validate(payload, project, specialist, expected_session=None):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('specialist', choices=sorted(SPECIALISTS))
+    parser.add_argument('specialist', choices=sorted(PREFIXES))
     parser.add_argument('--session-id')
     args = parser.parse_args()
     try:
