@@ -37,6 +37,8 @@ UNQUOTED_FORBIDDEN = frozenset("*?[]{}~()#!")
 PROTECTED_NAMES = frozenset({"identity.json", "manifest.json", "integrity.json", "sources.jsonl"})
 INTERPRETER = Path(".venv-data/bin/python")
 SESSION_FLAG_SCRIPTS = frozenset({"fetch.py", "manifest.py"})
+# R12: the only scripts/data entry points the agent may run.
+DATA_SCRIPTS = frozenset({"session.py", "fetch.py", "manifest.py"})
 ALLOWED_FORMS = ("only `.venv-data/bin/python -E -s <script> [args]`, `ls` and `head` "
                  "single commands are allowed")
 
@@ -115,6 +117,8 @@ def _check_session_flag(args: list[str], active: str) -> None:
 def _script_kind(path: Path, root: Path, active: str | None) -> str:
     parts = path.relative_to(root).parts
     if len(parts) == 3 and parts[:2] == ("scripts", "data"):
+        if parts[2] not in DATA_SCRIPTS:
+            raise ValueError("only scripts/data/session.py, fetch.py or manifest.py may be run")
         return "data"
     if len(parts) == 5 and parts[:2] == ("vendor", "scientific-agent-skills") and parts[3] == "scripts":
         return "vendor"
@@ -122,7 +126,8 @@ def _script_kind(path: Path, root: Path, active: str | None) -> str:
             and parts[3] == "scripts"):
         return "session"
     raise ValueError("script must be runs/data-analyst/<active>/scripts/*.py, "
-                     "vendor/scientific-agent-skills/*/scripts/*.py or scripts/data/*.py")
+                     "vendor/scientific-agent-skills/*/scripts/*.py or "
+                     "scripts/data/{session,fetch,manifest}.py")
 
 
 def _classify(command: str, root: Path, active: str | None, cwd: Path | None = None) -> str:

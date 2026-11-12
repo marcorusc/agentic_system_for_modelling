@@ -10,7 +10,13 @@ other caller the command is denied (exit 2) when it
 * runs an interpreter (python*, pypy*, ipython*, uv, uvx, a shell, source/eval/exec)
   in a pipeline that also references ``vendor/scientific-agent-skills`` (by path,
   resolved symlink or name), from a cwd inside it, or after ``cd`` into it;
-* executes a vendored path directly as a command.
+* executes a vendored path directly as a command;
+* (R11) runs ``scripts/data/session.py``, ``fetch.py`` or ``manifest.py`` other
+  than ``manifest.py verify`` (path, ``-m scripts.data.<tool>``, symlink, cwd,
+  ``cd``/variable forms). ``vendor_lock.py verify`` and ``manifest.py verify`` pass.
+
+Only a caller with ``agent_type == "data-analyst"`` and a non-empty ``agent_id``
+(R13) is exempt.
 
 Read/maintenance commands on vendored paths (git, cat, ls, grep, head, sed -n,
 ``python3 -m unittest`` without vendored paths, ``vendor_lock.py verify``) pass.
@@ -57,6 +63,9 @@ MAX_DEPTH = 4
 MAX_GLOB = 2000
 MAX_BRACES = 64
 MAX_HASHED_BYTES = 8 << 20
+DATA_TOOLS = frozenset({"session.py", "fetch.py", "manifest.py"})
+DATA_MODULE_RE = re.compile(r"\Ascripts\.data\.(session|fetch|manifest)\Z", re.IGNORECASE)
+DATA_TEXT_RE = re.compile(r"scripts[./]data[./](?:session|fetch|manifest(?!\.py\s+verify\b))", re.IGNORECASE)
 DELEGATE = ("data work (vendored scientific-agent-skills scripts, .venv-data, .venv-cellprofiler) "
             "is delegated to the data-analyst subagent")
 
@@ -165,6 +174,7 @@ class Guard:
         self.root, self.cwd = root, cwd
         self.vendor = root / "vendor" / VENDOR_NAME
         self.venvs = [root / name for name in sorted(VENVS)]
+        self.data_dir = root / "scripts" / "data"
         self._vendor_hashes: set[str] | None = None
 
     def vendor_hashes(self) -> set[str]:
@@ -194,6 +204,29 @@ class Guard:
                 return True
         return False
 
+    def data_tool(self, word: str) -> str | None:
+        """The scripts/data entry point a word names (path, symlink or -m module)."""
+        match = DATA_MODULE_RE.match(word)
+        if match:
+            return match.group(1).lower() + ".py"
+        for piece in _pieces(word, self.cwd):
+            for location in _locations(piece, self.cwd):
+                for name in DATA_TOOLS:
+                    if str(location).casefold() == str(self.data_dir / name).casefold():
+                        return name
+        return None
+
+    def is_data_dir(self, word: str) -> bool:
+        if any("scripts/data" in variant.casefold() for variant in _braces(word)):
+            return True
+        return any(_within(location, self.data_dir) for piece in _pieces(word, self.cwd)
+                   for location in _locations(piece, self.cwd))
+
+    @staticmethod
+    def _mutating(tool: str | None, following: list[str]) -> bool:
+        """R11: every data tool except `manifest.py verify` creates or changes session state."""
+        return tool is not None and not (tool == "manifest.py" and following[:1] == ["verify"])
+
     def is_vendor(self, word: str) -> bool:
         if any(VENDOR_NAME in variant.casefold() for variant in _braces(word)):
             return True
@@ -202,16 +235,27 @@ class Guard:
 
     def check(self, command: str, depth: int = 0) -> None:
         text, bodies = _strip_cat_heredocs(command)
-        any_interpreter = carried_vendor = False
+        any_interpreter = carried_vendor = carried_data = named_tool = False
         in_vendor = _within(self.cwd, self.vendor)
         for pipeline in _pipelines(_words(text)):
-            interpreter = vendor = False
+            interpreter = vendor = data_use = False
             for simple in pipeline:
                 words = [word for word, target in simple if not target]
                 argv = list(itertools.dropwhile(ASSIGNMENT_RE.match, words))
                 name = os.path.basename(argv[0]) if argv else ""
                 if argv and self.is_vendor(argv[0]):
                     raise ValueError(f"{argv[0]!r} executes a vendored script directly")
+                if argv and self._mutating(self.data_tool(argv[0]), argv[1:]):
+                    raise ValueError(f"{argv[0]!r} executes a data-session tool directly")
+                for index, word in enumerate(words):
+                    following = words[index + 1:]
+                    if self._mutating(self.data_tool(word), following):
+                        data_use = True
+                    base = os.path.basename(word).casefold()
+                    if base in DATA_TOOLS and self._mutating(base, following):
+                        named_tool = True
+                    if (not argv or name in CARRIERS) and self.is_data_dir(word):
+                        carried_data = True
                 if name in SOURCING or (name == "git" and any(GIT_SHELL_ALIAS_RE.search(w) for w in argv)):
                     interpreter = True
                 if name not in NON_EXECUTING and any(
@@ -231,13 +275,19 @@ class Guard:
                 vendor = any(self.is_vendor_copy(word) for simple in pipeline for word, _ in simple)
             if interpreter and (vendor or in_vendor):
                 raise ValueError("an interpreter would run vendored scientific-agent-skills code")
+            if interpreter and data_use:
+                raise ValueError("the main session may not run scripts/data session.py, fetch.py "
+                                 "or manifest.py build (only manifest.py verify)")
             any_interpreter = any_interpreter or interpreter
+        if any_interpreter and carried_data and named_tool:
+            raise ValueError("an interpreter would run a scripts/data session tool after `cd`/a variable")
         if any_interpreter and carried_vendor:
             raise ValueError("an interpreter would run after `cd`/a variable pointing at "
                              "vendored scientific-agent-skills")
         for line, body in bodies:
             folded = body.casefold()
-            if EMBEDDED_RE.search(line) and (VENDOR_NAME in folded or any(venv in folded for venv in VENVS)):
+            if EMBEDDED_RE.search(line) and (VENDOR_NAME in folded or any(venv in folded for venv in VENVS)
+                                            or DATA_TEXT_RE.search(body)):
                 raise ValueError("a heredoc feeding an interpreter references data work")
 
 
@@ -248,8 +298,9 @@ def main() -> int:
             raise ValueError("hook event must be a JSON object")
         if event.get("tool_name") not in (None, "Bash"):
             return 0
-        if event.get("agent_type") == "data-analyst":
-            return 0  # constrained by its own data_guard.py hooks
+        agent_id = event.get("agent_id")
+        if event.get("agent_type") == "data-analyst" and isinstance(agent_id, str) and agent_id.strip():
+            return 0  # R13: a real data-analyst subagent, constrained by its own data_guard.py hooks
         request = event.get("tool_input")
         if not isinstance(request, dict) or not isinstance(request.get("command"), str):
             raise ValueError("tool_input.command must be a string")

@@ -32,7 +32,8 @@ class OrchestratorGuardTests(unittest.TestCase):
         (self.root / ".venv-data" / "bin").mkdir(parents=True)
         (self.root / ".venv-data" / "bin" / "python").write_text("")
         (self.root / "scripts" / "data").mkdir(parents=True)
-        (self.root / "scripts" / "data" / "vendor_lock.py").write_text("")
+        for name in ("vendor_lock.py", "session.py", "fetch.py", "manifest.py"):
+            (self.root / "scripts" / "data" / name).write_text("")
 
     def tearDown(self) -> None:
         self.temporary.cleanup()
@@ -200,7 +201,63 @@ class OrchestratorGuardTests(unittest.TestCase):
     def test_data_analyst_allowed(self) -> None:
         self.assert_allowed(f".venv-data/bin/python -E -s {VENDOR_SCRIPT}",
                             agent_type="data-analyst", agent_id="a1")
-        self.assert_allowed(f".venv-data/bin/python -E -s {VENDOR_SCRIPT}", agent_type="data-analyst")
+        self.assert_allowed(f".venv-data/bin/python -E -s scripts/data/session.py new --purpose x",
+                            agent_type="data-analyst", agent_id="agent-7")
+
+    def test_agent_type_without_agent_id_denied(self) -> None:
+        for extra in ({"agent_type": "data-analyst"}, {"agent_type": "data-analyst", "agent_id": ""},
+                      {"agent_type": "data-analyst", "agent_id": None},
+                      {"agent_type": "data-analyst", "agent_id": 7}):
+            with self.subTest(extra=extra):
+                self.assert_denied(f".venv-data/bin/python -E -s {VENDOR_SCRIPT}", **extra)
+                self.assert_denied(f"python3 {VENDOR_SCRIPT}", **extra)
+
+    def test_main_session_data_tools_denied(self) -> None:
+        session = "data-20261112T120000Z-0123abcd"
+        for command in (
+            "python3 scripts/data/session.py new --purpose x",
+            f"python3 scripts/data/fetch.py --session {session} --url http://x --release r",
+            f"python3 scripts/data/manifest.py build --session {session}",
+            "python3 -I scripts/data/session.py new --purpose x",
+            f"python3 {self.root}/scripts/data/fetch.py --session {session} --release r",
+            "python3 ./scripts/data/manifest.py build --session x",
+            "python3 scripts/data/manifest.py --help",
+            "python3 -m scripts.data.session new --purpose x",
+            "python3 -m scripts.data.fetch --session x --release r",
+            "python3 -m scripts.data.manifest build --session x",
+            "uv run scripts/data/session.py new --purpose x",
+            "./scripts/data/session.py new --purpose x",
+            "scripts/data/fetch.py --session x --release r",
+            "cd scripts/data && python3 session.py new --purpose x",
+            "p=scripts/data; python3 $p/session.py new --purpose x",
+            "echo x | python3 scripts/data/fetch.py --session x --release r",
+            "python3 scripts/data/{session,common}.py new --purpose x",
+            "python3 SCRIPTS/DATA/SESSION.PY new --purpose x",
+        ):
+            with self.subTest(command=command):
+                self.assert_denied(command)
+        self.assert_denied("python3 session.py new --purpose x", cwd=str(self.root / "scripts" / "data"))
+        self.assert_denied("python3 manifest.py build --session x", cwd=str(self.root / "scripts" / "data"))
+        link = self.outside / "s.py"
+        try:
+            link.symlink_to(self.root / "scripts" / "data" / "session.py")
+        except OSError as error:
+            self.skipTest(f"symlinks unavailable: {error}")
+        self.assert_denied(f"python3 {link} new --purpose x")
+
+    def test_main_session_verify_tools_allowed(self) -> None:
+        session = "data-20261112T120000Z-0123abcd"
+        for command in (
+            f"python3 scripts/data/manifest.py verify --session {session}",
+            f"python3 -m scripts.data.manifest verify --session {session}",
+            "python3 scripts/data/vendor_lock.py verify",
+            "git add scripts/data/session.py scripts/data/fetch.py",
+            "cat scripts/data/manifest.py",
+            "grep -n build scripts/data/manifest.py",
+            "python3 -m unittest tests.data.test_session tests.data.test_fetch",
+        ):
+            with self.subTest(command=command):
+                self.assert_allowed(command)
 
     def test_other_agents_denied(self) -> None:
         for agent in ("network-curator", "Data-Analyst", "data-analyst ", ["data-analyst"], None):

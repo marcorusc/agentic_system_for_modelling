@@ -20,6 +20,8 @@ ACTIVE = "data-20261112T120000Z-0123abcd"
 OTHER = "data-20261112T130000Z-89abcdef"
 DIGEST = "a" * 64
 PY = ".venv-data/bin/python -E -s"
+OTHER_DATA_MODULES = ("vendor_lock.py", "environment.py", "common.py", "ledger.py", "snapshot.py",
+                      "__init__.py")
 NEW = f"{PY} scripts/data/session.py new --purpose test"
 
 
@@ -60,7 +62,7 @@ class GuardFixture(unittest.TestCase):
             python.symlink_to(sys.executable)  # venv interpreters are symlinks
         except OSError:
             python.write_text("")
-        for name in ("session.py", "fetch.py", "manifest.py", "common.py"):
+        for name in ("session.py", "fetch.py", "manifest.py", *OTHER_DATA_MODULES):
             (root / "scripts" / "data").mkdir(parents=True, exist_ok=True)
             (root / "scripts" / "data" / name).write_text("")
         (root / "scripts" / "data" / "notes.txt").write_text("")
@@ -114,6 +116,15 @@ class BashAllowlistTests(GuardFixture):
         self.allowed(f"{PY} scripts/data/manifest.py build --session {ACTIVE} --skills depmap")
         self.allowed(f"{PY} scripts/data/manifest.py verify --session={ACTIVE}")
         self.allowed(f"{PY} scripts/data/fetch.py --session {ACTIVE} --url https://x.org/a.csv --release r1")
+
+    def test_other_scripts_data_modules_denied(self) -> None:
+        for name in OTHER_DATA_MODULES:
+            with self.subTest(name=name):
+                self.denied(f"{PY} scripts/data/{name}", contains="session.py, fetch.py or manifest.py")
+                self.denied(f"{PY} scripts/data/{name} --session {ACTIVE}")
+        self.denied(f"{PY} scripts/data/vendor_lock.py build --upstream x")
+        self.denied(f"{PY} scripts/data/vendor_lock.py verify")
+        self.denied(f"{PY} scripts/data/environment.py", active=None)
 
     def test_other_session_script_denied(self) -> None:
         self.denied(f"{PY} runs/data-analyst/{OTHER}/scripts/analysis.py")
