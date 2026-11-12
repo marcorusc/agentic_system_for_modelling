@@ -13,7 +13,9 @@ other caller the command is denied (exit 2) when it
 * executes a vendored path directly as a command;
 * (R11) runs ``scripts/data/session.py``, ``fetch.py`` or ``manifest.py`` other
   than ``manifest.py verify`` (path, ``-m scripts.data.<tool>``, symlink, cwd,
-  ``cd``/variable forms). ``vendor_lock.py verify`` and ``manifest.py verify`` pass.
+  ``cd``/variable forms). ``vendor_lock.py verify`` and ``manifest.py verify`` pass. ``scripts/data/receive.py``
+(the orchestrator's post-run receive step) is deliberately NOT in DATA_TOOLS/DATA_TEXT_RE
+and is allowed in the main session (tested in test_orchestrator_receive_allowed).
 
 Only a caller with ``agent_type == "data-analyst"`` and a non-empty ``agent_id``
 (R13) is exempt.

@@ -35,6 +35,11 @@ runs `vendor/scientific-agent-skills` scripts or `.venv-data`. data-analyst invo
 never run concurrently with other specialists or state writes. The orchestrator
 registers each approved data product in `DATA_DICTIONARY.md` (name, identifiers, units,
 source release, data session ID).
+After each data-analyst completion notification, run
+`python3 scripts/data/receive.py --session <id> --agent-id <agentId>`; it recovers a
+missing SubagentStop capture and validates the handoff. Never present or act on
+proposals before it prints `RECEIVED <session> OK`. Data briefs list every upstream
+artifact the analyst may read, with its path and sha256.
 
 The orchestrator must have no modelling MCP tools; stop if any are visible. Run the
 setup isolation guard. Four specialist-inline *-agent transports expose only NeKo to

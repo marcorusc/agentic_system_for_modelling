@@ -32,7 +32,7 @@ class OrchestratorGuardTests(unittest.TestCase):
         (self.root / ".venv-data" / "bin").mkdir(parents=True)
         (self.root / ".venv-data" / "bin" / "python").write_text("")
         (self.root / "scripts" / "data").mkdir(parents=True)
-        for name in ("vendor_lock.py", "session.py", "fetch.py", "manifest.py", "handoff.py"):
+        for name in ("vendor_lock.py", "session.py", "fetch.py", "manifest.py", "handoff.py", "receive.py"):
             (self.root / "scripts" / "data" / name).write_text("")
 
     def tearDown(self) -> None:
@@ -264,6 +264,15 @@ class OrchestratorGuardTests(unittest.TestCase):
             "cat scripts/data/manifest.py",
             "grep -n build scripts/data/manifest.py",
             "python3 -m unittest tests.data.test_session tests.data.test_fetch",
+        ):
+            with self.subTest(command=command):
+                self.assert_allowed(command)
+
+    def test_orchestrator_receive_allowed(self) -> None:
+        session = "data-20261112T120000Z-0123abcd"
+        for command in (
+            f"python3 scripts/data/receive.py --session {session} --agent-id a1B2_c-3",
+            f"python3 -m scripts.data.receive --session {session} --agent-id a1",
         ):
             with self.subTest(command=command):
                 self.assert_allowed(command)
