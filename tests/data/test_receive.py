@@ -49,17 +49,19 @@ class ReceiveTests(unittest.TestCase):
         handoff.build(self.root, self.sid, "needs_approval", "handoff_notes.json")
         self.transcript = self.place_transcript("uuid-1")
 
-    def place_transcript(self, main_session):
+    def place_transcript(self, main_session, handoff_line=None):
         directory = self.troot / receive.project_slug(self.root) / main_session / "subagents"
         directory.mkdir(parents=True, exist_ok=True)
         path = directory / f"agent-{AID}.jsonl"
-        path.write_text("".join(json.dumps(e) + "\n" for e in self.events()), encoding="utf-8")
+        path.write_text("".join(json.dumps(e) + "\n" for e in self.events(handoff_line)), encoding="utf-8")
         return path
 
-    def events(self):
+    def events(self, handoff_line=None):
         """The session.py new call, then the final report ending in the Handoff line."""
         rel = f"runs/data-analyst/{self.sid}/handoff.json"
-        report = f"# Report\n\nDone.\n\nHandoff: {rel} sha256={sha256_file(self.root / rel)}"
+        if handoff_line is None:
+            handoff_line = f"Handoff: {rel} sha256={sha256_file(self.root / rel)}"
+        report = f"# Report\n\nDone.\n\n{handoff_line}".rstrip()
         return transcript_events(self.sid, self.digest) + [
             {"type": "assistant", "message": {"role": "assistant", "content": [
                 {"type": "tool_use", "id": "t9", "name": "SubagentHandback", "input": {"message": report}}]}}]
@@ -129,6 +131,50 @@ class ReceiveTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "binds no data session"):
             receive.receive(self.root, self.sid, AID, self.troot)
         self.assertFalse((self.dir / "invocation").exists())
+
+    def test_cli_prints_handoff_status(self):
+        self.hook_record()
+        out, err = io.StringIO(), io.StringIO()
+        with redirect_stdout(out), redirect_stderr(err):
+            code = receive.main(["--session", self.sid, "--agent-id", AID, "--transcript-root", str(self.troot)])
+        self.assertEqual(code, 0, err.getvalue())
+        self.assertEqual(out.getvalue().splitlines()[-2], "Handoff status: needs_approval")
+        self.assertEqual(receive.receive(self.root, self.sid, AID, self.troot)["status"], "needs_approval")
+
+    def test_note_decision_artifact_path_shown(self):
+        (self.dir / "outputs" / "volcano.png").write_bytes(b"png")
+        (self.dir / "outputs" / "index.json").write_text(json.dumps([{
+            "path": "outputs/volcano.png", "description": "volcano plot", "units": {},
+            "identifiers": "HGNC symbol"}]), encoding="utf-8")
+        manifest.build(self.root, self.sid, [])
+        (self.dir / "handoff_notes.json").write_text(json.dumps({"decisions": [
+            {"id": "D1", "question": "accept?", "artifact": "outputs/volcano.png"}]}), encoding="utf-8")
+        handoff.build(self.root, self.sid, "needs_approval", "handoff_notes.json")
+        self.place_transcript("uuid-1")
+        self.hook_record()
+        rows = {r["id"]: r for r in receive.receive(self.root, self.sid, AID, self.troot)["rows"]}
+        self.assertEqual(rows["D1"]["path"], f"runs/data-analyst/{self.sid}/outputs/volcano.png")
+        self.assertEqual(rows["D1"]["sha256"], sha256_file(self.dir / "outputs" / "volcano.png")[:12])
+
+    def test_missing_handoff_line_fails(self):
+        self.place_transcript("uuid-1", handoff_line="")
+        self.hook_record()
+        with self.assertRaisesRegex(ValueError, "does not end with the `Handoff: "):
+            receive.receive(self.root, self.sid, AID, self.troot)
+
+    def test_mismatched_handoff_line_fails(self):
+        rel = f"runs/data-analyst/{self.sid}/handoff.json"
+        self.place_transcript("uuid-1", handoff_line=f"Handoff: {rel} sha256={'0' * 64}")
+        self.hook_record()
+        with self.assertRaisesRegex(ValueError, "differs from handoff.json"):
+            receive.receive(self.root, self.sid, AID, self.troot)
+
+    def test_handoff_rebuilt_after_final_message_fails(self):
+        self.hook_record()
+        (self.dir / "handoff_notes.json").write_text(json.dumps({"actions": ["later"]}), encoding="utf-8")
+        handoff.build(self.root, self.sid, "needs_approval", "handoff_notes.json")
+        with self.assertRaisesRegex(ValueError, "differs from handoff.json"):
+            receive.receive(self.root, self.sid, AID, self.troot)
 
     def test_recovers_missing_capture(self):
         self.assertFalse((self.dir / "integrity.json").exists())
