@@ -54,6 +54,35 @@ def _files(session: Path, sub: str, suffix: str | None = None) -> list[str]:
     return sorted(found)
 
 
+def _read_ledger(session: Path) -> list:
+    path = session / "sources.jsonl"
+    if not path.exists():
+        return []
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+
+def _check_source(root: Path, session_id: str, index: int, entry: dict, errors: list[str]) -> None:
+    """R24: a source path is root-relative and its bytes still match the ledger."""
+    rel = entry["path"]
+    parts = Path(rel).parts
+    allowed = (("data-cache", "sha256"), ("runs", "data-analyst", session_id, "raw"), ("inputs",))
+    if (Path(rel).is_absolute() or "\\" in rel or ".." in parts
+            or not any(parts[:len(p)] == p and len(parts) > len(p) for p in allowed)):
+        errors.append(f"source {index}: path must be root-relative under data-cache/sha256/, "
+                      f"runs/data-analyst/{session_id}/raw/ or inputs/: {rel}")
+        return
+    path = Path(root) / rel
+    try:
+        reject_symlinks(path, Path(root))
+    except ValueError as exc:
+        errors.append(f"source {index} {rel}: {exc}")
+        return
+    if not path.is_file():
+        errors.append(f"source {index} {rel}: not a regular file")
+    elif sha256_file(path) != entry["sha256"]:
+        errors.append(f"source {index} {rel}: hash mismatch")
+
+
 def _hashed(session: Path, rel: str) -> str:
     return sha256_file(session / rel)
 
@@ -61,10 +90,7 @@ def _hashed(session: Path, rel: str) -> str:
 def build(root: Path, session_id: str, skills: list[str]) -> dict:
     session = session_dir(root, session_id)
     identity = _read_json(session / "identity.json")
-    sources = []
-    sources_path = session / "sources.jsonl"
-    if sources_path.exists():
-        sources = [json.loads(line) for line in sources_path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    sources = _read_ledger(session)
     outputs = []
     for entry in _read_index(session, "outputs"):
         outputs.append({**entry, "sha256": _hashed(session, entry["path"])})
@@ -205,6 +231,15 @@ def verify(root: Path, session_id: str) -> list[str]:
                 validate_entry(entry)
             except ValueError as exc:
                 errors.append(f"source {i}: {exc}")
+                continue
+            _check_source(root, session_id, i, entry, errors)
+        try:
+            ledgered = _read_ledger(session)
+        except (OSError, ValueError) as exc:
+            errors.append(f"cannot read sources.jsonl: {exc}")
+        else:
+            if sources != ledgered:
+                errors.append("manifest sources differ from sources.jsonl")
 
     scripts = _check_listed(session, data.get("scripts"), "script", "scripts", errors)
     outputs = _check_listed(session, data.get("outputs"), "output", "outputs", errors)

@@ -91,10 +91,13 @@ def download(
             raise ValueError(f"received HTML, expected {expect}")
         digest = sha256_file(tmp)
         final = cache / "sha256" / digest
-        if final.exists():
+        # R24: a cache hit is re-hashed; modified or non-regular entries are
+        # replaced with the freshly downloaded bytes. Cache files are read-only.
+        if not final.is_symlink() and final.is_file() and sha256_file(final) == digest:
             tmp.unlink()
         else:
             os.replace(tmp, final)
+        os.chmod(final, 0o444)
     except BaseException:
         tmp.unlink(missing_ok=True)
         raise
@@ -116,7 +119,7 @@ def download(
         "retrieved_at": retrieved_at,
         "sha256": digest,
         "terms": terms,
-        "path": str(final),
+        "path": final.relative_to(root).as_posix(),
     }
     ledger.validate_entry(entry)
     try:

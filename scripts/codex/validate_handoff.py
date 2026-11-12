@@ -131,15 +131,8 @@ def _validate_artifact(
             raise HandoffValidationError(f"artifact path contains a symlink: {path}")
 
 
-def _completed_artifacts(handoff: dict[str, Any], project: Path) -> None:
-    """Verify completion using actual files, not specialist self-attestation.
-
-    Draft handoffs use needs_approval until the orchestrator has persisted reports
-    and manifests. This check does not grant scientific approval or export rights.
-    """
-    entries = handoff["artifacts"]
-    if not entries:
-        raise HandoffValidationError("completed handoff requires stage artifacts")
+def _hashed_artifact_files(entries: list[Any], project: Path) -> dict[str, Path]:
+    """Require each artifact to exist, be non-empty and match its declared sha256."""
     files: dict[str, Path] = {}
     for index, entry in enumerate(entries):
         path = _artifact_path(entry, index)
@@ -161,6 +154,19 @@ def _completed_artifacts(handoff: dict[str, Any], project: Path) -> None:
         if file.stat().st_size == 0:
             raise HandoffValidationError(f"completed artifact is empty: {path}")
         files[path] = file
+    return files
+
+
+def _completed_artifacts(handoff: dict[str, Any], project: Path) -> None:
+    """Verify completion using actual files, not specialist self-attestation.
+
+    Draft handoffs use needs_approval until the orchestrator has persisted reports
+    and manifests. This check does not grant scientific approval or export rights.
+    """
+    entries = handoff["artifacts"]
+    if not entries:
+        raise HandoffValidationError("completed handoff requires stage artifacts")
+    files = _hashed_artifact_files(entries, project)
 
     specialist = handoff["specialist"]
     if specialist == "literature_reviewer":
@@ -250,10 +256,13 @@ def _completed_artifacts(handoff: dict[str, Any], project: Path) -> None:
 
 
 def _data_session_checks(handoff: dict[str, Any], project: Path) -> None:
-    """Check recorder integrity, manifest consistency and proposal gating."""
+    """Check artifacts, recorder integrity, manifest consistency and proposal gating."""
     from scripts.data import manifest as data_manifest
     session = handoff["session_id"]
     base = project / "runs" / "data-analyst" / session
+    # R25: completed and needs_approval alike carry object-form artifacts whose
+    # files exist and match their declared sha256.
+    _hashed_artifact_files(handoff["artifacts"], project)
     try:
         integrity = json.loads((base / "integrity.json").read_text(encoding="utf-8"))
     except (OSError, UnicodeError, ValueError) as error:
@@ -298,6 +307,14 @@ def _data_session_checks(handoff: dict[str, Any], project: Path) -> None:
         raise HandoffValidationError("data manifest is unreadable") from error
     if not isinstance(proposals, list):
         raise HandoffValidationError("data manifest proposals must be a list")
+    proposal_sha = {
+        f"runs/data-analyst/{session}/{entry.get('path')}": entry.get("sha256")
+        for entry in proposals if isinstance(entry, dict)
+    }
+    for index, entry in enumerate(handoff["artifacts"]):
+        path = _artifact_path(entry, index)
+        if path in proposal_sha and entry["sha256"].lower() != proposal_sha[path]:
+            raise HandoffValidationError(f"proposal artifact sha256 differs from the manifest: {path}")
     if handoff["status"] == "completed" and proposals:
         raise HandoffValidationError("proposals require needs_approval")
     if handoff["status"] == "needs_approval" and len(handoff["decisions_required"]) < len(proposals):

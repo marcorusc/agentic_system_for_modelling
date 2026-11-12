@@ -67,7 +67,7 @@ class FetchTests(unittest.TestCase):
         lines = self.lines()
         self.assertEqual(len(lines), 1)
         self.assertEqual(lines[0]["kind"], "download")
-        self.assertEqual(lines[0]["path"], str(cache))
+        self.assertEqual(lines[0]["path"], f"data-cache/sha256/{entry['sha256']}")
         meta = json.loads((self.session / "raw" / "t.csv.source.json").read_text())
         self.assertEqual(meta["sha256"], entry["sha256"])
         self.assertEqual(meta["content_type"], "text/csv")
@@ -84,10 +84,27 @@ class FetchTests(unittest.TestCase):
         self.assertEqual(len(list((self.root / "data-cache" / "sha256").iterdir())), 1)
         self.assertEqual(len(self.lines()), 2)
 
+    def test_cache_files_read_only(self):
+        entry = self.dl()
+        cache = self.root / "data-cache" / "sha256" / entry["sha256"]
+        self.assertEqual(cache.stat().st_mode & 0o777, 0o444)
+
+    def test_cache_hit_with_modified_bytes_rehashed_and_replaced(self):
+        first = self.dl(name="a.csv")
+        cache = self.root / "data-cache" / "sha256" / first["sha256"]
+        cache.chmod(0o644)
+        cache.write_bytes(b"a,b\n9,9\n")
+        second = self.dl(name="b.csv")
+        self.assertEqual(second["sha256"], first["sha256"])
+        self.assertEqual(cache.read_bytes(), BODY)
+        self.assertEqual(sha256_file(cache), second["sha256"])
+        self.assertEqual(cache.stat().st_mode & 0o777, 0o444)
+        self.assertEqual(list((self.root / "data-cache").glob("tmp-*")), [])
+
     def test_download_function_with_query_string(self):
         entry = self.dl(url=self.base + "/x?a=1&b=2")
         self.assertEqual(entry["uri"], self.base + "/x?a=1&b=2")
-        self.assertEqual(sha256_file(Path(entry["path"])), entry["sha256"])
+        self.assertEqual(sha256_file(self.root / entry["path"]), entry["sha256"])
 
     def test_html_rejected_when_tabular_expected(self):
         for path in ("/page", "/sneaky"):
@@ -117,6 +134,7 @@ class FetchTests(unittest.TestCase):
         self.assertEqual((self.session / "raw" / "api.json").read_text(), '{"ok": 1}')
         self.assertEqual(entry["uri"], "https://example.org/api?a=1&b=2")
         self.assertEqual(self.lines()[0]["kind"], "api")
+        self.assertEqual(entry["path"], f"runs/data-analyst/{self.session.name}/raw/api.json")
         with self.assertRaises(ValueError):
             ledger.record_api(self.session, url="u", params={}, response=b"x",
                               release="v9", name="api.json")
@@ -129,6 +147,7 @@ class FetchTests(unittest.TestCase):
         self.assertEqual(entry["kind"], "input")
         self.assertEqual(entry["sha256"], sha256_file(good))
         self.assertEqual(entry["release"], "researcher-supplied")
+        self.assertEqual(entry["path"], "inputs/d.csv")
         bad = self.root / "other.csv"
         bad.write_bytes(BODY)
         with self.assertRaises(ValueError):

@@ -1,4 +1,8 @@
-"""Source ledger (sources.jsonl) for data-analyst sessions."""
+"""Source ledger (sources.jsonl) for data-analyst sessions.
+
+Entry ``path`` values are project-root-relative POSIX paths (R24):
+``data-cache/sha256/<hex>``, ``runs/data-analyst/<id>/raw/<name>`` or ``inputs/<file>``.
+"""
 
 from __future__ import annotations
 
@@ -60,11 +64,19 @@ def record_api(
     release: str,
     name: str,
     terms: str = "",
+    root: Path | None = None,
 ) -> dict:
+    """Save an API response under raw/ and ledger it.
+
+    ``root`` defaults to the project root implied by the session location
+    (``<root>/runs/data-analyst/<id>``); the ledger path is root-relative (R24).
+    """
     check_name(name)
     session = Path(session)
+    root = Path(root) if root is not None else session.parents[2]
     raw = session / "raw" / name
     reject_symlinks(raw.parent, session)
+    rel = raw.relative_to(root).as_posix()
     data = response.encode("utf-8") if isinstance(response, str) else bytes(response)
     uri = url
     if params:
@@ -81,7 +93,7 @@ def record_api(
         "retrieved_at": utc_now(),
         "sha256": sha256_file(raw),
         "terms": terms,
-        "path": str(raw),
+        "path": rel,
     }
     try:
         validate_entry(entry)
@@ -124,7 +136,7 @@ def record_input(
         "retrieved_at": utc_now(),
         "sha256": sha256_file(path),
         "terms": terms,
-        "path": str(path),
+        "path": path.relative_to(root).as_posix(),
     }
     append(session, entry)
     return entry

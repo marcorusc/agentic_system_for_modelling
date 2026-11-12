@@ -3,7 +3,9 @@
 
 Run: python3 tests/integration/data_smoke.py
 
-Works in a temporary copy of the repo; `.venv-data` is symlinked, not copied.
+Works in a temporary copy of the repo. `.venv-data` is not copied: the copy gets a
+real `.venv-data/` directory (copied `pyvenv.cfg`, a real `bin/` whose entries are
+symlinks into the real venv), because the data guard rejects a symlinked venv (R21).
 Skips (exit 0) when `.venv-data` is not installed.
 """
 from __future__ import annotations
@@ -65,7 +67,7 @@ gmt = session / "raw" / "sets.gmt"
 gmt.write_text("".join(f"{n}\\tsynthetic\\t" + "\\t".join(v) + "\\n" for n, v in sets.items()))
 ledger.append(session, {"kind": "input", "uri": "synthetic:sets.gmt", "release": "synthetic",
                         "retrieved_at": utc_now(), "sha256": sha256_file(gmt), "terms": "synthetic",
-                        "path": "raw/sets.gmt"})
+                        "path": gmt.relative_to(root).as_posix()})
 '''
 
 # Units per known numeric column. Unknown numeric columns fail loudly.

@@ -167,6 +167,42 @@ class DataHandoffTests(unittest.TestCase):
         with self.assertRaisesRegex(HandoffValidationError, "outputs/ or proposals/"):
             self.check(payload)
 
+    def test_needs_approval_fabricated_sha_and_missing_artifact_rejected(self):
+        self.add_proposal()
+        payload = self.handoff("needs_approval", ["approve P1?"])
+        for artifact in payload["artifacts"]:
+            artifact["sha256"] = "0" * 64
+        with self.assertRaisesRegex(HandoffValidationError, "sha256 mismatch"):
+            self.check(payload)
+        payload = self.handoff("needs_approval", ["approve P1?"])
+        payload["artifacts"].append({"path": f"runs/data-analyst/{self.sid}/proposals/does_not_exist.csv",
+                                     "sha256": "0" * 64})
+        with self.assertRaisesRegex(HandoffValidationError, "not an existing regular file"):
+            self.check(payload)
+
+    def test_needs_approval_requires_object_artifacts_with_sha(self):
+        self.add_proposal()
+        payload = self.handoff("needs_approval", ["approve P1?"])
+        payload["artifacts"][0] = payload["artifacts"][0]["path"]
+        with self.assertRaisesRegex(HandoffValidationError, "requires sha256"):
+            self.check(payload)
+
+    def test_proposal_artifact_sha_must_equal_manifest(self):
+        self.add_proposal()
+        payload = self.handoff("needs_approval", ["approve P1?"])
+        rel = f"runs/data-analyst/{self.sid}/proposals/P1_seed_genes.csv"
+        payload["artifacts"].append({"path": rel, "sha256": hashlib.sha256(
+            (self.root / rel).read_bytes()).hexdigest()})
+        self.check(payload)
+        data = json.loads((self.dir / "manifest.json").read_text())
+        data["proposals"][0]["sha256"] = "1" * 64
+        (self.dir / "manifest.json").write_text(json.dumps(data))
+        payload["artifacts"][0]["sha256"] = hashlib.sha256((self.dir / "manifest.json").read_bytes()).hexdigest()
+        # Isolate the proposal check from manifest.verify, which also detects this.
+        with mock.patch("scripts.data.manifest.verify", return_value=[]):
+            with self.assertRaisesRegex(HandoffValidationError, "proposal artifact sha256 differs"):
+                self.check(payload)
+
     def test_state_registry_accepts_data_analyst(self):
         self.assertEqual(state.ROLES["data-analyst"], "data")
 

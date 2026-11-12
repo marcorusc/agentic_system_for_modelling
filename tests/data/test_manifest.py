@@ -4,12 +4,28 @@ import io
 import json
 import os
 import tempfile
+import threading
 import unittest
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from unittest import mock
 
-from scripts.data import manifest, session
+from scripts.data import fetch, ledger, manifest, session
 from scripts.data.common import session_dir
+
+CSV = b"gene,score\nA,1\n"
+
+
+class _CsvHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header("Content-Type", "text/csv")
+        self.send_header("Content-Length", str(len(CSV)))
+        self.end_headers()
+        self.wfile.write(CSV)
+
+    def log_message(self, *args):
+        pass
 
 
 class ManifestTests(unittest.TestCase):
@@ -162,6 +178,63 @@ class ManifestTests(unittest.TestCase):
         )
         self.build()
         self.assertTrue(any("source" in e for e in self.errors()))
+
+    def serve(self) -> str:
+        server = ThreadingHTTPServer(("127.0.0.1", 0), _CsvHandler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        self.addCleanup(thread.join)
+        self.addCleanup(server.server_close)
+        self.addCleanup(server.shutdown)
+        return f"http://127.0.0.1:{server.server_address[1]}/x.csv"
+
+    def test_in_place_edit_of_downloaded_source_detected(self):
+        entry = fetch.download(self.dir, url=self.serve(), name="x.csv", release="r1", root=self.root)
+        self.build()
+        self.assertEqual(self.errors(), [])
+        cache = self.root / entry["path"]
+        cache.chmod(0o644)
+        cache.write_bytes(b"gene,score\nA,999\n")
+        errs = self.errors()
+        self.assertTrue(any("source 0" in e and "hash mismatch" in e for e in errs), errs)
+
+    def test_in_place_edit_of_api_response_detected(self):
+        entry = ledger.record_api(self.dir, url="https://example.org/api", params={},
+                                  response='{"ok": 1}', release="v1", name="api.json")
+        self.build()
+        self.assertEqual(self.errors(), [])
+        (self.root / entry["path"]).write_text('{"ok": 2}', encoding="utf-8")
+        errs = self.errors()
+        self.assertTrue(any("source 0" in e and "hash mismatch" in e for e in errs), errs)
+
+    def test_missing_or_escaping_source_path_rejected(self):
+        entry = ledger.record_api(self.dir, url="https://example.org/api", params={},
+                                  response="x", release="v1", name="api.json")
+        for bad in (str(self.root / entry["path"]), "../outside", "DECISIONS.md",
+                    entry["path"] + ".missing"):
+            with self.subTest(path=bad):
+                (self.dir / "sources.jsonl").write_text(
+                    json.dumps({**entry, "path": bad}) + "\n", encoding="utf-8")
+                self.build()
+                errs = self.errors()
+                self.assertTrue(any("source 0" in e for e in errs), errs)
+
+    def test_manifest_sources_must_equal_ledger(self):
+        ledger.record_api(self.dir, url="https://example.org/api", params={},
+                          response="x", release="v1", name="api.json")
+        self.build()
+        self.assertEqual(self.errors(), [])
+        ledger.record_api(self.dir, url="https://example.org/api2", params={},
+                          response="y", release="v1", name="api2.json")
+        errs = self.errors()
+        self.assertTrue(any("sources.jsonl" in e for e in errs), errs)
+        self.build()
+        self.assertEqual(self.errors(), [])
+        data = self.load()
+        data["sources"] = data["sources"][:1]
+        self.save(data)
+        errs = self.errors()
+        self.assertTrue(any("sources.jsonl" in e for e in errs), errs)
 
     def test_identity_mismatch_rejected(self):
         self.build()
