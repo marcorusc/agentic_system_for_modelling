@@ -7,7 +7,8 @@ microscopy features). It works in a guarded session directory
 data-to-model proposals that need your approval. It never changes models or shared
 state. Approved proposals are recorded by the orchestrator as `data-derived` decisions
 and in `DATA_DICTIONARY.md`. For the design rationale and threat model, see
-[data-analyst architecture](data-analyst-architecture.md).
+[data-analyst architecture](data-analyst-architecture.md) and the
+[data-to-model handoffs architecture](data-to-model-handoffs-architecture.md).
 
 Guidance comes from vendored K-Dense skills in `vendor/scientific-agent-skills/`
 (see `vendor/scientific-agent-skills/VENDOR.md` and `THIRD_PARTY_NOTICES.md`). Please
