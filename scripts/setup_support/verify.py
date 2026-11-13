@@ -99,7 +99,8 @@ def verify(root: Path, prefix: Path | None, clients: dict, *, with_biomass: bool
             errors.append("Codex parent configuration has enabled modelling MCPs")
     if "claude" in clients:
         isolation = check_isolation.check(root, user_config=Path.home()/".claude.json",
-                                          user_settings=Path.home()/".claude/settings.json")
+                                          user_settings=Path.home()/".claude/settings.json",
+                                          user_skills=check_isolation.user_skills_dir())
         errors.extend(isolation["errors"])
         try:
             run([clients["claude"], "mcp", "list"], cwd=root, timeout=60)

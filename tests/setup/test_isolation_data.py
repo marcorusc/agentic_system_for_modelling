@@ -87,6 +87,19 @@ class DataIsolationTests(unittest.TestCase):
             check_isolation.main(['--root', str(self.root), '--repository-only'])
         self.assertTrue(json.loads(out.getvalue())['passed'])
 
+    def test_setup_verification_flags_vendored_user_skill(self):
+        from scripts.setup_support import verify
+        capabilities = {'passed': True, 'errors': [], 'mcp': {}}
+        with mock.patch.object(verify, 'run') as run:
+            clean = verify.verify(self.root, None, {'claude': '/fixture/claude'}, capability_report=capabilities)
+            (self.home / '.claude/skills/pydeseq2').mkdir(parents=True)
+            flagged = verify.verify(self.root, None, {'claude': '/fixture/claude'}, capability_report=capabilities)
+        self.assertTrue(clean['passed'], clean['errors'])
+        self.assertFalse(flagged['passed'])
+        self.assertTrue(any(str(self.home / '.claude/skills/pydeseq2') in e for e in flagged['errors']),
+                        flagged['errors'])
+        self.assertEqual(run.call_count, 2)
+
     def test_isolation_flags_missing_orchestrator_hook(self):
         path = self.root / '.claude/settings.json'
         data = json.loads(path.read_text())
