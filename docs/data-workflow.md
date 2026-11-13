@@ -6,7 +6,8 @@ microscopy features). It works in a guarded session directory
 `runs/data-analyst/<id>/`, produces hashed outputs plus a `manifest.json`, and returns
 data-to-model proposals that need your approval. It never changes models or shared
 state. Approved proposals are recorded by the orchestrator as `data-derived` decisions
-and in `DATA_DICTIONARY.md`.
+and in `DATA_DICTIONARY.md`. For the design rationale and threat model, see
+[data-analyst architecture](data-analyst-architecture.md).
 
 Guidance comes from vendored K-Dense skills in `vendor/scientific-agent-skills/`
 (see `vendor/scientific-agent-skills/VENDOR.md` and `THIRD_PARTY_NOTICES.md`). Please

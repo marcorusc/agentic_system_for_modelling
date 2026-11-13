@@ -16,6 +16,7 @@ current release (see [`CHANGELOG.md`](../CHANGELOG.md)).
 | [automatic-setup.md](automatic-setup.md) | Installing and verifying: plugin (uv) mode, managed or reused environments, BioMASS, source installs, `--check` |
 | [agentic-operations.md](agentic-operations.md) | Day-to-day governance for the orchestrator: state records, stage gates, captures, reviews, literature slices, failure handling |
 | [data-workflow.md](data-workflow.md) | The `data-analyst` specialist: `--with-data`/`--with-cellprofiler` setup, provenance checks, smoke test, guard limits and manual verification checklist |
+| [data-analyst-architecture.md](data-analyst-architecture.md) | Design rationale for the `data-analyst` specialist and the cross-specialist capture changes: vendored skills, guards and threat model, mechanical handoff, recorder-written reports, recovery and export saving, known limitations |
 | [ode-workflow.md](ode-workflow.md) | The optional BioMASS ODE branch: formulation, inputs, the ODE readiness check, capture and the real-backend smoke test |
 | [neko-curation-continuity.md](neko-curation-continuity.md) | Continuing NeKo curation from exported artifacts in a fresh session |
 | [specialist-dispatcher.md](specialist-dispatcher.md) | The Codex specialist dispatcher: isolation, task lifecycle, plugin, CLI fallback, troubleshooting |
