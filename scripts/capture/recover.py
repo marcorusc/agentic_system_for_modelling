@@ -6,9 +6,12 @@ Usage: recover.py --specialist NAME --agent-id AID [--session ID] [--transcript-
 Claude Code does not reliably fire SubagentStop for background subagents. This finds
 the agent transcript, binds its scientific session, and (unless the invocation is
 already captured and indexed) runs the normal recorder on a synthetic SubagentStop
-payload, then checks the recorder-written report.md. Prints ``RECOVERED <specialist>
-<session-or-unbound> <status>`` as its last line, or ``RECOVER FAILED: <reason>``
-on stderr with exit 1. It writes nothing but what the recorder writes.
+payload, then checks the recorder-written report.md. For a bound invocation (recorded
+or already recorded) it then copies the run's server exports into
+runs/<specialist>/<session>/exports/<agentId>/ (scripts/capture/exports.py) and lists
+them. Prints ``RECOVERED <specialist> <session-or-unbound> <status>`` as its last line,
+or ``RECOVER FAILED: <reason>`` on stderr with exit 1. It writes nothing but what the
+recorder and the export capture write.
 """
 
 from __future__ import annotations
@@ -21,6 +24,7 @@ from pathlib import Path
 if __package__ in (None, ""):  # run as a script: make the repo importable
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
+from scripts.capture.exports import capture_exports
 from scripts.capture.index import SPECIALISTS
 from scripts.capture.record_invocation import _index_registers, record, session_ids
 from scripts.capture.transcripts import check_agent_id, default_transcript_root, find_transcript
@@ -67,7 +71,8 @@ def recover(root: Path, specialist: str, agent_id: str, session: str | None,
             except (OSError, ValueError, AttributeError):
                 pass
             return {"status": "already-recorded", "session_id": bound, "capture_path": relative,
-                    "report_md": report_md, "transcript": str(transcript)}
+                    "report_md": report_md, "transcript": str(transcript),
+                    "exports": capture_exports(root, specialist, bound, agent_id, transcript)}
     result = record(root, {"agent_type": specialist, "agent_id": agent_id,
                            "agent_transcript_path": str(transcript), "stop_hook_active": False,
                            "hook_event_name": "SubagentStop"})
@@ -75,13 +80,14 @@ def recover(root: Path, specialist: str, agent_id: str, session: str | None,
         if session is not None:
             raise ValueError(f"agent {agent_id} was filed as an unbound invocation, not session {session}")
         return {"status": "unbound", "session_id": None, "capture_path": result.get("invocation_path"),
-                "report_md": None, "transcript": str(transcript)}
+                "report_md": None, "transcript": str(transcript), "exports": None}
     if bound is None or result.get("session_id") not in (None, bound):
         raise ValueError(f"recorder result does not match the bound session: {result}")
     if not (root / "runs" / specialist / bound / "report.md").is_file():
         raise ValueError(f"runs/{specialist}/{bound}/report.md is missing after recording")
     return {"status": "recorded", "session_id": bound, "capture_path": result.get("capture_path"),
-            "report_md": result.get("report_md"), "transcript": str(transcript)}
+            "report_md": result.get("report_md"), "transcript": str(transcript),
+            "exports": capture_exports(root, specialist, bound, agent_id, transcript)}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -101,6 +107,17 @@ def main(argv: list[str] | None = None) -> int:
     print(f"capture: {result['capture_path']}")
     if result["report_md"]:
         print(f"report.md: {result['report_md']}")
+    exports = result.get("exports")
+    if exports:
+        for row in exports["copied"]:
+            print(f"export: {row['tool']} {row['format']} -> {row['dest_path']}")
+        for row in exports["missing"]:
+            print(f"export WARNING: {row['tool']} {row['format']} source missing (not captured): "
+                  f"{row['source_path']}")
+        for row in exports["rejected"]:
+            print(f"export REFUSED: {row['tool']} {row['format']} {row['source_path']}: {row['reason']}")
+        if exports["path"]:
+            print(f"exports: {exports['path']}/exports.json")
     print(f"RECOVERED {args.specialist} {result['session_id'] or 'unbound'} {result['status']}")
     return 0
 
