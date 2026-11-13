@@ -120,7 +120,7 @@ class ReceiveTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, f"binds data session {self.sid}, not {sid2}.*--agent-id"):
             receive.receive(self.root, sid2, AID, self.troot)
         self.assertEqual((self.dir / "integrity.json").read_bytes(), earlier)
-        with mock.patch("scripts.data.receive.record") as recorder:
+        with mock.patch("scripts.capture.recover.record") as recorder:
             with self.assertRaises(ValueError):
                 receive.receive(self.root, sid2, AID, self.troot)
             recorder.assert_not_called()

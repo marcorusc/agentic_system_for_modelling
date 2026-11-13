@@ -60,7 +60,7 @@ def recover(root: Path, specialist: str, agent_id: str, session: str | None,
         relative = f"runs/{specialist}/{bound}/invocation/{agent_id}"
         # data-analyst also needs the recorder's integrity verdict (receive.py reads it)
         verdict = specialist != "data-analyst" or (root / "runs" / specialist / bound / "integrity.json").is_file()
-        if verdict and (root / relative).is_dir() and _index_registers(root, relative):
+        if verdict and (root / 'runs' / specialist / bound / 'report.md').is_file() and (root / relative).is_dir() and _index_registers(root, relative):
             report_md = None
             try:
                 report_md = json.loads((root / relative / "invocation.json").read_text(encoding="utf-8")).get("report_md")

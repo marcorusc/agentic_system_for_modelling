@@ -22,7 +22,7 @@ if __package__ in (None, ""):  # run as a script: make the repo importable
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from scripts.capture import recover
-from scripts.capture.record_invocation import _index_registers, record  # noqa: F401 (record: patched in tests)
+from scripts.capture.record_invocation import _index_registers
 from scripts.capture.transcripts import (  # noqa: F401 (re-exported)
     check_agent_id as _check_agent_id, default_transcript_root, find_transcript, project_slug)
 from scripts.codex.validate_handoff import HandoffValidationError, validate_handoff

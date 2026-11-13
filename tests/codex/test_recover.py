@@ -9,6 +9,7 @@ import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
+from unittest import mock
 
 from scripts.capture import recover
 from scripts.capture.transcripts import project_slug
@@ -72,6 +73,16 @@ class RecoverTests(unittest.TestCase):
         self.assertEqual(result["session_id"], "sess-1")
         self.assertEqual({p: p.read_bytes() for p in (self.root / "runs").rglob("*") if p.is_file()}, snap)
 
+    def test_indexed_capture_with_missing_report_recreates_it(self):
+        self.place()
+        self.run_recover()
+        report = self.root / "runs/network-curator/sess-1/report.md"
+        expected = report.read_bytes()
+        report.unlink()
+        result = self.run_recover()
+        self.assertEqual(result["status"], "recorded")
+        self.assertEqual(report.read_bytes(), expected)
+
     def test_session_mismatch_refused_without_recording(self):
         self.place()
         with self.assertRaisesRegex(ValueError, "binds session sess-1, not other.*check --agent-id; nothing was recorded"):
@@ -130,10 +141,9 @@ class RecoverTests(unittest.TestCase):
 
     def test_main_in_process(self):
         self.place()
-        os.environ["CLAUDE_PROJECT_DIR"] = str(self.root)
-        self.addCleanup(os.environ.pop, "CLAUDE_PROJECT_DIR", None)
         out, err = io.StringIO(), io.StringIO()
-        with redirect_stdout(out), redirect_stderr(err):
+        with mock.patch.dict(os.environ, {"CLAUDE_PROJECT_DIR": str(self.root)}), \
+                redirect_stdout(out), redirect_stderr(err):
             code = recover.main(["--specialist", "network-curator", "--agent-id", AID,
                                  "--transcript-root", str(self.troot)])
         self.assertEqual(code, 0, err.getvalue())
