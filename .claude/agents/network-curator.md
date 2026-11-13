@@ -147,14 +147,20 @@ newest captured SIF under `runs/network-curator/<old session>/exports/<invocatio
 (Glob that directory if the brief does not name it). Never rebuild on your own
 initiative. Only when the brief explicitly authorizes a restore of that session:
 
+0. Never pass the old session ID to any NeKo tool in the restore run, not even a
+   `status` check: the earlier blocked run already established it is unknown, and a
+   run that names two sessions cannot be recorded, so its exports are lost. The old
+   ID appears only in your report (and the orchestrator's `Derived from`).
 1. `create_session()`; then `create_network(list_of_initial_genes=[],
    sif_file=<absolute path of the captured repository SIF>, ...)` passing the old
    session's recorded `database`, `max_len`, `only_signed`, `consensus`,
    `path_policy` and `reuse_policy` (from the old report or the brief). A SIF import
    runs no connection completion; never repair or extend the restored topology.
-2. `status()`; compare node and edge counts with the captured export (the counts in
-   the old report, or the SIF's non-empty line count for edges). Report any mismatch
-   as a blocker, not a fix.
+2. `status(session_id=<new session>)`; compare node and edge counts with the
+   counts recorded in the old report when present. Otherwise count edges as the SIF's
+   lines not starting with `#` (NeKo writes `# Reference PMID:` and
+   `# NeKo provenance:` comment lines): Grep in count mode with pattern `^[^#\s]`.
+   Report any mismatch as a blocker, not a fix.
 3. Report the new full session ID as derived from the old one, the SIF path and its
    sha256 from `exports.json`, the counts compared, and that history before the
    import is only in the captured history export.

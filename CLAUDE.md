@@ -129,7 +129,8 @@ sessions; never replace history. Resolve active IDs from this table before dispa
 NeKo briefs say "no BNET/handoff export", never a bare "no export": network-curator
 always ends with SIF+history exports. A NeKo session unknown to the server is
 restored only on explicit authorization, from its captured SIF, as a new session
-registered with `Derived from` = the old session; it needs fresh stage approvals
+registered with `Derived from` = the old session (the restore run never passes the
+old ID to a NeKo tool: two bound sessions block recording); it needs fresh stage approvals
 (approvals bind to session/state). The old session's literature reports remain
 evidence for identical edges, cited from `evidence/reports/<old session>/`, never copied.
 Handoff is pending during review, approved only after researcher sign-off, exported

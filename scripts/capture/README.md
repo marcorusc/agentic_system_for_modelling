@@ -189,12 +189,22 @@ and reported. Files go to `runs/<specialist>/<session>/exports/<agentId>/<file n
 `exports.json` listing `{tool, format, source_path, dest_path, sha256, bytes}` per file,
 `{..., missing: true}` for a source that no longer exists (a warning, not a failure) and
 `{..., rejected: true, reason}` for refusals. A run with no export results creates no
-`exports/` directory. An identical rerun is a no-op (copies already saved stay valid after
-their sources vanish); differing existing content fails closed and is never overwritten.
+`exports/` directory. A capture is never amended: a rerun re-verifies the saved copies
+(a no-op when unchanged, and they stay valid after their sources vanish), fails closed when
+a saved copy or a recopied source differs, and only reports new refusals (for example
+after the artifact root changed) or files absent from the earlier capture. A file named
+`exports.json` is refused. If export capture fails after recording, the error says
+`export capture failed (invocation recorded at <path>)`.
 recover.py prints one `export:` line per copied file (`export WARNING:` / `export REFUSED:`
 for the others) before its last `RECOVERED` line. ode-modeler uses
 `record_ode_artifacts.py`; data-analyst has no MCP exports. These copies are not handoff
 captures: approved handoffs still go through the recorders above.
+
+Known limits: a run whose transcript binds more than one session is refused by recover.py
+before recording, so it gets no export capture either (restore runs must therefore never
+pass the old session ID to a NeKo tool). Exports written by pre-2.5 servers inside a
+managed environment's `site-packages/.../<Server>/artifacts/` are outside the artifact root
+and are refused (reported, not silently skipped).
 
 Identical stop-event retries verify every artifact byte and reuse the existing
 record, recovering a missing index entry when applicable. Changed transcripts or
