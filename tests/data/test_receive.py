@@ -49,19 +49,21 @@ class ReceiveTests(unittest.TestCase):
         handoff.build(self.root, self.sid, "needs_approval", "handoff_notes.json")
         self.transcript = self.place_transcript("uuid-1")
 
-    def place_transcript(self, main_session, handoff_line=None):
+    def place_transcript(self, main_session, handoff_line=None, body=None):
         directory = self.troot / receive.project_slug(self.root) / main_session / "subagents"
         directory.mkdir(parents=True, exist_ok=True)
         path = directory / f"agent-{AID}.jsonl"
-        path.write_text("".join(json.dumps(e) + "\n" for e in self.events(handoff_line)), encoding="utf-8")
+        path.write_text("".join(json.dumps(e) + "\n" for e in self.events(handoff_line, body)), encoding="utf-8")
         return path
 
-    def events(self, handoff_line=None):
+    def events(self, handoff_line=None, body=None):
         """The session.py new call, then the final report ending in the Handoff line."""
         rel = f"runs/data-analyst/{self.sid}/handoff.json"
         if handoff_line is None:
             handoff_line = f"Handoff: {rel} sha256={sha256_file(self.root / rel)}"
-        report = f"# Report\n\nDone.\n\n{handoff_line}".rstrip()
+        if body is None:
+            body = "# Report\n\n## Figures\n\nNone.\n\n## Abbreviations\n\nNone used.\n"
+        report = f"{body}\n{handoff_line}".rstrip()
         return transcript_events(self.sid, self.digest) + [
             {"type": "assistant", "message": {"role": "assistant", "content": [
                 {"type": "tool_use", "id": "t9", "name": "SubagentHandback", "input": {"message": report}}]}}]
@@ -155,6 +157,66 @@ class ReceiveTests(unittest.TestCase):
         rows = {r["id"]: r for r in receive.receive(self.root, self.sid, AID, self.troot)["rows"]}
         self.assertEqual(rows["D1"]["path"], f"runs/data-analyst/{self.sid}/outputs/volcano.png")
         self.assertEqual(rows["D1"]["sha256"], sha256_file(self.dir / "outputs" / "volcano.png")[:12])
+
+    def add_figures(self):
+        """Index two figures (PNG+SVG pairs of one stem each) and rebuild manifest and handoff."""
+        figdir = self.dir / "outputs" / "figures"
+        figdir.mkdir()
+        entries = []
+        for stem in ("volcano", "gsea"):
+            for ext in ("png", "svg"):
+                (figdir / f"{stem}.{ext}").write_bytes(b"x")
+                entries.append({
+                    "path": f"outputs/figures/{stem}.{ext}", "description": stem, "units": "none",
+                    "identifiers": "HGNC symbol", "title": stem, "caption": "c" * 80,
+                    "abbreviations": {}, "sources": ["synthetic:src"], "script": "scripts/f.py"})
+        (self.dir / "scripts" / "f.py").write_text("x=1\n", encoding="utf-8")
+        raw = self.dir / "raw" / "src.txt"
+        raw.write_text("src\n", encoding="utf-8")
+        (self.dir / "sources.jsonl").write_text(json.dumps({
+            "kind": "input", "uri": "synthetic:src", "release": "r", "retrieved_at": "2026-01-01T00:00:00Z",
+            "sha256": sha256_file(raw), "terms": "unverified",
+            "path": raw.relative_to(self.root).as_posix()}) + "\n", encoding="utf-8")
+        (self.dir / "outputs" / "index.json").write_text(json.dumps(entries), encoding="utf-8")
+
+    def receive_with_report(self, body):
+        self.add_figures()
+        manifest.build(self.root, self.sid, [])
+        handoff.build(self.root, self.sid, "needs_approval", "handoff_notes.json")
+        self.place_transcript("uuid-1", body=body)
+        self.hook_record()
+        return receive.receive(self.root, self.sid, AID, self.troot)
+
+    FULL = ("# Report\n\n## Figures\n\n- `volcano.png`: volcano\n- gsea.svg: dot plot\n\n"
+            "## Abbreviations\n\nFDR: false discovery rate\n")
+
+    def test_report_with_figures_and_abbreviations_received(self):
+        self.assertEqual(self.receive_with_report(self.FULL)["status"], "needs_approval")
+
+    def test_report_without_figures_heading_fails(self):
+        body = self.FULL.replace("## Figures", "Figures are below:")
+        with self.assertRaisesRegex(ValueError, "report is missing .*Figures"):
+            self.receive_with_report(body)
+
+    def test_report_without_abbreviations_heading_fails(self):
+        body = self.FULL.replace("## Abbreviations", "## Abbreviations and notes")
+        with self.assertRaisesRegex(ValueError, "report is missing .*Abbreviations"):
+            self.receive_with_report(body)
+
+    def test_report_missing_one_figure_fails(self):
+        body = self.FULL.replace("gsea.svg", "the dot plot")
+        with self.assertRaisesRegex(ValueError, "report is missing .*gsea"):
+            self.receive_with_report(body)
+
+    def test_report_figure_stem_mention_counts_for_pair(self):
+        body = self.FULL.replace("gsea.svg", "`gsea.png`")
+        self.assertEqual(self.receive_with_report(body)["status"], "needs_approval")
+
+    def test_report_without_figures_still_needs_abbreviations(self):
+        self.place_transcript("uuid-1", body="# Report\n\n## Figures\n\nnone\n")
+        self.hook_record()
+        with self.assertRaisesRegex(ValueError, "report is missing .*Abbreviations"):
+            receive.receive(self.root, self.sid, AID, self.troot)
 
     def test_missing_handoff_line_fails(self):
         self.place_transcript("uuid-1", handoff_line="")

@@ -28,6 +28,8 @@ LAYERS = ("spec", "neko", "maboss", "biomass", "physicell")
 KINDS = ("seed_genes", "initial_states", "mutations", "validation_targets", "parameters", "time_course")
 PROPOSAL_ID_RE = re.compile(r"\AP\d+\Z")
 TABULAR = {".csv": ",", ".tsv": "\t"}
+FIGURE_SUFFIXES = (".png", ".svg", ".pdf")
+MIN_CAPTION_CHARS = 80
 IDENTITY_FIELDS = ("session_id", "derived_from_session_id")
 
 
@@ -194,6 +196,48 @@ def _check_output(session: Path, entry: dict, errors: list[str]) -> None:
             errors.append(f"output {rel}: numeric column {name!r} has no unit")
 
 
+def is_figure(rel) -> bool:
+    """A figure is an outputs index path under outputs/figures/ with an image suffix."""
+    if not isinstance(rel, str):
+        return False
+    path = Path(rel)
+    return path.parts[:2] == ("outputs", "figures") and path.suffix.lower() in FIGURE_SUFFIXES
+
+
+def _nonempty(value) -> bool:
+    return isinstance(value, str) and bool(value.strip())
+
+
+def _check_figure(session: Path, entry: dict, uris: set[str], errors: list[str]) -> None:
+    rel = entry["path"]
+    if not _nonempty(entry.get("title")):
+        errors.append(f"figure {rel}: title must be a non-empty string")
+    caption = entry.get("caption")
+    if not _nonempty(caption) or len(caption.strip()) < MIN_CAPTION_CHARS:
+        errors.append(f"figure {rel}: caption must describe the plot (axes, encodings, n, test, thresholds, "
+                      f"how to read it) in at least {MIN_CAPTION_CHARS} characters")
+    abbreviations = entry.get("abbreviations")
+    if not isinstance(abbreviations, dict) or not all(
+            _nonempty(k) and _nonempty(v) for k, v in abbreviations.items()):
+        errors.append(f"figure {rel}: abbreviations must be an object mapping non-empty abbreviation "
+                      "to non-empty expansion ({} if the figure uses none)")
+    sources = entry.get("sources")
+    if not isinstance(sources, list) or not sources:
+        errors.append(f"figure {rel}: sources must be a non-empty list of sources.jsonl uri values")
+    else:
+        for uri in sources:
+            if not isinstance(uri, str) or uri not in uris:
+                errors.append(f"figure {rel}: sources entry {uri!r} is not a uri in sources.jsonl")
+    script = entry.get("script")
+    parts = Path(script).parts if isinstance(script, str) else ()
+    ok = bool(parts) and parts[0] == "scripts" and ".." not in parts and not Path(script).is_absolute()
+    if ok:
+        path = session / script
+        ok = path.is_file() and not path.is_symlink()
+    if not ok:
+        errors.append(f"figure {rel}: script must be the session-relative path of an existing file under scripts/")
+
+
 def verify(root: Path, session_id: str) -> list[str]:
     session = session_dir(root, session_id)
     errors: list[str] = []
@@ -255,8 +299,14 @@ def verify(root: Path, session_id: str) -> list[str]:
                 errors.append(f"{label} not listed in manifest: {rel}")
 
     if isinstance(data.get("outputs"), list):
+        try:
+            uris = {e.get("uri") for e in _read_ledger(session) if isinstance(e, dict)}
+        except (OSError, ValueError):
+            uris = set()
         for entry in data["outputs"]:
             if isinstance(entry, dict):
+                if is_figure(entry.get("path")):
+                    _check_figure(session, entry, uris, errors)
                 _check_output(session, entry, errors)
 
     if isinstance(data.get("proposals"), list):

@@ -29,6 +29,7 @@ from scripts.codex.validate_handoff import HandoffValidationError, validate_hand
 from scripts.data import manifest
 from scripts.data.common import RUNS_ROOT, project_root, session_dir, sha256_file
 
+HEADING_RE = re.compile(r"\A\s{0,3}#{1,6}\s+(.*?)\s*#*\s*\Z")
 HANDOFF_LINE_RE = re.compile(r"Handoff: (\S+) sha256=([0-9a-f]{64})")
 
 
@@ -61,7 +62,8 @@ def receive(root: Path, session_id: str, agent_id: str, transcript_root: Path | 
                          expected_session_id=session_id)
     except (HandoffValidationError, ValueError) as exc:
         raise ValueError(f"handoff validation failed: {exc}") from exc
-    _check_handoff_line(session, session_id, agent_id, handoff_path)
+    final = _check_handoff_line(session, session_id, agent_id, handoff_path)
+    _check_report_sections(session, final)
     prefix = (RUNS_ROOT / session_id).as_posix()
     rows = [{"id": d.get("id"), "kind": d.get("kind") or "-", "layer": d.get("target_layer") or "-",
              "path": d.get("path") or (f"{prefix}/{d['artifact']}" if isinstance(d.get("artifact"), str) else "-"),
@@ -86,6 +88,31 @@ def _check_handoff_line(session: Path, session_id: str, agent_id: str, handoff_p
     if match.group(2) != sha256_file(handoff_path):
         raise ValueError(f"the final report's Handoff: line sha256 {match.group(2)} differs from handoff.json "
                          "(rebuilt or edited after the final message)")
+    return "\n".join(lines)
+
+
+def _check_report_sections(session: Path, report: str) -> None:
+    """The report needs Figures and Abbreviations headings and must name every indexed figure."""
+    headings = {m.group(1).strip().strip("*_ ").lower()
+                for m in (HEADING_RE.match(line) for line in report.splitlines()) if m}
+    missing = [f"a `{name}` heading" for name in ("Figures", "Abbreviations") if name.lower() not in headings]
+    try:
+        index = json.loads((session / "outputs" / "index.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        index = []
+    names = {}
+    for entry in index if isinstance(index, list) else []:
+        rel = entry.get("path") if isinstance(entry, dict) else None
+        if manifest.is_figure(rel):
+            names.setdefault(Path(rel).stem, []).append(Path(rel).name)
+    unnamed = sorted(stem for stem in names
+                     if not re.search(rf"(?<![\w.-]){re.escape(stem)}(?![\w-])", report, re.IGNORECASE))
+    if unnamed:
+        missing.append("figure(s) " + ", ".join(f"{'/'.join(sorted(names[s]))}" for s in unnamed))
+    if missing:
+        raise ValueError("report is missing " + "; ".join(missing)
+                         + " (the final report needs `## Figures` and `## Abbreviations` headings "
+                         "and must name every figure file)")
 
 
 def main(argv: list[str] | None = None) -> int:

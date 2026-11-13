@@ -87,6 +87,87 @@ class ManifestTests(unittest.TestCase):
         self.assertEqual(data["vendored_skills_used"], ["pydeseq2"])
         self.assertEqual(len(data["environment"]["lock_sha256"]), 64)
 
+    def add_figure(self, **changes):
+        """Add a figure entry with complete metadata (then override with ``changes``)."""
+        if not (self.dir / "sources.jsonl").exists():
+            ledger.record_api(self.dir, url="https://example.org/api", params={},
+                              response="x", release="v1", name="api.json")
+        (self.dir / "outputs" / "figures").mkdir(exist_ok=True)
+        (self.dir / "outputs" / "figures" / "volcano.png").write_bytes(b"png")
+        entry = {
+            "path": "outputs/figures/volcano.png", "description": "Volcano plot",
+            "units": "none", "identifiers": "HGNC symbol", "title": "Volcano plot",
+            "caption": ("Volcano plot of differential expression: x axis log2 fold change, y axis "
+                        "-log10 adjusted p-value, n = 4 per group, red points pass FDR < 0.05."),
+            "abbreviations": {"FDR": "false discovery rate"},
+            "sources": ["https://example.org/api"], "script": "scripts/01_de.py"}
+        entry.update(changes)
+        idx = json.loads((self.dir / "outputs/index.json").read_text())
+        idx.append({k: v for k, v in entry.items() if v is not None})
+        self.write_json("outputs/index.json", idx)
+
+    def figure_errors(self):
+        self.build()
+        return [e for e in self.errors() if "volcano.png" in e]
+
+    def test_complete_figure_metadata_passes_and_is_recorded(self):
+        self.add_figure()
+        data = self.build()
+        self.assertEqual(self.errors(), [])
+        figure = [o for o in data["outputs"] if o["path"].endswith("volcano.png")][0]
+        for key in ("title", "caption", "abbreviations", "sources", "script"):
+            self.assertIn(key, figure)
+
+    def test_figure_missing_title_rejected(self):
+        self.add_figure(title=None)
+        self.assertTrue(any("title" in e for e in self.figure_errors()))
+
+    def test_figure_short_caption_rejected(self):
+        self.add_figure(caption="Volcano plot of results.")
+        self.assertTrue(any("caption" in e and "80" in e for e in self.figure_errors()))
+
+    def test_figure_non_object_abbreviations_rejected(self):
+        for bad in (None, ["FDR"], {"FDR": ""}, {"": "x"}):
+            with self.subTest(bad=bad):
+                (self.dir / "outputs/index.json").write_text(json.dumps(
+                    [{"path": "outputs/de.csv", "description": "DE",
+                      "units": {"log2FoldChange": "log2 ratio", "padj": "dimensionless"},
+                      "identifiers": "HGNC symbol"}]))
+                self.add_figure(abbreviations=bad)
+                self.assertTrue(any("abbreviations" in e for e in self.figure_errors()))
+
+    def test_figure_empty_abbreviations_object_allowed(self):
+        self.add_figure(abbreviations={})
+        self.assertEqual(self.figure_errors(), [])
+
+    def test_figure_empty_sources_rejected(self):
+        self.add_figure(sources=[])
+        self.assertTrue(any("sources" in e for e in self.figure_errors()))
+
+    def test_figure_source_not_in_ledger_rejected(self):
+        self.add_figure(sources=["https://example.org/other"])
+        self.assertTrue(any("sources" in e and "other" in e for e in self.figure_errors()))
+
+    def test_figure_missing_script_rejected(self):
+        for bad in ("scripts/nope.py", "../x.py", "outputs/de.csv"):
+            with self.subTest(script=bad):
+                (self.dir / "outputs/index.json").write_text(json.dumps(
+                    [{"path": "outputs/de.csv", "description": "DE",
+                      "units": {"log2FoldChange": "log2 ratio", "padj": "dimensionless"},
+                      "identifiers": "HGNC symbol"}]))
+                self.add_figure(script=bad)
+                self.assertTrue(any("script" in e for e in self.figure_errors()))
+
+    def test_non_figure_outputs_need_no_figure_metadata(self):
+        (self.dir / "outputs" / "figures").mkdir()
+        (self.dir / "outputs" / "figures" / "audit.json").write_text("{}", encoding="utf-8")
+        idx = json.loads((self.dir / "outputs/index.json").read_text())
+        idx.append({"path": "outputs/figures/audit.json", "description": "a",
+                    "units": "none", "identifiers": "none"})
+        self.write_json("outputs/index.json", idx)
+        self.build()
+        self.assertEqual(self.errors(), [])
+
     def test_missing_manifest_rejected(self):
         self.assertTrue(any("manifest.json" in e for e in self.errors()))
 
