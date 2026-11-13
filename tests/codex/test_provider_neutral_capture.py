@@ -335,6 +335,16 @@ class CaptureIntegrityReviewTests(CaptureTests):
         transcript.write_text('\n'.join(json.dumps(e) for e in events))
         self.assertEqual(guard.transcript_sessions(transcript,'boolean-dynamics-modeler'), {'scientific-session'})
 
+    def test_unicode_line_separators_inside_strings(self):
+        transcript = self.root/'separators.jsonl'
+        events = [
+            {'message':{'content':[{'type':'tool_use','id':'fresh','name':'mcp__maboss-agent__create_session','input':{}}]}},
+            {'message':{'content':[{'type':'tool_result','tool_use_id':'fresh','content':'Session created: scientific-session'}]}},
+            {'message':{'content':[{'type':'tool_result','tool_use_id':'x','content':'pdf\x85stream a b\x1c\\u0001'}]}}
+        ]
+        transcript.write_text('\n'.join(json.dumps(e, ensure_ascii=False) for e in events), encoding='utf-8')
+        self.assertEqual(guard.transcript_sessions(transcript,'boolean-dynamics-modeler'), {'scientific-session'})
+
     def test_index_rejects_identity_mismatch_and_bad_usage(self):
         target = self.project/'runs/network-curator/session-1/invocation/agent-1'
         target.mkdir(parents=True)

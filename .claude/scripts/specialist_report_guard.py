@@ -68,7 +68,8 @@ def transcript_sessions(path, specialist):
                 if isinstance(block, dict) and block.get('type') == 'text':
                     result(block.get('text'), tool)
     reject_symlinks(Path(path))
-    for line in Path(path).read_text().splitlines():
+    # JSONL records end at '\n'; str.splitlines() would also split on U+0085/U+2028.
+    for line in Path(path).read_text(encoding='utf-8').split('\n'):
         if not line.strip():
             continue
         event = json.loads(line)

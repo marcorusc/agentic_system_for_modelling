@@ -387,6 +387,16 @@ class TranscriptBindingTests(GuardFixture):
             self.bind(tool_use("t1", NEW), tool_result("t1", created()),
                       tool_use("t2", NEW), tool_result("t2", created(OTHER)))
 
+    def test_transcript_unicode_line_separators_inside_strings(self) -> None:
+        # JSONL records end at "\n" only; Claude Code leaves U+0085/U+2028/U+2029
+        # unescaped inside strings (e.g. binary PDF text in a tool result).
+        noise = tool_result("t0", "pdf\x85stream a b\x1c\x0c\\u0001")
+        path = self.root / "transcript.jsonl"
+        path.write_text("".join(json.dumps(e, ensure_ascii=False) + "\n" for e in
+                                (tool_use("t1", NEW), tool_result("t1", created()), noise)),
+                        encoding="utf-8")
+        self.assertEqual(self.guard.transcript_data_session(path, root=self.root), (ACTIVE, DIGEST))
+
     def test_transcript_duplicate_event_is_one_session(self) -> None:
         events = (tool_use("t1", NEW), tool_result("t1", created()))
         self.assertEqual(self.bind(*events, *events), (ACTIVE, DIGEST))

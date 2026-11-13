@@ -273,5 +273,15 @@ class ManifestTests(unittest.TestCase):
         self.assertEqual(manifest.main(["verify", "--session", self.sid]), 1)
 
 
+class LedgerReadTests(unittest.TestCase):
+    def test_unicode_line_separators_inside_strings(self):
+        # JSONL records end at "\n" only; U+0085/U+2028 may appear unescaped in strings.
+        with tempfile.TemporaryDirectory() as tmp:
+            entries = [{"terms": "quoted: a b"}, {"terms": "quoted: c\x85d"}]
+            (Path(tmp) / "sources.jsonl").write_text(
+                "".join(json.dumps(e, ensure_ascii=False) + "\n" for e in entries), encoding="utf-8")
+            self.assertEqual(manifest._read_ledger(Path(tmp)), entries)
+
+
 if __name__ == "__main__":
     unittest.main()

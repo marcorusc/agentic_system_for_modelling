@@ -58,7 +58,8 @@ def _read_ledger(session: Path) -> list:
     path = session / "sources.jsonl"
     if not path.exists():
         return []
-    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    # JSONL records end at "\n"; str.splitlines() would also split on U+0085/U+2028.
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").split("\n") if line.strip()]
 
 
 def _check_source(root: Path, session_id: str, index: int, entry: dict, errors: list[str]) -> None:

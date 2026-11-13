@@ -248,7 +248,9 @@ def transcript_data_session(transcript: Path, *, root: Path | None = None) -> tu
     root = Path(root).resolve() if root is not None else project_root().resolve()
     calls: set[str] = set()
     sessions: dict[str, str] = {}
-    for line in Path(transcript).read_text(encoding="utf-8").splitlines():
+    # JSONL records end at "\n"; str.splitlines() would also split on U+0085/U+2028
+    # that Claude Code leaves unescaped inside JSON strings.
+    for line in Path(transcript).read_text(encoding="utf-8").split("\n"):
         if not line.strip():
             continue
         event = json.loads(line)
