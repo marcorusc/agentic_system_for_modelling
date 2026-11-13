@@ -52,6 +52,13 @@ def _bind(root: Path, transcript: Path, specialist: str, agent_id: str, session:
     return found
 
 
+def _exports(root: Path, specialist: str, session: str, agent_id: str, transcript: Path, recorded: str | None):
+    try:
+        return capture_exports(root, specialist, session, agent_id, transcript)
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        raise ValueError(f"export capture failed (invocation recorded at {recorded}): {exc}") from exc
+
+
 def recover(root: Path, specialist: str, agent_id: str, session: str | None,
             transcript_root: Path | None) -> dict:
     if specialist not in SPECIALISTS:
@@ -72,7 +79,7 @@ def recover(root: Path, specialist: str, agent_id: str, session: str | None,
                 pass
             return {"status": "already-recorded", "session_id": bound, "capture_path": relative,
                     "report_md": report_md, "transcript": str(transcript),
-                    "exports": capture_exports(root, specialist, bound, agent_id, transcript)}
+                    "exports": _exports(root, specialist, bound, agent_id, transcript, relative)}
     result = record(root, {"agent_type": specialist, "agent_id": agent_id,
                            "agent_transcript_path": str(transcript), "stop_hook_active": False,
                            "hook_event_name": "SubagentStop"})
@@ -87,7 +94,7 @@ def recover(root: Path, specialist: str, agent_id: str, session: str | None,
         raise ValueError(f"runs/{specialist}/{bound}/report.md is missing after recording")
     return {"status": "recorded", "session_id": bound, "capture_path": result.get("capture_path"),
             "report_md": result.get("report_md"), "transcript": str(transcript),
-            "exports": capture_exports(root, specialist, bound, agent_id, transcript)}
+            "exports": _exports(root, specialist, bound, agent_id, transcript, result.get("capture_path"))}
 
 
 def main(argv: list[str] | None = None) -> int:

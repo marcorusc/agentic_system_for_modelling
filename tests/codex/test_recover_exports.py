@@ -71,8 +71,9 @@ class ExportsBase(unittest.TestCase):
         for n, item in enumerate(results):
             tool, arguments, content = item[:3]
             extra = item[3] if len(item) > 3 else {}
+            name = extra.get("name", f"mcp__{prefix}-agent__{tool}")
             ev.append({"type": "assistant", "message": {"id": f"m{n}", "content": [
-                {"type": "tool_use", "id": f"call{n}", "name": f"mcp__{prefix}-agent__{tool}", "input": arguments}]}})
+                {"type": "tool_use", "id": f"call{n}", "name": name, "input": arguments}]}})
             block = {"type": "tool_result", "tool_use_id": f"call{n}", "content": content}
             block.update(extra.get("block", {}))
             event = {"type": "user", "message": {"content": [block]}}
@@ -298,6 +299,69 @@ class CaptureTests(ExportsBase):
         lines = out.getvalue().splitlines()
         self.assertTrue(any(l.startswith("export: export_network sif ") and "Network.sif" in l for l in lines), lines)
         self.assertEqual(lines[-1], f"RECOVERED network-curator {SESSION} recorded")
+
+
+class ReviewFixTests(ExportsBase):
+    def real(self, payload):
+        """Real Claude Code shape: bare payload JSON in tool_result content and in toolUseResult."""
+        text = json.dumps(payload)
+        return text, {"event": {"toolUseResult": text}}
+
+    def test_real_transcript_shape_bare_payload(self):
+        sif = self.artifact("Network.sif", b"# Reference PMID: 1\nA\t1\tB\n")
+        companion = self.artifact("Network.0a1b2c.history.json", b'{"c":1}')
+        hist = self.artifact("network.9f8e7d.history.json", b'{"h":1}')
+        sif_payload = {**neko_export("sif", sif), "curation_file": file_summary(companion)}
+        content, extra = self.real(sif_payload)
+        hcontent, hextra = self.real(neko_export("history", hist))
+        self.transcript([
+            ("export_network", {"format": "sif", "session_id": SESSION}, content,
+             {**extra, "name": "mcp__neko-agent__export_network"}),
+            ("export_network", {"format": "history", "session_id": SESSION}, hcontent,
+             {**hextra, "name": "mcp__neko__export_network"}),
+        ])
+        result = self.run_recover()
+        self.assertEqual(result["status"], "recorded")
+        rows = {r["format"]: r for r in self.manifest()["exports"]}
+        self.assertEqual(set(rows), {"sif", "sif-curation", "history"})
+        for fmt, src in (("sif", sif), ("sif-curation", companion), ("history", hist)):
+            self.assertEqual(rows[fmt]["source_path"], str(src))
+            self.assertEqual((self.exports_dir() / src.name).read_bytes(), src.read_bytes())
+            self.assertEqual(rows[fmt]["sha256"], hashlib.sha256(src.read_bytes()).hexdigest())
+
+    def test_rerun_with_changed_artifact_root_reports_not_fails(self):
+        sif = self.artifact("Network.sif", b"A\t1\tB\n")
+        content, extra = self.real(neko_export("sif", sif))
+        self.transcript([("export_network", {"format": "sif"}, content, extra)])
+        first = self.run_recover()
+        snap = self.snapshot()
+        other = self.base / "other-root"
+        other.mkdir()
+        with mock.patch.dict(os.environ, {"MCP_BIOMODELLING_ARTIFACT_ROOT": str(other)}):
+            again = self.run_recover()
+        self.assertEqual(self.snapshot(), snap)
+        self.assertEqual(again["exports"]["copied"], first["exports"]["copied"])
+        self.assertEqual([r["source_path"] for r in again["exports"]["rejected"]], [str(sif)])
+
+    def test_export_failure_says_invocation_recorded(self):
+        sif = self.artifact("Network.sif", b"A\t1\tB\n")
+        content, extra = self.real(neko_export("sif", sif))
+        self.transcript([("export_network", {"format": "sif"}, content, extra)])
+        blocker = self.exports_dir()
+        blocker.parent.mkdir(parents=True)
+        blocker.write_text("not a capture")
+        with self.assertRaisesRegex(ValueError, r"export capture failed \(invocation recorded at "
+                                                r"runs/network-curator/sess-1/invocation/agent-x1\): "):
+            self.run_recover()
+        self.assertTrue((self.root / "runs/network-curator/sess-1/report.md").is_file())
+
+    def test_refuses_file_named_exports_json(self):
+        bad = self.artifact("exports.json", b"{}")
+        content, extra = self.real(neko_export("history", bad))
+        self.transcript([("export_network", {"format": "history"}, content, extra)])
+        result = self.run_recover()
+        self.assertEqual([r["source_path"] for r in result["exports"]["rejected"]], [str(bad)])
+        self.assertEqual(result["exports"]["copied"], [])
 
 
 if __name__ == "__main__":

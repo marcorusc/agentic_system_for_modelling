@@ -9,8 +9,9 @@ text prefix only when no structured field is present), and copies each file that
 lies inside ``<artifact root>/<Server>/<session>/`` (no symlinks) to
 ``runs/<specialist>/<session>/exports/<invocation_id>/<file name>`` with an
 ``exports.json`` manifest. Anything else is refused and reported, never copied.
-No export results -> no ``exports/`` directory. An identical rerun is a no-op;
-differing existing content fails closed. ode-modeler (record_ode_artifacts.py)
+No export results -> no ``exports/`` directory. A rerun never amends a capture: it
+re-verifies the saved copies (a no-op when unchanged), fails closed when a saved copy
+or a recopied source differs, and only reports new refusals or vanished sources. ode-modeler (record_ode_artifacts.py)
 and data-analyst (no MCP exports) are skipped.
 """
 from __future__ import annotations
@@ -187,7 +188,9 @@ def capture_exports(project: Path, specialist: str, session: str, invocation: st
     rows, payloads, names = [], {}, {}
     for item in latest.values():
         reason, source = _check_source(item['source_path'], session_dir)
-        if reason is None and source.name in names and names[source.name] != item['source_path']:
+        if reason is None and source.name == MANIFEST:
+            reason = f'{MANIFEST} is reserved for the capture manifest'
+        elif reason is None and source.name in names and names[source.name] != item['source_path']:
             reason = f'file name collides with {names[source.name]}'
         if reason is not None:
             rows.append({**item, 'rejected': True, 'reason': reason})
@@ -206,42 +209,48 @@ def capture_exports(project: Path, specialist: str, session: str, invocation: st
         return summary
     reject_symlinks(target)
     if os.path.lexists(target):
-        rows = _reuse_existing(target, rows, payloads)
-        summary.update(copied=[r for r in rows if 'sha256' in r], missing=[r for r in rows if r.get('missing')])
+        return _verify_existing(target, relative_target, rows)
     manifest = {'specialist': specialist, 'session_id': session, 'invocation_id': invocation, 'exports': rows}
-    encoded = (json.dumps(manifest, indent=2) + '\n').encode('utf-8')
-    summary['path'] = relative_target
-    if os.path.lexists(target):
-        existing = target / MANIFEST
-        reject_symlinks(existing)
-        if not existing.is_file() or existing.read_bytes() != encoded:
-            raise ValueError(f'{relative_target}/{MANIFEST} differs from this capture; refusing overwrite')
-        return summary
     with staged_capture(project, target) as stage:
         for file_name, content in payloads.items():
             (stage / file_name).write_bytes(content)
-        (stage / MANIFEST).write_bytes(encoded)
+        (stage / MANIFEST).write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8')
+    summary['path'] = relative_target
     return summary
 
 
-def _reuse_existing(target: Path, rows: list, payloads: dict) -> list:
-    """Verify an earlier capture byte for byte; keep its copies when sources have since vanished."""
+def _verify_existing(target: Path, relative_target: str, rows: list) -> dict:
+    """Rerun: verify the earlier capture's copies; never amend it.
+
+    Every previously copied file must still hash as recorded and any file copied again
+    must match it, else fail closed. Rows that differ only because the environment or
+    the source changed (new refusals, vanished sources, files absent from the earlier
+    capture) are reported, not written.
+    """
     manifest = target / MANIFEST
     reject_symlinks(manifest)
     try:
-        previous = {row['source_path']: row for row in json.loads(manifest.read_text(encoding='utf-8'))['exports']}
-    except (OSError, ValueError, KeyError, TypeError) as error:
-        raise ValueError(f'existing {manifest} is unreadable ({error}); refusing overwrite') from error
-    merged = []
+        previous = [row for row in json.loads(manifest.read_text(encoding='utf-8'))['exports'] if 'sha256' in row]
+    except (OSError, ValueError, KeyError, TypeError, AttributeError) as error:
+        raise ValueError(f'existing {relative_target}/{MANIFEST} is unreadable ({error}); refusing overwrite') from error
+    for row in previous:
+        dest = target / Path(row['dest_path']).name
+        reject_symlinks(dest)
+        if not dest.is_file() or hashlib.sha256(dest.read_bytes()).hexdigest() != row['sha256']:
+            raise ValueError(f'existing export {relative_target}/{dest.name} was modified; refusing overwrite')
+    by_source = {row['source_path']: row for row in previous}
+    missing, rejected = [], []
     for row in rows:
-        old = previous.get(row['source_path'])
-        if row.get('missing') and old and 'sha256' in old:
-            row = old  # verified below like any copied row
+        old = by_source.get(row['source_path'])
         if 'sha256' in row:
-            dest = target / Path(row['dest_path']).name
-            reject_symlinks(dest)
-            if not dest.is_file() or hashlib.sha256(dest.read_bytes()).hexdigest() != row['sha256']:
-                raise ValueError(f'existing export {dest.name} differs from the server file; refusing overwrite')
-            payloads.pop(dest.name, None)
-        merged.append(row)
-    return merged
+            if old is None:
+                rejected.append({key: row[key] for key in ('tool', 'format', 'source_path')}
+                                | {'rejected': True, 'reason': f'not in the existing capture {relative_target}; '
+                                                              'captures are never amended'})
+            elif old['sha256'] != row['sha256']:
+                raise ValueError(f'existing export {row["dest_path"]} differs from the server file; refusing overwrite')
+        elif row.get('missing') and old is None:
+            missing.append(row)
+        elif row.get('rejected'):
+            rejected.append(row)
+    return {'path': relative_target, 'copied': previous, 'missing': missing, 'rejected': rejected}
