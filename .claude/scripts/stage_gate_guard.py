@@ -7,7 +7,7 @@ import sys
 
 ROOT = Path(os.environ.get("CLAUDE_PROJECT_DIR", Path(__file__).resolve().parents[2])).resolve()
 sys.path.insert(0, str(ROOT))
-from scripts.gate import check_task
+from scripts.gate import check_data_input, check_task
 
 
 def main():
@@ -25,6 +25,10 @@ def main():
         # this hook enforces the two sequential Boolean downstream boundaries.
         if role in {"boolean_dynamics_modeler", "multicellular_configurator"}:
             check_task(ROOT, role, inputs.get("prompt", ""))
+        # Data enter NeKo and MaBoSS only through an approved, hash-checked
+        # DATA_INPUT line, checked after STAGE_GATE.
+        if role in {"network_curator", "boolean_dynamics_modeler"}:
+            check_data_input(ROOT, role, inputs.get("prompt", ""))
         return 0
     except (ValueError, OSError, TypeError, KeyError) as exc:
         print(f"Downstream stage dispatch blocked: {exc}", file=sys.stderr)

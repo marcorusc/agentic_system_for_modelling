@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+from datetime import datetime
 import json
 import re
 from pathlib import Path
@@ -11,6 +12,8 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts.state import ROOT, REGISTRY, checked_artifact, identifier, records, table, validate_record
 from scripts.curation_contract import check_binding, check_parent_scope, check_readout_isolation
+from scripts.data import approvals
+from scripts.data.manifest import KIND_SCHEMAS
 
 UPSTREAM = {"boolean-dynamics": ("network-curator", "topology"), "multicellular": ("boolean-dynamics-modeler", "boolean-dynamics"), "biomass_ode": ("network-curator", "topology")}
 # Backend 2.5.0: NeKo->MaBoSS 2.1 and NeKo->BioMASS 2.0 carry curation_file;
@@ -246,6 +249,153 @@ def check_task(root, specialist, task):
     if set(value) != {"upstream_session_id", "outputs"}:
         raise ValueError("STAGE_GATE requires upstream_session_id and outputs")
     return check(root, stage, value["upstream_session_id"], value["outputs"])
+
+
+DATA_PATH = "runs/data-analyst/"
+DATA_REFUSAL = "brief references data-analyst artifacts without a DATA_INPUT line; see CLAUDE.md"
+# Specialist -> (0-based line index of its DATA_INPUT line, human label).
+DATA_INPUT_LINE = {"network_curator": (0, "network-curator DATA_INPUT must be line 1 of the prompt"),
+                   "boolean_dynamics_modeler": (1, "boolean-dynamics-modeler DATA_INPUT must be line 2, after STAGE_GATE")}
+SHA256 = re.compile(r"[0-9a-f]{64}")
+
+
+def _strict_object(text, label):
+    def unique(pairs):
+        keys = [k for k, _ in pairs]
+        if len(keys) != len(set(keys)):
+            raise ValueError(f"{label} has duplicate keys")
+        return dict(pairs)
+    try:
+        value = json.loads(text, object_pairs_hook=unique)
+    except RecursionError:
+        raise ValueError(f"{label} JSON is nested too deeply") from None
+    if not isinstance(value, dict):
+        raise ValueError(f"{label} must be a JSON object")
+    return value
+
+
+def _data_sessions_named(task):
+    """Data-analyst session IDs named by `runs/data-analyst/<session>` paths in the prompt."""
+    return {m.rstrip(".") for m in re.findall(r"runs/data-analyst/([A-Za-z0-9][A-Za-z0-9._-]*)", task)}
+
+
+def _newest_data_approval(root, session):
+    """The researcher's newest `stage_approval` (stage data) of this data session.
+
+    Newest is the latest `recorded_at` (state.py stamps every record); equal times
+    fall back to DECISIONS.md order, which is append-only. When no candidate has a
+    time, DECISIONS.md order decides; a mix of timed and untimed records, or an
+    unreadable time, is ambiguous and refused.
+    """
+    recs = records((root / "DECISIONS.md").read_text(encoding="utf-8"))
+    found = [(n, r) for n, r in enumerate(recs) if r.get("kind") == "stage_approval"
+             and r.get("stage") == "data" and r.get("session_id") == session]
+    if not found:
+        raise ValueError(f"no researcher stage_approval of stage data names data session {session}")
+    times = [r.get("recorded_at") for _, r in found]
+    if all(t is None for t in times):
+        return found[-1][1]
+    keyed = []
+    for (n, r), raw in zip(found, times):
+        try:
+            moment = datetime.fromisoformat(raw) if isinstance(raw, str) else None
+        except ValueError:
+            moment = None
+        if moment is None or moment.tzinfo is None:
+            raise ValueError(f"cannot order data approvals of session {session}: "
+                             f"record {r.get('id')} has no timezone-aware recorded_at")
+        keyed.append((moment, n, r))
+    return max(keyed, key=lambda item: item[:2])[2]
+
+
+def _check_neko_data_input(root, value):
+    if set(value) != {"data_session", "proposals"}:
+        raise ValueError("network-curator DATA_INPUT requires exactly data_session and proposals")
+    session = identifier(value["data_session"])
+    proposals = value["proposals"]
+    if not isinstance(proposals, dict) or not proposals:
+        raise ValueError("DATA_INPUT proposals must be a nonempty object of proposal id -> sha256")
+    record = approvals.require_data_approval(root, _newest_data_approval(root, session)["id"], session)
+    validate_record(root, record)
+    resolved = {}
+    for proposal_id, digest in proposals.items():
+        if not isinstance(digest, str) or not SHA256.fullmatch(digest):
+            raise ValueError(f"DATA_INPUT proposal {proposal_id} needs a lowercase hex sha256")
+        entry = approvals.require_proposal_approved(root, record, session, proposal_id)
+        if entry.get("kind") != "seed_genes":
+            raise ValueError(f"proposal {proposal_id} has kind {entry.get('kind')!r}; network-curator "
+                             "DATA_INPUT takes only seed_genes")
+        layer = KIND_SCHEMAS["seed_genes"]["layer"]
+        if entry.get("target_layer") != layer:
+            raise ValueError(f"proposal {proposal_id} must target {layer}, not {entry.get('target_layer')!r}")
+        if entry["sha256"] != digest:
+            raise ValueError(f"proposal {proposal_id} sha256 {digest[:12]} differs from the approved file "
+                             f"{entry['path']} ({entry['sha256'][:12]})")
+        resolved[proposal_id] = {"path": entry["path"], "sha256": entry["sha256"]}
+    from scripts.data import mapping
+    mapping._validate_handoff(root, session)
+    return {"data_session": session, "approval_id": record["id"], "proposals": resolved}, {session}
+
+
+def _check_maboss_data_input(root, value, first_line):
+    if set(value) != {"mapping", "sha256", "approval"}:
+        raise ValueError("boolean-dynamics-modeler DATA_INPUT requires exactly mapping, sha256 and approval")
+    rel, digest, approval_id = value["mapping"], value["sha256"], value["approval"]
+    if not all(isinstance(v, str) and v for v in (rel, digest, approval_id)):
+        raise ValueError("DATA_INPUT mapping, sha256 and approval must be nonempty strings")
+    gate_value = _strict_object(first_line[len("STAGE_GATE "):], "STAGE_GATE") if first_line.startswith("STAGE_GATE ") else {}
+    upstream = gate_value.get("upstream_session_id")
+    if not isinstance(upstream, str):
+        raise ValueError("a MaBoSS DATA_INPUT needs a line-1 STAGE_GATE naming upstream_session_id")
+    record = approvals.require_mapping_approval(root, approval_id, rel, digest)
+    validate_record(root, record)
+    from scripts.data import mapping
+    # Check exactly the approved bytes: one read gives both the parsed mapping and its hash.
+    data, actual = mapping._load_mapping(root, rel)
+    if actual != digest:
+        raise ValueError(f"{rel} changed since approval {approval_id} (sha256 mismatch)")
+    errors = mapping._check_data(root, data)
+    if errors:
+        raise ValueError(f"mapping check failed for {rel}: " + "; ".join(errors))
+    neko = data["inputs"]["network"]["neko_session"]
+    if neko != upstream:
+        raise ValueError(f"mapping network is NeKo session {neko}, but STAGE_GATE names {upstream}")
+    sessions = {item["session"] for item in data["inputs"]["data"]}
+    return {"mapping": rel, "sha256": digest, "approval_id": approval_id, "neko_session": neko}, sessions
+
+
+def check_data_input(root, specialist, task):
+    """Check the DATA_INPUT line by which network-curator and boolean-dynamics-modeler take data.
+
+    Data reach these specialists only as approved, hash-checked artifacts named on a
+    literal DATA_INPUT line (line 1 for network-curator, line 2 after STAGE_GATE for
+    boolean-dynamics-modeler); data are never pasted or pointed at in prose. Returns
+    None when the prompt has neither a DATA_INPUT line nor a data-analyst path.
+    """
+    if specialist not in DATA_INPUT_LINE:
+        return None
+    if task is None:
+        task = ""
+    if not isinstance(task, str):
+        raise ValueError("dispatch prompt must be a string")
+    lines = task.splitlines()  # the same line split as check_task
+    expected, placement = DATA_INPUT_LINE[specialist]
+    positions = [n for n, line in enumerate(lines) if line.lstrip().startswith("DATA_INPUT")]
+    if not positions:
+        if DATA_PATH in task:
+            raise ValueError(DATA_REFUSAL)
+        return None
+    if positions != [expected] or not lines[expected].startswith("DATA_INPUT "):
+        raise ValueError(f"{placement} (exactly one, starting 'DATA_INPUT ')")
+    value = _strict_object(lines[expected][len("DATA_INPUT "):], "DATA_INPUT")
+    if specialist == "network_curator":
+        result, sessions = _check_neko_data_input(root, value)
+    else:
+        result, sessions = _check_maboss_data_input(root, value, lines[0])
+    other = sorted(_data_sessions_named(task) - sessions)
+    if other:
+        raise ValueError(f"brief names data-analyst session(s) {', '.join(other)} outside its DATA_INPUT")
+    return result
 
 
 def resolve_condition(root, decision_id):
