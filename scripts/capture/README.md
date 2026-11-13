@@ -128,12 +128,17 @@ hooks:
           command: 'python3 "$CLAUDE_PROJECT_DIR/.claude/scripts/specialist_report_guard.py" network-curator'
 ```
 
-Use the matching agent name for each agent. `Write` must be allowed by that agent
-and removed from its `disallowedTools`. Only its own
-`runs/<specialist>/<session>/report.md` is writable. The session must appear in the
-current invocation's modelling MCP calls/results. Reports cannot be overwritten;
-later full reports remain in their separate invocation records. The guard may use
-`--session-id` only when the dispatcher has an explicit session binding.
+Use the matching agent name for each agent. The guard denies every Write except the
+agent's own `runs/<specialist>/<session>/report.md`, whose session must appear in the
+current invocation's modelling MCP calls/results; it may use `--session-id` only when
+the dispatcher has an explicit session binding. Specialists do not write reports
+themselves (Claude Code blocks subagent Writes to report-style `.md` names): each
+returns its full report as its final message (or `SubagentHandback` message), and the
+SubagentStop recorder below writes it once, atomically, as
+`runs/<specialist>/<session>/report.md`. Reports are never overwritten: an existing
+`report.md` is kept and later full reports remain in their separate invocation records
+(`invocation.json` `report_md` is `written`, `identical` or `kept-first`). data-analyst
+uses its own guard (`.claude/scripts/data_guard.py`), which forbids writing `report.md`.
 
 The project `SubagentStop` command is:
 
@@ -146,7 +151,8 @@ fields. Nonmodelling agents are ignored. A unique modelling-session identity is
 required for scientific attribution; ambiguous identities fail with an actionable
 error, preserving the original Claude transcript. The immutable `invocation/<agent_id>/` record
 contains the task text, sanitized transcript, tool arguments/results, final full
-report, source transcript digest, and usage summary. Common credential fields are
+report (`final_report.md`, also materialized as the session `report.md`), source
+transcript digest, and usage summary. Common credential fields are
 redacted using the same sanitizer as the Codex runtime.
 
 Attempts that stop before creating a scientific session are preserved under
@@ -154,6 +160,51 @@ Attempts that stop before creating a scientific session are preserved under
 and unresolved scientific status. These technical records are not added to the
 scientific capture index or session registry and cannot authorize advancement.
 They retain the same sanitized transcript, report and measured usage fields.
+
+Claude Code 2.1.311 does not reliably fire `SubagentStop` for background subagents, so
+the orchestrator runs `python3 scripts/capture/recover.py --specialist <name> --agent-id
+<agentId> [--session <id>]` after every specialist completion. It locates the agent
+transcript under `~/.claude/projects/<slug>/*/subagents/agent-<id>.jsonl` (override with
+`--transcript-root`), binds the session, and, unless the invocation is already captured and
+indexed, runs the recorder above on a synthetic `SubagentStop` payload and checks that
+`runs/<specialist>/<session>/report.md` exists. With `--session`, a transcript bound to a
+different or no session is refused before anything is recorded. The last output line is
+`RECOVERED <specialist> <session-or-unbound> <recorded|already-recorded|unbound>`;
+failures print `RECOVER FAILED: <reason>` and exit 1. `scripts/data/receive.py` uses it for
+data-analyst.
+
+For a bound invocation, whether just recorded or `already-recorded`, recover.py then saves
+the run's server exports (`scripts/capture/exports.py`), because each specialist's MCP
+server and its sessions end with the run and some exports are overwritten in place
+(NeKo always writes `<session>/Network.sif`). It scans that invocation's transcript for
+successful results of the specialist's own export tools (NeKo `export_network` and its
+`curation_file`; MaBoSS `export_maboss_bnd_cfg`, `export_maboss_handoff`; PhysiCell
+`export_xml_configuration`, `export_cell_rules_csv`, `export_configuration_bundle`),
+taking paths from the structured result fields and falling back to NeKo's
+`SIF|History|BNET exported: <path>` text only when no structured field is present.
+Only regular files inside `<artifact root>/<Server>/<session>/` with no symlinks are copied
+(artifact root: `$MCP_BIOMODELLING_ARTIFACT_ROOT`, else `$XDG_CACHE_HOME` or `~/.cache`
+plus `/mcp-biomodelling/artifacts`, as the servers resolve it); anything else is refused
+and reported. Files go to `runs/<specialist>/<session>/exports/<agentId>/<file name>` with
+`exports.json` listing `{tool, format, source_path, dest_path, sha256, bytes}` per file,
+`{..., missing: true}` for a source that no longer exists (a warning, not a failure) and
+`{..., rejected: true, reason}` for refusals. A run with no export results creates no
+`exports/` directory. A capture is never amended: a rerun re-verifies the saved copies
+(a no-op when unchanged, and they stay valid after their sources vanish), fails closed when
+a saved copy or a recopied source differs, and only reports new refusals (for example
+after the artifact root changed) or files absent from the earlier capture. A file named
+`exports.json` is refused. If export capture fails after recording, the error says
+`export capture failed (invocation recorded at <path>)`.
+recover.py prints one `export:` line per copied file (`export WARNING:` / `export REFUSED:`
+for the others) before its last `RECOVERED` line. ode-modeler uses
+`record_ode_artifacts.py`; data-analyst has no MCP exports. These copies are not handoff
+captures: approved handoffs still go through the recorders above.
+
+Known limits: a run whose transcript binds more than one session is refused by recover.py
+before recording, so it gets no export capture either (restore runs must therefore never
+pass the old session ID to a NeKo tool). Exports written by pre-2.5 servers inside a
+managed environment's `site-packages/.../<Server>/artifacts/` are outside the artifact root
+and are refused (reported, not silently skipped).
 
 Identical stop-event retries verify every artifact byte and reuse the existing
 record, recovering a missing index entry when applicable. Changed transcripts or

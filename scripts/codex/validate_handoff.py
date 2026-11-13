@@ -22,6 +22,7 @@ SPECIALIST_STAGES = {
     "literature_reviewer": "literature_review",
     "boolean_dynamics_modeler": "maboss_dynamics",
     "multicellular_configurator": "physicell_configuration",
+    "data_analyst": "data",
 }
 SAFE_NEXT_STAGES = {
     "biomass_ode": {None, "researcher_approval"},
@@ -29,6 +30,7 @@ SAFE_NEXT_STAGES = {
     "literature_review": {None, "researcher_approval"},
     "maboss_dynamics": {None, "researcher_approval"},
     "physicell_configuration": {None, "researcher_approval"},
+    "data": {None, "researcher_approval"},
 }
 ARTIFACT_ROOTS = {
     "ode_modeler": ("runs/ode-modeler",),
@@ -36,6 +38,7 @@ ARTIFACT_ROOTS = {
     "literature_reviewer": ("evidence/reports",),
     "boolean_dynamics_modeler": ("runs/boolean-dynamics-modeler",),
     "multicellular_configurator": ("runs/multicellular-configurator",),
+    "data_analyst": ("runs/data-analyst",),
 }
 REQUIRED_FIELDS = {
     "schema_version",
@@ -128,15 +131,8 @@ def _validate_artifact(
             raise HandoffValidationError(f"artifact path contains a symlink: {path}")
 
 
-def _completed_artifacts(handoff: dict[str, Any], project: Path) -> None:
-    """Verify completion using actual files, not specialist self-attestation.
-
-    Draft handoffs use needs_approval until the orchestrator has persisted reports
-    and manifests. This check does not grant scientific approval or export rights.
-    """
-    entries = handoff["artifacts"]
-    if not entries:
-        raise HandoffValidationError("completed handoff requires stage artifacts")
+def _hashed_artifact_files(entries: list[Any], project: Path) -> dict[str, Path]:
+    """Require each artifact to exist, be non-empty and match its declared sha256."""
     files: dict[str, Path] = {}
     for index, entry in enumerate(entries):
         path = _artifact_path(entry, index)
@@ -158,6 +154,19 @@ def _completed_artifacts(handoff: dict[str, Any], project: Path) -> None:
         if file.stat().st_size == 0:
             raise HandoffValidationError(f"completed artifact is empty: {path}")
         files[path] = file
+    return files
+
+
+def _completed_artifacts(handoff: dict[str, Any], project: Path) -> None:
+    """Verify completion using actual files, not specialist self-attestation.
+
+    Draft handoffs use needs_approval until the orchestrator has persisted reports
+    and manifests. This check does not grant scientific approval or export rights.
+    """
+    entries = handoff["artifacts"]
+    if not entries:
+        raise HandoffValidationError("completed handoff requires stage artifacts")
+    files = _hashed_artifact_files(entries, project)
 
     specialist = handoff["specialist"]
     if specialist == "literature_reviewer":
@@ -203,7 +212,11 @@ def _completed_artifacts(handoff: dict[str, Any], project: Path) -> None:
     for field in ("schema_version", "specialist", "stage", "session_id", "derived_from_session_id"):
         if field not in manifest or manifest[field] != handoff[field]:
             raise HandoffValidationError(f"stage manifest identity mismatch: {field}")
-    if not any(file.suffix == ".md" and file.name != "important_paths.md" for file in files.values()):
+    # data_analyst: the recorder writes report.md after the final message, so it can
+    # never be a handoff artifact; _data_session_checks already requires it and
+    # verifies it byte-for-byte against the recorded final report.
+    if specialist != "data_analyst" and not any(
+            file.suffix == ".md" and file.name != "important_paths.md" for file in files.values()):
         raise HandoffValidationError("completed modelling stage requires a Markdown report")
     if specialist == "network_curator":
         if not {"important_paths.md", "literature_queue.json"} <= names or ".sif" not in suffixes:
@@ -230,6 +243,10 @@ def _completed_artifacts(handoff: dict[str, Any], project: Path) -> None:
             validate_completion(handoff, project, files)
         except (OSError, ValueError, KeyError, TypeError) as error:
             raise HandoffValidationError(str(error)) from error
+    elif specialist == "data_analyst":
+        session_prefix = f"runs/data-analyst/{handoff['session_id']}/"
+        if not any(p.startswith((session_prefix + "outputs/", session_prefix + "proposals/")) for p in files):
+            raise HandoffValidationError("data stage requires at least one artifact under outputs/ or proposals/")
     elif ".xml" not in suffixes:
         raise HandoffValidationError("PhysiCell stage requires an XML configuration export")
     if specialist == "multicellular_configurator":
@@ -240,6 +257,98 @@ def _completed_artifacts(handoff: dict[str, Any], project: Path) -> None:
                     ET.parse(file)
                 except (OSError, ET.ParseError) as error:
                     raise HandoffValidationError(f"invalid configuration XML: {file.name}") from error
+
+
+def _data_session_checks(handoff: dict[str, Any], project: Path) -> None:
+    """Check artifacts, recorder integrity, manifest consistency and proposal gating."""
+    from scripts.data import manifest as data_manifest
+    session = handoff["session_id"]
+    base = project / "runs" / "data-analyst" / session
+    # R25: completed and needs_approval alike carry object-form artifacts whose
+    # files exist and match their declared sha256.
+    _hashed_artifact_files(handoff["artifacts"], project)
+    try:
+        integrity = json.loads((base / "integrity.json").read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, ValueError) as error:
+        raise HandoffValidationError(f"data session integrity.json is missing or unreadable: {error}") from error
+    if (not isinstance(integrity, dict) or integrity.get("passed") is not True
+            or integrity.get("changed") != [] or integrity.get("identity_intact") is not True
+            or integrity.get("session_id") != session):
+        raise HandoffValidationError("data session integrity check did not pass")
+    # integrity.json is agent-writable; it counts only if it equals the verdict in
+    # the recorder's own indexed invocation record.
+    invocation = integrity.get("invocation_id")
+    if not isinstance(invocation, str) or SESSION_ID.fullmatch(invocation) is None:
+        raise HandoffValidationError("integrity.json lacks a valid invocation_id")
+    relative = f"runs/data-analyst/{session}/invocation/{invocation}/invocation.json"
+    try:
+        index = json.loads((project / "runs" / "index.json").read_text(encoding="utf-8"))
+        registered = {
+            artifact["path"]: artifact["sha256"]
+            for item in index["runs"] if item.get("capture_path") == relative.rsplit("/", 1)[0]
+            for artifact in item["artifacts"]
+        }
+        record_file = project / relative
+        if record_file.is_symlink() or not record_file.is_file():
+            raise ValueError("missing")
+        raw = record_file.read_bytes()
+        if registered.get(relative) != hashlib.sha256(raw).hexdigest():
+            raise ValueError("unregistered")
+        embedded = json.loads(raw).get("integrity")
+    except (OSError, UnicodeError, ValueError, KeyError, TypeError, AttributeError) as error:
+        raise HandoffValidationError("integrity.json has no registered recorder invocation record") from error
+    if embedded != integrity:
+        raise HandoffValidationError("integrity.json differs from the recorder invocation record")
+    # report.md must be the recorder's copy of the final report, not agent-authored.
+    report, final = base / "report.md", base / "invocation" / invocation / "final_report.md"
+    if report.is_symlink() or (handoff["status"] in {"completed", "needs_approval"} and not report.is_file()):
+        raise HandoffValidationError("data session report.md is missing (the recorder writes it)")
+    if report.exists():
+        try:
+            same = report.read_bytes() == final.read_bytes()
+        except OSError as error:
+            raise HandoffValidationError("cannot compare report.md with the recorded final report") from error
+        if not same:
+            raise HandoffValidationError("report.md differs from the recorded final report")
+    try:
+        errors = data_manifest.verify(project, session)
+    except (OSError, ValueError, KeyError, TypeError) as error:
+        raise HandoffValidationError(f"data manifest verification failed: {error}") from error
+    if errors:
+        raise HandoffValidationError("data manifest verification failed: " + "; ".join(errors))
+    try:
+        proposals = json.loads((base / "manifest.json").read_text(encoding="utf-8")).get("proposals", [])
+    except (OSError, UnicodeError, ValueError, AttributeError) as error:
+        raise HandoffValidationError("data manifest is unreadable") from error
+    if not isinstance(proposals, list):
+        raise HandoffValidationError("data manifest proposals must be a list")
+    proposal_sha = {
+        f"runs/data-analyst/{session}/{entry.get('path')}": entry.get("sha256")
+        for entry in proposals if isinstance(entry, dict)
+    }
+    for index, entry in enumerate(handoff["artifacts"]):
+        path = _artifact_path(entry, index)
+        if path in proposal_sha and entry["sha256"].lower() != proposal_sha[path]:
+            raise HandoffValidationError(f"proposal artifact sha256 differs from the manifest: {path}")
+    if handoff["status"] in {"completed", "blocked"} and proposals:
+        raise HandoffValidationError("proposals require needs_approval")
+    decisions = handoff["decisions_required"]
+    for item in decisions:
+        if (not isinstance(item, dict) or not isinstance(item.get("id"), str) or not item["id"].strip()
+                or not isinstance(item.get("question"), str) or not item["question"].strip()):
+            raise HandoffValidationError("each decision must be an object with non-empty id and question")
+    by_id = {item["id"]: item for item in decisions}
+    for entry in proposals:
+        if not isinstance(entry, dict):
+            continue
+        pid = entry.get("id")
+        decision = by_id.get(pid)
+        if decision is None:
+            raise HandoffValidationError(f"needs_approval requires a decision for proposal {pid}")
+        if decision.get("path") != f"runs/data-analyst/{session}/{entry.get('path')}":
+            raise HandoffValidationError(f"decision for proposal {pid} has a wrong path")
+        if decision.get("sha256") != entry.get("sha256"):
+            raise HandoffValidationError(f"decision for proposal {pid} has a sha256 differing from the manifest")
 
 
 def validate_handoff(
@@ -341,6 +450,8 @@ def validate_handoff(
             session_id=session_id,
             path=_artifact_path(entry, index),
         )
+    if specialist == "data_analyst" and (status in {"completed", "needs_approval"} or artifacts):
+        _data_session_checks(handoff, project)
     # ODE preservation claims require the same checks even while scientific
     # approval is pending. Metadata-only drafts remain possible before capture.
     ode = handoff.get("ode", {}) if specialist == "ode_modeler" else {}

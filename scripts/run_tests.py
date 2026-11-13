@@ -11,7 +11,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SUITES = ("tests/codex", ".claude/scripts", "tests/setup")
+SUITES = ("tests/codex", ".claude/scripts", "tests/setup", "tests/data")
 SUITE_TIMEOUT_SECONDS = 120
 
 

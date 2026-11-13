@@ -51,6 +51,7 @@ in provenance; convert before comparing dates across midnight.
 | `validation-declare` | Criterion, Method, Required evidence; creates a unique pending criterion |
 | `validation` | Supported artifact-validator JSON output; only updates already declared criterion IDs |
 | `checkpoint` | Full content-commit SHA and `summary`; no self-referential metadata commit |
+| `data-product` | Exactly `name`, `type`, `meaning`, `unit`, `identifiers`, `source_session` (data session ID), `path`, `sha256` (verified), `release`, `decision_id`, `notes`; appends a `DATA_DICTIONARY.md` row. `decision_id` must be the `id` of the researcher's `stage_approval` (stage `data`, same `session_id`, `artifact` = that session's unchanged `handoff.json`), recorded with `record` after `receive.py` prints `RECEIVED <id> OK`; the product must be a handoff artifact and a proposal's id must be in the record's `outputs` (see [data workflow](data-workflow.md)) |
 
 An artifact reference is `{"path":"repository/relative/file","sha256":"..."}`.
 Hashes are verified, not accepted as annotations. A validation result contains
@@ -213,11 +214,24 @@ reproducible command or patch. Biological values are not inferred from signed ed
 ## Capture and validation
 
 See [capture commands](../scripts/capture/README.md) for one-command handoff/package
-capture, guarded reports, immutable invocation records, resource metadata, index
-recovery and usage tables. The server still chooses its original artifact root;
+capture, recorder-written reports (the SubagentStop recorder saves each specialist's
+final message as the immutable `report.md`), immutable invocation records, resource
+metadata, index recovery and usage tables. The server still chooses its original artifact root;
 these repository helpers capture exports without fixing category B server behavior.
 Missing usage/resource fields remain null, not invented. Artifact copy and index
 publication are separate recoverable operations.
+
+Claude Code 2.1.311 does not reliably fire `SubagentStop` for background subagents, so
+after every specialist completion the orchestrator runs `python3 scripts/capture/recover.py
+--specialist <name> --agent-id <agentId> [--session <id>]` (before any registry or state
+write) and proceeds only on its `RECOVERED <specialist> <session-or-unbound> <status>`
+line. It records the missing invocation through the normal recorder, which also writes
+`report.md`, and is a no-op (`already-recorded`) when the hook did fire. In both cases it
+then saves the run's server exports (NeKo SIF/history, MaBoSS BND/CFG, PhysiCell XML and
+bundles) to `runs/<specialist>/<session>/exports/<agentId>/` with an `exports.json` hash
+manifest, since each MCP server and its sessions end with the run; rerunning it captures
+exports for older runs (details in the capture README). data-analyst uses `receive.py`,
+which calls it.
 
 See [validation commands](../scripts/validate/README.md) for explicit criteria,
 safe bounded Boolean analyses, trajectory metrics, seed planning and time-scaling

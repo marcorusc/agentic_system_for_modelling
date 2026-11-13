@@ -77,7 +77,7 @@ class OdeProfileSkillTests(unittest.TestCase):
         self.assertIn('  - Agent\n', header)
         self.assertIn('  - mcp__biomass-agent__close_session\n', header)
         for path in (ROOT / '.claude/agents').glob('*.md'):
-            if path.name != 'ode-modeler.md':
+            if path.name not in ('ode-modeler.md', 'data-analyst.md'):  # data-analyst has no MCP
                 self.assertIn("  - 'mcp__biomass-agent__*'\n", path.read_text().split('\n---\n', 1)[0])
 
     def test_local_reference_hashes_and_client_copies_match(self):

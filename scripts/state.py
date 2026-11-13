@@ -13,16 +13,22 @@ import json
 import os
 from pathlib import Path
 import re
+import sys
 import tempfile
 from datetime import datetime, timezone
 
 ROOT = Path(__file__).resolve().parents[1]
+if __package__ in (None, ""):
+    # Run as `python3 scripts/state.py`: make the `scripts` package importable.
+    sys.path.insert(0, str(ROOT))
 REGISTRY = ["Specialist", "Session ID", "Stage", "Status", "Derived from", "Handoff", "Artifacts"]
 DECISIONS = ["Date", "Decision", "Alternatives considered", "Rationale", "Evidence", "Approved by"]
 VALIDATION = ["Criterion", "Method", "Required evidence", "Status", "Result"]
+DATA_DICTIONARY = ["Name", "Type", "Biological meaning", "Unit", "Source", "Version", "Notes"]
+DATA_PRODUCT_KEYS = {"name", "type", "meaning", "unit", "identifiers", "source_session", "path", "sha256", "release", "decision_id", "notes"}
 RECORD = re.compile(r"<!-- governance-record -->\s*```json\n(.*?)\n```", re.S)
 ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
-ROLES = {"network-curator": "topology", "boolean-dynamics-modeler": "boolean-dynamics", "multicellular-configurator": "multicellular", "ode-modeler": "biomass_ode"}
+ROLES = {"network-curator": "topology", "boolean-dynamics-modeler": "boolean-dynamics", "multicellular-configurator": "multicellular", "ode-modeler": "biomass_ode", "data-analyst": "data"}
 
 
 def now():
@@ -174,12 +180,63 @@ def validate_record(root, item):
             raise ValueError("condition values must be nonempty string allowlists")
 
 
+def data_product_approval(root, item):
+    """Require decision_id to be the researcher's stage_approval of this data session's
+    current handoff.json, and the product to be an approved artifact of that handoff."""
+    from scripts.data.common import RUNS_ROOT
+    session = item["source_session"]
+    matches = [r for r in records((root / "DECISIONS.md").read_text(encoding="utf-8")) if r["id"] == item["decision_id"]]
+    if not matches:
+        raise ValueError("decision_id not found in DECISIONS.md governance records")
+    record = matches[0]
+    if record.get("kind") != "stage_approval":
+        raise ValueError(f"decision {item['decision_id']} must be a stage_approval, not {record.get('kind')!r}")
+    if record.get("stage") != "data":
+        raise ValueError(f"decision {item['decision_id']} must approve stage data, not {record.get('stage')!r}")
+    if record.get("session_id") != session:
+        raise ValueError(f"decision {item['decision_id']} approves session {record.get('session_id')!r}, not {session}")
+    base = (RUNS_ROOT / session).as_posix()
+    handoff_rel = f"{base}/handoff.json"
+    approved = record.get("artifact")
+    if not isinstance(approved, dict) or approved.get("path") != handoff_rel:
+        raise ValueError(f"decision {item['decision_id']} artifact must be {handoff_rel}")
+    handoff_path = artifact(root, handoff_rel)
+    if digest(handoff_path) != approved.get("sha256"):
+        raise ValueError(f"{handoff_rel} changed since approval {item['decision_id']} (sha256 mismatch)")
+    try:
+        handoff = json.loads(handoff_path.read_text(encoding="utf-8"))
+    except ValueError as exc:
+        raise ValueError(f"cannot read {handoff_rel}: {exc}") from exc
+    artifacts = handoff.get("artifacts") if isinstance(handoff, dict) else None
+    if not isinstance(artifacts, list) or handoff.get("session_id") != session:
+        raise ValueError(f"{handoff_rel} is not a handoff of session {session}")
+    listed = {(a.get("path"), a.get("sha256")) for a in artifacts if isinstance(a, dict)}
+    if (item["path"], item["sha256"]) not in listed:
+        raise ValueError(f"{item['path']} (sha256 {item['sha256'][:12]}) is not an artifact of the approved handoff {handoff_rel}")
+    if item["path"].startswith(f"{base}/proposals/"):
+        index_rel = f"{base}/proposals/index.json"
+        index_path = artifact(root, index_rel)
+        if (index_rel, digest(index_path)) not in listed:
+            raise ValueError(f"{index_rel} differs from the approved handoff")
+        try:
+            index = json.loads(index_path.read_text(encoding="utf-8"))
+        except ValueError as exc:
+            raise ValueError(f"cannot read {index_rel}: {exc}") from exc
+        rel = item["path"][len(base) + 1:]
+        ids = [p.get("id") for p in index if isinstance(p, dict) and p.get("path") == rel] if isinstance(index, list) else []
+        if len(ids) != 1 or not isinstance(ids[0], str):
+            raise ValueError(f"{item['path']} is not exactly one proposal in {index_rel}")
+        outputs = record.get("outputs")
+        if not isinstance(outputs, list) or ids[0] not in outputs:
+            raise ValueError(f"proposal {ids[0]} is not in the approved outputs of decision {item['decision_id']}")
+
+
 def update(root, operation, item):
     if not isinstance(item, dict):
         raise ValueError("state update must be a JSON object")
     root = root.resolve()
     with locked(root):
-        name = "DECISIONS.md" if operation in {"decision", "record"} else "VALIDATION_PLAN.md" if operation in {"validation", "validation-declare"} else "CURRENT_STATE.md"
+        name = "DECISIONS.md" if operation in {"decision", "record"} else "DATA_DICTIONARY.md" if operation == "data-product" else "VALIDATION_PLAN.md" if operation in {"validation", "validation-declare"} else "CURRENT_STATE.md"
         path = root / name
         text = path.read_text(encoding="utf-8")
         if operation == "decision":
@@ -257,6 +314,24 @@ def update(root, operation, item):
             if not seen:
                 raise ValueError("validator output has no results")
             text = replace_table(text, VALIDATION, rows)
+        elif operation == "data-product":
+            if set(item) != DATA_PRODUCT_KEYS or any(not isinstance(v, str) for v in item.values()):
+                raise ValueError("data-product requires exactly: " + ", ".join(sorted(DATA_PRODUCT_KEYS)))
+            from scripts.data.common import SESSION_RE
+            if SESSION_RE.fullmatch(item["source_session"]) is None:
+                raise ValueError("source_session is not a data session ID")
+            if not item["name"].strip() or not item["release"].strip():
+                raise ValueError("data product needs a name and release")
+            checked_artifact(root, {"path": item["path"], "sha256": item["sha256"]})
+            data_product_approval(root, item)
+            rows = table(text, DATA_DICTIONARY)[3]
+            if any(r["Name"] == item["name"] for r in rows):
+                raise ValueError("data product name already registered")
+            rows.append({"Name": item["name"], "Type": item["type"], "Biological meaning": item["meaning"], "Unit": item["unit"],
+                         "Source": f"`{item['source_session']}` `{item['path']}` sha256 `{item['sha256'][:12]}`",
+                         "Version": item["release"],
+                         "Notes": f"identifiers: {item['identifiers']}; decision {item['decision_id']}; {item['notes']}"})
+            text = replace_table(text, DATA_DICTIONARY, rows)
         elif operation == "checkpoint":
             commit = item.get("commit", "")
             if not re.fullmatch(r"[a-f0-9]{40}", commit) or not item.get("summary"):
@@ -270,7 +345,7 @@ def update(root, operation, item):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("operation", choices=["decision", "record", "registry-add", "registry-supersede", "registry-handoff", "validation-declare", "validation", "checkpoint"])
+    parser.add_argument("operation", choices=["decision", "record", "registry-add", "registry-supersede", "registry-handoff", "validation-declare", "validation", "checkpoint", "data-product"])
     parser.add_argument("--input", required=True, type=Path)
     parser.add_argument("--root", type=Path, default=ROOT)
     args = parser.parse_args()

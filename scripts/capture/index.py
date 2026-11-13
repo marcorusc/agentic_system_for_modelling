@@ -21,7 +21,7 @@ from scripts.capture.artifact_capture import reject_symlinks
 from scripts.codex.launcher_config import validate_session_id
 from scripts.codex.ode_artifacts import safe_file
 
-SPECIALISTS = {'network-curator', 'boolean-dynamics-modeler', 'multicellular-configurator', 'ode-modeler'}
+SPECIALISTS = {'network-curator', 'boolean-dynamics-modeler', 'multicellular-configurator', 'ode-modeler', 'data-analyst'}
 
 USAGE_COUNTS = {'input_tokens', 'output_tokens', 'cached_input_tokens',
                 'cache_creation_input_tokens', 'cache_read_input_tokens', 'tool_calls'}

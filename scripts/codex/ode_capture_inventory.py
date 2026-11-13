@@ -40,7 +40,11 @@ def verified_inventory(project: Path, invocation: Path, session: str) -> tuple[l
             or provenance.get('apps_enabled') is not False):
         raise ValueError('unsafe recorded specialist inventory')
     catalogue = None
-    for line in files['events.jsonl'].read_text().splitlines():
+    # JSONL records end at '\n'; str.splitlines() would also split on U+0085/U+2028.
+    lines = files['events.jsonl'].read_text(encoding='utf-8').split('\n')
+    if lines and lines[-1] == '':
+        lines.pop()
+    for line in lines:
         event = json.loads(line, object_pairs_hook=_unique_object)
         if not isinstance(event, dict):
             raise ValueError('invalid recorded event')

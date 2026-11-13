@@ -126,10 +126,8 @@ when explicitly invoked as this distinct mode, never folded into a normal run:
 
 ## Output
 
-Write the full immutable specialist report using the guarded Write tool at
-`runs/boolean-dynamics-modeler/{maboss_session_id}/report.md`. Include rules,
-trajectories, approved choices, failures and limitations. Return the same report
-path and structured result. Capture tools relocate and verify server artifacts;
+Include rules, trajectories, approved choices, failures and limitations in the full
+specialist report. Return the full report as your final message; the recorder saves it as `runs/boolean-dynamics-modeler/{maboss_session_id}/report.md`. Do not Write report files (Claude Code blocks subagent Writes to report-style .md names). Return the structured result. Capture tools relocate and verify server artifacts;
 never assume the server writes directly into the repository. The orchestrator's
 interpretation belongs under `runs/orchestrator/`, separately from your report.
 

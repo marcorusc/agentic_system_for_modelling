@@ -153,6 +153,21 @@ class CaptureTests(unittest.TestCase):
         self.assertEqual(retry, result)
         self.assertEqual(len(json.loads((self.project/'runs/index.json').read_text())['runs']), 1)
 
+    def test_invocation_capture_prefers_subagent_handback_report(self):
+        # Claude Code delivers a subagent's final report as a SubagentHandback tool_use
+        # (input.message); a later prose text block must not replace it.
+        path = self.transcript()
+        events = [json.loads(line) for line in path.read_text().splitlines()]
+        events[3]['message']['content'].insert(0, {'type':'text','text':'Now fetch symbols.'})
+        events.append({'type':'assistant','timestamp':'2026-10-05T00:00:11Z','message':{'id':'three','content':[
+            {'type':'tool_use','id':'hand','name':'SubagentHandback','input':{'message':'# Handback report\nAll results.'}}]}})
+        events.append({'type':'assistant','timestamp':'2026-10-05T00:00:12Z','message':{'id':'four','content':[
+            {'type':'text','text':'Done.'}]}})
+        path.write_text('\n'.join(json.dumps(e) for e in events))
+        result=record(self.project,{'agent_type':'network-curator','agent_id':'agent-1','agent_transcript_path':str(path)})
+        report=(self.project/result['capture_path']/'final_report.md').read_text()
+        self.assertEqual(report, '# Handback report\nAll results.\n')
+
     def run_stop_hook(self, payload):
         stdout, stderr = io.StringIO(), io.StringIO()
         with mock.patch.dict(os.environ, {'CLAUDE_PROJECT_DIR': str(self.project)}), \
@@ -318,6 +333,16 @@ class CaptureIntegrityReviewTests(CaptureTests):
             {'message':{'content':[{'type':'text','text':'random session_id: fabricated-session'}]}}
         ]
         transcript.write_text('\n'.join(json.dumps(e) for e in events))
+        self.assertEqual(guard.transcript_sessions(transcript,'boolean-dynamics-modeler'), {'scientific-session'})
+
+    def test_unicode_line_separators_inside_strings(self):
+        transcript = self.root/'separators.jsonl'
+        events = [
+            {'message':{'content':[{'type':'tool_use','id':'fresh','name':'mcp__maboss-agent__create_session','input':{}}]}},
+            {'message':{'content':[{'type':'tool_result','tool_use_id':'fresh','content':'Session created: scientific-session'}]}},
+            {'message':{'content':[{'type':'tool_result','tool_use_id':'x','content':'pdf\x85stream a b\x1c\\u0001'}]}}
+        ]
+        transcript.write_text('\n'.join(json.dumps(e, ensure_ascii=False) for e in events), encoding='utf-8')
         self.assertEqual(guard.transcript_sessions(transcript,'boolean-dynamics-modeler'), {'scientific-session'})
 
     def test_index_rejects_identity_mismatch_and_bad_usage(self):

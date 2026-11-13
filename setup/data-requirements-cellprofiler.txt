@@ -1,0 +1,2 @@
+# python=3.9
+cellprofiler==4.2.8.1

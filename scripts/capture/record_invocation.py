@@ -13,13 +13,24 @@ import json
 import os
 from pathlib import Path
 import sys
+import tempfile
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from scripts.capture.artifact_capture import staged_capture, reject_symlinks
 from scripts.capture.index import register_capture, SPECIALISTS
 from scripts.codex.launcher_config import validate_session_id
 from scripts.codex.launcher_process import sanitize_json_value
+from scripts.data import snapshot as data_snapshot
+from scripts.data.common import utc_now
 
-def session_ids(path, specialist):
+def _data_guard():
+    spec = importlib.util.spec_from_file_location('data_guard', Path(__file__).resolve().parents[2] / '.claude/scripts/data_guard.py')
+    module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+    return module
+
+def session_ids(path, specialist, root=None):
+    if specialist == 'data-analyst':
+        bound = _data_guard().transcript_data_session(Path(path), root=root)
+        return {bound[0]} if bound else set()
     spec = importlib.util.spec_from_file_location('report_guard', Path(__file__).resolve().parents[2] / '.claude/scripts/specialist_report_guard.py')
     module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
     return module.transcript_sessions(path, specialist)
@@ -44,6 +55,91 @@ def publish_invocation(project, target, files):
             if not path.is_file() or path.read_bytes() != content:
                 raise ValueError('existing invocation content changed; refusing overwrite')
 
+# Files the recorder itself creates when registering a capture (index + its lock).
+RECORDER_FILES = {'runs/index.json', 'runs/.index.capture.lock'}
+
+def _index_registers(project, relative):
+    try:
+        index = json.loads((project / 'runs' / 'index.json').read_text(encoding='utf-8'))
+        return any(item.get('capture_path') == relative for item in index.get('runs', []))
+    except Exception:
+        return False
+
+def _write_integrity(path, integrity):
+    if os.path.lexists(path): os.unlink(path)  # never follow a planted symlink
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(integrity, indent=2) + '\n', encoding='utf-8')
+
+def data_integrity(project, transcript, session, invocation):
+    """Always verify the protected snapshot before any recorder write; fail closed.
+
+    integrity.json is written by the recorder (system code); the agent write guard
+    forbids that name. A retry of an invocation already on disk must reproduce the
+    stored verdict, in which case the stored bytes (and timestamp) are reused.
+    """
+    base = project / 'runs' / 'data-analyst' / session
+    path = base / 'integrity.json'
+    reject_symlinks(base)
+    relative = f'runs/data-analyst/{session}/invocation/{invocation}'
+    stored = None
+    stored_file = base / 'invocation' / invocation / 'invocation.json'
+    if stored_file.is_file() and not stored_file.is_symlink():
+        try: stored = json.loads(stored_file.read_text(encoding='utf-8')).get('integrity')
+        except (OSError, ValueError, AttributeError): stored = None
+    try:
+        bound = _data_guard().transcript_data_session(transcript, root=project)
+        if bound is None or bound[0] != session: raise ValueError('transcript session binding changed')
+        result = data_snapshot.verify_session(project, session, bound[1])
+        changed, intact, error = list(result['changed']), bool(result['identity_intact']), None
+        if stored is not None and changed and set(changed) <= RECORDER_FILES and _index_registers(project, relative):
+            changed = []  # only the first recording's own index registration
+        passed = intact and not changed
+    except Exception as exc:  # fail closed on any malformed state
+        passed, changed, intact, error = False, [], False, str(exc) or type(exc).__name__
+    verdict = {'passed': bool(passed), 'changed': changed, 'identity_intact': intact, 'error': error}
+    if stored is not None:
+        if not isinstance(stored, dict) or verdict != {
+                'passed': stored.get('passed'), 'changed': stored.get('changed'),
+                'identity_intact': stored.get('identity_intact'), 'error': stored.get('error')}:
+            _write_integrity(path, {'schema_version': 1, 'session_id': session, 'invocation_id': invocation,
+                                    'checked_at': utc_now(), 'passed': False, 'changed': changed,
+                                    'identity_intact': False, 'error': 'verdict changed on retry'})
+            raise ValueError('verdict changed on retry; refusing to alter recorded integrity')
+        _write_integrity(path, stored)
+        return stored
+    integrity = {'schema_version': 1, 'session_id': session, 'invocation_id': invocation,
+                 'checked_at': utc_now(), 'passed': verdict['passed'], 'changed': changed,
+                 'identity_intact': intact}
+    if error is not None: integrity['error'] = error
+    _write_integrity(path, integrity)
+    return integrity
+
+def _report_state(project, specialist, session, final_report):
+    """Read-only: classify the session report.md against final_report; refuse symlinks."""
+    base = project / 'runs' / specialist / session
+    reject_symlinks(base)
+    path = base / 'report.md'
+    if os.path.lexists(path):
+        if path.is_symlink() or not path.is_file(): raise ValueError('report.md is a symlink or not a regular file; refusing')
+        return base, path, ('identical' if path.read_bytes() == final_report else 'kept-first')
+    return base, path, 'written'
+
+def materialize_report(project, specialist, session, final_report):
+    """Write runs/<specialist>/<session>/report.md once, atomically; never overwrite."""
+    base, path, state = _report_state(project, specialist, session, final_report)
+    if state != 'written': return state
+    base.mkdir(parents=True, exist_ok=True)
+    reject_symlinks(base)
+    fd, temp = tempfile.mkstemp(prefix='.report.md.', dir=base)
+    try:
+        with os.fdopen(fd, 'wb') as handle: handle.write(final_report)
+        if os.path.lexists(path): raise ValueError('report.md appeared concurrently; refusing overwrite')
+        os.replace(temp, path)
+    except BaseException:
+        if os.path.lexists(temp): os.unlink(temp)
+        raise
+    return 'written'
+
 def record(project, payload):
     if not isinstance(payload, dict): raise ValueError('hook payload must be an object')
     project = project.resolve(strict=True)
@@ -55,7 +151,7 @@ def record(project, payload):
     reject_symlinks(transcript)
     raw = transcript.read_bytes()
     events = [sanitize_json_value(json.loads(line)) for line in raw.splitlines() if line.strip()]
-    sessions = session_ids(transcript, specialist)
+    sessions = session_ids(transcript, specialist, project)
     if transcript.read_bytes() != raw:
         raise ValueError('transcript changed while recording; preserve source and retry explicitly')
     if len(sessions) > 1:
@@ -65,7 +161,11 @@ def record(project, payload):
         target = project / 'runs/orchestrator/unbound-invocations' / specialist / invocation
     else:
         target = project / 'runs' / specialist / session / 'invocation' / invocation
+    integrity = None
+    if specialist == 'data-analyst' and session is not None:
+        integrity = data_integrity(project, transcript, session, invocation)
     calls, prompts, final, usage_rows, timestamps = [], [], [], {}, []
+    handback = None  # Claude Code SubagentHandback tool_use carries the final report
     for event in events:
         if not isinstance(event, dict): raise ValueError('transcript events must be objects')
         if event.get('timestamp'):
@@ -83,9 +183,15 @@ def record(project, payload):
             for block in content:
                 if not isinstance(block, dict): raise ValueError('transcript blocks must be objects')
                 if block.get('type') in {'tool_use', 'tool_result'}: calls.append(block)
+                if (event.get('type') == 'assistant' and block.get('type') == 'tool_use'
+                        and block.get('name') == 'SubagentHandback'
+                        and isinstance(block.get('input'), dict)
+                        and isinstance(block['input'].get('message'), str)):
+                    handback = block['input']['message']
                 elif block.get('type') == 'text': text.append(block.get('text', ''))
             if event.get('type') == 'assistant' and text: final = text
             if event.get('type') == 'user' and text: prompts.extend(text)
+    if handback is not None: final = [handback]
     def total(key):
         values = [row.get(key) for row in usage_rows.values()]
         return sum(values) if values and all(type(v) is int and v >= 0 for v in values) else None
@@ -98,6 +204,16 @@ def record(project, payload):
     metadata = {'specialist': specialist, 'session_id': session,
         'invocation_id': invocation, 'source_transcript_sha256': hashlib.sha256(raw).hexdigest(),
         'credentials_redacted': True, 'usage': usage}
+    if integrity is not None: metadata['integrity'] = integrity
+    final_bytes = ('\n\n'.join(final) + '\n').encode('utf-8')
+    if session is not None:
+        stored_meta = target / 'invocation.json'
+        stored_report = None
+        if stored_meta.is_file() and not stored_meta.is_symlink():
+            try: stored_report = json.loads(stored_meta.read_text(encoding='utf-8')).get('report_md')
+            except (OSError, ValueError, AttributeError): stored_report = None
+        # Retries must reproduce the stored invocation.json byte for byte.
+        metadata['report_md'] = stored_report or _report_state(project, specialist, session, final_bytes)[2]
     if session is None:
         metadata.update(record_type='unbound-invocation', scientific_status='unresolved')
     files = {
@@ -113,7 +229,9 @@ def record(project, payload):
                 'invocation_path': target.relative_to(project).as_posix(),
                 'systemMessage': 'Specialist attempt preserved without a scientific session. '
                                  'This technical record cannot authorize stage advancement.'}
-    return register_capture(project, target, usage=usage)
+    materialize_report(project, specialist, session, final_bytes)
+    # Report the recorded status so identical hook retries return identical results.
+    return {**register_capture(project, target, usage=usage), 'report_md': metadata['report_md']}
 
 def main():
     payload = None

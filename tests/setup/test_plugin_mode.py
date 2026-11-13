@@ -25,6 +25,7 @@ class PluginModeTests(unittest.TestCase):
         self.root.mkdir()
         for name in ("setup", ".codex", ".codex-plugin", ".claude/agents", ".claude/skills"):
             shutil.copytree(ROOT / name, self.root / name)
+        shutil.copy(ROOT / ".claude/settings.json", self.root / ".claude/settings.json")
         self.home = Path(temporary.name) / "codex home"
         self.manifest = tomllib.loads((self.root / "setup/dependencies.toml").read_text())
         self.requirement = f'{self.manifest["package"]}=={self.manifest["version"]}'

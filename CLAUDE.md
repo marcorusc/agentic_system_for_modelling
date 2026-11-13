@@ -13,7 +13,7 @@ Durable files, never chat or memory, define scientific state:
 - VALIDATION_CRITERIA.yaml: explicit executable criteria; initialize from its empty
   template only when starting a model.
 - runs/<specialist>/<full-session-id>/: immutable artifacts, specialist report,
-  capture/invocation records. Each MCP issues its own ID; no pipeline-wide run ID.
+  capture/invocation records. Each MCP issues its own ID; data-analyst IDs are issued by scripts/data/session.py; no pipeline-wide run ID.
 - runs/orchestrator/<purpose>/: orchestrator-authored summaries, analyses and inputs.
   Manual inputs require CHANGES.md: base path+SHA256, ordered exact edits,
   evidence+supporting PMIDs, authorization, output path+SHA256, reproduction command
@@ -28,8 +28,31 @@ Durable files, never chat or memory, define scientific state:
 The main Claude session is the sole scientific orchestrator and shared-state writer:
 clarify objectives, delegate bounded tasks, validate returned handoffs, reconcile
 conflicts, obtain researcher decisions and control every stage transition. Specialists
-cannot delegate, alter shared state or advance stages. Guarded report Write is their
-only local authoring exception; model files are written by permitted MCP tools.
+cannot delegate, alter shared state or advance stages. Specialists return their report as their final message (the SubagentStop recorder writes the immutable report.md); data-analyst may also author scripts, outputs and proposals inside its own guarded session directory; model files are written by permitted MCP tools.
+
+Claude Code's SubagentStop hook is unreliable for background subagents. After every
+modelling-specialist completion notification (network-curator, boolean-dynamics-modeler,
+multicellular-configurator, ode-modeler), before any registry or state write, run
+`python3 scripts/capture/recover.py --specialist <name> --agent-id <agentId> [--session <id>]`
+and proceed only once it prints `RECOVERED ...`; on `RECOVER FAILED` relay the reason
+verbatim and never repair files. It also saves the run's server exports under
+`runs/<specialist>/<session>/exports/<agentId>/` (MCP sessions end with the run). data-analyst uses `receive.py` below, which includes recovery.
+
+Data retrieval and analysis are delegated to `data-analyst`. The orchestrator never
+runs `vendor/scientific-agent-skills` scripts or `.venv-data`. data-analyst invocations
+never run concurrently with other specialists or state writes.
+Immediately after each data-analyst completion notification, before any state write, run
+`python3 scripts/data/receive.py --session <id> --agent-id <agentId>`; it recovers a
+missing SubagentStop capture and validates the handoff and the final report's `Handoff:`
+line. Never present or act on proposals before it prints `RECEIVED <session> OK`. On
+`RECEIVE FAILED` relay the reason verbatim, never repair files, and ask the researcher.
+A run with no session (final message `blocked` without a `Handoff:` line, e.g.
+`.venv-data` missing) has nothing to receive: skip receive.py and relay the reason.
+After researcher approval, record it with `state.py record` (`stage_approval`, stage
+`data`, the handoff.json as `artifact`), then register each approved product in
+`DATA_DICTIONARY.md` with `state.py data-product` (its `decision_id` is that record's
+`id`); see docs/data-workflow.md. Data briefs list every upstream artifact the analyst
+may read, with its path and sha256.
 
 The orchestrator must have no modelling MCP tools; stop if any are visible. Run the
 setup isolation guard. Four specialist-inline *-agent transports expose only NeKo to
@@ -88,6 +111,8 @@ result. Every final rule and every manual edge needs a provenance tag in DECISIO
 - `manual-literature`: explicitly authorized manual edge with its own candidate
   report, supporting PMIDs, sign/direction assessment and approval. Apply it with
   NeKo `edit_interactions` between existing nodes, never by hand-editing SIF.
+- `data-derived`: an approved data-analyst proposal, citing data session ID, proposal id
+  and SHA256; an association, never a mechanism claim.
 - `fitted-for-dynamics`: chosen against a named validation target; no independent
   literature claim for the fitted Boolean function.
 - `readout`: researcher-named summary node added via MaBoSS `edit_maboss_readouts`
@@ -101,6 +126,13 @@ result. Every final rule and every manual edge needs a provenance tag in DECISIO
 CURRENT_STATE contains the append-only lineage table: Specialist, full Session ID,
 Stage, Status, Derived from, Handoff, Artifacts. Mark superseded rows and append new
 sessions; never replace history. Resolve active IDs from this table before dispatch.
+NeKo briefs say "no BNET/handoff export", never a bare "no export": network-curator
+always ends with SIF+history exports. A NeKo session unknown to the server is
+restored only on explicit authorization, from its captured SIF, as a new session
+registered with `Derived from` = the old session (the restore run never passes the
+old ID to a NeKo tool: two bound sessions block recording); it needs fresh stage approvals
+(approvals bind to session/state). The old session's literature reports remain
+evidence for identical edges, cited from `evidence/reports/<old session>/`, never copied.
 Handoff is pending during review, approved only after researcher sign-off, exported
 only after a verified conclusive artifact exists. Downstream sessions require the
 exact upstream exported session: NeKo -> MaBoSS -> PhysiCell. These approvals do not
@@ -124,7 +156,7 @@ After authorized operations, use scripts/capture commands to validate, relocate,
 and index exports (docs/agentic-operations.md). Curation-bearing handoffs (NeKo 2.1,
 NeKo-to-BioMASS 2.0, and MaBoSS 2.1 with such a parent) are imported from the
 recorder's `backend_import_manifest`, after `scripts/capture/verify_import_manifest.py`
-passes; the capture stays the gate/approval record. Specialists write guarded immutable
+passes; the capture stays the gate/approval record. Specialists return the report as their final message and the SubagentStop recorder writes the immutable
 report.md; invocation records persist task, tool calls/results, final output and usage.
 Orchestrator summaries belong under runs/orchestrator. Update state using state.py,
 validate and checkpoint; every stage, including multicellular, needs independent

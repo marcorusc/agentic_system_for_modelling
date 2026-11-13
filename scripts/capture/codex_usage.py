@@ -10,7 +10,8 @@ def usage_summary(directory: Path, provenance: dict):
     turns, tool_ids = [], set()
     has_stream = events_path.is_file()
     if has_stream:
-        for line in events_path.read_text().splitlines():
+        # JSONL records end at '\n'; str.splitlines() would also split on U+0085/U+2028.
+        for line in events_path.read_text(encoding='utf-8').split('\n'):
             if not line.strip(): continue
             event = json.loads(line)
             if event.get('type') == 'turn.completed' and isinstance(event.get('usage'), dict):
