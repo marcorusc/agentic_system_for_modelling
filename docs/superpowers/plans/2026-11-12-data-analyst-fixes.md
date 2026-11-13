@@ -40,7 +40,7 @@
 - New vendored skills: `scientific-visualization`, `seaborn` from upstream commit `2d2065fb4520fa3f3f2bcf61cff26ec8b7eba4b5`; `VENDORED_SKILLS` grows to 12.
 - Data env additions: `seaborn==0.13.2`; matplotlib pinned to `3.11.2` if it resolves, else the resolved version, recorded in the lock header comment.
 - Figures: `outputs/figures/*.png` (300 dpi) plus `.svg`; index `units: "none"`; caption in `description`.
-- Test-copy patches to port: `/home/marcorusc/tests/claude_test/skill-tests/issue1-guard-binding.patch` and `/home/marcorusc/tests/claude_test/skill-tests/issue2-recorder-handback.patch`.
+- Test-copy patches to port: the two patches exported from the live-test worktree (guard binding via `agent_id`; recorder `SubagentHandback` report), kept outside the repository.
 
 ## Review Focus
 
@@ -212,7 +212,7 @@
 ### Task 7: Plotting skills, environment and workflow documentation
 
 **Files:**
-- Create: `vendor/scientific-agent-skills/{scientific-visualization,seaborn}/` (verbatim from the pinned commit; the clean checkout is at `/home/marcorusc/tests/claude_test/downloads/scientific-agent-skills`)
+- Create: `vendor/scientific-agent-skills/{scientific-visualization,seaborn}/` (verbatim from the pinned commit; from a clean local checkout of the upstream repository at that commit)
 - Modify: `scripts/data/vendor_lock.py` (`VENDORED_SKILLS` += the 2 names), `vendor/scientific-agent-skills/{VENDOR.lock.json,VENDOR.md}`, `THIRD_PARTY_NOTICES.md` (both skills; BSD-3 text for seaborn), `setup/data-requirements.txt` and `.lock`, `scripts/data/environment.py` (`IMPORT_PROBE` adds `seaborn, matplotlib`), `.claude/skills/data-workflow/SKILL.md`, `.claude/agents/data-analyst.md`, `docs/data-workflow.md`, `README.md` (citation section lists 12 skills)
 - Test: `tests/data/test_vendor.py` (counts and notices), `tests/setup/test_data_setup.py` (probe string)
 
