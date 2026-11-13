@@ -2,7 +2,7 @@
 
 Status: draft for researcher review · Date: 2026-11-13 · Branch: `feature/data-to-model-handoffs`
 (stacked on `feature/data-analyst-agent` / PR #13; rebase onto `main` after #13 merges)
-Builds on: `2026-11-12-data-analyst-agent-design.md` and `2026-11-12-data-analyst-fixes-design.md`.
+Builds on: [`docs/data-analyst-architecture.md`](../../data-analyst-architecture.md) (sub-project 1).
 
 ## 1. Purpose
 
