@@ -29,7 +29,8 @@ from scripts.codex.validate_handoff import HandoffValidationError, validate_hand
 from scripts.data import manifest
 from scripts.data.common import RUNS_ROOT, project_root, session_dir, sha256_file
 
-HEADING_RE = re.compile(r"\A\s{0,3}#{1,6}\s+(.*?)\s*#*\s*\Z")
+HEADING_RE = re.compile(r"\A\s{0,3}(#{1,6})\s+(.*?)\s*#*\s*\Z")
+TITLE_RE = re.compile(r"\A(?:\d+[.)]?\s*)?[`*_]*(.*?)[`*_]*:?\Z")
 HANDOFF_LINE_RE = re.compile(r"Handoff: (\S+) sha256=([0-9a-f]{64})")
 
 
@@ -91,11 +92,32 @@ def _check_handoff_line(session: Path, session_id: str, agent_id: str, handoff_p
     return "\n".join(lines)
 
 
+def _heading_title(text: str) -> str:
+    """Heading text without an optional section number, backticks/emphasis and trailing colon."""
+    return TITLE_RE.match(text.strip()).group(1).strip().lower()
+
+
+def _figures_section(report: str) -> str | None:
+    """Text from the Figures heading to the next heading of the same or higher level, else None."""
+    lines = report.splitlines()
+    for i, line in enumerate(lines):
+        m = HEADING_RE.match(line)
+        if m and _heading_title(m.group(2)) == "figures":
+            level, body = len(m.group(1)), []
+            for later in lines[i + 1:]:
+                n = HEADING_RE.match(later)
+                if n and len(n.group(1)) <= level:
+                    break
+                body.append(later)
+            return "\n".join(body)
+    return None
+
+
 def _check_report_sections(session: Path, report: str) -> None:
-    """The report needs Figures and Abbreviations headings and must name every indexed figure."""
-    headings = {m.group(1).strip().strip("*_ ").lower()
-                for m in (HEADING_RE.match(line) for line in report.splitlines()) if m}
-    missing = [f"a `{name}` heading" for name in ("Figures", "Abbreviations") if name.lower() not in headings]
+    """The report needs Figures and Abbreviations headings and the Figures section must name every figure."""
+    titles = {_heading_title(m.group(2)) for m in map(HEADING_RE.match, report.splitlines()) if m}
+    missing = [f"{'an' if name[0] in 'AEIOU' else 'a'} `{name}` heading"
+               for name in ("Figures", "Abbreviations") if name.lower() not in titles]
     try:
         index = json.loads((session / "outputs" / "index.json").read_text(encoding="utf-8"))
     except (OSError, ValueError):
@@ -105,14 +127,16 @@ def _check_report_sections(session: Path, report: str) -> None:
         rel = entry.get("path") if isinstance(entry, dict) else None
         if manifest.is_figure(rel):
             names.setdefault(Path(rel).stem, []).append(Path(rel).name)
-    unnamed = sorted(stem for stem in names
-                     if not re.search(rf"(?<![\w.-]){re.escape(stem)}(?![\w-])", report, re.IGNORECASE))
+    section = _figures_section(report) or ""
+    unnamed = sorted(stem for stem in names if not re.search(
+        rf"(?<![\w.-]){re.escape(stem)}(?![\w-])(?!\.(?!(?:png|svg|pdf)\b))", section, re.IGNORECASE))
     if unnamed:
-        missing.append("figure(s) " + ", ".join(f"{'/'.join(sorted(names[s]))}" for s in unnamed))
+        missing.append("figure(s) " + ", ".join("/".join(sorted(names[s])) for s in unnamed)
+                       + " in the Figures section")
     if missing:
         raise ValueError("report is missing " + "; ".join(missing)
-                         + " (the final report needs `## Figures` and `## Abbreviations` headings "
-                         "and must name every figure file)")
+                         + " (write `## Figures` and `## Abbreviations` headings, and name every figure "
+                         "file inside the Figures section)")
 
 
 def main(argv: list[str] | None = None) -> int:

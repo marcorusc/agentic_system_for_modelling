@@ -208,7 +208,7 @@ def _nonempty(value) -> bool:
     return isinstance(value, str) and bool(value.strip())
 
 
-def _check_figure(session: Path, entry: dict, uris: set[str], errors: list[str]) -> None:
+def _check_figure(session: Path, entry: dict, uris: set[str] | None, errors: list[str]) -> None:
     rel = entry["path"]
     if not _nonempty(entry.get("title")):
         errors.append(f"figure {rel}: title must be a non-empty string")
@@ -226,7 +226,7 @@ def _check_figure(session: Path, entry: dict, uris: set[str], errors: list[str])
         errors.append(f"figure {rel}: sources must be a non-empty list of sources.jsonl uri values")
     else:
         for uri in sources:
-            if not isinstance(uri, str) or uri not in uris:
+            if uris is not None and (not isinstance(uri, str) or uri not in uris):
                 errors.append(f"figure {rel}: sources entry {uri!r} is not a uri in sources.jsonl")
     script = entry.get("script")
     parts = Path(script).parts if isinstance(script, str) else ()
@@ -302,7 +302,7 @@ def verify(root: Path, session_id: str) -> list[str]:
         try:
             uris = {e.get("uri") for e in _read_ledger(session) if isinstance(e, dict)}
         except (OSError, ValueError):
-            uris = set()
+            uris = None  # the unreadable ledger is reported once, with its cause, above
         for entry in data["outputs"]:
             if isinstance(entry, dict):
                 if is_figure(entry.get("path")):

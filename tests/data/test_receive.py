@@ -187,7 +187,7 @@ class ReceiveTests(unittest.TestCase):
         self.hook_record()
         return receive.receive(self.root, self.sid, AID, self.troot)
 
-    FULL = ("# Report\n\n## Figures\n\n- `volcano.png`: volcano\n- gsea.svg: dot plot\n\n"
+    FULL = ("# Report\n\n## Figures\n\n- `volcano.png`: first plot\n- gsea.svg: second plot\n\n"
             "## Abbreviations\n\nFDR: false discovery rate\n")
 
     def test_report_with_figures_and_abbreviations_received(self):
@@ -211,6 +211,42 @@ class ReceiveTests(unittest.TestCase):
     def test_report_figure_stem_mention_counts_for_pair(self):
         body = self.FULL.replace("gsea.svg", "`gsea.png`")
         self.assertEqual(self.receive_with_report(body)["status"], "needs_approval")
+
+    def test_heading_variants_accepted(self):
+        for figs, abbr in (("## 5. Figures", "## 6. Abbreviations"), ("## `Figures`", "## Abbreviations:"),
+                           ("### 5) Figures", "# Abbreviations")):
+            with self.subTest(figs=figs):
+                body = self.FULL.replace("## Figures", figs).replace("## Abbreviations", abbr)
+                self.assertEqual(self.receive_with_report(body)["status"], "needs_approval")
+                self.setUp()
+
+    def test_heading_variants_rejected(self):
+        for old, new, name in (("## Abbreviations", "## Abbreviations used", "Abbreviations"),
+                               ("## Figures", "## Figures (all in outputs)", "Figures"),
+                               ("## Figures", "## The Figures", "Figures")):
+            with self.subTest(new=new):
+                with self.assertRaisesRegex(ValueError, f"report is missing .*{name}"):
+                    self.receive_with_report(self.FULL.replace(old, new))
+                self.setUp()
+
+    def test_figure_named_outside_figures_section_fails(self):
+        body = ("# Report\n\n## Methods\n\nSee `volcano.png` and `gsea.png`.\n\n## Figures\n\nnone\n\n"
+                "## Abbreviations\n\nnone\n")
+        with self.assertRaisesRegex(ValueError, "report is missing .*volcano"):
+            self.receive_with_report(body)
+
+    def test_figure_subsection_stays_in_figures_section(self):
+        body = ("# Report\n\n## Figures\n\n### Fig 1\n\n[v](outputs/figures/volcano.svg)\n\n"
+                "| gsea | `gsea.png` |\n\n## Abbreviations\n\nnone\n")
+        self.assertEqual(self.receive_with_report(body)["status"], "needs_approval")
+
+    def test_loose_figure_mentions_rejected(self):
+        for loose in ("outputs/de/volcano.csv", "volcano_luad.png"):
+            with self.subTest(loose=loose):
+                body = self.FULL.replace("`volcano.png`", loose)
+                with self.assertRaisesRegex(ValueError, "report is missing .*volcano"):
+                    self.receive_with_report(body)
+                self.setUp()
 
     def test_report_without_figures_still_needs_abbreviations(self):
         self.place_transcript("uuid-1", body="# Report\n\n## Figures\n\nnone\n")

@@ -140,6 +140,16 @@ class ManifestTests(unittest.TestCase):
         self.add_figure(abbreviations={})
         self.assertEqual(self.figure_errors(), [])
 
+    def test_unreadable_ledger_reported_once(self):
+        self.add_figure()
+        self.add_figure(path="outputs/figures/b.png")
+        (self.dir / "outputs/figures/b.png").write_bytes(b"png")
+        self.build()
+        (self.dir / "sources.jsonl").write_text("{not json\n", encoding="utf-8")
+        errs = self.errors()
+        self.assertEqual(len([e for e in errs if "sources.jsonl" in e and "cannot read" in e]), 1, errs)
+        self.assertFalse(any("is not a uri" in e for e in errs), errs)
+
     def test_figure_empty_sources_rejected(self):
         self.add_figure(sources=[])
         self.assertTrue(any("sources" in e for e in self.figure_errors()))

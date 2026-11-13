@@ -96,7 +96,8 @@ line. The orchestrator then skips `receive.py` and relays the reason.
 
 Your final message is the human-readable report, with these headings in order: Question
 and scope; Sources; Methods; Results; Figures; Abbreviations; Limitations; Proposals and
-decisions (templates in `data-workflow` section 7). Sources describe every data source (name,
+decisions (templates in `data-workflow` section 7). Write the headings exactly `## Figures` and
+`## Abbreviations` (a leading section number like `## 5. Figures` is fine; no extra words after the title). Sources describe every data source (name,
 endpoint/URL, release, retrieval date, terms, derived outputs and figures). Figures has one
 entry per figure (path, title, full description, key observation, source). Abbreviations
 defines every abbreviation used in figures and text. Methods and Results cite figures inline

@@ -164,7 +164,7 @@ invent licence terms; use `"unverified"` when you did not read them.
 ## 5. Figures
 
 - **Location and format:** figures go in `outputs/figures/`, as PNG (300 dpi) plus SVG. Each file is listed in `outputs/index.json` with `units: "none"` and an `identifiers` value, plus the figure metadata below. `manifest.py verify` rejects a figure (an indexed `.png`/`.svg`/`.pdf` under `outputs/figures/`) that lacks it, and `receive.py` rejects a report that does not name every figure.
-- **Figure metadata (required):** `title` (non-empty); `caption` (at least 80 characters: axes, colours and markers, n per group, test, thresholds, how to read it; never a one-liner); `abbreviations` (object abbreviation -> expansion, `{}` only if the figure uses none); `sources` (non-empty list; each item equals the `uri` of a `sources.jsonl` entry); `script` (session-relative path of the existing file under `scripts/` that made it). Keep `description` (set it to the title). A PNG/SVG pair may share identical metadata.
+- **Figure metadata (required):** `title` (non-empty); `caption` (at least 80 characters: axes, colours and markers, n per group, test, thresholds, how to read it; never a one-liner); `abbreviations` (object abbreviation -> expansion, `{}` only if the figure uses none); `sources` (non-empty list of `uri` values copied verbatim from `sources.jsonl`; a figure may list several); `script` (session-relative path of the existing file under `scripts/` that made it). Keep `description` (set it to the title). A PNG/SVG pair may share identical metadata.
 - **Readable figures:** axis labels spell out the quantity and unit; every abbreviation shown in a figure is defined in its `abbreviations` or avoided (for example write "log2 fold change", not "LFC", unless defined).
 - **In the report:** Figures section (one entry per figure: path, title, full description, key observation, data source), an Abbreviations glossary, and inline citations in Methods and Results such as "differential expression (Fig. 4, `fig04_volcano_luad.png`)". See section 7.
 - **Style:** use `vendor/scientific-agent-skills/scientific-visualization/assets/publication.mplstyle` and its colour-blind-safe palettes. Run `palette_audit.py` on custom palettes.
@@ -277,9 +277,10 @@ of `seed_genes`, `initial_states`, `mutations`, `validation_targets`, `parameter
 `time_course`. Use exactly one value each. Proposal ids are `P1`, `P2`, ... (`^P\d+$`;
 `P2b` is rejected), and each proposal file is named after its id (`P3_<what>.csv`).
 
-Report headings (final message, saved by the recorder as `report.md`). `receive.py` requires
-`Figures` and `Abbreviations` headings (any level, exact text) and every indexed figure's file name
-(a PNG/SVG pair counts once if the stem appears); with no figures, Figures says "none" but
+Report headings (final message, saved by the recorder as `report.md`). Write the headings
+exactly `## Figures` and `## Abbreviations` (a leading section number such as `## 5. Figures`
+is fine; no extra words after the title). `receive.py` requires both headings and every indexed
+figure's file name inside the Figures section (a PNG/SVG pair counts once if the stem appears); with no figures, Figures says "none" but
 Abbreviations is still required. The `Handoff:` line is last.
 
 ```markdown
