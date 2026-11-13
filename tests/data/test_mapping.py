@@ -32,6 +32,10 @@ TARGETS = ("target_id,statement,test_context,reference_context,perturbation,phen
            "V1,EGFR-mutant drop larger,LUAD_EGFR,LUAD_wt,S1,viability,greater_drop,moderate,GDSC\n"
            "V2,MEK drop,LUAD_EGFR,LUAD_wt,S2,viability,greater_drop,weak,GDSC\n")
 SEEDS = "hgnc_symbol,tier,evidence\nEGFR,core,lit\n"
+SOURCE = "inputs/papers/smith2024.pdf"
+SOURCE_BYTES = b"%PDF-1.4 synthetic figure source\n"
+STANDALONE_BNET = "inputs/models/user.bnet"
+STANDALONE_OUTPUTS = ["Proliferation", "Survival"]
 
 
 def sha(path):
@@ -119,6 +123,49 @@ class MappingFixture(unittest.TestCase):
                                          "statistic": "tail_mean", "tail_points": 2}}]
         data["unmapped"] = [{"from": {"proposal": "P1", "row": "S2"}, "reason": "MEK is not a model node"},
                             {"from": {"proposal": "P2", "row": "V2"}, "reason": "depends on unmapped S2"}]
+        self.save(rel, data)
+        return rel, data
+
+    def add_source(self, rel=SOURCE, content=SOURCE_BYTES):
+        path = self.root / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(content)
+        return rel
+
+    def add_standalone(self, record_id="sa-1", rel=STANDALONE_BNET, text=BNET_TEXT, kind="standalone_approval",
+                       stage="boolean-dynamics"):
+        """A researcher-provided BNET with an explicit standalone authorization record."""
+        path = self.root / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        if not path.exists():
+            path.write_text(text, encoding="utf-8")
+        item = {"id": record_id, "kind": kind, "stage": stage, "outputs": STANDALONE_OUTPUTS,
+                "artifact": {"path": rel, "sha256": sha(path)}, "approved_by": "researcher",
+                "authorization": "researcher: use my model"}
+        if kind == "stage_approval":
+            item["session_id"] = NEKO
+        state.update(self.root, "record", item)
+        return rel
+
+    def complete_sources(self, purpose="papers", network=None, sources=(("smith2024", SOURCE),)):
+        """A mapping whose only inputs are researcher-provided sources."""
+        for _, rel in sources:
+            if not (self.root / rel).exists():
+                self.add_source(rel)
+        path = mapping.draft(self.root, purpose, [], network or (NEKO, BNET), sources=list(sources))
+        rel = path.relative_to(self.root).as_posix()
+        data = self.load(rel)
+        data["contexts"] = {"LUAD_EGFR": [{"node": "EGFR", "state": 1}], "LUAD_wt": []}
+        data["perturbations"] = [{"id": "S1", "from": {"source": "smith2024", "locator": "Fig. 3B"},
+                                  "model": [{"node": "EGFR", "state": 0}]}]
+        data["readouts"] = [{"phenotype": "viability", "nodes": ["Proliferation", "Survival"]}]
+        data["criteria"] = [{"criterion_id": "V1", "from": [{"source": "smith2024", "locator": "Fig. 3C"},
+                                                            {"source": "smith2024", "locator": "Table S2, EGFR row"}],
+                             "method": "scenario_contrast",
+                             "test": {"context": "LUAD_EGFR", "perturbation": "S1"},
+                             "reference": {"context": "LUAD_wt", "perturbation": "S1"},
+                             "options": {"readouts": ["Proliferation"], "margin": 0.05, "combine": "all",
+                                         "statistic": "tail_mean", "tail_points": 2}}]
         self.save(rel, data)
         return rel, data
 
@@ -497,6 +544,260 @@ class CriteriaTests(MappingFixture):
         self.assertEqual(code, 1)
         code, out, err = run("draft", "--purpose", "x2", "--data", f"{self.sid}:P1", "--network", f"{NEKO}:{BNET}")
         self.assertEqual(code, 1)
+
+
+def run_cli(*argv):
+    out, err = io.StringIO(), io.StringIO()
+    with redirect_stdout(out), redirect_stderr(err):
+        code = mapping.main(list(argv))
+    return code, out.getvalue(), err.getvalue()
+
+
+class SourceTests(MappingFixture):
+    """A. Researcher-provided sources (any format, under inputs/) cited with a locator."""
+
+    def test_sources_only_mapping_passes(self):
+        rel, data = self.complete_sources()
+        self.assertEqual(data["inputs"]["data"], [])
+        self.assertEqual(data["inputs"]["sources"], [{"id": "smith2024", "path": SOURCE,
+                                                       "sha256": sha(self.root / SOURCE)}])
+        self.assertEqual(data["unmapped"], [])
+        self.assertEqual(mapping.check(self.root, rel), [])
+
+    def test_draft_needs_data_or_source_and_existing_sources(self):
+        with self.assertRaisesRegex(ValueError, "at least one"):
+            mapping.draft(self.root, "none", [], (NEKO, BNET), sources=[])
+        with self.assertRaisesRegex(ValueError, "missing"):
+            mapping.draft(self.root, "gone", [], (NEKO, BNET), sources=[("x", "inputs/absent.pdf")])
+        self.add_source()
+        with self.assertRaisesRegex(ValueError, "twice"):
+            mapping.draft(self.root, "dup", [], (NEKO, BNET), sources=[("a", SOURCE), ("a", SOURCE)])
+        self.assertFalse((self.root / "runs/orchestrator/dup").exists())
+
+    def test_uncited_source_refused(self):
+        rel, data = self.complete_sources()
+        other = self.add_source("inputs/tables/viability.xlsx", b"PK\x03\x04 fake workbook")
+        extra = {"id": "viability", "path": other, "sha256": sha(self.root / other)}
+        errors = self.errors_after(rel, data, lambda d: d["inputs"]["sources"].append(extra))
+        self.assertEqual(errors, ["source viability is never cited"])
+
+    def test_unknown_source_id_refused(self):
+        rel, data = self.complete_sources()
+        errors = self.errors_after(rel, data, lambda d: d["perturbations"][0]["from"].update(source="nope"))
+        self.assertError(errors, "source nope is not declared")
+
+    def test_empty_locator_refused(self):
+        rel, data = self.complete_sources()
+        for locator in ("", "   ", None, 3, "Fig. 1 | row 2", "Fig. 1\nrow 2"):
+            errors = self.errors_after(rel, data, lambda d: d["perturbations"][0]["from"].update(locator=locator))
+            self.assertError(errors, "locator")
+
+    def test_source_outside_inputs_refused(self):
+        rel, data = self.complete_sources()
+        outside = "runs/orchestrator/notes.txt"
+        (self.root / outside).write_text("x", encoding="utf-8")
+        (self.root / "inputs" / "folder").mkdir()
+        for path in (outside, "inputs", "inputs/folder", "./" + SOURCE, "inputs//papers/smith2024.pdf",
+                     "inputs/../" + outside, str(self.root / SOURCE), "inputs\\papers\\smith2024.pdf"):
+            errors = self.errors_after(rel, data, lambda d: d["inputs"]["sources"][0].update(path=path))
+            self.assertError(errors, "inputs.sources[0]")
+        errors = self.errors_after(rel, data, lambda d: d["inputs"]["sources"][0].update(path="inputs/folder"))
+        self.assertError(errors, "folder")
+
+    def test_symlinked_source_refused(self):
+        rel, data = self.complete_sources()
+        (self.root / "inputs" / "link.pdf").symlink_to(self.root / SOURCE)
+        (self.root / "inputs" / "linkdir").symlink_to(self.root / "inputs" / "papers")
+        for path in ("inputs/link.pdf", "inputs/linkdir/smith2024.pdf"):
+            errors = self.errors_after(rel, data, lambda d: d["inputs"]["sources"][0].update(path=path))
+            self.assertError(errors, "symlink")
+
+    def test_source_hash_mismatch_refused(self):
+        rel, data = self.complete_sources()
+        (self.root / SOURCE).write_bytes(SOURCE_BYTES + b"edited")
+        self.assertError(mapping.check(self.root, rel), "inputs.sources[0]", "sha256")
+        self.add_source()
+        errors = self.errors_after(rel, data, lambda d: d["inputs"]["sources"][0].update(sha256="A" * 64))
+        self.assertError(errors, "sha256")
+
+    def test_source_declaration_shape(self):
+        rel, data = self.complete_sources()
+        errors = self.errors_after(rel, data, lambda d: d["inputs"]["sources"][0].update(id="bad id"))
+        self.assertError(errors, "safe identifier")
+        twice = dict(data["inputs"]["sources"][0])
+        errors = self.errors_after(rel, data, lambda d: d["inputs"]["sources"].append(twice))
+        self.assertError(errors, "duplicate source id smith2024")
+        errors = self.errors_after(rel, data, lambda d: d["inputs"]["sources"][0].update(extra=1))
+        self.assertError(errors, "id, path, sha256")
+        errors = self.errors_after(rel, data, lambda d: d["inputs"].pop("sources"))
+        self.assertError(errors, "inputs must have exactly the keys data, sources and network")
+        errors = self.errors_after(rel, data, lambda d: d["inputs"].update(sources=[]))
+        self.assertError(errors, "cannot both be empty")
+
+    def test_mixed_proposal_and_source_refs(self):
+        rel, data = self.complete()
+        self.add_source()
+        source = {"id": "smith2024", "path": SOURCE, "sha256": sha(self.root / SOURCE)}
+
+        def change(d):
+            d["inputs"]["sources"].append(source)
+            d["perturbations"][0]["from"] = [{"proposal": "P1", "row": "S1"},
+                                             {"source": "smith2024", "locator": "Fig. 2A"}]
+        self.assertEqual(self.errors_after(rel, data, change), [])
+
+        def twice(d):
+            change(d)
+            d["criteria"][0]["from"] = [{"proposal": "P2", "row": "V1"}, {"proposal": "P1", "row": "S1"}]
+        self.assertError(self.errors_after(rel, data, twice), "P1 row S1 is referenced 2 times", "validation_targets")
+
+    def test_from_as_list(self):
+        rel, data = self.complete()
+
+        def both_rows(d):
+            d["perturbations"][0]["from"] = [{"proposal": "P1", "row": "S1"}, {"proposal": "P1", "row": "S2"}]
+            d["unmapped"] = [u for u in d["unmapped"] if u["from"] != {"proposal": "P1", "row": "S2"}]
+        self.assertEqual(self.errors_after(rel, data, both_rows), [])
+        errors = self.errors_after(rel, data, lambda d: d["perturbations"][0].update(**{"from": []}))
+        self.assertError(errors, "non-empty list")
+        errors = self.errors_after(rel, data, lambda d: d["perturbations"][0].update(
+            **{"from": [{"proposal": "P1", "row": "S1"}, {"proposal": "P1", "row": "S1"}]}))
+        self.assertError(errors, "P1 row S1 is referenced 2 times")
+        errors = self.errors_after(rel, data, lambda d: d["unmapped"][0].update(
+            **{"from": [{"proposal": "P1", "row": "S2"}, {"source": "x", "row": "S2"}]}))
+        self.assertError(errors, "from must be")
+
+    def test_cli_draft_with_sources_only(self):
+        self.add_source()
+        code, out, err = run_cli("draft", "--purpose", "cli", "--source", f"smith2024:{SOURCE}",
+                                 "--network", f"{NEKO}:{BNET}")
+        self.assertEqual(code, 0, err)
+        data = self.load("runs/orchestrator/cli/mapping.json")
+        self.assertEqual((data["inputs"]["data"], data["inputs"]["sources"][0]["id"]), ([], "smith2024"))
+        code, out, err = run_cli("draft", "--purpose", "cli2", "--network", f"{NEKO}:{BNET}")
+        self.assertEqual(code, 1)
+        self.assertIn("at least one", err)
+
+    def test_criteria_declaration_cites_sources(self):
+        rel, data = self.complete_sources()
+        runs = []
+        for n, (context, pert) in enumerate((("LUAD_EGFR", None), ("LUAD_EGFR", "S1"), ("LUAD_wt", None),
+                                             ("LUAD_wt", "S1"))):
+            traj = f"runs/boolean-dynamics-modeler/mb-1/exports/inv1/run{n}.csv"
+            (self.root / traj).parent.mkdir(parents=True, exist_ok=True)
+            (self.root / traj).write_text("Time,Proliferation\n0,0.5\n1,0.5\n", encoding="utf-8")
+            runs.append({"context": context, "perturbation": pert, "trajectory": traj})
+        self.save("runs/orchestrator/papers/runs.json", {"runs": runs})
+        state.update(self.root, "record", {
+            "id": "dec-map-src", "kind": "stage_approval", "stage": "data_mapping", "session_id": NEKO,
+            "outputs": ["S1", "V1"], "artifact": {"path": rel, "sha256": sha(self.root / rel)},
+            "approved_by": "researcher", "authorization": "researcher: ok"})
+        result = mapping.criteria(self.root, rel, "runs/orchestrator/papers/runs.json", "dec-map-src")
+        evidence = result["declarations"][0]["Required evidence"]
+        short = sha(self.root / SOURCE)[:12]
+        self.assertIn(f"source {SOURCE} sha256 {short} at Fig. 3C", evidence)
+        self.assertIn(f"source {SOURCE} sha256 {short} at Table S2, EGFR row", evidence)
+
+
+class StandaloneNetworkTests(MappingFixture):
+    """B. A mapping onto a researcher-provided BNET with an explicit standalone approval."""
+
+    def network(self, record_id="sa-1", rel=STANDALONE_BNET):
+        return {"standalone_decision_id": record_id, "bnet": rel}
+
+    def test_standalone_network_mapping_passes(self):
+        self.add_standalone()
+        rel, data = self.complete_sources(network=self.network())
+        self.assertEqual(data["inputs"]["network"], {"standalone_decision_id": "sa-1", "bnet": STANDALONE_BNET,
+                                                     "sha256": sha(self.root / STANDALONE_BNET)})
+        self.assertEqual(mapping.check(self.root, rel), [])
+        code, _, err = run_cli("draft", "--purpose", "sacli", "--source", f"smith2024:{SOURCE}",
+                               "--standalone-network", f"sa-1:{STANDALONE_BNET}")
+        self.assertEqual(code, 0, err)
+        self.assertEqual(self.load("runs/orchestrator/sacli/mapping.json")["inputs"]["network"]["standalone_decision_id"],
+                         "sa-1")
+
+    def test_standalone_network_refusals(self):
+        self.add_standalone()
+        rel, data = self.complete_sources(network=self.network())
+        errors = self.errors_after(rel, data, lambda d: d["inputs"]["network"].update(sha256="0" * 64))
+        self.assertError(errors, "inputs.network")
+        other = self.add_standalone("sa-2", "inputs/models/other.bnet", BNET_TEXT + "KRAS, KRAS\n")
+        errors = self.errors_after(rel, data, lambda d: d["inputs"]["network"].update(standalone_decision_id="sa-2"))
+        self.assertError(errors, "artifact")
+        errors = self.errors_after(rel, data, lambda d: d["inputs"]["network"].update(standalone_decision_id="sa-9"))
+        self.assertError(errors, "sa-9")
+        self.add_standalone("sa-stage", STANDALONE_BNET, kind="stage_approval", stage="topology")
+        errors = self.errors_after(rel, data, lambda d: d["inputs"]["network"].update(standalone_decision_id="sa-stage"))
+        self.assertError(errors, "standalone_approval")
+        self.add_standalone("sa-multi", STANDALONE_BNET, stage="multicellular")
+        errors = self.errors_after(rel, data, lambda d: d["inputs"]["network"].update(standalone_decision_id="sa-multi"))
+        self.assertError(errors, "boolean-dynamics")
+        bnd = "inputs/models/user.bnd"
+        (self.root / bnd).write_text("Node A { logic = A; }\n", encoding="utf-8")
+        self.add_standalone("sa-bnd", bnd)
+        errors = self.errors_after(rel, data, lambda d: d["inputs"]["network"].update(
+            standalone_decision_id="sa-bnd", bnet=bnd, sha256=sha(self.root / bnd)))
+        self.assertError(errors, ".bnet")
+        errors = self.errors_after(rel, data, lambda d: d["inputs"]["network"].update(neko_session=NEKO))
+        self.assertError(errors, "inputs.network must have exactly")
+        del other
+
+
+class RedraftTests(MappingFixture):
+    """D. A NeKo re-export: draft --from copies the mapping onto the new BNET."""
+
+    NEW_BNET = f"runs/network-curator/{NEKO}/exports/inv2/model.bnet"
+    # EGFR removed, MAPK1 and Survival rules changed (MAPK1 is not used by the mapping).
+    NEW_TEXT = "targets, factors\nMAPK1, MAPK1\nProliferation, MAPK1\nSurvival, !MAPK1\n"
+
+    def setUp(self):
+        super().setUp()
+        self.rel, self.data = self.complete()
+        new = self.root / self.NEW_BNET
+        new.parent.mkdir(parents=True)
+        new.write_text(self.NEW_TEXT, encoding="utf-8")
+
+    def test_redraft_copies_and_notes(self):
+        before = (self.root / self.rel).read_bytes()
+        path, notes = mapping.redraft(self.root, self.rel, "luad2", (NEKO, self.NEW_BNET))
+        new_rel = path.relative_to(self.root).as_posix()
+        self.assertEqual(new_rel, "runs/orchestrator/luad2/mapping.json")
+        self.assertEqual((self.root / self.rel).read_bytes(), before)
+        new = self.load(new_rel)
+        for key in ("contexts", "perturbations", "readouts", "criteria", "unmapped"):
+            self.assertEqual(new[key], self.data[key], key)
+        self.assertEqual(new["inputs"]["data"], self.data["inputs"]["data"])
+        self.assertEqual(new["inputs"]["sources"], [])
+        self.assertEqual(new["inputs"]["network"], {"neko_session": NEKO, "bnet": self.NEW_BNET,
+                                                    "sha256": sha(self.root / self.NEW_BNET)})
+        absent = [n for n in notes if "absent" in n]
+        changed = [n for n in notes if "rediscuss" in n]
+        self.assertEqual(len(absent), 1, notes)
+        self.assertIn("EGFR", absent[0])
+        self.assertEqual(len(changed), 1, notes)
+        self.assertIn("Survival", changed[0])
+        self.assertEqual(len(notes), 2, notes)
+        errors = mapping.check(self.root, new_rel)
+        self.assertEqual(sorted(e.split(":")[0] for e in errors), ["context LUAD_EGFR", "perturbation S1 model"], errors)
+        self.assertTrue(all("EGFR" in e for e in errors), errors)
+        with self.assertRaisesRegex(ValueError, "exists"):
+            mapping.redraft(self.root, self.rel, "luad2", (NEKO, self.NEW_BNET))
+        with self.assertRaisesRegex(ValueError, "exists"):
+            mapping.redraft(self.root, self.rel, "luad", (NEKO, self.NEW_BNET))
+
+    def test_redraft_cli(self):
+        code, out, err = run_cli("draft", "--from", self.rel, "--purpose", "luad3", "--network", f"{NEKO}:{self.NEW_BNET}")
+        self.assertEqual(code, 0, err)
+        self.assertIn("note: node EGFR", out)
+        self.assertIn("rediscuss", out)
+        self.assertIn("runs/orchestrator/luad3/mapping.json", out)
+        code, out, err = run_cli("draft", "--from", self.rel, "--purpose", "luad4", "--data", f"{self.sid}:P1:dec-data-1",
+                                 "--network", f"{NEKO}:{self.NEW_BNET}")
+        self.assertEqual(code, 1)
+        self.assertIn("--from", err)
+        code, out, err = run_cli("draft", "--from", self.rel, "--purpose", "luad3", "--network", f"{NEKO}:{self.NEW_BNET}")
+        self.assertEqual(code, 1)
+        self.assertIn("exists", err)
 
 
 if __name__ == "__main__":

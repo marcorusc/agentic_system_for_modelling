@@ -1,18 +1,32 @@
 #!/usr/bin/env python3
-"""Draft, check and turn into criteria the mapping of approved data proposals onto a MaBoSS model.
+"""Draft, check and turn into criteria the mapping of approved data and user sources onto a MaBoSS model.
 
 The mapping (runs/orchestrator/<purpose>/mapping.json) is the artifact the
 researcher and orchestrator agree on: which approved `perturbations` and
-`validation_targets` rows become model contexts, perturbations, readouts and
-criteria, and why the remaining rows are left unmapped.
+`validation_targets` rows, and which researcher-provided sources under inputs/
+(any format, never parsed; cited by {source, locator}), become model contexts,
+perturbations, readouts and criteria, and why the remaining proposal rows are
+left unmapped.
+
+The network is either a NeKo export ({neko_session, bnet, sha256}) or a
+researcher-provided BNET with a standalone approval ({standalone_decision_id,
+bnet, sha256}; the record's artifact is exactly that .bnet). A .bnd/.cfg-only
+model cannot be mapped.
 
 Criterion methods in a mapping are scenario_contrast, ordered_peaks and
 canonical_cycles. boolean_structure is refused: it validates network structure,
 not data-driven responses, and is declared directly in VALIDATION_CRITERIA.yaml.
 
 CLI:
-  mapping.py draft --purpose P --data SESSION:PROPOSAL:APPROVAL ... --network NEKO_SESSION:BNET
-  mapping.py check MAPPING                       (exit 1, one problem per line on stderr)
+  mapping.py draft --purpose P [--data SESSION:PROPOSAL:APPROVAL ...] [--source ID:PATH ...]
+                   (--network NEKO_SESSION:BNET | --standalone-network STANDALONE_DECISION_ID:BNET)
+                                                 (at least one --data or --source; sha256s are computed)
+  mapping.py draft --from OLD_MAPPING --purpose P (--network ... | --standalone-network ...)
+                                                 (copy OLD onto a re-exported network; prints a note per
+                                                  mapped node absent from the new BNET or whose rule changed)
+  mapping.py check MAPPING [--stage-gate JSON]   (exit 1, one problem per line on stderr; with the
+                                                  STAGE_GATE JSON of the MaBoSS brief, also the gate's
+                                                  network binding, which reports a stale mapping)
   mapping.py criteria MAPPING --runs RUNS --approval RECORD_ID [--out FILE] [--merge-into VALIDATION_CRITERIA.yaml]
 """
 
@@ -33,7 +47,8 @@ if __package__ in (None, ""):
 
 from scripts import state  # noqa: E402
 from scripts.data import approvals  # noqa: E402
-from scripts.data.common import RUNS_ROOT, project_root, reject_symlinks  # noqa: E402
+from scripts.data import sources as user_sources  # noqa: E402
+from scripts.data.common import RUNS_ROOT, project_root, reject_symlinks, strict_json  # noqa: E402
 from scripts.data.manifest import KIND_SCHEMAS, read_proposal_table  # noqa: E402
 from scripts.validate.common import load_json_yaml  # noqa: E402
 from scripts.validate.scenario_contrast import contrast  # noqa: E402
@@ -50,6 +65,11 @@ METHOD_KEYS = {"scenario_contrast": {"test", "reference"}, "ordered_peaks": {"sc
 METHODS = tuple(METHOD_KEYS)
 PHENOTYPES = KIND_SCHEMAS["validation_targets"]["enums"]["phenotype"]
 ORCHESTRATOR = ("runs", "orchestrator")
+INPUT_KEYS = {"data", "sources", "network"}
+# The two network anchors: a NeKo export, or a researcher BNET with a standalone approval.
+NEKO_NETWORK = {"neko_session", "bnet", "sha256"}
+STANDALONE_NETWORK = {"standalone_decision_id", "bnet", "sha256"}
+STANDALONE_STAGE = "boolean-dynamics"  # the stage a MaBoSS standalone_approval authorizes
 NETWORK = ("runs", "network-curator")
 TRAJECTORIES = ("runs", "boolean-dynamics-modeler")
 SYNTHETIC_MAX_POINTS = 1_000_000
@@ -57,26 +77,31 @@ SYNTHETIC_MAX_POINTS = 1_000_000
 
 # ---------------------------------------------------------------- helpers
 
-def bnet_nodes(path: Path) -> set[str]:
-    """Target nodes of a BNET: text before the first comma of each rule line.
+def bnet_rules(path: Path) -> dict[str, str]:
+    """Target node -> rule text of a BNET: the text before and after the first comma of each rule line.
 
     Blank lines, `#` comments and the `targets, factors` header (any spacing or
     case) are skipped, as in scripts/validate/boolean_structure.py.
     """
-    nodes = set()
+    rules = {}
     for raw in Path(path).read_text(encoding="utf-8").splitlines():
         line = raw.strip()
         if not line or line.startswith("#") or line.lower().replace(" ", "") == "targets,factors":
             continue
         if "," not in line:
             raise ValueError(f"BNET row requires 'target, expression': {line!r}")
-        node = line.split(",", 1)[0].strip()
+        node, rule = (part.strip() for part in line.split(",", 1))
         if not node:
             raise ValueError(f"BNET row has an empty target: {line!r}")
-        nodes.add(node)
-    if not nodes:
+        rules[node] = rule
+    if not rules:
         raise ValueError("BNET has no nodes")
-    return nodes
+    return rules
+
+
+def bnet_nodes(path: Path) -> set[str]:
+    """Target nodes of a BNET (see bnet_rules)."""
+    return set(bnet_rules(path))
 
 
 def _parts(rel) -> tuple:
@@ -101,6 +126,49 @@ def _bnet(root: Path, neko_session, rel) -> Path:
         raise ValueError(f"network BNET must be a .bnet under runs/network-curator/{neko_session}/exports/ or "
                          f"boolean-handoffs/, not {rel!r}")
     return state.artifact(root, rel)
+
+
+def _standalone_bnet(root: Path, decision_id, rel) -> Path:
+    """The BNET a standalone_approval authorizes for MaBoSS (the semantics of gate.standalone).
+
+    The record must be a valid researcher standalone_approval of stage boolean-dynamics whose
+    artifact is exactly this .bnet; validate_record has checked the artifact's sha256 on disk.
+    """
+    state.identifier(decision_id)
+    try:
+        record = approvals.load_record(root, decision_id)
+    except ValueError:
+        raise ValueError(f"standalone approval {decision_id} is not a governance record in DECISIONS.md") from None
+    if record.get("kind") != "standalone_approval":
+        raise ValueError(f"decision {decision_id} must be a standalone_approval, not {record.get('kind')!r}")
+    state.validate_record(root, record)
+    if record.get("stage") != STANDALONE_STAGE:
+        raise ValueError(f"standalone approval {decision_id} must authorize stage {STANDALONE_STAGE}, "
+                         f"not {record.get('stage')!r}")
+    if not isinstance(rel, str) or not rel.endswith(".bnet"):
+        raise ValueError(f"network BNET must be a .bnet, not {rel!r} (a .bnd/.cfg-only model cannot be mapped)")
+    if record["artifact"]["path"] != rel:
+        raise ValueError(f"standalone approval {decision_id} artifact is {record['artifact']['path']}, not {rel}")
+    return state.artifact(root, rel)
+
+
+def _network_file(root: Path, network: dict) -> Path:
+    """The BNET of a {neko_session|standalone_decision_id, bnet, ...} network; ValueError if not allowed."""
+    if "standalone_decision_id" in network:
+        return _standalone_bnet(root, network["standalone_decision_id"], network["bnet"])
+    return _bnet(root, network["neko_session"], network["bnet"])
+
+
+def _network_entry(root: Path, network) -> tuple[dict, Path]:
+    """The inputs.network of a draft and its BNET, from (NEKO_SESSION, BNET) or {anchor: id, "bnet": BNET}."""
+    if isinstance(network, (tuple, list)) and len(network) == 2:
+        network = {"neko_session": network[0], "bnet": network[1]}
+    if not isinstance(network, dict) or set(network) not in ({"neko_session", "bnet"},
+                                                             {"standalone_decision_id", "bnet"}):
+        raise ValueError("network must be (NEKO_SESSION, BNET) or {standalone_decision_id, bnet}")
+    path = _network_file(root, network)
+    bnet_nodes(path)
+    return {**network, "sha256": state.digest(path)}, path
 
 
 def _table_rows(root: Path, rel: str, kind: str) -> list[str]:
@@ -148,17 +216,32 @@ def _write_new(root: Path, path: Path, text: str) -> None:
 
 # ---------------------------------------------------------------- draft
 
-def draft(root: Path, purpose: str, data: list[tuple[str, str, str]], network: tuple[str, str]) -> Path:
-    root = Path(root)
+def _new_target(root: Path, purpose: str) -> Path:
     state.identifier(purpose)
     target = root / ORCHESTRATOR[0] / ORCHESTRATOR[1] / purpose / "mapping.json"
     if target.exists() or target.is_symlink():
         raise ValueError(f"{target.relative_to(root).as_posix()} exists; drafts never overwrite a mapping")
-    if not data:
-        raise ValueError("a mapping needs at least one data proposal")
-    neko_session, bnet_rel = network
-    bnet = _bnet(root, neko_session, bnet_rel)
-    bnet_nodes(bnet)
+    return target
+
+
+def _write_mapping(root: Path, target: Path, mapping: dict) -> None:
+    try:
+        _write_new(root, target, json.dumps(mapping, indent=2) + "\n")
+    except FileExistsError as exc:
+        raise ValueError(f"{target.relative_to(root).as_posix()} exists; drafts never overwrite a mapping") from exc
+
+
+def draft(root: Path, purpose: str, data: list[tuple[str, str, str]], network,
+          sources: list[tuple[str, str]] = ()) -> Path:
+    """Write a skeleton mapping: data inputs, user sources (sha256 computed) and the network.
+
+    `network` is (NEKO_SESSION, BNET) or {"standalone_decision_id": ID, "bnet": BNET}.
+    """
+    root = Path(root)
+    target = _new_target(root, purpose)
+    if not data and not sources:
+        raise ValueError("a mapping needs at least one data proposal or user source")
+    net, _ = _network_entry(root, network)
     inputs, unmapped, seen, sessions = [], [], set(), set()
     for session_id, proposal_id, record_id in data:
         if proposal_id in seen:
@@ -172,15 +255,86 @@ def draft(root: Path, purpose: str, data: list[tuple[str, str, str]], network: t
                        "sha256": entry["sha256"], "approval": record_id})
         for row in _table_rows(root, entry["path"], entry["kind"]):
             unmapped.append({"from": {"proposal": proposal_id, "row": row}, "reason": "TODO"})
-    mapping = {"schema_version": 1,
-               "inputs": {"data": inputs, "network": {"neko_session": neko_session, "bnet": bnet_rel,
-                                                      "sha256": state.digest(bnet)}},
+    declared = []
+    for source_id, rel in sources:
+        if any(item["id"] == source_id for item in declared):
+            raise ValueError(f"source id {source_id} is listed twice (source ids must be unique in a mapping)")
+        declared.append(user_sources.entry(root, source_id, rel))
+    mapping = {"schema_version": 1, "inputs": {"data": inputs, "sources": declared, "network": net},
                "contexts": {}, "perturbations": [], "readouts": [], "criteria": [], "unmapped": unmapped}
-    try:
-        _write_new(root, target, json.dumps(mapping, indent=2) + "\n")
-    except FileExistsError as exc:
-        raise ValueError(f"{target.relative_to(root).as_posix()} exists; drafts never overwrite a mapping") from exc
+    _write_mapping(root, target, mapping)
     return target
+
+
+def _used_nodes(old: dict) -> dict[str, list[str]]:
+    """Node -> the mapping entries that fix or read it (contexts, perturbations, readouts)."""
+    used: dict[str, list[str]] = {}
+
+    def add(node, label):
+        if isinstance(node, str):
+            used.setdefault(node, []).append(label)
+    contexts = old.get("contexts")
+    for cid, items in (contexts.items() if isinstance(contexts, dict) else ()):
+        for item in items if isinstance(items, list) else ():
+            if isinstance(item, dict):
+                add(item.get("node"), f"context {cid}")
+    for pert in old.get("perturbations") if isinstance(old.get("perturbations"), list) else ():
+        if isinstance(pert, dict) and isinstance(pert.get("model"), list):
+            for item in pert["model"]:
+                if isinstance(item, dict):
+                    add(item.get("node"), f"perturbation {pert.get('id')}")
+    for readout in old.get("readouts") if isinstance(old.get("readouts"), list) else ():
+        if isinstance(readout, dict) and isinstance(readout.get("nodes"), list):
+            for node in readout["nodes"]:
+                add(node, f"readout {readout.get('phenotype')}")
+    return used
+
+
+def _old_rules(root: Path, network) -> dict[str, str] | None:
+    """Rules of the old mapping's BNET if it is still on disk with its recorded sha256, else None."""
+    try:
+        path = state.artifact(root, network["bnet"])
+        if state.digest(path) != network["sha256"]:
+            return None
+        return bnet_rules(path)
+    except (ValueError, OSError, KeyError, TypeError, UnicodeDecodeError):
+        return None
+
+
+def redraft(root: Path, old_rel: str, purpose: str, network) -> tuple[Path, list[str]]:
+    """Copy OLD onto a new network as a new mapping; (path, notes) for the nodes to rediscuss.
+
+    inputs.data/sources, contexts, perturbations, readouts, criteria and unmapped are
+    copied unchanged; the old mapping and its approval are untouched, and the new one
+    needs `check` and a fresh approval. A note is returned for each mapped node absent
+    from the new BNET and each mapped node whose rule text changed.
+    """
+    root = Path(root)
+    target = _new_target(root, purpose)
+    old, _ = _load_mapping(root, old_rel)
+    inputs = old.get("inputs")
+    missing = [key for key in ("contexts", "perturbations", "readouts", "criteria", "unmapped") if key not in old]
+    if not isinstance(inputs, dict) or "data" not in inputs or missing:
+        raise ValueError(f"{old_rel} lacks {', '.join(missing) or 'inputs.data'}; nothing to redraft from")
+    net, path = _network_entry(root, network)
+    new_rules = bnet_rules(path)
+    old_rules = _old_rules(root, inputs.get("network"))
+    notes = []
+    if old_rules is None:
+        notes.append(f"note: the old network BNET of {old_rel} is missing or changed; rule changes were not compared")
+    for node, labels in _used_nodes(old).items():
+        where = "; ".join(dict.fromkeys(labels))
+        if node not in new_rules:
+            notes.append(f"note: node {node} is absent from the new BNET (used by {where})")
+        elif old_rules is not None and node in old_rules \
+                and "".join(old_rules[node].split()) != "".join(new_rules[node].split()):
+            notes.append(f"note: node {node} rule changed ({old_rules[node]!r} -> {new_rules[node]!r}); "
+                         f"rediscuss {where}")
+    mapping = {"schema_version": 1,
+               "inputs": {"data": inputs["data"], "sources": inputs.get("sources", []), "network": net},
+               **{key: old[key] for key in ("contexts", "perturbations", "readouts", "criteria", "unmapped")}}
+    _write_mapping(root, target, mapping)
+    return target, notes
 
 
 # ---------------------------------------------------------------- check
@@ -195,20 +349,24 @@ class _Checker:
         self.perturbations: set[str] = set()
         self.readouts: set[str] = set()
         self.refs: dict[tuple[str, str], list[str]] = {}
+        self.sources = user_sources.Sources(root, self.error)
 
     def error(self, message: str) -> None:
         self.errors.append(message)
 
     # -- inputs
     def inputs(self, inputs) -> None:
-        if not isinstance(inputs, dict) or set(inputs) != {"data", "network"}:
-            self.error("inputs must have exactly the keys data and network")
+        if not isinstance(inputs, dict) or set(inputs) != INPUT_KEYS:
+            self.error("inputs must have exactly the keys data, sources and network")
             return
         self.network(inputs["network"])
+        self.sources.declare(inputs["sources"], "inputs.sources")
         data = inputs["data"]
-        if not isinstance(data, list) or not data:
-            self.error("inputs.data must be a non-empty list")
+        if not isinstance(data, list):
+            self.error("inputs.data must be a list")
             return
+        if not data and inputs["sources"] == []:
+            self.error("inputs.data and inputs.sources cannot both be empty")
         sessions = set()
         for n, item in enumerate(data):
             label = f"inputs.data[{n}]"
@@ -256,12 +414,13 @@ class _Checker:
                 self.refs.setdefault((pid, row), [])
 
     def network(self, network) -> None:
-        if not isinstance(network, dict) or set(network) != {"neko_session", "bnet", "sha256"}:
-            self.error("inputs.network must have exactly neko_session, bnet, sha256")
+        if not isinstance(network, dict) or set(network) not in (NEKO_NETWORK, STANDALONE_NETWORK):
+            self.error("inputs.network must have exactly neko_session, bnet, sha256 "
+                       "or exactly standalone_decision_id, bnet, sha256")
             return
         try:
-            path = _bnet(self.root, network["neko_session"], network["bnet"])
-        except ValueError as exc:
+            path = _network_file(self.root, network)
+        except (ValueError, OSError) as exc:
             self.error(f"inputs.network: {exc}")
             return
         if state.digest(path) != network["sha256"]:
@@ -298,11 +457,32 @@ class _Checker:
                     self.error(f"{label}: node {item['node']} is set twice")
                 seen.add(item["node"])
 
-    def source(self, label: str, ref, section: str | None):
-        """Validate a `from` reference; record it for row coverage."""
+    def source(self, label: str, value, section: str | None):
+        """Validate a `from`: one reference or a non-empty list of them.
+
+        A reference is {proposal, row} (recorded for row coverage) or {source, locator}
+        (a declared user source; counted as cited).
+        """
+        if isinstance(value, list) and not value:
+            self.error(f"{label}: from must be one reference or a non-empty list of references")
+            return
+        cited = set()
+        for ref in value if isinstance(value, list) else [value]:
+            if user_sources.is_ref(ref):
+                key = json.dumps(ref, sort_keys=True, default=str)
+                if key in cited:
+                    self.error(f"{label}: cites source {ref['source']} at {ref['locator']!r} twice")
+                    continue
+                cited.add(key)
+                self.sources.ref(label, ref)
+            else:
+                self.proposal_ref(label, ref, section)
+
+    def proposal_ref(self, label: str, ref, section: str | None):
         if not isinstance(ref, dict) or set(ref) != {"proposal", "row"} \
                 or not all(isinstance(v, str) for v in ref.values()):
-            self.error(f"{label}: from must be {{proposal, row}} strings")
+            self.error(f"{label}: from must be {{proposal, row}} strings or {{source, locator}}, "
+                       "or a non-empty list of them")
             return
         pid, row = ref["proposal"], ref["row"]
         info = self.proposals.get(pid)
@@ -495,7 +675,8 @@ class _Checker:
                 self.error(f"unmapped[{n}] must have exactly from and reason")
                 continue
             ref = item["from"]
-            label = f"unmapped[{n}]" + (f" ({ref.get('proposal')} row {ref.get('row')})" if isinstance(ref, dict) else "")
+            label = f"unmapped[{n}]" + (f" ({ref.get('proposal')} row {ref.get('row')})"
+                                        if isinstance(ref, dict) and "proposal" in ref else "")
             reason = item["reason"]
             if not isinstance(reason, str) or not reason.strip() or reason.strip().upper() == "TODO":
                 self.error(f"{label}: reason must be a non-empty explanation, not empty or TODO")
@@ -513,23 +694,10 @@ class _Checker:
 def _load_mapping(root: Path, mapping_rel: str) -> tuple[dict, str]:
     """Read the mapping once: its parsed object and the sha256 of exactly those bytes."""
     raw = _mapping_path(root, mapping_rel).read_bytes()
-    data = json.loads(raw.decode("utf-8"), object_pairs_hook=_unique_keys, parse_constant=_no_constant)
+    data = strict_json(raw)
     if not isinstance(data, dict):
         raise ValueError("mapping must be a JSON object")
     return data, hashlib.sha256(raw).hexdigest()
-
-
-def _unique_keys(pairs):
-    out = {}
-    for key, value in pairs:
-        if key in out:
-            raise ValueError(f"duplicate key: {key}")
-        out[key] = value
-    return out
-
-
-def _no_constant(name):
-    raise ValueError(f"non-finite value: {name}")
 
 
 def overlaps(data: dict) -> list[tuple[str, str, str]]:
@@ -551,14 +719,43 @@ def overlaps(data: dict) -> list[tuple[str, str, str]]:
     return found
 
 
-def check(root: Path, mapping_rel: str) -> list[str]:
-    """Every problem with the mapping, one message each; [] when it is valid."""
+def check(root: Path, mapping_rel: str, stage_gate=None) -> list[str]:
+    """Every problem with the mapping, one message each; [] when it is valid.
+
+    With `stage_gate` (the STAGE_GATE JSON object, with or without its `STAGE_GATE `
+    prefix, that line 1 of the MaBoSS brief will carry), the dispatch gate's network
+    binding is checked too, so a mapping made stale by a re-export is reported.
+    """
     root = Path(root)
     try:
         data, _ = _load_mapping(root, mapping_rel)
     except (ValueError, OSError, UnicodeDecodeError) as exc:
         return [f"{mapping_rel}: {exc}"]
-    return _check_data(root, data)
+    errors = _check_data(root, data)
+    if stage_gate is not None:
+        errors += network_binding_errors(root, data, stage_gate)
+    return errors
+
+
+def _stage_gate_line(stage_gate) -> str:
+    if isinstance(stage_gate, dict):
+        return "STAGE_GATE " + json.dumps(stage_gate)
+    if not isinstance(stage_gate, str):
+        raise ValueError("STAGE_GATE must be the JSON object of the brief's line 1")
+    text = stage_gate.strip()
+    return text if text.startswith("STAGE_GATE ") else "STAGE_GATE " + text
+
+
+def network_binding_errors(root: Path, data: dict, stage_gate) -> list[str]:
+    """The dispatch gate's binding of inputs.network to a STAGE_GATE, as error lines ([] when bound)."""
+    from scripts import gate
+    inputs = data.get("inputs") if isinstance(data, dict) else None
+    try:
+        gate.check_mapping_network(Path(root), inputs.get("network") if isinstance(inputs, dict) else None,
+                                   _stage_gate_line(stage_gate))
+    except (ValueError, OSError, KeyError, TypeError) as exc:
+        return [f"STAGE_GATE binding: {exc}"]
+    return []
 
 
 def load_and_check(root: Path, mapping_rel: str) -> tuple[dict, str, list[str]]:
@@ -590,6 +787,7 @@ def _check_data(root: Path, data: dict) -> list[str]:
     checker.criteria_section(data.get("criteria"))
     checker.unmapped_section(data.get("unmapped"))
     checker.coverage()
+    checker.sources.uncited()
     return checker.errors
 
 
@@ -650,6 +848,7 @@ def criteria(root: Path, mapping_rel: str, runs_rel: str, approval_id: str) -> d
     if errors:
         raise ValueError(f"{mapping_rel} fails check: " + "; ".join(errors))
     runs = _runs(root, runs_rel, data)
+    declared = {item["id"]: item for item in data["inputs"]["sources"]}
     missing, entries, declarations = [], [], []
 
     def run(context, perturbation):
@@ -669,11 +868,14 @@ def criteria(root: Path, mapping_rel: str, runs_rel: str, approval_id: str) -> d
             inputs = [run(s["context"], s["perturbation"]) for s in item["scenarios"]]
         entries.append({"criterion_id": item["criterion_id"], "method": method, "inputs": inputs,
                         "options": item["options"]})
-        source = item["from"]
+        refs = item["from"] if isinstance(item["from"], list) else [item["from"]]
+        cites = [f"data {ref['proposal']} row {ref['row']}" if "proposal" in ref else
+                 f"source {declared[ref['source']]['path']} sha256 {declared[ref['source']]['sha256'][:12]} "
+                 f"at {ref['locator']}" for ref in refs]
         declarations.append({"Criterion": item["criterion_id"], "Method": method,
                              "Required evidence": f"{method} over {', '.join(map(str, inputs))}; mapping "
-                                                  f"{mapping_rel} sha256 {digest} (approval {approval_id}); data {source['proposal']} "
-                                                  f"row {source['row']}"})
+                                                  f"{mapping_rel} sha256 {digest} (approval {approval_id}); "
+                                                  + "; ".join(cites)})
     if missing:
         raise ValueError("no run for scenario " + ", ".join(dict.fromkeys(missing)))
     return {"criteria": entries, "declarations": declarations}
@@ -723,10 +925,18 @@ def main(argv: list[str] | None = None) -> int:
     sub = parser.add_subparsers(dest="command", required=True)
     d = sub.add_parser("draft")
     d.add_argument("--purpose", required=True)
-    d.add_argument("--data", required=True, nargs="+", metavar="SESSION:PROPOSAL:APPROVAL")
-    d.add_argument("--network", required=True, metavar="NEKO_SESSION:BNET")
+    d.add_argument("--data", nargs="+", default=[], metavar="SESSION:PROPOSAL:APPROVAL")
+    d.add_argument("--source", action="append", default=[], metavar="ID:PATH",
+                   help="a researcher-provided file under inputs/ (repeatable); its sha256 is computed")
+    d.add_argument("--from", dest="from_mapping", metavar="OLD_MAPPING",
+                   help="copy OLD_MAPPING onto the given network (after a re-export); excludes --data/--source")
+    network = d.add_mutually_exclusive_group(required=True)
+    network.add_argument("--network", metavar="NEKO_SESSION:BNET")
+    network.add_argument("--standalone-network", metavar="STANDALONE_DECISION_ID:BNET")
     c = sub.add_parser("check")
     c.add_argument("mapping")
+    c.add_argument("--stage-gate", metavar="JSON",
+                   help="the STAGE_GATE JSON of the MaBoSS brief: also check the gate's network binding")
     g = sub.add_parser("criteria")
     g.add_argument("mapping")
     g.add_argument("--runs", required=True)
@@ -738,13 +948,26 @@ def main(argv: list[str] | None = None) -> int:
     root = project_root().resolve()
     try:
         if args.command == "draft":
-            data = [tuple(_split(v, 3, "SESSION:PROPOSAL:APPROVAL")) for v in args.data]
-            network = tuple(_split(args.network, 2, "NEKO_SESSION:BNET"))
-            path = draft(root, args.purpose, data, network)
+            if args.network:
+                network = tuple(_split(args.network, 2, "NEKO_SESSION:BNET"))
+            else:
+                decision, bnet = _split(args.standalone_network, 2, "STANDALONE_DECISION_ID:BNET")
+                network = {"standalone_decision_id": decision, "bnet": bnet}
+            if args.from_mapping:
+                if args.data or args.source:
+                    raise ValueError("draft --from copies the old mapping's inputs; do not combine it with "
+                                     "--data or --source")
+                path, notes = redraft(root, args.from_mapping, args.purpose, network)
+                for note in notes:
+                    print(note)
+            else:
+                data = [tuple(_split(v, 3, "SESSION:PROPOSAL:APPROVAL")) for v in args.data]
+                sources = [tuple(_split(v, 2, "ID:PATH")) for v in args.source]
+                path = draft(root, args.purpose, data, network, sources)
             print(f"mapping drafted: {path.relative_to(root).as_posix()} sha256={state.digest(path)}")
             return 0
         if args.command == "check":
-            errors = check(root, args.mapping)
+            errors = check(root, args.mapping, args.stage_gate)
             for error in errors:
                 print(error, file=sys.stderr)
             if errors:

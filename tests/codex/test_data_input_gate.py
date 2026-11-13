@@ -10,7 +10,8 @@ from unittest import mock
 
 from scripts import gate, state
 from scripts.data import mapping
-from tests.data.test_mapping import BNET, BNET_TEXT, NEKO, MappingFixture, sha
+from tests.data.test_mapping import (BNET, BNET_TEXT, NEKO, SOURCE, STANDALONE_BNET, STANDALONE_OUTPUTS,
+                                     MappingFixture, run_cli, sha)
 
 REFUSAL = "brief references data-analyst artifacts without a DATA_INPUT line; see CLAUDE.md"
 HOOK = state.ROOT / ".claude" / "scripts" / "stage_gate_guard.py"
@@ -372,6 +373,240 @@ class HookTests(DataInputFixture):
         result = self.hook("boolean-dynamics-modeler", self.maboss_task(approval="dec-data-1"))
         self.assertEqual(result.returncode, 2)
         self.assertIn("data_mapping", result.stderr)
+
+
+REDRAFT = "redraft with mapping.py draft --from"
+SA_GATE = "STAGE_GATE " + json.dumps({"standalone_decision_id": "sa-1", "outputs": STANDALONE_OUTPUTS})
+
+
+class StandaloneNetworkGateTests(DataInputFixture):
+    """B. MaBoSS DATA_INPUT after a standalone STAGE_GATE: the mapping must target that BNET."""
+
+    def setUp(self):
+        super().setUp()
+        self.add_standalone()
+        self.sa_rel, self.sa_data = self.complete_sources(
+            "sa", network={"standalone_decision_id": "sa-1", "bnet": STANDALONE_BNET})
+        self.approve_sa_mapping("dec-map-sa", self.sa_rel)
+
+    def approve_sa_mapping(self, record_id, rel, session_id="sa-1"):
+        state.update(self.root, "record", {
+            "id": record_id, "kind": "stage_approval", "stage": "data_mapping", "session_id": session_id,
+            "outputs": ["S1", "V1"], "artifact": {"path": rel, "sha256": sha(self.root / rel)},
+            "approved_by": "researcher", "authorization": "researcher: mapping ok"})
+
+    def sa_task(self, gate_line=SA_GATE, rel=None, approval="dec-map-sa"):
+        return self.maboss_task(gate_line=gate_line, rel=rel or self.sa_rel, approval=approval)
+
+    def test_standalone_mapping_accepted_by_check_and_hook(self):
+        result = gate.check_data_input(self.root, "boolean_dynamics_modeler", self.sa_task())
+        self.assertEqual(result, {"mapping": self.sa_rel, "sha256": sha(self.root / self.sa_rel),
+                                  "approval_id": "dec-map-sa", "standalone_decision_id": "sa-1"})
+        hook = self.hook("boolean-dynamics-modeler", self.sa_task())
+        self.assertEqual(hook.returncode, 0, hook.stderr)
+        self.assertEqual(mapping.check(self.root, self.sa_rel, stage_gate=SA_GATE), [])
+
+    def test_standalone_mismatched_sha_refused(self):
+        # The standalone BNET changed after its authorization: the record and the mapping no longer bind.
+        task = self.sa_task()
+        (self.root / STANDALONE_BNET).write_text(BNET_TEXT + "# edited\n", encoding="utf-8")
+        with self.assertRaises(ValueError):
+            gate.check_data_input(self.root, "boolean_dynamics_modeler", task)
+        self.assertEqual(self.hook("boolean-dynamics-modeler", task).returncode, 2)
+
+    def test_standalone_different_id_refused(self):
+        self.add_standalone("sa-2", "inputs/models/other.bnet", BNET_TEXT + "KRAS, KRAS\n")
+        other = "STAGE_GATE " + json.dumps({"standalone_decision_id": "sa-2", "outputs": STANDALONE_OUTPUTS})
+        with self.assertRaisesRegex(ValueError, "sa-2"):
+            gate.check_data_input(self.root, "boolean_dynamics_modeler", self.sa_task(gate_line=other))
+        self.assertEqual(self.hook("boolean-dynamics-modeler", self.sa_task(gate_line=other)).returncode, 2)
+        self.assertError(mapping.check(self.root, self.sa_rel, stage_gate=other), "sa-2")
+        # The approval's session_id must be the standalone decision id.
+        self.approve_sa_mapping("dec-map-sa-bad", self.sa_rel, session_id="sa-2")
+        with self.assertRaisesRegex(ValueError, "session_id"):
+            gate.check_data_input(self.root, "boolean_dynamics_modeler", self.sa_task(approval="dec-map-sa-bad"))
+
+    def test_standalone_wrong_record_kind_refused(self):
+        self.add_standalone("sa-stage", STANDALONE_BNET, kind="stage_approval", stage="boolean-dynamics")
+        wrong = "STAGE_GATE " + json.dumps({"standalone_decision_id": "sa-stage", "outputs": STANDALONE_OUTPUTS})
+        with self.assertRaises(ValueError):
+            gate.check_data_input(self.root, "boolean_dynamics_modeler", self.sa_task(gate_line=wrong))
+        self.assertEqual(self.hook("boolean-dynamics-modeler", self.sa_task(gate_line=wrong)).returncode, 2)
+
+    def test_standalone_mapping_with_neko_gate_refused(self):
+        self.stage_gate_ready()
+        with self.assertRaisesRegex(ValueError, "standalone_decision_id"):
+            gate.check_data_input(self.root, "boolean_dynamics_modeler", self.sa_task(gate_line=STAGE_GATE))
+        # The NeKo-upstream route is unchanged.
+        self.assertEqual(gate.check_data_input(self.root, "boolean_dynamics_modeler", self.maboss_task())["approval_id"],
+                         "dec-map-1")
+
+
+class SeedsGateTests(DataInputFixture):
+    """C. NeKo DATA_INPUT naming an approved seeds.json built from researcher sources."""
+
+    SEEDS_REL = "runs/orchestrator/kras-seeds/seeds.json"
+
+    def setUp(self):
+        super().setUp()
+        self.add_source()
+        self.write_seeds(self.SEEDS_REL, ["KRAS", "EGFR"])
+        self.approve_seeds("dec-seeds-1", self.SEEDS_REL, ["EGFR", "KRAS"])
+
+    def write_seeds(self, rel, symbols, cite=True):
+        data = {"schema_version": 1,
+                "sources": [{"id": "smith2024", "path": SOURCE, "sha256": sha(self.root / SOURCE)}],
+                "seeds": [{"hgnc_symbol": s, "from": [{"source": "smith2024", "locator": "Table 1"}] if cite else []}
+                          for s in symbols]}
+        (self.root / rel).parent.mkdir(parents=True, exist_ok=True)
+        self.save(rel, data)
+
+    def approve_seeds(self, record_id, rel, outputs, stage="data_seeds", session_id="kras-seeds"):
+        state.update(self.root, "record", {
+            "id": record_id, "kind": "stage_approval", "stage": stage, "session_id": session_id,
+            "outputs": outputs, "artifact": {"path": rel, "sha256": sha(self.root / rel)},
+            "approved_by": "researcher", "authorization": "researcher: seeds ok"})
+
+    def seeds_line(self, rel=None, digest=None, approval="dec-seeds-1", **extra):
+        rel = rel or self.SEEDS_REL
+        return "DATA_INPUT " + json.dumps({"seeds": rel, "sha256": digest or sha(self.root / rel),
+                                           "approval": approval, **extra})
+
+    def seeds_task(self, **kw):
+        return f"{self.seeds_line(**kw)}\nBuild the network from the seeds file named above; the source is {SOURCE}."
+
+    def test_seeds_form_accepted_through_hook(self):
+        result = gate.check_data_input(self.root, "network_curator", self.seeds_task())
+        self.assertEqual(result, {"seeds": self.SEEDS_REL, "sha256": sha(self.root / self.SEEDS_REL),
+                                  "approval_id": "dec-seeds-1", "symbols": ["KRAS", "EGFR"]})
+        hook = self.hook("network-curator", self.seeds_task())
+        self.assertEqual(hook.returncode, 0, hook.stderr)
+
+    def test_seeds_wrong_sha_refused(self):
+        with self.assertRaisesRegex(ValueError, "sha256"):
+            gate.check_data_input(self.root, "network_curator", self.seeds_task(digest="0" * 64))
+        for bad in ("abc", 7, "A" * 64):
+            with self.assertRaises(ValueError):
+                gate.check_data_input(self.root, "network_curator", self.seeds_task(digest=bad))
+        task = self.seeds_task()
+        self.write_seeds(self.SEEDS_REL, ["KRAS", "EGFR", "BRAF"])
+        with self.assertRaisesRegex(ValueError, "sha256"):
+            gate.check_data_input(self.root, "network_curator", task)
+        result = self.hook("network-curator", task)
+        self.assertEqual(result.returncode, 2)
+
+    def test_seeds_wrong_stage_refused(self):
+        self.approve_seeds("dec-seeds-map", self.SEEDS_REL, ["EGFR", "KRAS"], stage="data_mapping")
+        with self.assertRaisesRegex(ValueError, "data_seeds"):
+            gate.check_data_input(self.root, "network_curator", self.seeds_task(approval="dec-seeds-map"))
+        with self.assertRaisesRegex(ValueError, "data_seeds"):
+            gate.check_data_input(self.root, "network_curator", self.seeds_task(approval="dec-data-1"))
+        with self.assertRaisesRegex(ValueError, "not found"):
+            gate.check_data_input(self.root, "network_curator", self.seeds_task(approval="nope"))
+
+    def test_seeds_outputs_must_equal_symbols(self):
+        for record_id, outputs in (("dec-seeds-less", ["KRAS"]), ("dec-seeds-more", ["KRAS", "EGFR", "BRAF"])):
+            self.approve_seeds(record_id, self.SEEDS_REL, outputs)
+            with self.assertRaisesRegex(ValueError, "outputs"):
+                gate.check_data_input(self.root, "network_curator", self.seeds_task(approval=record_id))
+
+    def test_seeds_session_id_must_be_purpose(self):
+        self.approve_seeds("dec-seeds-p", self.SEEDS_REL, ["EGFR", "KRAS"], session_id="other-purpose")
+        with self.assertRaisesRegex(ValueError, "session_id"):
+            gate.check_data_input(self.root, "network_curator", self.seeds_task(approval="dec-seeds-p"))
+
+    def test_seeds_failing_check_refused(self):
+        rel = "runs/orchestrator/uncited/seeds.json"
+        self.write_seeds(rel, ["KRAS"], cite=False)
+        self.approve_seeds("dec-seeds-bad", rel, ["KRAS"], session_id="uncited")
+        with self.assertRaisesRegex(ValueError, "seeds check failed"):
+            gate.check_data_input(self.root, "network_curator", self.seeds_task(rel=rel, approval="dec-seeds-bad"))
+        with self.assertRaisesRegex(ValueError, "runs/orchestrator"):
+            gate.check_data_input(self.root, "network_curator", self.seeds_task(rel=SOURCE, approval="dec-seeds-1"))
+
+    def test_both_forms_or_mixed_keys_refused(self):
+        both = self.seeds_line(data_session=self.sid, proposals={"P3": sha(self.root / self.seeds)})
+        mixed = "DATA_INPUT " + json.dumps({"seeds": self.SEEDS_REL, "sha256": sha(self.root / self.SEEDS_REL),
+                                            "proposals": {"P3": sha(self.root / self.seeds)}})
+        partial = "DATA_INPUT " + json.dumps({"seeds": self.SEEDS_REL, "approval": "dec-seeds-1"})
+        for line in (both, mixed, partial, f"{self.seeds_line()}\n{self.neko_line()}"):
+            with self.assertRaisesRegex(ValueError, "DATA_INPUT", msg=line):
+                gate.check_data_input(self.root, "network_curator", line)
+            self.assertEqual(self.hook("network-curator", line).returncode, 2)
+
+    def test_seeds_form_scope_refuses_data_sessions(self):
+        task = self.seeds_task() + f"\nAlso see {self.seeds}."
+        with self.assertRaisesRegex(ValueError, "outside its DATA_INPUT"):
+            gate.check_data_input(self.root, "network_curator", task)
+
+    def test_seeds_stage_is_a_governance_stage(self):
+        self.assertIn("data_seeds", state.GOVERNANCE_STAGES)
+
+
+class StaleMappingTests(DataInputFixture):
+    """D. A NeKo re-export makes the approved mapping stale; check and gate say how to recover."""
+
+    NEW_BNET = f"runs/network-curator/{NEKO}/exports/inv2/model.bnet"
+
+    def setUp(self):
+        super().setUp()
+        self.stage_gate_ready()
+
+    def reexport(self, text=BNET_TEXT + "# re-exported\n"):
+        """A new approved NeKo handoff of the same session whose BNET differs."""
+        bnet = self.root / self.NEW_BNET
+        bnet.parent.mkdir(parents=True)
+        bnet.write_text(text, encoding="utf-8")
+        handoff = self.root / "runs" / "network-curator" / NEKO / "handoff.json"
+        manifest = json.loads(handoff.read_text(encoding="utf-8"))
+        manifest["bnet_file"].update(path=self.NEW_BNET, size_bytes=bnet.stat().st_size, sha256=sha(bnet))
+        second = handoff.with_name("handoff-2.json")
+        second.write_text(json.dumps(manifest), encoding="utf-8")
+        ref = {"path": f"runs/network-curator/{NEKO}/handoff-2.json", "sha256": sha(second)}
+        review = {"id": "review-neko-2", "kind": "stage_review", "session_id": NEKO, "stage": "topology",
+                  "outcome": "approved", "artifact": ref}
+        for role in ("scientific-reviewer", "reproducibility-auditor"):
+            review[role] = {"path": f"runs/{role}.md", "sha256": sha(self.root / "runs" / f"{role}.md")}
+        state.update(self.root, "record", review)
+        state.update(self.root, "record", {
+            "id": "approval-neko-2", "kind": "stage_approval", "session_id": NEKO, "stage": "topology",
+            "downstream_stage": "boolean-dynamics", "outputs": OUTPUTS, "approved_by": "researcher",
+            "authorization": "researcher approved the re-export", "artifact": ref})
+
+    def test_check_with_stage_gate(self):
+        self.assertEqual(mapping.check(self.root, self.mapping_rel, stage_gate=STAGE_GATE), [])
+        self.assertEqual(mapping.check(self.root, self.mapping_rel,
+                                       stage_gate=STAGE_GATE[len("STAGE_GATE "):]), [])
+        self.reexport()
+        errors = mapping.check(self.root, self.mapping_rel, stage_gate=STAGE_GATE)
+        self.assertEqual(len(errors), 1, errors)
+        self.assertIn("not the BNET of the approved NeKo handoff", errors[0])
+        self.assertTrue(errors[0].endswith(REDRAFT), errors)
+        self.assertEqual(mapping.check(self.root, self.mapping_rel), [])  # without --stage-gate: not detectable
+        code, out, err = run_cli("check", self.mapping_rel, "--stage-gate", STAGE_GATE[len("STAGE_GATE "):])
+        self.assertEqual(code, 1)
+        self.assertIn(REDRAFT, err)
+        bad = mapping.check(self.root, self.mapping_rel, stage_gate="{not json")
+        self.assertEqual(len(bad), 1)
+        self.assertIn("STAGE_GATE", bad[0])
+
+    def test_gate_refusal_carries_hint_and_redraft_recovers(self):
+        self.reexport()
+        with self.assertRaises(ValueError) as caught:
+            gate.check_data_input(self.root, "boolean_dynamics_modeler", self.maboss_task())
+        self.assertIn("not the BNET of the approved NeKo handoff", str(caught.exception))
+        self.assertTrue(str(caught.exception).endswith(REDRAFT), str(caught.exception))
+        result = self.hook("boolean-dynamics-modeler", self.maboss_task())
+        self.assertEqual(result.returncode, 2)
+        self.assertIn(REDRAFT, result.stderr)
+        path, notes = mapping.redraft(self.root, self.mapping_rel, "luad-r2", (NEKO, self.NEW_BNET))
+        self.assertEqual(notes, [])
+        new_rel = path.relative_to(self.root).as_posix()
+        self.assertEqual(mapping.check(self.root, new_rel, stage_gate=STAGE_GATE), [])
+        self.approve_mapping("dec-map-r2", new_rel)
+        task = self.maboss_task(rel=new_rel, approval="dec-map-r2")
+        self.assertEqual(gate.check_data_input(self.root, "boolean_dynamics_modeler", task)["approval_id"], "dec-map-r2")
+        self.assertEqual(self.hook("boolean-dynamics-modeler", task).returncode, 0)
 
 
 if __name__ == "__main__":

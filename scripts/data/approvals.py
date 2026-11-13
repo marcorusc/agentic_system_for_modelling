@@ -1,4 +1,4 @@
-"""Resolve researcher approvals recorded in DECISIONS.md for data sessions and mappings.
+"""Resolve researcher approvals recorded in DECISIONS.md for data sessions, mappings and seeds files.
 
 `scripts.state` is imported lazily: state.py imports this module, and it must also
 keep working when run as a script.
@@ -123,16 +123,26 @@ def require_proposal_approved(root: Path, record: dict, session_id: str, proposa
     return entry
 
 
-def require_mapping_approval(root: Path, record_id: str, mapping_rel: str, sha256: str) -> dict:
+def _require_artifact_approval(root: Path, record_id: str, stage: str, rel: str, sha256: str) -> dict:
+    """The `stage` stage_approval of exactly this artifact path and sha256, unchanged on disk."""
     state = _state()
     root = Path(root)
     record = load_record(root, record_id)
-    _stage_approval(record, record_id, "data_mapping")
+    _stage_approval(record, record_id, stage)
     approved = record.get("artifact")
-    if not isinstance(approved, dict) or approved.get("path") != mapping_rel:
-        raise ValueError(f"decision {record_id} artifact must be {mapping_rel}")
+    if not isinstance(approved, dict) or approved.get("path") != rel:
+        raise ValueError(f"decision {record_id} artifact must be {rel}")
     if approved.get("sha256") != sha256:
         raise ValueError(f"decision {record_id} approves a different sha256 than {sha256}")
-    if state.digest(state.artifact(root, mapping_rel)) != sha256:
-        raise ValueError(f"{mapping_rel} changed since approval {record_id} (sha256 mismatch)")
+    if state.digest(state.artifact(root, rel)) != sha256:
+        raise ValueError(f"{rel} changed since approval {record_id} (sha256 mismatch)")
     return record
+
+
+def require_mapping_approval(root: Path, record_id: str, mapping_rel: str, sha256: str) -> dict:
+    return _require_artifact_approval(root, record_id, "data_mapping", mapping_rel, sha256)
+
+
+def require_seeds_approval(root: Path, record_id: str, seeds_rel: str, sha256: str) -> dict:
+    """The data_seeds stage_approval of exactly this seeds.json path and sha256."""
+    return _require_artifact_approval(root, record_id, "data_seeds", seeds_rel, sha256)

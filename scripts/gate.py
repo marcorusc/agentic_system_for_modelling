@@ -320,9 +320,16 @@ def _approval_for(root, session, proposal_id):
                      f"session {session} for its current handoff: " + "; ".join(failures))
 
 
+NEKO_PROPOSALS_FORM = {"data_session", "proposals"}
+NEKO_SEEDS_FORM = {"seeds", "sha256", "approval"}
+
+
 def _check_neko_data_input(root, value):
-    if set(value) != {"data_session", "proposals"}:
-        raise ValueError("network-curator DATA_INPUT requires exactly data_session and proposals")
+    if set(value) == NEKO_SEEDS_FORM:
+        return _check_neko_seeds_input(root, value)
+    if set(value) != NEKO_PROPOSALS_FORM:
+        raise ValueError("network-curator DATA_INPUT requires exactly data_session and proposals, "
+                         "or exactly seeds, sha256 and approval")
     session = identifier(value["data_session"])
     proposals = value["proposals"]
     if not isinstance(proposals, dict) or not proposals:
@@ -351,21 +358,92 @@ def _check_neko_data_input(root, value):
             "proposals": resolved}, {session}
 
 
+# STAGE_GATE key -> the inputs.network key naming the same anchor, and how messages call it.
+NETWORK_ANCHORS = {"upstream_session_id": ("neko_session", "NeKo session"),
+                   "standalone_decision_id": ("standalone_decision_id", "standalone approval")}
+REDRAFT_HINT = "redraft with mapping.py draft --from"
+
+
+def _gate_anchor(first_line):
+    """(STAGE_GATE key, value) of a MaBoSS brief's line 1: its upstream_session_id or standalone_decision_id."""
+    gate_value = _strict_object(first_line[len("STAGE_GATE "):], "STAGE_GATE") if first_line.startswith("STAGE_GATE ") else {}
+    for key in NETWORK_ANCHORS:
+        if isinstance(gate_value.get(key), str):
+            return key, gate_value[key]
+    raise ValueError("a MaBoSS DATA_INPUT needs a line-1 STAGE_GATE naming upstream_session_id or standalone_decision_id")
+
+
+def check_mapping_network(root, network, first_line):
+    """Bind a mapping's inputs.network to the line-1 STAGE_GATE of the MaBoSS brief.
+
+    NeKo upstream: network.neko_session equals upstream_session_id and network.sha256 is the
+    BNET of the NeKo handoff that STAGE_GATE approves. Standalone: network.standalone_decision_id
+    equals the STAGE_GATE's and network.sha256 is that standalone_approval's artifact sha256.
+    check_task re-resolves the STAGE_GATE (not weakened by this). Returns (key, anchor).
+    """
+    key, anchor = _gate_anchor(first_line)
+    if not isinstance(network, dict):
+        raise ValueError("mapping inputs.network is missing")
+    field, label = NETWORK_ANCHORS[key]
+    if field not in network:
+        other = next((k for k, (f, _) in NETWORK_ANCHORS.items() if f in network), None)
+        if other is None:
+            raise ValueError("mapping inputs.network names neither neko_session nor standalone_decision_id")
+        other_field, other_label = NETWORK_ANCHORS[other]
+        raise ValueError(f"mapping network is {other_label} {network[other_field]}, so its STAGE_GATE must name "
+                         f"{other} {network[other_field]}, not {key} {anchor}")
+    if network[field] != anchor:
+        raise ValueError(f"mapping network is {label} {network[field]}, but STAGE_GATE names {anchor}; {REDRAFT_HINT}")
+    gate_result = check_task(root, "boolean_dynamics_modeler", first_line)
+    if key == "upstream_session_id":
+        manifest = json.loads(checked_artifact(root, gate_result["artifact"]).read_text())
+        approved = (manifest.get("bnet_file") or {}).get("sha256")
+        what = "the BNET of the approved NeKo handoff"
+    else:
+        approved = gate_result["artifact"]["sha256"]
+        what = f"the BNET of standalone approval {anchor}"
+    if network.get("sha256") != approved:
+        raise ValueError(f"mapping network {network.get('bnet')} (sha256 {str(network.get('sha256'))[:12]}) is not "
+                         f"{what} (sha256 {str(approved)[:12]}); {REDRAFT_HINT}")
+    return key, anchor
+
+
+def _check_neko_seeds_input(root, value):
+    """The seeds form: an approved runs/orchestrator/<p>/seeds.json built from researcher sources."""
+    rel, digest, approval_id = value["seeds"], value["sha256"], value["approval"]
+    if not all(isinstance(v, str) and v for v in (rel, digest, approval_id)):
+        raise ValueError("DATA_INPUT seeds, sha256 and approval must be nonempty strings")
+    if not SHA256.fullmatch(digest):
+        raise ValueError("DATA_INPUT seeds needs a lowercase hex sha256")
+    from scripts.data import seeds
+    purpose = seeds.purpose(rel)
+    record = approvals.require_seeds_approval(root, approval_id, rel, digest)
+    validate_record(root, record)
+    if record.get("session_id") != purpose:
+        raise ValueError(f"seeds approval {approval_id} has session_id {record.get('session_id')!r}; a data_seeds "
+                         f"approval's session_id is the purpose directory {purpose}")
+    # Check exactly the approved bytes: one read gives both the parsed file and its hash.
+    data, actual, errors = seeds.load_and_check(root, rel)
+    if actual != digest:
+        raise ValueError(f"{rel} changed since approval {approval_id} (sha256 mismatch)")
+    if errors:
+        raise ValueError(f"seeds check failed for {rel}: " + "; ".join(errors))
+    symbols = seeds.symbols(data)
+    if set(record["outputs"]) != set(symbols) or len(record["outputs"]) != len(symbols):
+        raise ValueError(f"seeds approval {approval_id} outputs {sorted(record['outputs'])} must equal the "
+                         f"seed symbols {sorted(symbols)}")
+    return {"seeds": rel, "sha256": digest, "approval_id": approval_id, "symbols": symbols}, set()
+
+
 def _check_maboss_data_input(root, value, first_line):
     if set(value) != {"mapping", "sha256", "approval"}:
         raise ValueError("boolean-dynamics-modeler DATA_INPUT requires exactly mapping, sha256 and approval")
     rel, digest, approval_id = value["mapping"], value["sha256"], value["approval"]
     if not all(isinstance(v, str) and v for v in (rel, digest, approval_id)):
         raise ValueError("DATA_INPUT mapping, sha256 and approval must be nonempty strings")
-    gate_value = _strict_object(first_line[len("STAGE_GATE "):], "STAGE_GATE") if first_line.startswith("STAGE_GATE ") else {}
-    upstream = gate_value.get("upstream_session_id")
-    if not isinstance(upstream, str):
-        raise ValueError("a MaBoSS DATA_INPUT needs a line-1 STAGE_GATE naming upstream_session_id")
+    key, anchor = _gate_anchor(first_line)
     record = approvals.require_mapping_approval(root, approval_id, rel, digest)
     validate_record(root, record)
-    if record.get("session_id") != upstream:
-        raise ValueError(f"mapping approval {approval_id} has session_id {record.get('session_id')!r}; a data_mapping "
-                         f"approval's session_id is the mapping's NeKo session, which STAGE_GATE names as {upstream}")
     from scripts.data import mapping
     # Check exactly the approved bytes: one read gives both the parsed mapping and its hash.
     data, actual, errors = mapping.load_and_check(root, rel)
@@ -373,25 +451,21 @@ def _check_maboss_data_input(root, value, first_line):
         raise ValueError(f"{rel} changed since approval {approval_id} (sha256 mismatch)")
     if errors:
         raise ValueError(f"mapping check failed for {rel}: " + "; ".join(errors))
+    # The mapping's network must be the BNET the STAGE_GATE approved: the NeKo handoff's, or the
+    # standalone approval's artifact.
+    check_mapping_network(root, data["inputs"]["network"], first_line)
+    if record.get("session_id") != anchor:
+        raise ValueError(f"mapping approval {approval_id} has session_id {record.get('session_id')!r}; a data_mapping "
+                         f"approval's session_id is the mapping's network anchor (the NeKo session, or the "
+                         f"standalone_decision_id), which STAGE_GATE names as {anchor}")
     ids = ({item.get("id") for item in data["perturbations"]}
            | {item.get("criterion_id") for item in data["criteria"]})
     if set(record["outputs"]) != ids:
         raise ValueError(f"mapping approval {approval_id} outputs {sorted(record['outputs'])} must equal the "
                          f"mapping's perturbation and criterion ids {sorted(ids, key=str)}")
-    neko = data["inputs"]["network"]["neko_session"]
-    if neko != upstream:
-        raise ValueError(f"mapping network is NeKo session {neko}, but STAGE_GATE names {upstream}")
-    # The mapping's network must be the BNET of the NeKo handoff the STAGE_GATE approved
-    # (re-resolved here with check_task, which is not weakened by this).
-    gate_result = check_task(root, "boolean_dynamics_modeler", first_line)
-    manifest = json.loads(checked_artifact(root, gate_result["artifact"]).read_text())
-    approved_bnet = (manifest.get("bnet_file") or {}).get("sha256")
-    mapped = data["inputs"]["network"]
-    if mapped["sha256"] != approved_bnet:
-        raise ValueError(f"mapping network {mapped['bnet']} (sha256 {mapped['sha256'][:12]}) is not the BNET of the "
-                         f"approved NeKo handoff (sha256 {str(approved_bnet)[:12]})")
     sessions = {item["session"] for item in data["inputs"]["data"]}
-    return {"mapping": rel, "sha256": digest, "approval_id": approval_id, "neko_session": neko}, sessions
+    anchor_key = "neko_session" if key == "upstream_session_id" else "standalone_decision_id"
+    return {"mapping": rel, "sha256": digest, "approval_id": approval_id, anchor_key: anchor}, sessions
 
 
 def check_data_input(root, specialist, task):
@@ -401,6 +475,11 @@ def check_data_input(root, specialist, task):
     literal DATA_INPUT line (line 1 for network-curator, line 2 after STAGE_GATE for
     boolean-dynamics-modeler); data are never pasted or pointed at in prose. Returns
     None when the prompt has neither a DATA_INPUT line nor a data-analyst path.
+
+    network-curator: {"data_session", "proposals"} (approved seed_genes proposals) or
+    {"seeds", "sha256", "approval"} (an approved data_seeds seeds.json from user sources).
+    boolean-dynamics-modeler: {"mapping", "sha256", "approval"}, bound to the STAGE_GATE
+    upstream_session_id (NeKo export) or standalone_decision_id (researcher BNET).
     """
     if specialist not in DATA_INPUT_LINE:
         return None

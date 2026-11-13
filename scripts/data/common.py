@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import os
 import re
 from datetime import datetime, timezone
@@ -56,3 +57,21 @@ def session_dir(root: Path, session_id: str) -> Path:
     if not path.is_dir():
         raise ValueError(f"data session does not exist: {session_id}")
     return path
+
+
+def _unique_keys(pairs):
+    out = {}
+    for key, value in pairs:
+        if key in out:
+            raise ValueError(f"duplicate key: {key}")
+        out[key] = value
+    return out
+
+
+def _no_constant(name):
+    raise ValueError(f"non-finite value: {name}")
+
+
+def strict_json(raw: bytes):
+    """Parse UTF-8 JSON, refusing duplicate keys and NaN/Infinity."""
+    return json.loads(raw.decode("utf-8"), object_pairs_hook=_unique_keys, parse_constant=_no_constant)
