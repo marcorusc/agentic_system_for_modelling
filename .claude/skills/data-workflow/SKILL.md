@@ -76,6 +76,10 @@ Only these Bash forms are accepted by the guard:
   `scripts/data/handoff.py`.
   Other `scripts/data` modules (`ledger`, `common`, ...) are imported from saved scripts.
 - Plain `ls` and `head` inside the repository.
+- To search files (including the vendored guides) use the Grep, Glob and Read tools.
+  Shell `grep`, `find`, `cat` and similar are not allowed.
+- Write every command on a single line. Never use `\` line continuations; put long
+  logic in a saved script instead.
 - `fetch.py`, `manifest.py` and `handoff.py` must always pass `--session <active>`.
 - The command line may not contain `;` `|` `&` `<` `>` `$` backticks, backslash, newlines
   or non-ASCII; unquoted globs, braces and `~` are rejected. URLs with `?` or `&` cannot
@@ -142,6 +146,14 @@ The datahub git-LFS / S3 download can fail (LFS pointer files or S3 errors inste
 data). Do not retry blindly. Fall back to the cBioPortal API and reconcile record
 counts: compare the number of samples/patients/mutations retrieved against the study
 summary count and report any discrepancy in the Sources and Limitations sections.
+
+### Source documents (PDF, Excel)
+
+Units, concentrations and assay durations must come from the source's own documentation,
+never from memory. `.venv-data` includes `pypdf` (read PDF descriptions, e.g. GDSC
+release notes) and `openpyxl` (`pandas.read_excel` for `.xlsx` releases, e.g. GDSC or
+DepMap). Read them from a saved script, register each document in the ledger like any
+other source, and quote the exact unit text in the report.
 
 ### Ledger `terms`
 
@@ -246,7 +258,8 @@ identifiers type or `"none"`):
 
 `target_layer` is one of `spec`, `neko`, `maboss`, `biomass`, `physicell`; `kind` is one
 of `seed_genes`, `initial_states`, `mutations`, `validation_targets`, `parameters`,
-`time_course`. Use exactly one value each.
+`time_course`. Use exactly one value each. Proposal ids are `P1`, `P2`, ... (`^P\d+$`;
+`P2b` is rejected), and each proposal file is named after its id (`P3_<what>.csv`).
 
 Report headings (final message, saved by the recorder as `report.md`):
 

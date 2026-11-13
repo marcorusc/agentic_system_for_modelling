@@ -10,7 +10,7 @@ from scripts.data import environment as data_env
 from scripts.setup_support import detect, environment, verify
 
 ROOT = Path(__file__).resolve().parents[2]
-IMPORT_PROBE = "import pydeseq2, gseapy, anndata, decoupler, sklearn, statsmodels, pint, uncertainties, gget, seaborn, matplotlib"
+IMPORT_PROBE = "import pydeseq2, gseapy, anndata, decoupler, sklearn, statsmodels, pint, uncertainties, gget, seaborn, matplotlib, pypdf, openpyxl"
 
 
 class DataSetupTests(unittest.TestCase):
