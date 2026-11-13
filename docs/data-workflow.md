@@ -54,7 +54,7 @@ runs the vendored PyDESeq2 and GSEA scripts on a synthetic 4-vs-4 dataset and pr
   approval is recorded;
 - the boolean-dynamics-modeler `DATA_INPUT` line (after a `STAGE_GATE` line naming the NeKo
   session) is accepted and a wrong mapping hash is refused (only the data part of the gate is
-  called; `STAGE_GATE` governance records are outside the smoke);
+  called; the smoke records a synthetic exported, reviewed and approved NeKo session so the `STAGE_GATE` binds the BNET);
 - synthetic trajectories and `runs.json` go through `mapping.py criteria --merge-into
   VALIDATION_CRITERIA.yaml`, and `scripts/validate/evaluate.py` passes the `scenario_contrast`
   criterion.
@@ -176,10 +176,11 @@ DATA_INPUT {"data_session": "data-...", "proposals": {"P1": "<sha256>"}}
 Each proposal must be a `seed_genes` proposal with target layer `neko`, be in the
 `outputs` of a `stage_approval` for stage `data` and that session, and match both the
 manifest and the file on disk; the handoff must still validate. When several data
-approvals of the session match, the latest `recorded_at` wins (a tie: the later record in
-`DECISIONS.md`; none timed: the last record). A mix of timed and untimed records, or an
-unparseable or timezone-naive `recorded_at`, is refused. The mapping approval is looked up
-by its exact `approval` id.
+approvals of the session exist, they are cumulative: a proposal is approved if any valid
+`data` `stage_approval` of that data session, binding the current `handoff.json` sha256,
+lists it in `outputs`; a later partial approval does not revoke an earlier one. There is no
+revocation record: to withdraw a proposal, re-run the data analysis in a new session (new
+handoff). The mapping approval is looked up by its exact `approval` id.
 
 The curator finds each proposal file itself through `runs/data-analyst/<data_session>/manifest.json`
 (the brief carries no path) and returns `blocked` if an id is missing or a hash differs.
@@ -192,10 +193,14 @@ researcher (`scripts/data/mapping.py`):
 |---|---|
 | `draft --purpose P --data SESSION:PROPOSAL:APPROVAL ... --network NEKO_SESSION:BNET` | Skeleton with inputs, hashes and approvals filled in; one `unmapped` entry per proposal row with reason `TODO`. |
 | `check MAPPING` | Exit 1 with one problem per line: bad paths or hashes, unapproved proposals, missing BNET nodes, rows neither mapped nor `unmapped` with a real reason, invalid criteria. |
-| `criteria MAPPING --runs RUNS [--out FILE] [--merge-into VALIDATION_CRITERIA.yaml]` | Criteria entries from `runs.json` (scenario to saved trajectory CSV); refuses a scenario with no run. |
+| `criteria MAPPING --runs RUNS --approval RECORD_ID [--out FILE] [--merge-into VALIDATION_CRITERIA.yaml]` | Criteria entries from `runs.json` (scenario to saved trajectory CSV); refuses a mapping without a `data_mapping` approval of exactly its current bytes, and a scenario with no run. `--out` is written before the merge. The approval id appears in each declaration's "Required evidence" next to the mapping sha256. |
 
 Rules enforced by `check`:
-- the BNET is under `runs/network-curator/<session>/exports/`;
+- the BNET is under `runs/network-curator/<session>/exports/` or
+  `boolean-handoffs/<capture>/`;
+- where the context and a perturbation fix the same node, the perturbation overrides the
+  context; `check` prints each overlap as a `note:` line and does not fail;
+- readout nodes must be among the MaBoSS output nodes approved for the run;
 - criterion methods are `scenario_contrast`, `ordered_peaks` and `canonical_cycles`;
   `boolean_structure` is declared directly in `VALIDATION_CRITERIA.yaml`;
 - `scenario_contrast` needs different test and reference contexts.
@@ -214,7 +219,10 @@ DATA_INPUT {"mapping": "runs/orchestrator/<p>/mapping.json", "sha256": "...", "a
 ```
 
 The hook requires the matching approval, a passing `mapping.py check` at dispatch time,
-and `inputs.network.neko_session` equal to the `STAGE_GATE` `upstream_session_id`.
+`inputs.network.neko_session` equal to the `STAGE_GATE` `upstream_session_id`, and
+`inputs.network.sha256` equal to the BNET sha256 of the NeKo handoff that `STAGE_GATE`
+approved. A `data_mapping` approval's `session_id` is the mapping's NeKo session and must
+equal that `upstream_session_id`.
 
 **Brief strictness.** For both specialists, any case-insensitive occurrence of
 `DATA[_-]?INPUT` other than the single canonical line is refused: never mention it in

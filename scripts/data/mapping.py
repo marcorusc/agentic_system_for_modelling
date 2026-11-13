@@ -13,7 +13,7 @@ not data-driven responses, and is declared directly in VALIDATION_CRITERIA.yaml.
 CLI:
   mapping.py draft --purpose P --data SESSION:PROPOSAL:APPROVAL ... --network NEKO_SESSION:BNET
   mapping.py check MAPPING                       (exit 1, one problem per line on stderr)
-  mapping.py criteria MAPPING --runs RUNS [--out FILE] [--merge-into VALIDATION_CRITERIA.yaml]
+  mapping.py criteria MAPPING --runs RUNS --approval RECORD_ID [--out FILE] [--merge-into VALIDATION_CRITERIA.yaml]
 """
 
 from __future__ import annotations
@@ -96,8 +96,10 @@ def _mapping_path(root: Path, rel) -> Path:
 def _bnet(root: Path, neko_session, rel) -> Path:
     state.identifier(neko_session)
     parts = _parts(rel)
-    if parts[:4] != (*NETWORK, neko_session, "exports") or len(parts) < 6 or not rel.endswith(".bnet"):
-        raise ValueError(f"network BNET must be a .bnet under runs/network-curator/{neko_session}/exports/, not {rel!r}")
+    if parts[:3] != (*NETWORK, neko_session) or len(parts) < 6 or parts[3] not in ("exports", "boolean-handoffs") \
+            or not rel.endswith(".bnet"):
+        raise ValueError(f"network BNET must be a .bnet under runs/network-curator/{neko_session}/exports/ or "
+                         f"boolean-handoffs/, not {rel!r}")
     return state.artifact(root, rel)
 
 
@@ -530,6 +532,25 @@ def _no_constant(name):
     raise ValueError(f"non-finite value: {name}")
 
 
+def overlaps(data: dict) -> list[tuple[str, str, str]]:
+    """(perturbation id, context id, node) wherever both fix a node: the perturbation overrides the context."""
+    found = []
+    contexts, perturbations = data.get("contexts"), data.get("perturbations")
+    if not isinstance(contexts, dict) or not isinstance(perturbations, list):
+        return found
+    for item in perturbations:
+        if not isinstance(item, dict) or not isinstance(item.get("model"), list):
+            continue
+        fixed = [e["node"] for e in item["model"] if isinstance(e, dict) and "node" in e]
+        for cid, states in contexts.items():
+            if not isinstance(states, list):
+                continue
+            for entry in states:
+                if isinstance(entry, dict) and entry.get("node") in fixed:
+                    found.append((item.get("id"), cid, entry["node"]))
+    return found
+
+
 def check(root: Path, mapping_rel: str) -> list[str]:
     """Every problem with the mapping, one message each; [] when it is valid."""
     root = Path(root)
@@ -616,10 +637,15 @@ def _runs(root: Path, runs_rel: str, data: dict) -> dict:
     return found
 
 
-def criteria(root: Path, mapping_rel: str, runs_rel: str) -> dict:
-    """VALIDATION_CRITERIA entries and validation-declare inputs for the mapping's criteria."""
+def criteria(root: Path, mapping_rel: str, runs_rel: str, approval_id: str) -> dict:
+    """VALIDATION_CRITERIA entries and validation-declare inputs for the mapping's criteria.
+
+    The mapping must carry a researcher `data_mapping` approval (`approval_id`) of exactly
+    its current bytes; nothing is emitted for an unapproved or since-edited mapping.
+    """
     root = Path(root)
     data, digest = _load_mapping(root, mapping_rel)  # check and build from the same bytes
+    approvals.require_mapping_approval(root, approval_id, mapping_rel, digest)
     errors = _check_data(root, data)
     if errors:
         raise ValueError(f"{mapping_rel} fails check: " + "; ".join(errors))
@@ -646,7 +672,7 @@ def criteria(root: Path, mapping_rel: str, runs_rel: str) -> dict:
         source = item["from"]
         declarations.append({"Criterion": item["criterion_id"], "Method": method,
                              "Required evidence": f"{method} over {', '.join(map(str, inputs))}; mapping "
-                                                  f"{mapping_rel} sha256 {digest}; data {source['proposal']} "
+                                                  f"{mapping_rel} sha256 {digest} (approval {approval_id}); data {source['proposal']} "
                                                   f"row {source['row']}"})
     if missing:
         raise ValueError("no run for scenario " + ", ".join(dict.fromkeys(missing)))
@@ -704,6 +730,8 @@ def main(argv: list[str] | None = None) -> int:
     g = sub.add_parser("criteria")
     g.add_argument("mapping")
     g.add_argument("--runs", required=True)
+    g.add_argument("--approval", required=True, metavar="RECORD_ID",
+                   help="id of the data_mapping stage_approval of exactly this mapping")
     g.add_argument("--out")
     g.add_argument("--merge-into")
     args = parser.parse_args(argv)
@@ -721,9 +749,11 @@ def main(argv: list[str] | None = None) -> int:
                 print(error, file=sys.stderr)
             if errors:
                 return 1
+            for pid, cid, node in overlaps(_load_mapping(root, args.mapping)[0]):
+                print(f"note: perturbation {pid} overrides context {cid} on {node}")
             print(f"mapping check passed: {args.mapping}")
             return 0
-        result = criteria(root, args.mapping, args.runs)
+        result = criteria(root, args.mapping, args.runs, args.approval)
         text = json.dumps(result, indent=2) + "\n"
         if args.out:
             parts = _parts(args.out)
@@ -731,13 +761,13 @@ def main(argv: list[str] | None = None) -> int:
                 raise ValueError("--out must be a repository-relative path")
             if (root / args.out).exists() or (root / args.out).is_symlink():
                 raise ValueError(f"{args.out} exists; refusing to overwrite")
-        if args.merge_into:
-            merge_into(root, args.merge_into, result["criteria"])
         if args.out:
             try:
                 _write_new(root, root / args.out, text)
             except FileExistsError as exc:
                 raise ValueError(f"{args.out} exists; refusing to overwrite") from exc
+        if args.merge_into:  # after --out, so a failed --out write leaves the YAML untouched
+            merge_into(root, args.merge_into, result["criteria"])
         print(text, end="")
         return 0
     except (ValueError, OSError, KeyError) as exc:

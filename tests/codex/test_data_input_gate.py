@@ -1,6 +1,7 @@
 """DATA_INPUT dispatch checks: NeKo seeds and MaBoSS mappings consume only approved, hash-checked data."""
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -8,6 +9,7 @@ import unittest
 from unittest import mock
 
 from scripts import gate, state
+from scripts.data import mapping
 from tests.data.test_mapping import BNET, BNET_TEXT, NEKO, MappingFixture, sha
 
 REFUSAL = "brief references data-analyst artifacts without a DATA_INPUT line; see CLAUDE.md"
@@ -87,21 +89,24 @@ class NekoDataInputTests(DataInputFixture):
         self.assertEqual(result["approval_id"], "dec-data-1")
         self.assertEqual(result["proposals"], {"P3": {"path": self.seeds, "sha256": sha(self.root / self.seeds)}})
 
-    def test_neko_newest_approval_is_used(self):
-        self.approve("dec-data-2", ["P3"])
-        self.assertEqual(gate.check_data_input(self.root, "network_curator", self.neko_task())["approval_id"],
-                         "dec-data-2")
-
-    def test_neko_untimed_approval_among_timed_is_ambiguous(self):
-        ref = {"path": f"{self.base}/handoff.json", "sha256": sha(self.root / self.base / "handoff.json")}
-        record = {"id": "dec-data-hand", "kind": "stage_approval", "stage": "data", "session_id": self.sid,
-                  "outputs": ["P3"], "artifact": ref, "approved_by": "researcher", "authorization": "ok"}
+    def restrict_first_approval(self, outputs):
         decisions = self.root / "DECISIONS.md"
-        decisions.write_text(decisions.read_text(encoding="utf-8").rstrip()
-                             + "\n\n<!-- governance-record -->\n```json\n" + json.dumps(record) + "\n```\n",
-                             encoding="utf-8")
-        with self.assertRaisesRegex(ValueError, "cannot order data approvals"):
-            gate.check_data_input(self.root, "network_curator", self.neko_task())
+        text = decisions.read_text(encoding="utf-8")
+        pattern = r'"outputs": \[\s*"P1",\s*"P2",\s*"P3"\s*\]'
+        self.assertRegex(text, pattern)
+        decisions.write_text(re.sub(pattern, f'"outputs": {json.dumps(outputs)}', text, count=1), encoding="utf-8")
+
+    def test_neko_approvals_are_cumulative(self):
+        # P3 approved in record A and P4 in a later record B: both usable in one DATA_INPUT.
+        self.approve("dec-data-2", ["P4"])
+        seeds4 = f"{self.base}/proposals/P4_seed_genes.csv"
+        proposals = {"P3": sha(self.root / self.seeds), "P4": sha(self.root / seeds4)}
+        result = gate.check_data_input(self.root, "network_curator", self.neko_task(proposals=proposals))
+        self.assertEqual(set(result["proposals"]), {"P3", "P4"})
+        # A later partial approval does not revoke earlier ones.
+        self.approve("dec-data-3", ["P1"])
+        self.assertEqual(set(gate.check_data_input(self.root, "network_curator",
+                                                   self.neko_task(proposals=proposals))["proposals"]), {"P3", "P4"})
 
     def test_neko_wrong_hash_refused(self):
         with self.assertRaisesRegex(ValueError, "sha256"):
@@ -120,13 +125,22 @@ class NekoDataInputTests(DataInputFixture):
             gate.check_data_input(self.root, "network_curator", self.neko_task(proposals={"P9": "0" * 64}))
         with self.assertRaisesRegex(ValueError, "no researcher stage_approval"):
             gate.check_data_input(self.root, "network_curator", self.neko_task(session="data-other-session"))
-        # The newest approval of the session governs; it no longer approves P3.
+        # P3 listed only in a record that binds a stale handoff sha is refused.
+        self.restrict_first_approval(["P1"])
+        handoff = self.root / self.base / "handoff.json"
+        original = handoff.read_text(encoding="utf-8")
+        handoff.write_text(original + " ", encoding="utf-8")
+        self.approve("dec-data-stale", ["P3"])
+        handoff.write_text(original, encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "not in the approved outputs"):
+            gate.check_data_input(self.root, "network_curator", self.neko_task())
+        # P3 never listed at all.
         self.approve("dec-data-2", ["P1", "P2"])
-        with self.assertRaisesRegex(ValueError, "not in the approved outputs of decision dec-data-2"):
+        with self.assertRaisesRegex(ValueError, "not in the approved outputs"):
             gate.check_data_input(self.root, "network_curator", self.neko_task())
         # A handoff changed after approval invalidates the approval.
         handoff = self.root / self.base / "handoff.json"
-        handoff.write_text(handoff.read_text(encoding="utf-8") + " ", encoding="utf-8")
+        handoff.write_text(handoff.read_text(encoding="utf-8") + "\n\n", encoding="utf-8")
         with self.assertRaisesRegex(ValueError, "changed since approval"):
             gate.check_data_input(self.root, "network_curator", self.neko_task())
 
@@ -164,6 +178,10 @@ class NekoDataInputTests(DataInputFixture):
 
 
 class MabossDataInputTests(DataInputFixture):
+    def setUp(self):
+        super().setUp()
+        self.stage_gate_ready()
+
     def test_maboss_mapping_ok(self):
         result = gate.check_data_input(self.root, "boolean_dynamics_modeler", self.maboss_task())
         self.assertEqual(result, {"mapping": self.mapping_rel, "sha256": sha(self.root / self.mapping_rel),
@@ -225,6 +243,36 @@ class MabossDataInputTests(DataInputFixture):
             gate.check_data_input(self.root, "boolean_dynamics_modeler", self.maboss_task(gate_line=standalone))
         with self.assertRaisesRegex(ValueError, "line 2"):
             gate.check_data_input(self.root, "boolean_dynamics_modeler", self.maboss_line())
+
+
+    def test_maboss_mapping_bnet_must_be_the_approved_one(self):
+        other = self.root / f"runs/network-curator/{NEKO}/exports/inv2/draft.bnet"
+        other.parent.mkdir(parents=True)
+        other.write_text(BNET_TEXT + "KRAS, KRAS\n", encoding="utf-8")
+        rel = self.draft("other")
+        data = self.load(rel)
+        data["inputs"]["network"] = {"neko_session": NEKO, "bnet": other.relative_to(self.root).as_posix(),
+                                     "sha256": sha(other)}
+        data["contexts"] = {"LUAD_EGFR": [{"node": "KRAS", "state": 1}], "LUAD_wt": []}
+        for key in ("perturbations", "readouts", "criteria", "unmapped"):
+            data[key] = self.mapping_data[key]
+        self.save(rel, data)
+        self.assertEqual(mapping.check(self.root, rel), [])
+        self.approve_mapping("dec-map-2", rel)
+        task = self.maboss_task(rel=rel, approval="dec-map-2")
+        with self.assertRaisesRegex(ValueError, "not the BNET of the approved NeKo handoff"):
+            gate.check_data_input(self.root, "boolean_dynamics_modeler", task)
+        self.assertEqual(self.hook("boolean-dynamics-modeler", task).returncode, 2)
+        self.assertEqual(gate.check_data_input(self.root, "boolean_dynamics_modeler", self.maboss_task())["approval_id"],
+                         "dec-map-1")
+
+    def test_maboss_approval_session_must_be_the_neko_session(self):
+        state.update(self.root, "record", {
+            "id": "dec-map-bad", "kind": "stage_approval", "stage": "data_mapping", "session_id": "neko-session-2",
+            "outputs": ["S1", "V1"], "artifact": {"path": self.mapping_rel, "sha256": sha(self.root / self.mapping_rel)},
+            "approved_by": "researcher", "authorization": "researcher: mapping ok"})
+        with self.assertRaisesRegex(ValueError, "session_id"):
+            gate.check_data_input(self.root, "boolean_dynamics_modeler", self.maboss_task(approval="dec-map-bad"))
 
 
 class ScopeTests(DataInputFixture):

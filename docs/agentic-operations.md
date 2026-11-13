@@ -184,11 +184,13 @@ through a `DATA_INPUT` line, checked by `scripts/gate.py check_data_input`:
   `DATA_INPUT {"mapping": "runs/orchestrator/<p>/mapping.json", "sha256": "...", "approval": "<record id>"}`.
   The approval is a `stage_approval` for stage `data_mapping` on that mapping and hash,
   whose `outputs` equal the mapping's perturbation and criterion ids; `mapping.py check`
-  must pass and the mapping's NeKo session must equal the `STAGE_GATE` upstream.
+  must pass, the mapping's NeKo session must equal the `STAGE_GATE` upstream (the approval's
+  `session_id` is that NeKo session) and its BNET sha256 must equal the approved NeKo
+  handoff's BNET.
 
-For the NeKo data approval, when several records of the session match, the latest
-`recorded_at` wins (a tie: the later in `DECISIONS.md`; none timed: the last record); a mix of
-timed and untimed records, or an unparseable or timezone-naive `recorded_at`, is refused. The
+NeKo data approvals are cumulative: a proposal is approved if any valid `data` approval of the
+session, binding the current handoff sha256, lists it. There is no revocation record; to
+withdraw a proposal, re-run the data analysis in a new session (new handoff). The
 mapping approval is looked up by its exact `approval` id. Any other occurrence of
 `DATA_INPUT` (any case or separator) in the prompt, a `runs/data-analyst` path or a data
 session id without the line, is refused, and any hook error denies the dispatch. Never
@@ -200,12 +202,14 @@ Mapping commands (details in docs/data-workflow.md):
 ```
 python3 scripts/data/mapping.py draft --purpose P --data SESSION:PROPOSAL:APPROVAL ... --network NEKO_SESSION:BNET
 python3 scripts/data/mapping.py check runs/orchestrator/P/mapping.json
-python3 scripts/data/mapping.py criteria runs/orchestrator/P/mapping.json --runs runs/orchestrator/P/runs.json [--merge-into VALIDATION_CRITERIA.yaml]
+python3 scripts/data/mapping.py criteria runs/orchestrator/P/mapping.json --runs runs/orchestrator/P/runs.json --approval <data_mapping record id> [--merge-into VALIDATION_CRITERIA.yaml]
 ```
 
 Procedure: draft, discuss with the researcher, fill, `check`, researcher approval
 (`data_mapping`), dispatch, then `criteria` from the reported trajectories and
-`scripts/validate/evaluate.py`. `scenario_contrast` is documented in
+`scripts/validate/evaluate.py` (`criteria` refuses a mapping without its approval). Where the
+context and perturbation fix the same node, the perturbation overrides the context.
+`scenario_contrast` is documented in
 `scripts/validate/README.md`.
 
 ## Evidence and provenance

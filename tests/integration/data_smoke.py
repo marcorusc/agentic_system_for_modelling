@@ -441,10 +441,10 @@ def run(tmp: Path) -> None:
     def sha_of(rel: str) -> str:
         return sha256_file(root / rel)
 
-    def record_state(record: dict) -> None:
-        file = tmp / f"{record['id']}.json"
+    def record_state(record: dict, operation: str = "record") -> None:
+        file = tmp / f"{record.get('id') or record.get('session_id')}-{operation}.json"
         write_json(file, record)
-        sh("scripts/state.py", "record", "--input", str(file))
+        sh("scripts/state.py", operation, "--input", str(file))
 
     base = f"runs/data-analyst/{sid}"
     record_state({"id": "dec-data-1", "kind": "stage_approval", "stage": "data", "session_id": sid,
@@ -460,7 +460,7 @@ def run(tmp: Path) -> None:
     try:
         gate.check_data_input(root, "network_curator", bad_neko)
     except ValueError as exc:
-        assert "sha256" in str(exc), exc
+        assert f"proposal P1 sha256 {'0' * 12} differs from the approved file {seeds}" in str(exc), exc
     else:
         raise AssertionError("NeKo brief with a wrong proposal hash was accepted")
     step("data approval recorded; network-curator DATA_INPUT accepted, wrong proposal hash refused")
@@ -495,17 +495,47 @@ def run(tmp: Path) -> None:
                   "approved_by": "researcher", "authorization": "researcher: mapping ok"})
     step("mapping.py draft, completed mapping passes check, data_mapping approval recorded")
 
+    # The STAGE_GATE the MaBoSS DATA_INPUT rides on: an exported, reviewed, approved NeKo session.
+    outputs = ["Proliferation", "Survival"]
+    for name in ("CURRENT_STATE.md", "VALIDATION_PLAN.md"):
+        if not (root / name).exists():
+            shutil.copyfile(root / "templates" / name, root / name)
+    bnet_path = root / BNET_REL
+    neko_manifest = {"source": {"server": "NeKo", "session_id": NEKO}, "schema_name": "mcp-biomodelling-handoff",
+                     "schema_version": "1.0", "handoff_type": "neko-to-maboss",
+                     "network": {"nodes": ["EGFR", "MAPK1", "Proliferation", "Survival"], "output_nodes": outputs},
+                     "bnet_file": {"path": BNET_REL, "server": "NeKo", "session_id": NEKO, "role": "neko_bnet",
+                                   "name": bnet_path.name, "suffix": ".bnet", "media_type": "text/plain",
+                                   "size_bytes": bnet_path.stat().st_size, "sha256": sha_of(BNET_REL)}}
+    handoff_rel = f"runs/network-curator/{NEKO}/handoff.json"
+    write_json(root / handoff_rel, neko_manifest)
+    neko_ref = {"path": handoff_rel, "sha256": sha_of(handoff_rel)}
+    from scripts import state as state_module
+    state_module.update(root, "registry-add", dict(zip(state_module.REGISTRY, [
+        "network-curator", NEKO, "topology", "active", "—", "pending", handoff_rel])))
+    review = {"id": "review-neko", "kind": "stage_review", "session_id": NEKO, "stage": "topology",
+              "outcome": "approved", "artifact": neko_ref}
+    for role in ("scientific-reviewer", "reproducibility-auditor"):
+        (root / "runs" / f"{role}.md").write_text("independent bounded review", encoding="utf-8")
+        review[role] = {"path": f"runs/{role}.md", "sha256": sha_of(f"runs/{role}.md")}
+    record_state(review)
+    record_state({"id": "approval-neko", "kind": "stage_approval", "session_id": NEKO, "stage": "topology",
+                  "downstream_stage": "boolean-dynamics", "outputs": outputs, "approved_by": "researcher",
+                  "authorization": "researcher approved this revision and outputs", "artifact": neko_ref})
+    state_module.update(root, "registry-handoff", {"session_id": NEKO, "handoff": "approved"})
+    state_module.update(root, "registry-handoff", {"session_id": NEKO, "handoff": "exported", "artifact": neko_ref})
+
     stage_gate = "STAGE_GATE " + json.dumps({"upstream_session_id": NEKO, "outputs": ["Proliferation", "Survival"]})
     maboss_line = "DATA_INPUT " + json.dumps({"mapping": mapping_rel, "sha256": sha_of(mapping_rel),
                                               "approval": "dec-map-1"})
     maboss_task = f"{stage_gate}\n{maboss_line}\nSimulate exactly the mapping's scenarios."
     result = gate.check_data_input(root, "boolean_dynamics_modeler", maboss_task)
-    assert result, result
+    assert result["approval_id"] == "dec-map-1" and result["neko_session"] == NEKO, result
     bad_maboss = maboss_task.replace(sha_of(mapping_rel), "0" * 64)
     try:
         gate.check_data_input(root, "boolean_dynamics_modeler", bad_maboss)
     except ValueError as exc:
-        assert "sha256" in str(exc), exc
+        assert f"decision dec-map-1 approves a different sha256 than {'0' * 64}" in str(exc), exc
     else:
         raise AssertionError("MaBoSS brief with a wrong mapping hash was accepted")
     step("boolean-dynamics-modeler DATA_INPUT accepted, wrong mapping hash refused")
@@ -523,7 +553,10 @@ def run(tmp: Path) -> None:
         runs.append({"context": context, "perturbation": perturbation, "trajectory": rel})
     write_json(root / "runs/orchestrator/luad/runs.json", {"runs": runs})
     sh("scripts/data/mapping.py", "criteria", mapping_rel, "--runs", "runs/orchestrator/luad/runs.json",
-       "--merge-into", "VALIDATION_CRITERIA.yaml")
+       "--approval", "dec-map-1", "--merge-into", "VALIDATION_CRITERIA.yaml")
+    unapproved = sh("scripts/data/mapping.py", "criteria", mapping_rel, "--runs", "runs/orchestrator/luad/runs.json",
+                    "--approval", "dec-data-1", check=False)
+    assert unapproved.returncode == 1 and "data_mapping" in unapproved.stderr, unapproved.stderr
     merged = json.loads((root / "VALIDATION_CRITERIA.yaml").read_text(encoding="utf-8"))
     assert [c["criterion_id"] for c in merged["criteria"]] == ["V1"], merged
     assert merged["criteria"][0]["inputs"] == [r["trajectory"] for r in runs], merged

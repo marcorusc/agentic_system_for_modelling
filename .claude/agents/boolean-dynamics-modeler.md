@@ -91,7 +91,7 @@ act on.
 If line 2 of the invocation (after `STAGE_GATE`) is a `DATA_INPUT` line, read the
 mapping file it names and never alter it. Simulate exactly the mapping's scenarios:
 each context, each perturbation applied to its context, and the context without the
-perturbation as control. Add no scenario, node state or readout of your own. Report one
+perturbation as control. On a node fixed by both the context and the perturbation, the perturbation overrides the context. Add no scenario, node state or readout of your own. Report one
 trajectory artifact path per `(context, perturbation)` pair (control included), so the
 orchestrator can write `runs.json`. Report any mapped node the model does not accept.
 

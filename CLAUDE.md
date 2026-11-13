@@ -64,7 +64,8 @@ mapping's perturbation and criterion ids), then line 2 of the boolean-dynamics-m
 brief, after `STAGE_GATE`, is
 `DATA_INPUT {"mapping": "runs/orchestrator/<p>/mapping.json", "sha256": "...", "approval": "<record id>"}`.
 Mention `DATA_INPUT` or a `runs/data-analyst` path nowhere else in these briefs; the
-dispatch hook refuses it. Registry: a NeKo session built from seeds has `Derived from`
+dispatch hook refuses it (a bare data session id without `DATA_INPUT` too, and any data
+session other than the one `DATA_INPUT` names). Registry: a NeKo session built from seeds has `Derived from`
 = the data session and cites proposal ids and short hashes; a MaBoSS row cites the
 mapping path and short hash. Tag mapped states, perturbations and readouts `data-derived`.
 

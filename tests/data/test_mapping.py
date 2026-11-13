@@ -63,7 +63,8 @@ class MappingFixture(unittest.TestCase):
         self.dir = session_dir(self.root, self.sid)
         self.base = f"runs/data-analyst/{self.sid}"
         files = {"P1": ("perturbations", "maboss", PERTURBATIONS), "P2": ("validation_targets", "maboss", TARGETS),
-                 "P3": ("seed_genes", "neko", SEEDS)}
+                 "P3": ("seed_genes", "neko", SEEDS),
+                 "P4": ("seed_genes", "neko", "hgnc_symbol,tier,evidence\nMAPK1,core,lit\n")}
         index = []
         for pid, (kind, layer, text) in files.items():
             (self.dir / "proposals" / f"{pid}_{kind}.csv").write_text(text, encoding="utf-8")
@@ -182,6 +183,29 @@ class CheckTests(MappingFixture):
     def setUp(self):
         super().setUp()
         self.rel, self.data = self.complete()
+
+    def test_overlap_of_context_and_perturbation_is_a_note_not_an_error(self):
+        rel, data = self.complete("overlap")
+        self.assertEqual(mapping.check(self.root, rel), [])
+        self.assertEqual(mapping.overlaps(data), [("S1", "LUAD_EGFR", "EGFR")])
+        out, err = io.StringIO(), io.StringIO()
+        with redirect_stdout(out), redirect_stderr(err):
+            code = mapping.main(["check", rel])
+        self.assertEqual(code, 0, err.getvalue())
+        self.assertIn("note: perturbation S1 overrides context LUAD_EGFR on EGFR", out.getvalue())
+        self.assertEqual(err.getvalue(), "")
+
+    def test_bnet_may_be_a_captured_boolean_handoff(self):
+        rel, data = self.complete("captured")
+        captured = f"runs/network-curator/{NEKO}/boolean-handoffs/cap-1/model.bnet"
+        (self.root / captured).parent.mkdir(parents=True)
+        (self.root / captured).write_text(BNET_TEXT, encoding="utf-8")
+        data["inputs"]["network"] = {"neko_session": NEKO, "bnet": captured, "sha256": sha(self.root / captured)}
+        self.save(rel, data)
+        self.assertEqual(mapping.check(self.root, rel), [])
+        data["inputs"]["network"]["bnet"] = f"runs/network-curator/{NEKO}/other/model.bnet"
+        self.save(rel, data)
+        self.assertError(mapping.check(self.root, rel), "network BNET must be")
 
     def test_check_complete_mapping_passes(self):
         self.assertEqual(mapping.check(self.root, self.rel), [])
@@ -341,9 +365,17 @@ class CriteriaTests(MappingFixture):
             runs.append({"context": context, "perturbation": pert, "trajectory": rel})
         self.runs_rel = "runs/orchestrator/luad/runs.json"
         self.save(self.runs_rel, {"runs": runs})
+        self.approve_mapping("dec-map-1")
+
+    def approve_mapping(self, record_id, rel=None):
+        rel = rel or self.rel
+        state.update(self.root, "record", {
+            "id": record_id, "kind": "stage_approval", "stage": "data_mapping", "session_id": NEKO,
+            "outputs": ["S1", "V1"], "artifact": {"path": rel, "sha256": sha(self.root / rel)},
+            "approved_by": "researcher", "authorization": "researcher: mapping ok"})
 
     def test_criteria_scenario_contrast_input_order(self):
-        result = mapping.criteria(self.root, self.rel, self.runs_rel)
+        result = mapping.criteria(self.root, self.rel, self.runs_rel, "dec-map-1")
         (entry,) = result["criteria"]
         t = self.trajectories
         self.assertEqual(entry, {"criterion_id": "V1", "method": "scenario_contrast",
@@ -354,24 +386,59 @@ class CriteriaTests(MappingFixture):
         self.assertEqual(set(decl), {"Criterion", "Method", "Required evidence"})
         self.assertEqual((decl["Criterion"], decl["Method"]), ("V1", "scenario_contrast"))
         self.assertIn(self.rel, decl["Required evidence"])
+        self.assertIn("approval dec-map-1", decl["Required evidence"])
         self.save("VALIDATION_CRITERIA.yaml", {"schema_version": 1, "criteria": result["criteria"]})
         report = evaluate(self.root, "VALIDATION_CRITERIA.yaml")
         self.assertEqual(report["results"][0]["status"], "passed", report)
+
+    def test_criteria_require_mapping_approval(self):
+        with self.assertRaisesRegex(ValueError, "not found"):
+            mapping.criteria(self.root, self.rel, self.runs_rel, "nope")
+        with self.assertRaisesRegex(ValueError, "data_mapping"):
+            mapping.criteria(self.root, self.rel, self.runs_rel, "dec-data-1")
+        # Edited after approval.
+        edited = dict(self.data, unmapped=self.data["unmapped"][:1])
+        self.save(self.rel, edited)
+        with self.assertRaisesRegex(ValueError, "approves a different sha256"):
+            mapping.criteria(self.root, self.rel, self.runs_rel, "dec-map-1")
+
+    def test_cli_criteria_needs_approval_and_failed_out_leaves_yaml_untouched(self):
+        def run(*argv):
+            out, err = io.StringIO(), io.StringIO()
+            with redirect_stdout(out), redirect_stderr(err):
+                code = mapping.main(list(argv))
+            return code, out.getvalue(), err.getvalue()
+        yaml = self.root / "VALIDATION_CRITERIA.yaml"
+        before = yaml.read_bytes()
+        with self.assertRaises(SystemExit):
+            with redirect_stderr(io.StringIO()):
+                mapping.main(["criteria", self.rel, "--runs", self.runs_rel, "--merge-into", "VALIDATION_CRITERIA.yaml"])
+        code, _, err = run("criteria", self.rel, "--runs", self.runs_rel, "--approval", "nope")
+        self.assertEqual(code, 1)
+        self.assertIn("not found", err)
+        # --out cannot be written (its parent is a file): the YAML must stay untouched.
+        code, _, err = run("criteria", self.rel, "--runs", self.runs_rel, "--approval", "dec-map-1",
+                           "--out", "runs/orchestrator/luad/runs.json/criteria.json", "--merge-into", "VALIDATION_CRITERIA.yaml")
+        self.assertEqual(code, 1, err)
+        self.assertEqual(yaml.read_bytes(), before)
+        code, out, err = run("criteria", self.rel, "--runs", self.runs_rel, "--approval", "dec-map-1")
+        self.assertEqual(code, 0, err)
+        self.assertIn("approval dec-map-1", out)
 
     def test_criteria_missing_run_refused(self):
         runs = self.load(self.runs_rel)
         runs["runs"] = [r for r in runs["runs"] if (r["context"], r["perturbation"]) != ("LUAD_wt", None)]
         self.save(self.runs_rel, runs)
         with self.assertRaisesRegex(ValueError, "LUAD_wt"):
-            mapping.criteria(self.root, self.rel, self.runs_rel)
+            mapping.criteria(self.root, self.rel, self.runs_rel, "dec-map-1")
         runs["runs"].append({"context": "LUAD_wt", "perturbation": None, "trajectory": "outside.csv"})
         (self.root / "outside.csv").write_text("Time,Proliferation\n0,0.5\n", encoding="utf-8")
         self.save(self.runs_rel, runs)
         with self.assertRaisesRegex(ValueError, "runs/boolean-dynamics-modeler"):
-            mapping.criteria(self.root, self.rel, self.runs_rel)
+            mapping.criteria(self.root, self.rel, self.runs_rel, "dec-map-1")
 
     def test_merge_refuses_duplicate_id(self):
-        entries = mapping.criteria(self.root, self.rel, self.runs_rel)["criteria"]
+        entries = mapping.criteria(self.root, self.rel, self.runs_rel, "dec-map-1")["criteria"]
         mapping.merge_into(self.root, "VALIDATION_CRITERIA.yaml", entries)
         merged = self.load("VALIDATION_CRITERIA.yaml")
         self.assertEqual(merged, {"schema_version": 1, "criteria": entries})
@@ -383,7 +450,7 @@ class CriteriaTests(MappingFixture):
     def test_merge_preserves_mode(self):
         target = self.root / "VALIDATION_CRITERIA.yaml"
         target.chmod(0o644)
-        entries = mapping.criteria(self.root, self.rel, self.runs_rel)["criteria"]
+        entries = mapping.criteria(self.root, self.rel, self.runs_rel, "dec-map-1")["criteria"]
         mapping.merge_into(self.root, "VALIDATION_CRITERIA.yaml", entries)
         self.assertEqual(target.stat().st_mode & 0o777, 0o644)
 
@@ -392,7 +459,7 @@ class CriteriaTests(MappingFixture):
         runs["runs"][3]["trajectory"] = runs["runs"][2]["trajectory"]
         self.save(self.runs_rel, runs)
         with self.assertRaisesRegex(ValueError, "same trajectory"):
-            mapping.criteria(self.root, self.rel, self.runs_rel)
+            mapping.criteria(self.root, self.rel, self.runs_rel, "dec-map-1")
 
     def test_cli_exit_codes(self):
         def run(*argv):
@@ -402,14 +469,17 @@ class CriteriaTests(MappingFixture):
             return code, out.getvalue(), err.getvalue()
         code, out, err = run("check", self.rel)
         self.assertEqual(code, 0, err)
-        code, out, err = run("criteria", self.rel, "--runs", self.runs_rel, "--merge-into", "VALIDATION_CRITERIA.yaml")
+        code, out, err = run("criteria", self.rel, "--runs", self.runs_rel, "--approval", "dec-map-1",
+                             "--merge-into", "VALIDATION_CRITERIA.yaml")
         self.assertEqual(code, 0, err)
         self.assertEqual(json.loads(out)["criteria"][0]["criterion_id"], "V1")
         self.assertEqual(self.load("VALIDATION_CRITERIA.yaml")["criteria"][0]["criterion_id"], "V1")
-        code, out, err = run("criteria", self.rel, "--runs", self.runs_rel, "--out", "runs/orchestrator/luad/criteria.json")
+        code, out, err = run("criteria", self.rel, "--runs", self.runs_rel, "--approval", "dec-map-1",
+                             "--out", "runs/orchestrator/luad/criteria.json")
         self.assertEqual(code, 0, err)
         self.assertEqual(self.load("runs/orchestrator/luad/criteria.json")["criteria"][0]["criterion_id"], "V1")
-        code, out, err = run("criteria", self.rel, "--runs", self.runs_rel, "--merge-into", "VALIDATION_CRITERIA.yaml")
+        code, out, err = run("criteria", self.rel, "--runs", self.runs_rel, "--approval", "dec-map-1",
+                             "--merge-into", "VALIDATION_CRITERIA.yaml")
         self.assertEqual(code, 1)
         bad = copy.deepcopy(self.data)
         bad["unmapped"][0]["reason"] = "TODO"

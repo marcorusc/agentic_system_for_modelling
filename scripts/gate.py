@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime
 import json
 import re
 from pathlib import Path
@@ -290,33 +289,35 @@ def _data_sessions_named(text):
     return ({m.rstrip(".") for m in DATA_SESSION_PATH.findall(text)} | set(DATA_SESSION_ID.findall(text)))
 
 
-def _newest_data_approval(root, session):
-    """The researcher's newest `stage_approval` (stage data) of this data session.
+def _data_approvals(root, session):
+    """Every `stage_approval` (stage data) of this data session, in DECISIONS.md order.
 
-    Newest is the latest `recorded_at` (state.py stamps every record); equal times
-    fall back to DECISIONS.md order, which is append-only. When no candidate has a
-    time, DECISIONS.md order decides; a mix of timed and untimed records, or an
-    unreadable time, is ambiguous and refused.
+    Approvals are cumulative: a proposal is approved when any valid record that
+    binds the current handoff.json lists it in `outputs`. There is no revocation
+    record; a proposal is withdrawn by re-running the analysis in a new session.
     """
     recs = records((root / "DECISIONS.md").read_text(encoding="utf-8"))
-    found = [(n, r) for n, r in enumerate(recs) if r.get("kind") == "stage_approval"
+    found = [r for r in recs if r.get("kind") == "stage_approval"
              and r.get("stage") == "data" and r.get("session_id") == session]
     if not found:
         raise ValueError(f"no researcher stage_approval of stage data names data session {session}")
-    times = [r.get("recorded_at") for _, r in found]
-    if all(t is None for t in times):
-        return found[-1][1]
-    keyed = []
-    for (n, r), raw in zip(found, times):
+    return found
+
+
+def _approval_for(root, session, proposal_id):
+    """The first valid data approval of the session that lists the proposal, else the refusal."""
+    failures = []
+    for candidate in _data_approvals(root, session):
         try:
-            moment = datetime.fromisoformat(raw) if isinstance(raw, str) else None
-        except ValueError:
-            moment = None
-        if moment is None or moment.tzinfo is None:
-            raise ValueError(f"cannot order data approvals of session {session}: "
-                             f"record {r.get('id')} has no timezone-aware recorded_at")
-        keyed.append((moment, n, r))
-    return max(keyed, key=lambda item: item[:2])[2]
+            record = approvals.require_data_approval(root, candidate["id"], session)
+            validate_record(root, record)
+            approvals.require_proposal_in_outputs(record, proposal_id)
+        except ValueError as exc:
+            failures.append(str(exc))
+            continue
+        return record
+    raise ValueError(f"proposal {proposal_id} is not in the approved outputs of any valid data approval of "
+                     f"session {session} for its current handoff: " + "; ".join(failures))
 
 
 def _check_neko_data_input(root, value):
@@ -326,12 +327,13 @@ def _check_neko_data_input(root, value):
     proposals = value["proposals"]
     if not isinstance(proposals, dict) or not proposals:
         raise ValueError("DATA_INPUT proposals must be a nonempty object of proposal id -> sha256")
-    record = approvals.require_data_approval(root, _newest_data_approval(root, session)["id"], session)
-    validate_record(root, record)
-    resolved = {}
+    _data_approvals(root, session)  # an unknown session is refused before any proposal is looked at
+    resolved, used = {}, []
     for proposal_id, digest in proposals.items():
         if not isinstance(digest, str) or not SHA256.fullmatch(digest):
             raise ValueError(f"DATA_INPUT proposal {proposal_id} needs a lowercase hex sha256")
+        record = _approval_for(root, session, proposal_id)
+        used.append(record["id"])
         entry = approvals.require_proposal_approved(root, record, session, proposal_id)
         if entry.get("kind") != "seed_genes":
             raise ValueError(f"proposal {proposal_id} has kind {entry.get('kind')!r}; network-curator "
@@ -345,7 +347,8 @@ def _check_neko_data_input(root, value):
         resolved[proposal_id] = {"path": entry["path"], "sha256": entry["sha256"]}
     from scripts.data import mapping
     mapping.validate_data_handoff(root, session)
-    return {"data_session": session, "approval_id": record["id"], "proposals": resolved}, {session}
+    return {"data_session": session, "approval_id": used[0], "approval_ids": list(dict.fromkeys(used)),
+            "proposals": resolved}, {session}
 
 
 def _check_maboss_data_input(root, value, first_line):
@@ -360,6 +363,9 @@ def _check_maboss_data_input(root, value, first_line):
         raise ValueError("a MaBoSS DATA_INPUT needs a line-1 STAGE_GATE naming upstream_session_id")
     record = approvals.require_mapping_approval(root, approval_id, rel, digest)
     validate_record(root, record)
+    if record.get("session_id") != upstream:
+        raise ValueError(f"mapping approval {approval_id} has session_id {record.get('session_id')!r}; a data_mapping "
+                         f"approval's session_id is the mapping's NeKo session, which STAGE_GATE names as {upstream}")
     from scripts.data import mapping
     # Check exactly the approved bytes: one read gives both the parsed mapping and its hash.
     data, actual, errors = mapping.load_and_check(root, rel)
@@ -375,6 +381,15 @@ def _check_maboss_data_input(root, value, first_line):
     neko = data["inputs"]["network"]["neko_session"]
     if neko != upstream:
         raise ValueError(f"mapping network is NeKo session {neko}, but STAGE_GATE names {upstream}")
+    # The mapping's network must be the BNET of the NeKo handoff the STAGE_GATE approved
+    # (re-resolved here with check_task, which is not weakened by this).
+    gate_result = check_task(root, "boolean_dynamics_modeler", first_line)
+    manifest = json.loads(checked_artifact(root, gate_result["artifact"]).read_text())
+    approved_bnet = (manifest.get("bnet_file") or {}).get("sha256")
+    mapped = data["inputs"]["network"]
+    if mapped["sha256"] != approved_bnet:
+        raise ValueError(f"mapping network {mapped['bnet']} (sha256 {mapped['sha256'][:12]}) is not the BNET of the "
+                         f"approved NeKo handoff (sha256 {str(approved_bnet)[:12]})")
     sessions = {item["session"] for item in data["inputs"]["data"]}
     return {"mapping": rel, "sha256": digest, "approval_id": approval_id, "neko_session": neko}, sessions
 
