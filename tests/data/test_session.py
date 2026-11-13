@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -146,6 +147,23 @@ class SessionTests(unittest.TestCase):
         del after["link"]
         after["DECISIONS.md"] = "0"
         self.assertEqual(snapshot.diff(snap, after), ["DECISIONS.md", "link", "new"])
+
+    def _assert_refused_outside(self, link: Path):
+        outside = self.root.parent / (self.root.name + "-outside")
+        outside.mkdir()
+        self.addCleanup(shutil.rmtree, outside, True)
+        link.parent.mkdir(parents=True, exist_ok=True)
+        link.symlink_to(outside, target_is_directory=True)
+        proc = self.run_new()
+        self.assertNotEqual(proc.returncode, 0, proc.stdout)
+        self.assertIn("symlink", proc.stderr)
+        self.assertEqual(list(outside.rglob("*")), [])
+
+    def test_symlinked_runs_refused(self):
+        self._assert_refused_outside(self.root / "runs")
+
+    def test_symlinked_runs_data_analyst_refused(self):
+        self._assert_refused_outside(self.root / "runs" / "data-analyst")
 
     def test_derived_from_must_exist(self):
         proc = self.run_new("--derived-from", "data-20200101T000000Z-deadbeef")

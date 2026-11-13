@@ -22,6 +22,7 @@ from scripts.data.common import (  # noqa: E402
     RUNS_ROOT,
     SESSION_RE,
     project_root,
+    reject_symlinks,
     session_dir,
     utc_now,
 )
@@ -41,6 +42,13 @@ def new_session(root: Path, purpose: str, derived_from: str | None) -> tuple[str
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     session_id = f"data-{stamp}-{secrets.token_hex(4)}"
     base = root / RUNS_ROOT / session_id
+    # Refuse a symlinked runs/ or runs/data-analyst/ before creating anything,
+    # so a session can never be created (or identity.json written) outside the root.
+    reject_symlinks(base, root)
+    try:
+        base.resolve().relative_to(root.resolve())
+    except ValueError as exc:
+        raise ValueError(f"session directory {base} resolves outside {root}") from exc
     for sub in SUBDIRS:
         (base / sub).mkdir(parents=True)
     protected = snapshot.take(root, session_id)
