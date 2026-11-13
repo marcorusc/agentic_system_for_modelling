@@ -51,7 +51,7 @@ in provenance; convert before comparing dates across midnight.
 | `validation-declare` | Criterion, Method, Required evidence; creates a unique pending criterion |
 | `validation` | Supported artifact-validator JSON output; only updates already declared criterion IDs |
 | `checkpoint` | Full content-commit SHA and `summary`; no self-referential metadata commit |
-| `data-product` | Exactly `name`, `type`, `meaning`, `unit`, `identifiers`, `source_session` (data session ID), `path`, `sha256` (verified), `release`, `decision_id`, `notes`; appends a `DATA_DICTIONARY.md` row. `decision_id` must be the `id` of an existing governance record, so first `record` the researcher's `stage_approval` (stage `data`) after `receive.py` prints `RECEIVED <id> OK` (see [data workflow](data-workflow.md)) |
+| `data-product` | Exactly `name`, `type`, `meaning`, `unit`, `identifiers`, `source_session` (data session ID), `path`, `sha256` (verified), `release`, `decision_id`, `notes`; appends a `DATA_DICTIONARY.md` row. `decision_id` must be the `id` of the researcher's `stage_approval` (stage `data`, same `session_id`, `artifact` = that session's unchanged `handoff.json`), recorded with `record` after `receive.py` prints `RECEIVED <id> OK`; the product must be a handoff artifact and a proposal's id must be in the record's `outputs` (see [data workflow](data-workflow.md)) |
 
 An artifact reference is `{"path":"repository/relative/file","sha256":"..."}`.
 Hashes are verified, not accepted as annotations. A validation result contains

@@ -96,8 +96,12 @@ After `RECEIVED ... OK` and the researcher's explicit decision:
 
 2. Register each approved product in `DATA_DICTIONARY.md` (`python3 scripts/state.py
    data-product --input product.json`). All keys are required strings; `path`/`sha256`
-   are verified and `decision_id` must be the `id` of a governance record in
-   `DECISIONS.md`:
+   are verified. `decision_id` must be the `id` of the step 1 record: a `stage_approval`
+   with stage `data` and `session_id` equal to `source_session`, whose `artifact` is that
+   session's `handoff.json` with an unchanged sha256. The product's `path` and `sha256`
+   must be one of that handoff's `artifacts`; a proposal file additionally needs its
+   proposal id (from `proposals/index.json`, itself unchanged since the handoff) in the
+   record's `outputs`. Any other record is refused:
 
    ```json
    {"name": "seed_genes_P1", "type": "gene list", "meaning": "...", "unit": "none",
