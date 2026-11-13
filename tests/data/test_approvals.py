@@ -99,6 +99,49 @@ class ApprovalTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "not an artifact of the approved handoff"):
             approvals.require_proposal_approved(self.root, rec, SESSION, "P1")
 
+    def test_proposal_refuses_unvalidated_record(self):
+        review = {"id": "rev-x", "kind": "stage_review", "stage": "data", "session_id": SESSION, "outputs": ["P1"]}
+        with self.assertRaisesRegex(ValueError, "not found"):
+            approvals.require_proposal_approved(self.root, review, SESSION, "P1")
+        folder = self.root / "reviews"
+        folder.mkdir()
+        (folder / "r.md").write_text("r")
+        ref = {"path": "reviews/r.md", "sha256": sha(folder / "r.md")}
+        self.add({"id": "rev-1", "kind": "stage_review", "stage": "data", "session_id": SESSION,
+                  "outcome": "approved", "scientific-reviewer": ref, "reproducibility-auditor": ref,
+                  "artifact": self.ref(), "outputs": ["P1"]})
+        with self.assertRaisesRegex(ValueError, "must be a stage_approval"):
+            approvals.require_proposal_approved(self.root, approvals.load_record(self.root, "rev-1"), SESSION, "P1")
+        with self.assertRaisesRegex(ValueError, "approves session"):
+            approvals.require_proposal_approved(self.root, self.approval, OTHER, "P1")
+
+    def rewrite_index(self, entries):
+        folder = self.root / self.base
+        (folder / "proposals/index.json").write_text(json.dumps(entries))
+        self.write_handoff(["proposals/index.json", "proposals/P1_seed_genes.csv", "proposals/P2_seed_genes.csv"])
+        self.n = getattr(self, "n", 2) + 1
+        self.add({"id": f"dec-{self.n}", "kind": "stage_approval", "stage": "data", "session_id": SESSION,
+                  "outputs": ["P1"], "artifact": self.ref()})
+        return approvals.load_record(self.root, f"dec-{self.n}")
+
+    def test_bad_index_entries_refused(self):
+        entry = {"id": "P1", "kind": "seed_genes", "target_layer": "neko"}
+        rec = self.rewrite_index([{**entry, "path": "../../../DECISIONS.md"}])
+        with self.assertRaises(ValueError):
+            approvals.require_proposal_approved(self.root, rec, SESSION, "P1")
+        link = self.root / self.base / "proposals/link.csv"
+        link.symlink_to(self.root / self.base / "proposals/P1_seed_genes.csv")
+        rec = self.rewrite_index([{**entry, "path": "proposals/link.csv"}])
+        with self.assertRaises(ValueError):
+            approvals.require_proposal_approved(self.root, rec, SESSION, "P1")
+
+    def test_duplicate_proposal_ids_refused(self):
+        entry = {"id": "P1", "kind": "seed_genes", "target_layer": "neko"}
+        rec = self.rewrite_index([{**entry, "path": "proposals/P1_seed_genes.csv"},
+                                  {**entry, "path": "proposals/P2_seed_genes.csv"}])
+        with self.assertRaisesRegex(ValueError, "not exactly one proposal"):
+            approvals.require_proposal_approved(self.root, rec, SESSION, "P1")
+
     def test_mapping_approval_ok_and_mismatch_refused(self):
         (self.root / "mapping.json").write_text("{}")
         digest = sha(self.root / "mapping.json")

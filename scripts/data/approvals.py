@@ -106,6 +106,8 @@ def require_proposal_approved(root: Path, record: dict, session_id: str, proposa
     state = _state()
     root = Path(root)
     base = (RUNS_ROOT / session_id).as_posix()
+    # Never trust the caller's record: re-resolve it from DECISIONS.md and re-check it.
+    record = require_data_approval(root, record.get("id"), session_id)
     require_proposal_in_outputs(record, proposal_id)
     listed = handoff_artifacts(root, session_id)
     index_rel, index = proposal_index(root, session_id, listed)
