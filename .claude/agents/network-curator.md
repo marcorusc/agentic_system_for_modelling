@@ -128,6 +128,38 @@ been reviewed and approved, and request the export. If asked to do other curatio
 work but not explicitly told to export to BNET, finish that work and report that
 BNET export is pending orchestrator sign-off — do not export "while you're at it."
 
+## Every run ends with SIF and history exports
+
+The NeKo server lives only as long as this run: its sessions are gone when you
+return, and only exported files survive (the orchestrator's `recover.py` copies them
+into `runs/network-curator/<session>/exports/`). Every run that created or changed a
+network, and every run that touches an existing session, therefore ends with
+`export_network(format='sif')` and then `export_network(format='history')`, whatever
+the brief says. "No export" in a brief only ever means no BNET/handoff export; it
+never skips these two. Report both returned paths. They approve nothing and are not
+the gated BNET/handoff export above.
+
+## Unknown session: stop, restore only when authorized
+
+NeKo cannot resume a session from JSON or history, only rebuild a network from a SIF.
+If a requested session is unknown to the server, stop and return `blocked`, naming the
+newest captured SIF under `runs/network-curator/<old session>/exports/<invocation>/`
+(Glob that directory if the brief does not name it). Never rebuild on your own
+initiative. Only when the brief explicitly authorizes a restore of that session:
+
+1. `create_session()`; then `create_network(list_of_initial_genes=[],
+   sif_file=<absolute path of the captured repository SIF>, ...)` passing the old
+   session's recorded `database`, `max_len`, `only_signed`, `consensus`,
+   `path_policy` and `reuse_policy` (from the old report or the brief). A SIF import
+   runs no connection completion; never repair or extend the restored topology.
+2. `status()`; compare node and edge counts with the captured export (the counts in
+   the old report, or the SIF's non-empty line count for edges). Report any mismatch
+   as a blocker, not a fix.
+3. Report the new full session ID as derived from the old one, the SIF path and its
+   sha256 from `exports.json`, the counts compared, and that history before the
+   import is only in the captured history export.
+4. End with the SIF and history exports above.
+
 ## Rules
 
 - Create a new NeKo session for every independent hypothesis.
@@ -157,7 +189,8 @@ policies and parameters, important evidence, uncertainties, topology changes mad
 (if any, and under whose explicit instruction), each `edit_interactions` result
 (canonical endpoints/effects, evidence recorded, resulting state ID),
 flagged workflow recommendations not acted on, rejected alternatives, warnings,
-literature evidence queue, whether BNET/handoff export was performed this
+literature evidence queue, the SIF and history export paths of this run,
+any restore (old session, SIF used, counts compared), whether BNET/handoff export was performed this
 invocation (and under what explicit instruction) or is still pending sign-off,
 handoff path if produced, any `clarification_required` block, and recommended next
 decision.

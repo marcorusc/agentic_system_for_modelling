@@ -60,6 +60,33 @@ Boolean-model simulation, `export_neko_handoff` hands off to
    - `export_network(format='history')` — all retained snapshots, structured
      explanations and branch relationships for reproducibility review. It is
      not a handoff and approves nothing.
+9. **Always finish with SIF + history exports:** the server and its sessions
+   end with this run; only exported files survive (`recover.py` copies them to
+   `runs/network-curator/<session>/exports/<invocation>/`). Every run that created
+   or changed a network, and every run that touches an existing session, ends with
+   `export_network(format='sif')` then `export_network(format='history')`,
+   whatever the brief says; report both paths. "No export" in a brief only ever
+   means no BNET/handoff. The BNET/handoff gate is unchanged.
+
+## Unknown session and authorized restore
+
+There is no session restore from JSON or history; a network can only be rebuilt
+from a SIF with `create_network(sif_file=...)`. If a requested session is unknown
+to the server, stop and return `blocked`, naming the newest captured SIF under
+`runs/network-curator/<old session>/exports/<invocation>/`. Only when the brief
+explicitly authorizes a restore:
+
+1. `create_session()` → `create_network(list_of_initial_genes=[],
+   sif_file=<absolute path of the captured repository SIF>, database=...,
+   max_len=..., only_signed=..., consensus=..., path_policy=...,
+   reuse_policy=...)` with the policies recorded in the old report. The import
+   runs no connection completion; do not repair or extend it.
+2. `status()` and compare node/edge counts with the captured export (old report
+   counts, or the SIF's non-empty line count for edges); a mismatch is a blocker.
+3. Report the new full session ID as derived from the old session, the SIF path and
+   its `exports.json` sha256, and the counts compared. The pre-import history exists
+   only in the captured history export.
+4. Finish with the SIF + history exports (step 9).
 
 ## Tool categories
 
