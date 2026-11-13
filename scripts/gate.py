@@ -393,7 +393,9 @@ def check_mapping_network(root, network, first_line):
         raise ValueError(f"mapping network is {other_label} {network[other_field]}, so its STAGE_GATE must name "
                          f"{other} {network[other_field]}, not {key} {anchor}")
     if network[field] != anchor:
-        raise ValueError(f"mapping network is {label} {network[field]}, but STAGE_GATE names {anchor}; {REDRAFT_HINT}")
+        hint = REDRAFT_HINT if key == "upstream_session_id" else \
+            f"check the STAGE_GATE record, or, if the network was re-authorized, {REDRAFT_HINT}"
+        raise ValueError(f"mapping network is {label} {network[field]}, but STAGE_GATE names {anchor}; {hint}")
     gate_result = check_task(root, "boolean_dynamics_modeler", first_line)
     if key == "upstream_session_id":
         manifest = json.loads(checked_artifact(root, gate_result["artifact"]).read_text())

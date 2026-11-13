@@ -15,6 +15,7 @@ from pathlib import Path
 import re
 import sys
 import tempfile
+import unicodedata
 from datetime import datetime, timezone
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -68,10 +69,21 @@ def checked_artifact(root, item):
     return path
 
 
+# Characters a Markdown table cell cannot hold: the delimiter, and every control, line- or
+# paragraph-separator character (str.splitlines breaks on \x0b, \x0c, \x1c-\x1e, \x85, U+2028, U+2029).
+UNSAFE_CELL_CATEGORIES = {"Cc", "Zl", "Zp"}
+
+
+def unsafe_cell_char(value):
+    """The first character of `value` that a table cell cannot hold, or None."""
+    return next((c for c in value if c == "|" or unicodedata.category(c) in UNSAFE_CELL_CATEGORIES), None)
+
+
 def cell(value):
     value = str(value)
-    if any(c in value for c in ("|", "\n", "\r")):
-        raise ValueError("table cell contains a delimiter or newline")
+    bad = unsafe_cell_char(value)
+    if bad is not None:
+        raise ValueError(f"table cell contains a delimiter, newline or control character ({bad!r})")
     return value
 
 

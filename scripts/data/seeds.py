@@ -9,9 +9,10 @@ results, any format under inputs/) rather than from a data-analyst proposal:
    "sources": [{"id", "path", "sha256"}, ...],
    "seeds": [{"hgnc_symbol": "KRAS", "from": [{"source": "<id>", "locator": "Table 1"}, ...]}, ...]}
 
-Sources follow scripts/data/sources.py and are never parsed. Symbols are non-empty
-and unique after stripping whitespace; each seed cites at least one declared source
-and every declared source is cited. The researcher's approval is a `stage_approval`
+Sources follow scripts/data/sources.py and are never parsed. Each hgnc_symbol is one
+gene symbol (matching [A-Za-z0-9][A-Za-z0-9._@/-]* after stripping whitespace), unique
+ignoring case; each seed cites at least one declared source and every declared source
+is cited. The researcher's approval is a `stage_approval`
 of stage `data_seeds` whose artifact is this file and sha256, whose session_id is
 <purpose>, and whose outputs equal the set of seed symbols; line 1 of the
 network-curator brief is then
@@ -25,6 +26,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import re
 import sys
 from pathlib import Path, PurePosixPath
 
@@ -37,6 +39,7 @@ from scripts.data.common import project_root, strict_json  # noqa: E402
 
 KEYS = ("schema_version", "sources", "seeds")
 SEED_KEYS = {"hgnc_symbol", "from"}
+SYMBOL = re.compile(r"[A-Za-z0-9][A-Za-z0-9._@/-]*")
 ORCHESTRATOR = ("runs", "orchestrator")
 
 
@@ -90,15 +93,18 @@ def check_data(root: Path, data: dict) -> list[str]:
             errors.append(f"seeds[{n}] must have exactly hgnc_symbol and from")
             continue
         symbol = item["hgnc_symbol"]
-        if not isinstance(symbol, str) or not symbol.strip():
-            errors.append(f"seeds[{n}]: hgnc_symbol must be a non-empty string")
+        # Raw value too: str.strip() would drop line separators such as U+2028.
+        if not isinstance(symbol, str) or not SYMBOL.fullmatch(symbol.strip()) \
+                or state.unsafe_cell_char(symbol) is not None:
+            errors.append(f"seeds[{n}]: hgnc_symbol must be one gene symbol matching {SYMBOL.pattern}, "
+                          f"not {symbol!r}")
             label = f"seeds[{n}]"
         else:
             symbol = symbol.strip()
             label = f"seed {symbol}"
-            if symbol in seen:
-                errors.append(f"seeds[{n}]: duplicate seed {symbol}")
-            seen.add(symbol)
+            if symbol.casefold() in seen:
+                errors.append(f"seeds[{n}]: duplicate seed {symbol} (symbols are unique ignoring case)")
+            seen.add(symbol.casefold())
         refs = item["from"]
         if not isinstance(refs, list) or not refs:
             errors.append(f"{label}: from must be a non-empty list of {{source, locator}}")

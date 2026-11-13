@@ -27,8 +27,6 @@ INPUTS = "inputs"
 SHA256 = re.compile(r"[0-9a-f]{64}")
 SOURCE_KEYS = {"id", "path", "sha256"}
 REF_KEYS = {"source", "locator"}
-# Locators are quoted in VALIDATION_PLAN.md table cells ("Required evidence"), which cannot hold these.
-LOCATOR_FORBIDDEN = ("|", "\n", "\r")
 
 
 def source_file(root: Path, rel) -> Path:
@@ -37,6 +35,10 @@ def source_file(root: Path, rel) -> Path:
     if not isinstance(rel, str) or not rel or "\\" in rel or rel.startswith("/"):
         raise ValueError(f"source path must be a repository-relative path under {INPUTS}/, not {rel!r}")
     pure = PurePosixPath(rel)
+    bad = state.unsafe_cell_char(rel)
+    if bad is not None:
+        raise ValueError(f"source path {rel!r} contains a forbidden character {bad!r} ('|' or a control, line- or "
+                         "paragraph-separator character); rename the file")
     if pure.as_posix() != rel or ".." in pure.parts or pure.parts[0] != INPUTS:
         raise ValueError(f"source path must be a canonical repository-relative path under {INPUTS}/, not {rel!r}")
     if len(pure.parts) < 2:
@@ -66,8 +68,10 @@ def check_locator(locator) -> str | None:
     """The problem with a locator, or None."""
     if not isinstance(locator, str) or not locator.strip():
         return "locator must be non-empty text (e.g. 'Fig. 3B', 'Table S2, KRAS G12D row')"
-    if any(c in locator for c in LOCATOR_FORBIDDEN):
-        return "locator cannot contain '|' or a line break"
+    bad = state.unsafe_cell_char(locator)
+    if bad is not None:
+        # Locators and paths are quoted in VALIDATION_PLAN.md table cells ("Required evidence").
+        return f"locator cannot contain {bad!r} ('|' or a control, line- or paragraph-separator character)"
     return None
 
 

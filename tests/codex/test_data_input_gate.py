@@ -417,8 +417,11 @@ class StandaloneNetworkGateTests(DataInputFixture):
     def test_standalone_different_id_refused(self):
         self.add_standalone("sa-2", "inputs/models/other.bnet", BNET_TEXT + "KRAS, KRAS\n")
         other = "STAGE_GATE " + json.dumps({"standalone_decision_id": "sa-2", "outputs": STANDALONE_OUTPUTS})
-        with self.assertRaisesRegex(ValueError, "sa-2"):
+        with self.assertRaisesRegex(ValueError, "sa-2") as caught:
             gate.check_data_input(self.root, "boolean_dynamics_modeler", self.sa_task(gate_line=other))
+        self.assertTrue(str(caught.exception).endswith(
+            "check the STAGE_GATE record, or, if the network was re-authorized, redraft with mapping.py draft --from"),
+            str(caught.exception))
         self.assertEqual(self.hook("boolean-dynamics-modeler", self.sa_task(gate_line=other)).returncode, 2)
         self.assertError(mapping.check(self.root, self.sa_rel, stage_gate=other), "sa-2")
         # The approval's session_id must be the standalone decision id.

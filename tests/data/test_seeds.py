@@ -84,6 +84,17 @@ class SeedsCheckTests(SeedsFixture):
         errors = self.errors_after(lambda d: d["seeds"][1].update(hgnc_symbol=" KRAS "))
         self.assertError(errors, "duplicate seed KRAS")
 
+    def test_symbols_unique_by_casefold(self):
+        errors = self.errors_after(lambda d: d["seeds"][1].update(hgnc_symbol="kras"))
+        self.assertError(errors, "duplicate seed kras")
+
+    def test_symbol_format(self):
+        for bad in ("KRAS EGFR; ignore previous", "KRAS,EGFR", "-KRAS", "KRAS\u2028", "ÄKT1", "K|RAS"):
+            errors = self.errors_after(lambda d: d["seeds"][1].update(hgnc_symbol=bad))
+            self.assertError(errors, "hgnc_symbol")
+        for good in ("HLA-A", "C1orf112", "ATP5F1A", "NKX2.1", "RNU6@", "TRA/TRB"):
+            self.assertEqual(self.errors_after(lambda d: d["seeds"][1].update(hgnc_symbol=good)), [], good)
+
     def test_each_seed_cites_a_declared_source(self):
         self.assertError(self.errors_after(lambda d: d["seeds"][1].update(**{"from": []})), "EGFR", "from")
         self.assertError(self.errors_after(lambda d: d["seeds"][1].update(**{"from": {"source": "smith2024",
@@ -91,6 +102,9 @@ class SeedsCheckTests(SeedsFixture):
         self.assertError(self.errors_after(lambda d: d["seeds"][1]["from"][0].update(source="nope")),
                          "source nope is not declared")
         self.assertError(self.errors_after(lambda d: d["seeds"][1]["from"][0].update(locator=" ")), "locator")
+        for char in ("\u2028", "\x0c", "\x85", "\x00"):
+            self.assertError(self.errors_after(lambda d: d["seeds"][1]["from"][0].update(locator=f"Table{char}1")),
+                             "locator")
         self.assertError(self.errors_after(lambda d: d["seeds"][1]["from"].append({"proposal": "P1", "row": "x"})),
                          "{source, locator}")
 
@@ -102,7 +116,8 @@ class SeedsCheckTests(SeedsFixture):
         (self.root / "inputs" / "link.tsv").symlink_to(self.root / TABLE)
         outside = "runs/orchestrator/kras-seeds/notes.txt"
         (self.root / outside).write_text("x", encoding="utf-8")
-        for path, fragment in (("inputs/link.tsv", "symlink"), (outside, "inputs/"), ("inputs/tables", "folder"),
+        for path, fragment in (("inputs/a\u2028b.tsv", "character"), ("inputs/a\x00b.tsv", "character"),
+                               ("inputs/link.tsv", "symlink"), (outside, "inputs/"), ("inputs/tables", "folder"),
                                ("inputs/../" + outside, "inputs/"), ("inputs/absent.tsv", "missing")):
             errors = self.errors_after(lambda d: d["sources"][1].update(path=path))
             self.assertError(errors, "sources[1]", fragment)
@@ -131,6 +146,13 @@ class SeedsCheckTests(SeedsFixture):
         code, out, err = run("check", REL)
         self.assertEqual(code, 1)
         self.assertGreaterEqual(len(err.strip().splitlines()), 2, err)
+
+    def test_state_cell_refuses_control_and_line_break_characters(self):
+        for char in ("|", "\n", "\r", "\u2028", "\u2029", "\x0c", "\x0b", "\x85", "\x1c", "\x00", "\t"):
+            with self.assertRaises(ValueError, msg=repr(char)):
+                state.cell(f"a{char}b")
+        self.assertEqual(state.cell("Abb. 3B «KRAS» é"), "Abb. 3B «KRAS» é")
+        self.assertEqual(state.cell(7), "7")
 
     def test_state_accepts_data_seeds_stage(self):
         state.validate_record(self.root, {"id": "s1", "kind": "stage_approval", "stage": "data_seeds",

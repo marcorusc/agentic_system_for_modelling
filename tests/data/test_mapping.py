@@ -592,6 +592,27 @@ class SourceTests(MappingFixture):
             errors = self.errors_after(rel, data, lambda d: d["perturbations"][0]["from"].update(locator=locator))
             self.assertError(errors, "locator")
 
+    def test_locator_and_path_control_or_line_break_characters_refused(self):
+        rel, data = self.complete_sources()
+        bad_chars = ("\u2028", "\x0c", "\x85", "\x00", "\u2029", "\x0b", "\x1e", "\t")
+        for char in bad_chars:
+            locator = f"Fig. 1{char}row 2"
+            errors = self.errors_after(rel, data, lambda d: d["perturbations"][0]["from"].update(locator=locator))
+            self.assertError(errors, "locator")
+        for name in [f"inputs/a{char}b.pdf" for char in bad_chars] + ["inputs/a|b.pdf"]:
+            if "\x00" not in name:
+                self.add_source(name)
+            errors = self.errors_after(rel, data, lambda d: d["inputs"]["sources"][0].update(path=name))
+            self.assertError(errors, "inputs.sources[0]", "character")
+        with self.assertRaisesRegex(ValueError, "character"):
+            mapping.draft(self.root, "ctl", [], (NEKO, BNET), sources=[("x", self.add_source("inputs/a\u2028b.pdf"))])
+        # Ordinary spaces and non-ASCII letters remain allowed in locators and paths.
+        spaced = self.add_source("inputs/papers/Müller et al 2024.pdf")
+        def change(d):
+            d["inputs"]["sources"][0].update(path=spaced, sha256=sha(self.root / spaced))
+            d["perturbations"][0]["from"].update(locator="Abb. 3B, Zeile «KRAS»")
+        self.assertEqual(self.errors_after(rel, data, change), [])
+
     def test_source_outside_inputs_refused(self):
         rel, data = self.complete_sources()
         outside = "runs/orchestrator/notes.txt"
