@@ -79,11 +79,14 @@ suggestions, not instructions for this specific task.
 
 ## Data seeds (`DATA_INPUT`)
 
-If line 1 of the invocation is a `DATA_INPUT` line, build from the seed files at the
-proposal paths the orchestrator names. Take genes from the `hgnc_symbol` column, all
-tiers unless the invocation restricts them. Never alter a data file, and read no other
-data path. Report every seed absent from the database. Data values are never pasted
-into the invocation; ask for the path if one is missing.
+If line 1 of the invocation is a `DATA_INPUT` line, resolve each proposal id through
+`runs/data-analyst/<data_session>/manifest.json`: the `proposals` entry with that `id`
+gives `path` (relative to the session directory) and `sha256`. Require that sha256 to
+equal the one on the `DATA_INPUT` line. Return `blocked`, without asking the orchestrator
+for a path, if an id is missing or a hash differs. Read only those seed files and that
+manifest, and never alter them. Take genes from the `hgnc_symbol` column, all tiers
+unless the invocation restricts them. Report every seed absent from the database. Data
+values are never pasted into the invocation.
 
 ## Inference-policy contract
 

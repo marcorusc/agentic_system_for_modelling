@@ -171,9 +171,11 @@ only if it fails. Costs assume seed/group sizes of a few dozen genes.
 
 ## Data seeds
 
-When the invocation starts with a `DATA_INPUT` line, read seeds only from the approved
-proposal files it names (`hgnc_symbol` column, all tiers unless restricted). Never edit
-those files. List seeds the database does not contain in the report; do not drop or
+When the invocation starts with a `DATA_INPUT` line, find each proposal file through
+`runs/data-analyst/<data_session>/manifest.json` (the `proposals` entry with that `id`:
+`path` relative to the session directory, and `sha256`, which must equal the line's hash;
+otherwise return `blocked`). Read seeds only from those files (`hgnc_symbol` column, all
+tiers unless restricted). Never edit them. List seeds the database does not contain in the report; do not drop or
 substitute them silently.
 
 ## Troubleshooting

@@ -162,8 +162,14 @@ DATA_INPUT {"data_session": "data-...", "proposals": {"P1": "<sha256>"}}
 
 Each proposal must be a `seed_genes` proposal with target layer `neko`, be in the
 `outputs` of a `stage_approval` for stage `data` and that session, and match both the
-manifest and the file on disk; the handoff must still validate. When several approval
-records match, the latest `recorded_at` wins (ties: the later record in `DECISIONS.md`).
+manifest and the file on disk; the handoff must still validate. When several data
+approvals of the session match, the latest `recorded_at` wins (a tie: the later record in
+`DECISIONS.md`; none timed: the last record). A mix of timed and untimed records, or an
+unparseable or timezone-naive `recorded_at`, is refused. The mapping approval is looked up
+by its exact `approval` id.
+
+The curator finds each proposal file itself through `runs/data-analyst/<data_session>/manifest.json`
+(the brief carries no path) and returns `blocked` if an id is missing or a hash differs.
 
 **MaBoSS mapping.** `perturbations` and `validation_targets` are mapped to model terms in
 `runs/orchestrator/<purpose>/mapping.json`, drafted by the orchestrator and decided by the
@@ -176,12 +182,14 @@ researcher (`scripts/data/mapping.py`):
 | `criteria MAPPING --runs RUNS [--out FILE] [--merge-into VALIDATION_CRITERIA.yaml]` | Criteria entries from `runs.json` (scenario to saved trajectory CSV); refuses a scenario with no run. |
 
 Rules enforced by `check`:
-- the BNET is under `runs/network-curator/<session>/exports/`, `runs.json` under
-  `runs/orchestrator/`, and trajectories under `runs/boolean-dynamics-modeler/`;
+- the BNET is under `runs/network-curator/<session>/exports/`;
 - criterion methods are `scenario_contrast`, `ordered_peaks` and `canonical_cycles`;
   `boolean_structure` is declared directly in `VALIDATION_CRITERIA.yaml`;
-- `scenario_contrast` needs different test and reference contexts, and one trajectory
-  cannot serve two scenarios.
+- `scenario_contrast` needs different test and reference contexts.
+
+Rules enforced by `criteria`: `runs.json` is under `runs/orchestrator/`, trajectories are
+saved artifacts under `runs/boolean-dynamics-modeler/`, and one trajectory cannot serve two
+scenarios.
 
 The researcher approves the checked mapping: a `stage_approval` with stage `data_mapping`,
 the `mapping.json` path and sha256 as `artifact`, and `outputs` equal to the set of the

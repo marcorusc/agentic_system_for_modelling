@@ -186,7 +186,10 @@ through a `DATA_INPUT` line, checked by `scripts/gate.py check_data_input`:
   whose `outputs` equal the mapping's perturbation and criterion ids; `mapping.py check`
   must pass and the mapping's NeKo session must equal the `STAGE_GATE` upstream.
 
-When several records match, the latest `recorded_at` wins. Any other occurrence of
+For the NeKo data approval, when several records of the session match, the latest
+`recorded_at` wins (a tie: the later in `DECISIONS.md`; none timed: the last record); a mix of
+timed and untimed records, or an unparseable or timezone-naive `recorded_at`, is refused. The
+mapping approval is looked up by its exact `approval` id. Any other occurrence of
 `DATA_INPUT` (any case or separator) in the prompt, a `runs/data-analyst` path or a data
 session id without the line, is refused, and any hook error denies the dispatch. Never
 put data values in a brief. `state.py record` accepts `data_mapping` as a governance
