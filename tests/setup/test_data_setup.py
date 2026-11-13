@@ -1,5 +1,8 @@
 from __future__ import annotations
+import json
+import re
 import shutil
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -20,6 +23,20 @@ class DataSetupTests(unittest.TestCase):
         (self.root/'setup').mkdir()
         for name in ('data-requirements.txt', 'data-requirements.lock', 'data-requirements-cellprofiler.txt'):
             shutil.copy(ROOT/'setup'/name, self.root/'setup'/name)
+        self.pins = dict(re.findall(r'(?m)^([A-Za-z0-9][A-Za-z0-9._-]*)==(\S+)\s*$',
+                                    (ROOT/'setup/data-requirements.lock').read_text()))
+        self.assertGreater(len(self.pins), 50)
+        self.installed = {'python': '3.12', 'distributions': {n: [v] for n, v in self.pins.items()}}
+
+    def fake_run(self, argv, *args, **kwargs):
+        # Answers the installed-metadata query; every other command just "succeeds".
+        if argv[-1] == data_env.METADATA_PROBE:
+            self.assertEqual(argv[1:4], ['-E', '-s', '-c'])
+            return subprocess.CompletedProcess(argv, 0, stdout=json.dumps(self.installed), stderr='')
+        return subprocess.CompletedProcess(argv, 0, stdout='', stderr='')
+
+    def patched_run(self):
+        return mock.patch('subprocess.run', side_effect=self.fake_run)
 
     def test_parser_accepts_data_flags(self):
         args = setup.parser().parse_args(['--with-data'])
@@ -31,22 +48,23 @@ class DataSetupTests(unittest.TestCase):
         self.assertTrue(args.with_cellprofiler); self.assertTrue(args.with_data)
 
     def test_ensure_runs_expected_commands(self):
-        with mock.patch('subprocess.run') as run:
+        with self.patched_run() as run:
             result = data_env.ensure(self.root, '/bin/uv', check=False, with_cellprofiler=False)
         py = str(self.root/'.venv-data/bin/python')
         self.assertEqual([c.args[0] for c in run.call_args_list], [
             ['/bin/uv', 'venv', str(self.root/'.venv-data'), '--python', '3.12'],
             ['/bin/uv', 'pip', 'sync', '--python', py, str(self.root/'setup/data-requirements.lock')],
-            [py, '-E', '-s', '-c', IMPORT_PROBE]])
+            [py, '-E', '-s', '-c', IMPORT_PROBE],
+            [py, '-E', '-s', '-c', data_env.METADATA_PROBE]])
         self.assertTrue(all(c.kwargs.get('check') for c in run.call_args_list))
         self.assertTrue(result['passed']); self.assertEqual(result['lock_sha256'], data_env.lock_sha256(self.root))
         self.assertEqual(data_env.data_python(self.root), self.root/'.venv-data/bin/python')
 
     def test_cellprofiler_uses_python_from_requirements_comment(self):
-        with mock.patch('subprocess.run') as run:
+        with self.patched_run() as run:
             result = data_env.ensure(self.root, '/bin/uv', check=False, with_cellprofiler=True)
         cp = self.root/'.venv-cellprofiler'
-        argv = [c.args[0] for c in run.call_args_list][3:]
+        argv = [c.args[0] for c in run.call_args_list][4:]
         self.assertEqual(argv, [
             ['/bin/uv', 'venv', str(cp), '--python', '3.9'],
             ['/bin/uv', 'pip', 'install', '--python', str(cp/'bin/python'), '-r',
@@ -59,17 +77,18 @@ class DataSetupTests(unittest.TestCase):
 
     def test_existing_env_skips_venv_creation(self):
         self._touch('.venv-data')
-        with mock.patch('subprocess.run') as run:
+        with self.patched_run() as run:
             result = data_env.ensure(self.root, '/bin/uv', check=False, with_cellprofiler=False)
         py = str(self.root/'.venv-data/bin/python')
         self.assertEqual([c.args[0] for c in run.call_args_list], [
             ['/bin/uv', 'pip', 'sync', '--python', py, str(self.root/'setup/data-requirements.lock')],
-            [py, '-E', '-s', '-c', IMPORT_PROBE]])
+            [py, '-E', '-s', '-c', IMPORT_PROBE],
+            [py, '-E', '-s', '-c', data_env.METADATA_PROBE]])
         self.assertTrue(result['passed'])
 
     def test_existing_cellprofiler_env_skips_venv_creation(self):
         self._touch('.venv-data'); self._touch('.venv-cellprofiler')
-        with mock.patch('subprocess.run') as run:
+        with self.patched_run() as run:
             data_env.ensure(self.root, '/bin/uv', check=False, with_cellprofiler=True)
         cp = self.root/'.venv-cellprofiler'
         argv = [c.args[0] for c in run.call_args_list]
@@ -80,10 +99,53 @@ class DataSetupTests(unittest.TestCase):
             [str(cp/'bin/cellprofiler'), '--version']])
 
     def test_check_mode_runs_no_install(self):
-        with mock.patch('subprocess.run') as run:
+        with self.patched_run() as run:
             result = data_env.ensure(self.root, '/bin/uv', check=True, with_cellprofiler=False)
-        self.assertEqual([c.args[0][1:] for c in run.call_args_list], [['-E', '-s', '-c', IMPORT_PROBE]])
-        self.assertTrue(result['passed'])
+        self.assertEqual([c.args[0][1:] for c in run.call_args_list],
+                         [['-E', '-s', '-c', IMPORT_PROBE], ['-E', '-s', '-c', data_env.METADATA_PROBE]])
+        self.assertTrue(result['passed'], result['errors'])
+
+    def check(self):
+        with self.patched_run() as run:
+            result = data_env.ensure(self.root, '/bin/uv', check=True, with_cellprofiler=False)
+        self.assertFalse(any(c.args[0][0] == '/bin/uv' for c in run.call_args_list))  # never installs
+        return result
+
+    def test_check_mode_matching_lock_passes_with_normalised_names(self):
+        dists = self.installed['distributions']
+        dists['Charset_Normalizer'] = dists.pop('charset-normalizer')
+        dists['ANNOTATED.types'] = dists.pop('annotated-types')
+        dists['unpinned-extra'] = ['1.0']
+        result = self.check()
+        self.assertTrue(result['passed'], result['errors']); self.assertEqual(result['errors'], [])
+
+    def test_check_mode_version_mismatch_fails(self):
+        self.installed['distributions']['anndata'] = ['0.0.1']
+        self.installed['distributions']['certifi'] = ['1.0']
+        result = self.check()
+        self.assertFalse(result['passed'])
+        self.assertEqual(len(result['errors']), 2, result['errors'])
+        self.assertTrue(any('anndata' in e and '0.0.1' in e and self.pins['anndata'] in e for e in result['errors']))
+
+    def test_check_mode_missing_package_fails(self):
+        del self.installed['distributions']['anndata']
+        result = self.check()
+        self.assertFalse(result['passed'])
+        self.assertEqual(len(result['errors']), 1, result['errors'])
+        self.assertIn('anndata', result['errors'][0]); self.assertIn('missing', result['errors'][0])
+
+    def test_check_mode_wrong_python_fails(self):
+        self.installed['python'] = '3.11'
+        result = self.check()
+        self.assertFalse(result['passed'])
+        self.assertTrue(any('3.11' in e and '3.12' in e for e in result['errors']), result['errors'])
+
+    def test_install_mode_verifies_lock_after_sync(self):
+        self.installed['distributions']['anndata'] = ['0.0.1']
+        with self.patched_run():
+            result = data_env.ensure(self.root, '/bin/uv', check=False, with_cellprofiler=False)
+        self.assertFalse(result['passed'])
+        self.assertTrue(any('anndata' in e for e in result['errors']))
 
     def test_failed_command_is_reported(self):
         import subprocess
