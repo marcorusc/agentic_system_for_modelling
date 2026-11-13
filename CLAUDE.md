@@ -68,6 +68,15 @@ dispatch hook refuses it (a bare data session id without `DATA_INPUT` too, and a
 session other than the one `DATA_INPUT` names). Registry: a NeKo session built from seeds has `Derived from`
 = the data session and cites proposal ids and short hashes; a MaBoSS row cites the
 mapping path and short hash. Tag mapped states, perturbations and readouts `data-derived`.
+Seeds from the researcher's own sources: write `runs/orchestrator/<p>/seeds.json`, check it with
+`scripts/data/seeds.py check`, record a `data_seeds` `stage_approval` (`session_id` = `<p>`,
+`outputs` = the symbols), then line 1 is `DATA_INPUT {"seeds": "...seeds.json", "sha256": "...", "approval": "<record id>"}`.
+Sources may be in any format under `inputs/` (papers, tables, images, assay results) and are never
+reformatted; the mapping or seeds file cites each by path, sha256 and locator, and the researcher's
+approval of that translation makes it usable. Read papers and small tables yourself; raw omics and
+microscopy go to data-analyst. A researcher BNET with a `standalone_approval` can be the mapping network
+(`mapping.py draft --standalone-network ID:BNET`; `STAGE_GATE` names `standalone_decision_id`).
+After a re-export run `mapping.py check --stage-gate`, redraft with `draft --from`, and get fresh approval.
 
 The orchestrator must have no modelling MCP tools; stop if any are visible. Run the
 setup isolation guard. Four specialist-inline *-agent transports expose only NeKo to

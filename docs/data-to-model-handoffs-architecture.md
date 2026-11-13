@@ -38,7 +38,11 @@ dispatch checks; lineage; review checklists; the `scenario_contrast` validator.
 | **Fail-closed hook** | `stage_gate_guard.py` exits 2 on any error, including import failures. Claude Code blocks a dispatch only on exit 2; exit 1 would let it proceed. |
 | **Orchestrator-drafted mapping, discussed with the researcher, checked by script** | `CLAUDE.md` forbids silently selecting mappings, states or readouts. Node names and margins are never inferred. `mapping.py check` makes the result exact. |
 | **The mapping approval binds the mapping sha256 and `outputs` equal perturbation ids plus criterion ids** | Otherwise `outputs` is decorative. Adding a criterion after approval needs re-approval. |
-| **Mapping bound to the `STAGE_GATE`-approved BNET** | `inputs.network.sha256` must equal the BNET of the approved NeKo handoff, so a mapping cannot target a different export. A re-export needs a redrafted mapping. |
+| **Mapping bound to the `STAGE_GATE`-approved BNET** | `inputs.network.sha256` must equal the BNET of the approved NeKo handoff, so a mapping cannot target a different export. A re-export needs a redrafted mapping (`draft --from`). |
+| **Sources of any format, never parsed** | Researchers hold papers, tables, images and assay results. Scripts only hash a file under `inputs/`; the orchestrator's translation (`mapping.json`, `seeds.json`) is exact and checked, and the researcher's approval of it makes a source usable. |
+| **`seeds.json` and a `data_seeds` approval for NeKo seeds from researcher sources** | A seed list is otherwise pasted prose. The approval binds the file hash and `outputs` equal the symbols; `session_id` is the purpose directory. |
+| **Standalone network in a mapping** | A researcher BNET with a `standalone_approval` can be the mapping network, so MaBoSS runs on researcher topology with or without data. |
+| **Redraft instead of a hand edit after a re-export** | `check --stage-gate` finds the stale network; `draft --from` copies the mapping and flags changed nodes; a fresh approval is required. |
 | **Cumulative data approvals** | Researchers approve stepwise. A proposal counts as approved if any valid `data` approval for the session, binding the current handoff hash, lists it. There is no revocation record. An earlier newest-wins rule was dropped. |
 | **Perturbation overrides context on shared nodes** | A scenario is a context plus an optional perturbation, so overlaps need one rule. `mapping.py check` prints overlaps as notes. |
 | **`boolean_structure` not allowed in mappings** | It validates network structure, not data-driven responses. It can still be declared directly in `VALIDATION_CRITERIA.yaml`. |
@@ -51,10 +55,12 @@ dispatch checks; lineage; review checklists; the `scenario_contrast` validator.
 |---|---|
 | `scripts/data/manifest.py` (`KIND_SCHEMAS`) | Required columns, enumerated values and unique keys per proposal kind; non-empty tables; kind-to-layer rules. |
 | `scripts/data/approvals.py` | Finds and verifies `data` and `data_mapping` approvals in `DECISIONS.md`. |
-| `scripts/data/mapping.py` | `draft`, `check`, `criteria` (and a merge into `VALIDATION_CRITERIA.yaml`). Imports the BNET node list and each method's option checker. |
+| `scripts/data/mapping.py` | `draft` (also `--source`, `--standalone-network`, `--from`), `check` (also `--stage-gate`), `criteria` (and a merge into `VALIDATION_CRITERIA.yaml`). Imports the BNET node list and each method's option checker. |
+| `scripts/data/sources.py` | Shared source rules for mappings and seeds: file under `inputs/`, no symlinks, sha256, locator characters. Never opens a source for content. |
+| `scripts/data/seeds.py` | `check` for `seeds.json`: symbols, sources, citations. |
 | `scripts/gate.py` (`check_data_input`) | Parses and verifies the `DATA_INPUT` line for network-curator and boolean-dynamics-modeler. |
 | `.claude/scripts/stage_gate_guard.py` | Dispatch hook: runs `check_task` then `check_data_input`; deny with stderr and exit 2. |
-| `scripts/state.py` | Accepts `data_mapping` as a governance stage for `stage_approval` and `stage_review`. |
+| `scripts/state.py` | Accepts `data_mapping` as a governance stage for `stage_approval` and `stage_review`, and `data_seeds`. |
 | `scripts/validate/scenario_contrast.py`, `evaluate.py` | Contrast validator and its registration. |
 | Agent and skill instructions | `network-curator`, `boolean-dynamics-modeler`, `neko-workflow`, `maboss-workflow`, `validate-stage`, `scientific-reviewer`, `reproducibility-auditor`, and the `CLAUDE.md` rules. |
 | `tests/integration/data_smoke.py` | Offline path from synthetic proposals to an evaluated `scenario_contrast`. |
@@ -91,13 +97,22 @@ The step-by-step procedure is in [data workflow](data-workflow.md). In outline:
   proposal not approved or not in the session index, a row neither mapped nor listed in
   `unmapped` with a real reason, unsupported methods or invalid options, and undeclared
   readouts. It exits non-zero and lists every problem.
-- **NeKo `DATA_INPUT`** (line 1): `{"data_session", "proposals": {id: sha256}}`. Each
+- **Sources:** `{id, path, sha256}` (regular file under `inputs/`, no symlinks); a ref is
+  `{source, locator}` (free text without `|` or control or line-break characters); every
+  declared source is cited.
+- **`seeds.json`** `runs/orchestrator/<p>/seeds.json`: `schema_version: 1`, `sources`, `seeds`
+  (`hgnc_symbol` matching `[A-Za-z0-9][A-Za-z0-9._@/-]*`, unique ignoring case, each with
+  `from` refs). Approval: `data_seeds` `stage_approval`, `session_id` = `<p>`, `outputs` = symbols.
+- **NeKo `DATA_INPUT`** (line 1), exactly one of two forms: `{"seeds", "sha256", "approval"}`
+  (above), or `{"data_session", "proposals": {id: sha256}}`. For the proposal form, each
   proposal must be `seed_genes` for `neko`, approved, and equal to manifest and disk. The
   curator resolves ids through the session manifest and returns `blocked` on any
   mismatch.
 - **MaBoSS `DATA_INPUT`** (line 2): `{"mapping", "sha256", "approval"}`. The approval is a
   `data_mapping` `stage_approval` for that mapping and hash. Its `session_id` is the NeKo
-  session and must equal the `STAGE_GATE` upstream.
+  session and must equal the `STAGE_GATE` upstream. With a standalone network
+  (`inputs.network.standalone_decision_id`, a `.bnet`, record stage `boolean-dynamics`) the
+  `STAGE_GATE` uses `standalone_decision_id` and the approval's `session_id` is that id.
 - **`scenario_contrast`:** drop is P(control) minus P(perturbed). It passes when
   test drop minus reference drop is strictly greater than the margin. The statistic is
   `final` or `tail_mean`; `combine` is `all` or `any`. There is no implicit tolerance.
@@ -123,7 +138,14 @@ The step-by-step procedure is in [data workflow](data-workflow.md). In outline:
 
 ## 7. Known limitations
 
-- **Plain-text data** with no path or session id cannot be detected.
+- **Values copied into brief prose.** The residual risk is the orchestrator copying values (for
+  example gene symbols) into a brief; the hook cannot tell them from ordinary text. Mitigated by
+  `CLAUDE.md` and the reviewers. Users place sources in `inputs/`.
+- **Nothing technically stops the orchestrator writing a file into `inputs/`** and citing it. The
+  control is your approval of the mapping or seeds file, which shows each path.
+- **Source content is not checked by scripts:** a locator that does not support its row is
+  caught only by you and the reviewers.
+- **A standalone network must be a `.bnet`**, and seed symbols must match the symbol pattern.
 - **Scoping is per session, not per path:** a brief may cite other files of the named
   data session.
 - **Evasion spellings:** homoglyph spellings of `DATA_INPUT` and case-sensitive

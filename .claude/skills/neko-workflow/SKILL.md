@@ -175,7 +175,9 @@ When the invocation starts with a `DATA_INPUT` line, find each proposal file thr
 `runs/data-analyst/<data_session>/manifest.json` (the `proposals` entry with that `id`:
 `path` relative to the session directory, and `sha256`, which must equal the line's hash;
 otherwise return `blocked`). Read seeds only from those files (`hgnc_symbol` column, all
-tiers unless restricted). Never edit them. List seeds the database does not contain in the report; do not drop or
+tiers unless restricted). When line 1 is the seeds form (`{"seeds": "runs/orchestrator/<p>/seeds.json", ...}`),
+read the genes from that `seeds.json` (`hgnc_symbol` entries; the researcher approved it as the
+translation of their own sources) and do not open the cited sources. Never edit either. List seeds the database does not contain in the report; do not drop or
 substitute them silently.
 
 ## Troubleshooting

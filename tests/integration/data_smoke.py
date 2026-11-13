@@ -566,6 +566,87 @@ def run(tmp: Path) -> None:
     outcome = {r["criterion_id"]: r["status"] for r in evaluation["results"]}
     assert outcome == {"V1": "passed"}, evaluation
     step("evaluate.py: scenario_contrast V1 passed (EGFR-off drop larger in the test context)")
+    # 8. researcher sources of any format -> seeds.json -> NeKo (never parsed; the approved translation is checked)
+    seeds_dir = root / "runs/orchestrator/kras-seeds"
+    (root / "inputs").mkdir(exist_ok=True)
+    (root / "inputs/smith2024.pdf").write_bytes(b"%PDF-1.4\n% opaque bytes the scripts never read\n\x00\x01\x02")
+    (root / "inputs/assay_results.txt").write_text(
+        "free-form notes, not a table\nclone 7: KRAS G12D, drug-sensitive\n", encoding="utf-8")
+    seeds_rel = "runs/orchestrator/kras-seeds/seeds.json"
+    write_json(root / seeds_rel, {
+        "schema_version": 1,
+        "sources": [{"id": "smith2024", "path": "inputs/smith2024.pdf", "sha256": sha_of("inputs/smith2024.pdf")},
+                    {"id": "assay", "path": "inputs/assay_results.txt", "sha256": sha_of("inputs/assay_results.txt")}],
+        "seeds": [{"hgnc_symbol": "KRAS", "from": [{"source": "smith2024", "locator": "Fig. 3B"},
+                                                   {"source": "assay", "locator": "clone 7 line"}]},
+                  {"hgnc_symbol": "EGFR", "from": [{"source": "smith2024", "locator": "Table 1, row 2"}]}]})
+    checked = sh("scripts/data/seeds.py", "check", seeds_rel, check=False)
+    assert checked.returncode == 0 and not checked.stderr, checked.stdout + checked.stderr
+    record_state({"id": "dec-seeds-1", "kind": "stage_approval", "stage": "data_seeds", "session_id": "kras-seeds",
+                  "outputs": ["EGFR", "KRAS"], "artifact": {"path": seeds_rel, "sha256": sha_of(seeds_rel)},
+                  "approved_by": "researcher", "authorization": "researcher: seeds ok"})
+    seeds_line = "DATA_INPUT " + json.dumps({"seeds": seeds_rel, "sha256": sha_of(seeds_rel), "approval": "dec-seeds-1"})
+    seeds_task = f"{seeds_line}\nBuild the network from the seeds file named above."
+    result = gate.check_data_input(root, "network_curator", seeds_task)
+    assert result["approval_id"] == "dec-seeds-1" and result["symbols"] == ["KRAS", "EGFR"], result
+    try:
+        gate.check_data_input(root, "network_curator", seeds_task.replace(sha_of(seeds_rel), "0" * 64))
+    except ValueError as exc:
+        wrong_sha = str(exc)
+        assert f"decision dec-seeds-1 approves a different sha256 than {'0' * 64}" in wrong_sha, wrong_sha
+    else:
+        raise AssertionError("NeKo brief with a wrong seeds hash was accepted")
+    step("researcher sources (PDF bytes, free text) -> seeds.json: check passes, data_seeds approved, "
+         "network-curator seeds DATA_INPUT accepted, wrong seeds hash refused")
+
+    # 9. a researcher BNET (standalone approval) -> mapping built from sources only -> MaBoSS
+    sa_rel = "inputs/researcher_model.bnet"
+    (root / sa_rel).write_text(BNET_TEXT, encoding="utf-8")
+    record_state({"id": "sa-1", "kind": "standalone_approval", "stage": "boolean-dynamics",
+                  "outputs": ["Proliferation", "Survival"], "artifact": {"path": sa_rel, "sha256": sha_of(sa_rel)},
+                  "approved_by": "researcher", "authorization": "researcher: simulate my own model"})
+    sa_mapping = "runs/orchestrator/own-model/mapping.json"
+    sh("scripts/data/mapping.py", "draft", "--purpose", "own-model", "--source", "smith2024:inputs/smith2024.pdf",
+       "--standalone-network", f"sa-1:{sa_rel}")
+    sa_data = json.loads((root / sa_mapping).read_text(encoding="utf-8"))
+    assert sa_data["inputs"]["network"]["standalone_decision_id"] == "sa-1", sa_data["inputs"]
+    sa_data["contexts"] = {"MUT": [{"node": "EGFR", "state": 1}], "WT": []}
+    sa_data["perturbations"] = [{"id": "S1", "from": {"source": "smith2024", "locator": "Fig. 3B"},
+                                 "model": [{"node": "EGFR", "state": 0}]}]
+    sa_data["readouts"] = [{"phenotype": "viability", "nodes": ["Proliferation", "Survival"]}]
+    sa_data["criteria"] = [{"criterion_id": "V1", "from": [{"source": "smith2024", "locator": "Fig. 3C"}],
+                            "method": "scenario_contrast",
+                            "test": {"context": "MUT", "perturbation": "S1"},
+                            "reference": {"context": "WT", "perturbation": "S1"},
+                            "options": {"readouts": ["Proliferation"], "margin": 0.05, "combine": "all",
+                                        "statistic": "tail_mean", "tail_points": 2}}]
+    sa_data["unmapped"] = []
+    write_json(root / sa_mapping, sa_data)
+    checked = sh("scripts/data/mapping.py", "check", sa_mapping, check=False)
+    assert checked.returncode == 0 and not checked.stderr, checked.stdout + checked.stderr
+    record_state({"id": "dec-map-sa", "kind": "stage_approval", "stage": "data_mapping", "session_id": "sa-1",
+                  "outputs": ["S1", "V1"], "artifact": {"path": sa_mapping, "sha256": sha_of(sa_mapping)},
+                  "approved_by": "researcher", "authorization": "researcher: mapping from my paper ok"})
+    sa_gate = "STAGE_GATE " + json.dumps({"standalone_decision_id": "sa-1", "outputs": ["Proliferation", "Survival"]})
+    sa_line = "DATA_INPUT " + json.dumps({"mapping": sa_mapping, "sha256": sha_of(sa_mapping), "approval": "dec-map-sa"})
+    result = gate.check_data_input(root, "boolean_dynamics_modeler",
+                                   f"{sa_gate}\n{sa_line}\nSimulate exactly the mapping's scenarios.")
+    assert result["approval_id"] == "dec-map-sa" and result["standalone_decision_id"] == "sa-1", result
+    step("standalone BNET + sources-only mapping: check passes, data_mapping approved (session_id = decision id), "
+         "boolean-dynamics-modeler DATA_INPUT accepted")
+
+    # 10. re-export: stale detection and draft --from
+    gate_json = json.dumps({"upstream_session_id": NEKO, "outputs": ["Proliferation", "Survival"]})
+    fresh = sh("scripts/data/mapping.py", "check", mapping_rel, "--stage-gate", gate_json, check=False)
+    assert fresh.returncode == 0 and not fresh.stderr, fresh.stdout + fresh.stderr
+    new_bnet = f"runs/network-curator/{NEKO}/exports/inv2/model.bnet"
+    (root / new_bnet).parent.mkdir(parents=True)
+    (root / new_bnet).write_text(BNET_TEXT.replace("Survival, MAPK1", "Survival, MAPK1 & !EGFR"), encoding="utf-8")
+    redraft = sh("scripts/data/mapping.py", "draft", "--from", mapping_rel, "--purpose", "luad-v2",
+                 "--network", f"{NEKO}:{new_bnet}")
+    assert "Survival" in redraft.stdout and "rediscuss" in redraft.stdout, redraft.stdout
+    step("mapping.py check --stage-gate passes on the approved BNET; draft --from a re-exported BNET notes "
+         "the changed node Survival")
     print("DATA SMOKE PASSED")
 
 

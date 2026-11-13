@@ -58,7 +58,16 @@ runs the vendored PyDESeq2 and GSEA scripts on a synthetic 4-vs-4 dataset and pr
   called; the smoke records a synthetic exported, reviewed and approved NeKo session so the `STAGE_GATE` binds the BNET);
 - synthetic trajectories and `runs.json` go through `mapping.py criteria --merge-into
   VALIDATION_CRITERIA.yaml`, and `scripts/validate/evaluate.py` passes the `scenario_contrast`
-  criterion.
+  criterion;
+- researcher sources of any format (opaque PDF-like bytes, a free-text note) in `inputs/`: a
+  `seeds.json` citing them with locators passes `seeds.py check`, a `data_seeds` approval is
+  recorded, the network-curator seeds `DATA_INPUT` is accepted and a wrong seeds hash is refused;
+- a researcher BNET with a `standalone_approval`: `mapping.py draft --source ... --standalone-network`
+  (no `--data`), the completed mapping passes `check`, the `data_mapping` approval has
+  `session_id` = the standalone decision id, and the boolean-dynamics-modeler `DATA_INPUT` after a
+  `standalone_decision_id` `STAGE_GATE` is accepted;
+- re-export: `mapping.py check --stage-gate` passes on the NeKo-route mapping, and `draft --from` onto
+  a re-exported BNET notes the changed node.
 
 It ends with `DATA SMOKE PASSED`.
 
@@ -167,6 +176,50 @@ Approved proposals reach NeKo and MaBoSS through `DATA_INPUT` lines that the dis
 (`.claude/scripts/stage_gate_guard.py`, calling `scripts/gate.py check_data_input`) checks
 again from the durable records. Never paste data values into a brief.
 
+**Routes.** The researcher's sources may be in any format (papers, data tables, microscopy
+images, raw omics, phenotype tables, mutation-assay results). They are never reformatted or
+parsed by scripts. The orchestrator translates them into the exact, checked `mapping.json` or
+`seeds.json`, and your approval of that translation makes a source usable. You place sources in
+`inputs/` and may show an example structure in chat. Who reads what: papers go to the
+orchestrator (or `literature-reviewer` for edge evidence); small tables and stated observations
+go to the orchestrator; raw omics and microscopy go to `data-analyst`, whose approved proposal
+is then cited. Briefs never contain data values.
+
+| Route | Path |
+|---|---|
+| data-analyst proposals to NeKo | `seed_genes` proposal, `DATA_INPUT` `{data_session, proposals}` |
+| your sources to NeKo | `seeds.json` (`data_seeds` approval), `DATA_INPUT` `{seeds, sha256, approval}` |
+| sources and/or proposals to a mapping | `mapping.json` (`data_mapping` approval) |
+| your own BNET to MaBoSS, with or without a mapping | `standalone_approval` (stage `boolean-dynamics`), `STAGE_GATE` with `standalone_decision_id` |
+| no data at all | unchanged: no `DATA_INPUT` |
+
+**Your sources to NeKo.** `runs/orchestrator/<p>/seeds.json`:
+
+```json
+{"schema_version": 1,
+ "sources": [{"id": "smith2024", "path": "inputs/smith2024.pdf", "sha256": "<hex>"}],
+ "seeds": [{"hgnc_symbol": "KRAS", "from": [{"source": "smith2024", "locator": "Fig. 3B"}]}]}
+```
+
+Every seed cites at least one declared source, and every source is cited. `python3
+scripts/data/seeds.py check SEEDS` prints one problem per line. Symbols must match
+`[A-Za-z0-9][A-Za-z0-9._@/-]*` and are unique ignoring case. The approval is a `stage_approval`
+for stage `data_seeds`: `artifact` is the `seeds.json` path and sha256, `session_id` is the
+purpose directory name `<p>`, `outputs` is the set of seed symbols. Line 1 of the
+network-curator brief is then
+`DATA_INPUT {"seeds": "runs/orchestrator/<p>/seeds.json", "sha256": "...", "approval": "<record id>"}`
+(exactly one of the two NeKo forms). The hook re-checks the approval, the hash and `seeds.py check`.
+The curator reads `hgnc_symbol` from the file and never alters it.
+
+**Sources in a mapping.** `inputs` of `mapping.json` is `{data, sources, network}`. `data` and
+`sources` are lists, and at least one is non-empty. A source is `{id, path, sha256}`: a regular
+file under `inputs/` (no symlinks; cite a file in a folder, or an archive), hash equal to the
+file. `from` is one ref or a non-empty list of refs: `{proposal, row}` as before, or
+`{source, locator}` with a declared source id and free-text locator (for example `Fig. 3B`,
+`Table S2, KRAS G12D row`). Every declared source must be cited. Locators and paths may not
+contain `|` or any control or line-break character (declarations are written to table cells).
+Criteria text cites sources as path, short sha256 and locator.
+
 **NeKo seeds.** After the `data` approval (its `outputs` list the proposal ids), line 1 of
 the network-curator brief is:
 
@@ -192,12 +245,14 @@ researcher (`scripts/data/mapping.py`):
 
 | Command | Purpose |
 |---|---|
-| `draft --purpose P --data SESSION:PROPOSAL:APPROVAL ... --network NEKO_SESSION:BNET` | Skeleton with inputs, hashes and approvals filled in; one `unmapped` entry per proposal row with reason `TODO`. |
-| `check MAPPING` | Exit 1 with one problem per line: bad paths or hashes, unapproved proposals, missing BNET nodes, rows neither mapped nor `unmapped` with a real reason, invalid criteria. |
+| `draft --purpose P [--data SESSION:PROPOSAL:APPROVAL ...] [--source ID:PATH ...] (--network NEKO_SESSION:BNET \| --standalone-network DECISION_ID:BNET)` | Skeleton with inputs, hashes and approvals filled in; one `unmapped` entry per proposal row with reason `TODO`. At least one `--data` or `--source`. |
+| `draft --from OLD_MAPPING --purpose P2 (--network ... \| --standalone-network ...)` | Redraft onto a new network (see Re-export). |
+| `check MAPPING [--stage-gate JSON]` | Exit 1 with one problem per line: bad paths or hashes, unapproved proposals, missing BNET nodes, rows neither mapped nor `unmapped` with a real reason, invalid criteria. |
 | `criteria MAPPING --runs RUNS --approval RECORD_ID [--out FILE] [--merge-into VALIDATION_CRITERIA.yaml]` | Criteria entries from `runs.json` (scenario to saved trajectory CSV); refuses a mapping without a `data_mapping` approval of exactly its current bytes, and a scenario with no run. `--out` is written before the merge. The approval id appears in each declaration's "Required evidence" next to the mapping sha256. |
 
 Rules enforced by `check`:
-- the BNET is under `runs/network-curator/<session>/exports/` or
+- the BNET is a researcher `.bnet` bound to a `standalone_approval` of stage `boolean-dynamics`,
+  or is under `runs/network-curator/<session>/exports/` or
   `boolean-handoffs/<capture>/`;
 - where the context and a perturbation fix the same node, the perturbation overrides the
   context; `check` prints each overlap as a `note:` line and does not fail;
@@ -224,6 +279,23 @@ The hook requires the matching approval, a passing `mapping.py check` at dispatc
 `inputs.network.sha256` equal to the BNET sha256 of the NeKo handoff that `STAGE_GATE`
 approved. A `data_mapping` approval's `session_id` is the mapping's NeKo session and must
 equal that `upstream_session_id`.
+
+**Your BNET (standalone network).** With a `standalone_approval` for your `.bnet` (stage
+`boolean-dynamics`, `outputs` the MaBoSS output nodes), the mapping network is
+`{standalone_decision_id, bnet, sha256}`, the `STAGE_GATE` line is
+`STAGE_GATE {"standalone_decision_id": "...", "outputs": [...]}`, the mapping network must
+carry the same id with the record's sha256, and the `data_mapping` approval's `session_id` is
+that decision id. Without a mapping, the standalone `STAGE_GATE` alone is unchanged. A `.bnd`/`.cfg`
+only model cannot be used in a mapping.
+
+**Re-export.** A new BNET export makes the mapping stale. Run `mapping.py check MAPPING
+--stage-gate '<STAGE_GATE JSON>'`: it reports the stale network (and the hook refuses it),
+ending "redraft with mapping.py draft --from". Then `mapping.py draft --from OLD_MAPPING
+--purpose P2 --network ...` copies data, sources, contexts, perturbations, readouts, criteria and
+`unmapped` onto the new network and prints a note for each used node that is absent from the new BNET or
+whose rule changed ("rediscuss"). `check` lists each entry that no longer validates. Discuss
+those with the researcher; the old mapping and approval stay untouched, and the new mapping needs a
+fresh `data_mapping` approval.
 
 **Brief strictness.** For both specialists, any case-insensitive occurrence of
 `DATA[_-]?INPUT` other than the single canonical line is refused: never mention it in

@@ -72,6 +72,10 @@ explicitly. Configuration validation never proves a PhysiCell simulation ran.
 ## Data-stage and mapping checklist
 
 When the stage uses data proposals or a `mapping.json`, check that these agree:
+- each cited source file under `inputs/` exists with the sha256 in the mapping or
+  `seeds.json`, and its locator supports the row (label a hash you read as unverified);
+- each `seeds.json` seed traces to a cited source, and the `data_seeds` approval `outputs`
+  equal its symbols;
 - proposal sha256 values in the mapping, the manifest, the approval records and every
   `DATA_INPUT` line, and the mapping sha256 in its `data_mapping` approval;
 - the approval `outputs` (proposal ids; for the mapping, its perturbation and criterion

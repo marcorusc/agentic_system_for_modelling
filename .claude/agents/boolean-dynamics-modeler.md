@@ -94,6 +94,8 @@ each context, each perturbation applied to its context, and the context without 
 perturbation as control. On a node fixed by both the context and the perturbation, the perturbation overrides the context. Add no scenario, node state or readout of your own. Report one
 trajectory artifact path per `(context, perturbation)` pair (control included), so the
 orchestrator can write `runs.json`. Report any mapped node the model does not accept.
+The mapping's network may come from a researcher-provided BNET with a standalone approval
+(`STAGE_GATE` names `standalone_decision_id`); nothing else changes for you.
 
 ## Rule-refinement mode
 

@@ -70,6 +70,10 @@ explicitly. Configuration validation never proves a PhysiCell simulation ran.
 ## Data-stage and mapping checklist
 
 When the stage uses data proposals or a `mapping.json`:
+- each cited source exists with the recorded sha256, and its locator actually supports
+  the row it justifies (open the source or its approved proposal; never accept a locator
+  unread);
+- each seed in a `seeds.json` traces to a cited source and a locator that names that gene;
 - each mapped context, perturbation and readout is biologically justified for the
   data it came from (for example drug to its targets, cohort to a node state);
 - each `unmapped` reason is sound, not a way to skip inconvenient rows;

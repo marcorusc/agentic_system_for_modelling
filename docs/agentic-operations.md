@@ -188,6 +188,14 @@ through a `DATA_INPUT` line, checked by `scripts/gate.py check_data_input`:
   `session_id` is that NeKo session) and its BNET sha256 must equal the approved NeKo
   handoff's BNET.
 
+- network-curator, line 1, seeds form: `DATA_INPUT {"seeds": "runs/orchestrator/<p>/seeds.json", "sha256": "...", "approval": "<record id>"}`
+  (exactly one of the two forms). The approval is a `stage_approval` for stage `data_seeds` on
+  that file and hash, with `session_id` = `<p>` and `outputs` = the seed symbols;
+  `seeds.py check` must pass. The curator takes genes from `hgnc_symbol`.
+- boolean-dynamics-modeler with a researcher BNET: `STAGE_GATE {"standalone_decision_id": "...", "outputs": [...]}`
+  then the same mapping `DATA_INPUT`; the mapping network must carry that
+  `standalone_decision_id`, and the approval's `session_id` equals it.
+
 NeKo data approvals are cumulative: a proposal is approved if any valid `data` approval of the
 session, binding the current handoff sha256, lists it. There is no revocation record; to
 withdraw a proposal, re-run the data analysis in a new session (new handoff). The
@@ -195,13 +203,16 @@ mapping approval is looked up by its exact `approval` id. Any other occurrence o
 `DATA_INPUT` (any case or separator) in the prompt, a `runs/data-analyst` path or a data
 session id without the line, is refused, and any hook error denies the dispatch. Never
 put data values in a brief. `state.py record` accepts `data_mapping` as a governance
-stage for `stage_approval` and `stage_review`.
+stage for `stage_approval` and `stage_review`, and `data_seeds` for `stage_approval`.
 
 Mapping commands (details in docs/data-workflow.md):
 
 ```
 python3 scripts/data/mapping.py draft --purpose P --data SESSION:PROPOSAL:APPROVAL ... --network NEKO_SESSION:BNET
-python3 scripts/data/mapping.py check runs/orchestrator/P/mapping.json
+python3 scripts/data/mapping.py draft --purpose P --source ID:inputs/FILE ... --standalone-network DECISION_ID:BNET   # sources only, researcher BNET
+python3 scripts/data/mapping.py draft --from OLD_MAPPING --purpose P2 --network NEKO_SESSION:NEW_BNET                  # redraft after a re-export
+python3 scripts/data/mapping.py check runs/orchestrator/P/mapping.json [--stage-gate '{"upstream_session_id": "...", "outputs": [...]}']
+python3 scripts/data/seeds.py check runs/orchestrator/P/seeds.json
 python3 scripts/data/mapping.py criteria runs/orchestrator/P/mapping.json --runs runs/orchestrator/P/runs.json --approval <data_mapping record id> [--merge-into VALIDATION_CRITERIA.yaml]
 ```
 

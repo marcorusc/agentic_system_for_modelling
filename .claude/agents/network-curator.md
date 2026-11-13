@@ -88,6 +88,11 @@ manifest, and never alter them. Take genes from the `hgnc_symbol` column, all ti
 unless the invocation restricts them. Report every seed absent from the database. Data
 values are never pasted into the invocation.
 
+If line 1 is instead `DATA_INPUT {"seeds": "runs/orchestrator/<p>/seeds.json", "sha256": ..., "approval": ...}`,
+read that `seeds.json` and take genes from its `hgnc_symbol` entries. Never alter it and do
+not open the sources it cites. Report every seed absent from the database; never drop or
+substitute one.
+
 ## Inference-policy contract
 
 Before network construction or any operation that invokes `complete_connection`,
