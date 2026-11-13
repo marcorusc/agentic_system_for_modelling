@@ -186,6 +186,19 @@ class CheckTests(MappingFixture):
     def test_check_complete_mapping_passes(self):
         self.assertEqual(mapping.check(self.root, self.rel), [])
 
+    def test_public_load_and_check_and_validate_data_handoff(self):
+        data, digest, errors = mapping.load_and_check(self.root, self.rel)
+        self.assertEqual((data, digest, errors), (self.data, sha(self.root / self.rel), []))
+        draft = self.draft("todo")
+        self.assertEqual(len(mapping.load_and_check(self.root, draft)[2]), 4)
+        with self.assertRaises(ValueError):
+            mapping.load_and_check(self.root, "runs/elsewhere/m.json")
+        mapping.validate_data_handoff(self.root, self.sid)
+        handoff_path = self.root / self.base / "handoff.json"
+        handoff_path.write_text("{}", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "no longer validates"):
+            mapping.validate_data_handoff(self.root, self.sid)
+
     def test_hash_mismatch(self):
         errors = self.errors_after(self.rel, self.data, lambda d: d["inputs"]["data"][0].update(sha256="0" * 64))
         self.assertError(errors, "sha256")

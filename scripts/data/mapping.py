@@ -540,6 +540,22 @@ def check(root: Path, mapping_rel: str) -> list[str]:
     return _check_data(root, data)
 
 
+def load_and_check(root: Path, mapping_rel: str) -> tuple[dict, str, list[str]]:
+    """Read the mapping once and check exactly those bytes: (data, sha256, errors).
+
+    Unlike `check`, an unreadable or misplaced mapping raises ValueError/OSError
+    rather than being reported as an error line.
+    """
+    root = Path(root)
+    data, digest = _load_mapping(root, mapping_rel)
+    return data, digest, _check_data(root, data)
+
+
+def validate_data_handoff(root: Path, session_id: str) -> None:
+    """Raise ValueError unless the data session's handoff.json validates now."""
+    _validate_handoff(Path(root), session_id)
+
+
 def _check_data(root: Path, data: dict) -> list[str]:
     checker = _Checker(root)
     if set(data) != set(KEYS):

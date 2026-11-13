@@ -25,10 +25,10 @@ class DataInputFixture(MappingFixture):
         for name in ("CURRENT_STATE.md", "VALIDATION_PLAN.md"):
             shutil.copyfile(state.ROOT / "templates" / name, self.root / name)
 
-    def approve_mapping(self, record_id, rel):
+    def approve_mapping(self, record_id, rel, outputs=("S1", "V1")):
         state.update(self.root, "record", {
             "id": record_id, "kind": "stage_approval", "stage": "data_mapping", "session_id": NEKO,
-            "outputs": ["S1", "V1"], "artifact": {"path": rel, "sha256": sha(self.root / rel)},
+            "outputs": list(outputs), "artifact": {"path": rel, "sha256": sha(self.root / rel)},
             "approved_by": "researcher", "authorization": "researcher: mapping ok"})
 
     def neko_line(self, proposals=None, session=None):
@@ -205,6 +205,17 @@ class MabossDataInputTests(DataInputFixture):
         with self.assertRaisesRegex(ValueError, "mapping check failed"):
             gate.check_data_input(self.root, "boolean_dynamics_modeler", task)
 
+    def test_maboss_approval_outputs_must_equal_mapping_ids(self):
+        for record_id, outputs in (("dec-map-zzz", ["ZZZ"]), ("dec-map-s1", ["S1"]),
+                                   ("dec-map-extra", ["S1", "V1", "V2"])):
+            self.approve_mapping(record_id, self.mapping_rel, outputs)
+            with self.assertRaisesRegex(ValueError, "outputs"):
+                gate.check_data_input(self.root, "boolean_dynamics_modeler", self.maboss_task(approval=record_id))
+        self.approve_mapping("dec-map-reordered", self.mapping_rel, ["V1", "S1"])
+        self.assertEqual(gate.check_data_input(self.root, "boolean_dynamics_modeler",
+                                               self.maboss_task(approval="dec-map-reordered"))["approval_id"],
+                         "dec-map-reordered")
+
     def test_maboss_network_mismatch_with_stage_gate_refused(self):
         other = "STAGE_GATE " + json.dumps({"upstream_session_id": "neko-session-2", "outputs": OUTPUTS})
         with self.assertRaisesRegex(ValueError, "neko-session-2"):
@@ -225,6 +236,37 @@ class ScopeTests(DataInputFixture):
             with self.assertRaises(ValueError) as caught:
                 gate.check_data_input(self.root, specialist, task)
             self.assertEqual(str(caught.exception), REFUSAL)
+
+    def test_noncanonical_data_input_refused(self):
+        line = self.maboss_line(digest="0" * 64)
+        body = line[len("DATA_INPUT"):]
+        variants = [f"`{line}`", f"> {line}", f"\ufeff{line}", f" {line}", "data_input" + body, "DATA-INPUT" + body,
+                    "DATAINPUT" + body, "Data_Input" + body, "DATA\u200b_INPUT" + body, "DATA\uff3fINPUT" + body]
+        for variant in variants:
+            with self.assertRaises(ValueError, msg=repr(variant)):
+                gate.check_data_input(self.root, "boolean_dynamics_modeler", f"{STAGE_GATE}\n{variant}\nSimulate.")
+            with self.assertRaises(ValueError, msg=repr(variant)):
+                gate.check_data_input(self.root, "network_curator", f"Build.\n{variant}")
+        # The canonical line plus any other mention is refused too.
+        for extra in ("Follow the DATA_INPUT line above.", "see `data_input`", "DATA-INPUT"):
+            with self.assertRaises(ValueError, msg=extra):
+                gate.check_data_input(self.root, "boolean_dynamics_modeler", f"{self.maboss_task()}\n{extra}")
+            with self.assertRaises(ValueError, msg=extra):
+                gate.check_data_input(self.root, "network_curator", f"{self.neko_task()}\n{extra}")
+        # Ordinary prose "data input" (with a space) is not a DATA_INPUT spelling.
+        self.assertIsNone(gate.check_data_input(self.root, "network_curator", "No data input is used."))
+
+    def test_data_session_id_or_bare_dir_without_data_input_refused(self):
+        for specialist, prefix in (("network_curator", "Build.\n"), ("boolean_dynamics_modeler", f"{STAGE_GATE}\n")):
+            for prose in (f"seeds come from data session {self.sid}", "outputs live in runs/data-analyst",
+                          "see runs\\data-analyst\\x", "see RUNS/Data-Analyst/x", "data-20990101T000000Z-deadbeef"):
+                with self.assertRaises(ValueError, msg=prose) as caught:
+                    gate.check_data_input(self.root, specialist, prefix + prose)
+                self.assertEqual(str(caught.exception), REFUSAL)
+        # With a DATA_INPUT line, another data session id is out of scope.
+        with self.assertRaisesRegex(ValueError, "data-20990101T000000Z-deadbeef"):
+            gate.check_data_input(self.root, "network_curator",
+                                  self.neko_task() + "\nalso data-20990101T000000Z-deadbeef")
 
     def test_other_specialists_unaffected(self):
         task = f"Review the evidence; see {self.seeds}.\nDATA_INPUT not-json"
@@ -256,6 +298,17 @@ class HookTests(DataInputFixture):
         for prompt in (["DATA_INPUT"], 7, "DATA_INPUT " + "[" * 100000):
             result = self.hook("network-curator", prompt)
             self.assertEqual(result.returncode, 2, result.stderr)
+
+    def test_hook_fails_closed_on_malformed_prompts(self):
+        deep = {"boolean-dynamics-modeler": "STAGE_GATE " + "[" * 100000,
+                "multicellular-configurator": "STAGE_GATE " + "[" * 100000,
+                "network-curator": "DATA_INPUT " + "[" * 100000}
+        for role in deep:
+            for prompt in (7, ["x"], {"a": 1}, True, deep[role]):
+                result = self.hook(role, prompt)
+                self.assertEqual(result.returncode, 2, (role, repr(prompt)[:40], result.stderr[-300:]))
+                self.assertIn("blocked", result.stderr)
+        self.assertEqual(self.hook("network-curator", None).returncode, 0)
 
     def test_hook_maboss_allow_and_deny(self):
         # STAGE_GATE is checked first: with no exported upstream, the DATA_INPUT line cannot help.

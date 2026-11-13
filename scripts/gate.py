@@ -8,6 +8,7 @@ import json
 import re
 from pathlib import Path
 import sys
+import unicodedata
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts.state import ROOT, REGISTRY, checked_artifact, identifier, records, table, validate_record
@@ -251,7 +252,12 @@ def check_task(root, specialist, task):
     return check(root, stage, value["upstream_session_id"], value["outputs"])
 
 
-DATA_PATH = "runs/data-analyst/"
+# Detection runs on a normalised copy of the prompt (see _detection_text); any spelling
+# of DATA_INPUT, data-analyst path or data session ID counts.
+DATA_PATH = re.compile(r"runs[\\/]+data-analyst", re.I)
+DATA_SESSION_PATH = re.compile(r"runs[\\/]+data-analyst[\\/]+([A-Za-z0-9][A-Za-z0-9._-]*)", re.I)
+DATA_SESSION_ID = re.compile(r"data-\d{8}T\d{6}Z-[0-9a-f]{8}", re.I)
+DATA_INPUT_MENTION = re.compile(r"DATA[_-]?INPUT", re.I)
 DATA_REFUSAL = "brief references data-analyst artifacts without a DATA_INPUT line; see CLAUDE.md"
 # Specialist -> (0-based line index of its DATA_INPUT line, human label).
 DATA_INPUT_LINE = {"network_curator": (0, "network-curator DATA_INPUT must be line 1 of the prompt"),
@@ -274,9 +280,14 @@ def _strict_object(text, label):
     return value
 
 
-def _data_sessions_named(task):
-    """Data-analyst session IDs named by `runs/data-analyst/<session>` paths in the prompt."""
-    return {m.rstrip(".") for m in re.findall(r"runs/data-analyst/([A-Za-z0-9][A-Za-z0-9._-]*)", task)}
+def _detection_text(task):
+    """The prompt NFKC-normalised and without format characters (BOM, zero-width), for detection only."""
+    return "".join(ch for ch in unicodedata.normalize("NFKC", task) if unicodedata.category(ch) != "Cf")
+
+
+def _data_sessions_named(text):
+    """Data-analyst sessions named by `runs/data-analyst/<session>` paths or by data session IDs."""
+    return ({m.rstrip(".") for m in DATA_SESSION_PATH.findall(text)} | set(DATA_SESSION_ID.findall(text)))
 
 
 def _newest_data_approval(root, session):
@@ -333,7 +344,7 @@ def _check_neko_data_input(root, value):
                              f"{entry['path']} ({entry['sha256'][:12]})")
         resolved[proposal_id] = {"path": entry["path"], "sha256": entry["sha256"]}
     from scripts.data import mapping
-    mapping._validate_handoff(root, session)
+    mapping.validate_data_handoff(root, session)
     return {"data_session": session, "approval_id": record["id"], "proposals": resolved}, {session}
 
 
@@ -351,12 +362,16 @@ def _check_maboss_data_input(root, value, first_line):
     validate_record(root, record)
     from scripts.data import mapping
     # Check exactly the approved bytes: one read gives both the parsed mapping and its hash.
-    data, actual = mapping._load_mapping(root, rel)
+    data, actual, errors = mapping.load_and_check(root, rel)
     if actual != digest:
         raise ValueError(f"{rel} changed since approval {approval_id} (sha256 mismatch)")
-    errors = mapping._check_data(root, data)
     if errors:
         raise ValueError(f"mapping check failed for {rel}: " + "; ".join(errors))
+    ids = ({item.get("id") for item in data["perturbations"]}
+           | {item.get("criterion_id") for item in data["criteria"]})
+    if set(record["outputs"]) != ids:
+        raise ValueError(f"mapping approval {approval_id} outputs {sorted(record['outputs'])} must equal the "
+                         f"mapping's perturbation and criterion ids {sorted(ids, key=str)}")
     neko = data["inputs"]["network"]["neko_session"]
     if neko != upstream:
         raise ValueError(f"mapping network is NeKo session {neko}, but STAGE_GATE names {upstream}")
@@ -380,19 +395,22 @@ def check_data_input(root, specialist, task):
         raise ValueError("dispatch prompt must be a string")
     lines = task.splitlines()  # the same line split as check_task
     expected, placement = DATA_INPUT_LINE[specialist]
-    positions = [n for n, line in enumerate(lines) if line.lstrip().startswith("DATA_INPUT")]
-    if not positions:
-        if DATA_PATH in task:
+    text = _detection_text(task)
+    mentions = len(DATA_INPUT_MENTION.findall(text))
+    if not mentions:
+        if DATA_PATH.search(text) or DATA_SESSION_ID.search(text):
             raise ValueError(DATA_REFUSAL)
         return None
-    if positions != [expected] or not lines[expected].startswith("DATA_INPUT "):
-        raise ValueError(f"{placement} (exactly one, starting 'DATA_INPUT ')")
+    # Any spelling of DATA_INPUT anywhere must be exactly the one canonical line.
+    if mentions != 1 or len(lines) <= expected or not lines[expected].startswith("DATA_INPUT "):
+        raise ValueError(f"{placement}: exactly one line starting 'DATA_INPUT ' and no other "
+                         "mention of DATA_INPUT in any spelling")
     value = _strict_object(lines[expected][len("DATA_INPUT "):], "DATA_INPUT")
     if specialist == "network_curator":
         result, sessions = _check_neko_data_input(root, value)
     else:
         result, sessions = _check_maboss_data_input(root, value, lines[0])
-    other = sorted(_data_sessions_named(task) - sessions)
+    other = sorted(_data_sessions_named(text) - sessions)
     if other:
         raise ValueError(f"brief names data-analyst session(s) {', '.join(other)} outside its DATA_INPUT")
     return result
