@@ -3,7 +3,7 @@
 
 Usage: receive.py --session ID --agent-id AID [--transcript-root DIR]
 
-Recovers the SubagentStop capture when the hook did not fire (no integrity.json or
+Recovers the SubagentStop capture (scripts/capture/recover.py) when the hook did not fire (no integrity.json or
 no index registration) after checking that the agent transcript binds --session,
 then verifies the manifest, the integrity verdict, the handoff and the final
 report's ``Handoff: ... sha256=<hex>`` line against handoff.json, and prints the
@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import re
 import sys
 from pathlib import Path
@@ -22,54 +21,15 @@ from pathlib import Path
 if __package__ in (None, ""):  # run as a script: make the repo importable
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from scripts.capture.record_invocation import _data_guard, _index_registers, record
+from scripts.capture import recover
+from scripts.capture.record_invocation import _index_registers, record  # noqa: F401 (record: patched in tests)
+from scripts.capture.transcripts import (  # noqa: F401 (re-exported)
+    check_agent_id as _check_agent_id, default_transcript_root, find_transcript, project_slug)
 from scripts.codex.validate_handoff import HandoffValidationError, validate_handoff
 from scripts.data import manifest
 from scripts.data.common import RUNS_ROOT, project_root, session_dir, sha256_file
 
-AGENT_ID_RE = re.compile(r"\A[A-Za-z0-9_-]{1,128}\Z")
 HANDOFF_LINE_RE = re.compile(r"Handoff: (\S+) sha256=([0-9a-f]{64})")
-
-
-def project_slug(root: Path) -> str:
-    return re.sub(r"[^A-Za-z0-9]", "-", str(Path(root).resolve()))
-
-
-def default_transcript_root() -> Path:
-    config = os.environ.get("CLAUDE_CONFIG_DIR")
-    return (Path(config) if config else Path.home() / ".claude") / "projects"
-
-
-def _check_agent_id(agent_id: object) -> str:
-    if not isinstance(agent_id, str) or AGENT_ID_RE.fullmatch(agent_id) is None:
-        raise ValueError(f"invalid agent id: {agent_id!r}")
-    return agent_id
-
-
-def find_transcript(root: Path, agent_id: str, transcript_root: Path) -> Path:
-    _check_agent_id(agent_id)
-    base = Path(transcript_root) / project_slug(root)
-    matches = sorted(p for p in base.glob(f"*/subagents/agent-{agent_id}.jsonl") if p.is_file())
-    if not matches:
-        raise ValueError(f"no transcript found for agent {agent_id} under {base}")
-    if len(matches) != 1:
-        raise ValueError(f"exactly one transcript required for agent {agent_id}, "
-                         f"found {len(matches)}: {', '.join(map(str, matches))}")
-    return matches[0]
-
-
-def _check_binding(root: Path, transcript: Path, agent_id: str, session_id: str) -> None:
-    """Refuse recovery unless the transcript binds exactly --session (never record another session)."""
-    try:
-        bound = _data_guard().transcript_data_session(transcript, root=root)
-    except (OSError, ValueError) as exc:
-        raise ValueError(f"cannot bind a data session from the transcript of agent {agent_id}: {exc}; "
-                         "check --agent-id") from exc
-    if bound is None:
-        raise ValueError(f"the transcript of agent {agent_id} binds no data session; check --agent-id")
-    if bound[0] != session_id:
-        raise ValueError(f"the transcript of agent {agent_id} binds data session {bound[0]}, not {session_id}; "
-                         "check --agent-id (nothing was recorded)")
 
 
 def receive(root: Path, session_id: str, agent_id: str, transcript_root: Path | None) -> dict:
@@ -79,12 +39,8 @@ def receive(root: Path, session_id: str, agent_id: str, transcript_root: Path | 
     relative = (RUNS_ROOT / session_id / "invocation" / agent_id).as_posix()
     recovered = False
     if not (session / "integrity.json").is_file() or not _index_registers(root, relative):
-        transcript = find_transcript(root, agent_id, transcript_root or default_transcript_root())
-        _check_binding(root, transcript, agent_id, session_id)
-        record(root, {"agent_type": "data-analyst", "agent_id": agent_id,
-                      "agent_transcript_path": str(transcript), "stop_hook_active": False,
-                      "hook_event_name": "SubagentStop"})
-        recovered = True
+        recovered = recover.recover(root, "data-analyst", agent_id, session_id,
+                                    transcript_root)["status"] == "recorded"
         if not _index_registers(root, relative):
             raise ValueError(f"invocation {agent_id} is not registered in runs/index.json after recovery")
     errors = manifest.verify(root, session_id)
