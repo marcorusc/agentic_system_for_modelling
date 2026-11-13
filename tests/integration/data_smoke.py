@@ -306,7 +306,8 @@ def run(tmp: Path) -> None:
     first = list(rows[0].keys())[0]
     top = sorted(rows, key=lambda r: float(r["stat"]), reverse=True)[:10]
     (session / "proposals" / "P1_seed_genes.csv").write_text(
-        "gene\n" + "".join(f"{r[first]}\n" for r in top), encoding="utf-8")
+        "hgnc_symbol,tier,evidence\n" + "".join(
+            f"{r[first]},data,DESeq2 Wald stat {r['stat']}\n" for r in top), encoding="utf-8")
     (session / "proposals" / "index.json").write_text(json.dumps([
         {"id": "P1", "target_layer": "neko", "kind": "seed_genes",
          "path": "proposals/P1_seed_genes.csv", "method": "top 10 genes by DESeq2 Wald stat",

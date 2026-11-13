@@ -39,7 +39,7 @@ class ReceiveTests(unittest.TestCase):
         (self.root / "scripts" / "data" / "session.py").write_text("")
         self.sid, self.digest = session.new_session(self.root, "x", None)
         self.dir = session_dir(self.root, self.sid)
-        (self.dir / "proposals" / "P1_seed_genes.csv").write_text("gene\nA\n", encoding="utf-8")
+        (self.dir / "proposals" / "P1_seed_genes.csv").write_text("hgnc_symbol,tier,evidence\nA,core,e\n", encoding="utf-8")
         (self.dir / "proposals" / "index.json").write_text(json.dumps([{
             "id": "P1", "target_layer": "neko", "kind": "seed_genes",
             "path": "proposals/P1_seed_genes.csv", "method": "padj", "thresholds": {"padj": 0.05}}]),

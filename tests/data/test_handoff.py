@@ -40,7 +40,7 @@ class HandoffTests(unittest.TestCase):
             "identifiers": "HGNC symbol"}])
 
     def add_proposal(self):
-        (self.dir / "proposals" / "P1_seed_genes.csv").write_text("gene\nA\n", encoding="utf-8")
+        (self.dir / "proposals" / "P1_seed_genes.csv").write_text("hgnc_symbol,tier,evidence\nA,core,e\n", encoding="utf-8")
         self.write_json("proposals/index.json", [{
             "id": "P1", "target_layer": "neko", "kind": "seed_genes",
             "path": "proposals/P1_seed_genes.csv", "method": "padj", "thresholds": {"padj": 0.05}}])

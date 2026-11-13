@@ -48,6 +48,13 @@ runs the vendored PyDESeq2 and GSEA scripts on a synthetic 4-vs-4 dataset and pr
 
 It ends with `DATA SMOKE PASSED`.
 
+## Proposal schemas
+
+Proposals of kind `seed_genes` (layer `neko`), `perturbations` and `validation_targets`
+(layer `maboss`) must be CSV/TSV tables with fixed required columns, enum values and unique
+ids, checked by `manifest.py verify` (`KIND_SCHEMAS`). Extra columns are allowed. The old
+kind `mutations` is now `perturbations`. The column tables are in the `data-workflow` skill, section 7.
+
 ## Handoff, report and receive procedure
 
 The agent finishes with `manifest.py build` and `verify`, writes `handoff_notes.json`
