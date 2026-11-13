@@ -265,6 +265,22 @@ def _check_figure(session: Path, entry: dict, uris: set[str] | None, errors: lis
         errors.append(f"figure {rel}: script must be the session-relative path of an existing file under scripts/")
 
 
+def read_proposal_table(path: Path) -> tuple[list[str], list[dict]]:
+    """Read a .csv/.tsv proposal table (BOM tolerated): its header and its rows as dicts.
+
+    Raises OSError, UnicodeDecodeError or csv.Error on unreadable tables and
+    ValueError on an unsupported suffix.
+    """
+    delimiter = TABULAR.get(Path(path).suffix.lower())
+    if delimiter is None:
+        raise ValueError(f"proposal table must be .csv or .tsv: {path}")
+    with Path(path).open(newline="", encoding="utf-8-sig") as handle:
+        reader = csv.DictReader(handle, delimiter=delimiter)
+        columns = list(reader.fieldnames or [])
+        rows = list(reader)
+    return columns, rows
+
+
 def _check_proposal_table(session: Path, pid, entry: dict, schema: dict, errors: list[str]) -> None:
     rel = entry.get("path")
     delimiter = TABULAR.get(Path(rel).suffix.lower()) if isinstance(rel, str) else None
@@ -276,10 +292,7 @@ def _check_proposal_table(session: Path, pid, entry: dict, schema: dict, errors:
     if not path.is_file() or path.is_symlink():
         return  # reported by the listing check
     try:
-        with path.open(newline="", encoding="utf-8-sig") as handle:
-            reader = csv.DictReader(handle, delimiter=delimiter)
-            columns = reader.fieldnames or []
-            rows = list(reader)
+        columns, rows = read_proposal_table(path)
     except (OSError, UnicodeDecodeError, csv.Error) as exc:
         errors.append(f"{label}: cannot read table: {exc}")
         return
