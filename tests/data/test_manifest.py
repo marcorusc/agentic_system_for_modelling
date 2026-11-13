@@ -306,6 +306,61 @@ class ManifestTests(unittest.TestCase):
         text = "hgnc_symbol,tier,evidence,stat\nA,core,lit,3.2\n"
         self.assertEqual(self.set_proposal("seed_genes", "neko", text), [])
 
+    def test_bom_csv_accepted(self):
+        self.assertEqual(self.set_proposal("seed_genes", "neko", "\ufeff" + self.SEED), [])
+
+    def test_duplicate_header_rejected(self):
+        errs = self.set_proposal("seed_genes", "neko",
+                                 "hgnc_symbol,tier,evidence,tier\nA,core,e,data\n")
+        self.assertTrue(any("duplicate" in e and "tier" in e for e in errs), errs)
+
+    def test_unique_compared_after_strip(self):
+        text = self.PERT + self.PERT.split("\n")[1].replace("S1,", "S1 ,", 1) + "\n"
+        errs = self.set_proposal("perturbations", "maboss", text)
+        self.assertTrue(any("duplicate scenario_id" in e for e in errs), errs)
+
+    def test_duplicate_target_id_rejected(self):
+        errs = self.set_proposal("validation_targets", "maboss", self.VAL + self.VAL.split("\n")[1] + "\n")
+        self.assertTrue(any("duplicate target_id" in e for e in errs), errs)
+
+    def test_header_only_rejected(self):
+        errs = self.set_proposal("seed_genes", "neko", "hgnc_symbol,tier,evidence\n")
+        self.assertTrue(any("at least one" in e for e in errs), errs)
+
+    def test_tsv_accepted(self):
+        (self.dir / "proposals" / "P1_seed_genes.csv").unlink()
+        (self.dir / "proposals" / "P1_seed_genes.tsv").write_text(
+            self.SEED.replace(",", "\t"), encoding="utf-8")
+        self.write_json("proposals/index.json", [{
+            "id": "P1", "target_layer": "neko", "kind": "seed_genes",
+            "path": "proposals/P1_seed_genes.tsv", "method": "m", "thresholds": {}}])
+        self.build()
+        self.assertEqual(self.errors(), [])
+
+    def test_non_csv_path_rejected(self):
+        (self.dir / "proposals" / "P1_seed_genes.csv").unlink()
+        (self.dir / "proposals" / "P1_seed_genes.txt").write_text(self.SEED, encoding="utf-8")
+        self.write_json("proposals/index.json", [{
+            "id": "P1", "target_layer": "neko", "kind": "seed_genes",
+            "path": "proposals/P1_seed_genes.txt", "method": "m", "thresholds": {}}])
+        self.build()
+        self.assertTrue(any("csv" in e.lower() for e in self.errors()))
+
+    def test_targets_empty_items_rejected(self):
+        for bad in ("EGFR;;ERBB2", ";EGFR"):
+            errs = self.set_proposal("perturbations", "maboss", self.PERT.replace("A;B", bad))
+            self.assertTrue(any("targets" in e for e in errs), (bad, errs))
+
+    def test_whitespace_only_required_rejected(self):
+        errs = self.set_proposal("seed_genes", "neko", "hgnc_symbol,tier,evidence\nA,core,   \n")
+        self.assertTrue(any("evidence" in e for e in errs), errs)
+
+    def test_enum_rejected_other_kinds(self):
+        errs = self.set_proposal("perturbations", "maboss", self.PERT.replace("inhibit", "Inhibit"))
+        self.assertTrue(any("effect" in e for e in errs), errs)
+        errs = self.set_proposal("validation_targets", "maboss", self.VAL.replace("strong", "huge"))
+        self.assertTrue(any("evidence_strength" in e for e in errs), errs)
+
     def test_bad_and_duplicate_proposal_ids_rejected(self):
         idx = json.loads((self.dir / "proposals/index.json").read_text())
         (self.dir / "proposals" / "b.csv").write_text("g\nB\n", encoding="utf-8")

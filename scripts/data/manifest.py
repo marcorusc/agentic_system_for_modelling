@@ -276,17 +276,24 @@ def _check_proposal_table(session: Path, pid, entry: dict, schema: dict, errors:
     if not path.is_file() or path.is_symlink():
         return  # reported by the listing check
     try:
-        with path.open(newline="", encoding="utf-8") as handle:
+        with path.open(newline="", encoding="utf-8-sig") as handle:
             reader = csv.DictReader(handle, delimiter=delimiter)
             columns = reader.fieldnames or []
             rows = list(reader)
     except (OSError, UnicodeDecodeError, csv.Error) as exc:
         errors.append(f"{label}: cannot read table: {exc}")
         return
+    stripped = [c.strip() for c in columns]
+    dupes = sorted({c for c in stripped if stripped.count(c) > 1})
+    if dupes:
+        errors.append(f"{label}: duplicate column names {dupes}")
+        return
     missing = [c for c in schema["required"] if c not in columns]
     if missing:
         errors.append(f"{label}: missing required columns {missing}")
         return
+    if not rows:
+        errors.append(f"{label}: table needs at least one data row")
     seen: set[str] = set()
     for n, row in enumerate(rows, start=2):
         for col in schema["required"]:
@@ -302,9 +309,10 @@ def _check_proposal_table(session: Path, pid, entry: dict, schema: dict, errors:
                 errors.append(f"{label} line {n}: {col} must be ';'-separated non-empty items")
         key = schema["unique"]
         if key and _nonempty(row.get(key)):
-            if row[key] in seen:
-                errors.append(f"{label} line {n}: duplicate {key} {row[key]!r}")
-            seen.add(row[key])
+            value = row[key].strip()
+            if value in seen:
+                errors.append(f"{label} line {n}: duplicate {key} {value!r}")
+            seen.add(value)
 
 
 def verify(root: Path, session_id: str) -> list[str]:

@@ -281,7 +281,8 @@ of `seed_genes`, `initial_states`, `perturbations`, `validation_targets`, `param
 
 `seed_genes`, `perturbations` and `validation_targets` proposals must be CSV/TSV tables.
 `manifest.py verify` requires every column below, non-empty on every row. Extra columns
-(your statistics) are allowed. `mutations` is no longer a kind; use `perturbations`.
+(your statistics) are allowed. Column names must be unique, the table needs at least one
+data row, and enum values are exact, lowercase, as listed (no case folding). `mutations` is no longer a kind; use `perturbations`.
 
 `seed_genes` (`target_layer` `neko`):
 
