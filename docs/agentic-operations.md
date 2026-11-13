@@ -221,6 +221,14 @@ these repository helpers capture exports without fixing category B server behavi
 Missing usage/resource fields remain null, not invented. Artifact copy and index
 publication are separate recoverable operations.
 
+Claude Code 2.1.311 does not reliably fire `SubagentStop` for background subagents, so
+after every specialist completion the orchestrator runs `python3 scripts/capture/recover.py
+--specialist <name> --agent-id <agentId> [--session <id>]` (before any registry or state
+write) and proceeds only on its `RECOVERED <specialist> <session-or-unbound> <status>`
+line. It records the missing invocation through the normal recorder, which also writes
+`report.md`, and is a no-op (`already-recorded`) when the hook did fire. data-analyst
+uses `receive.py`, which calls it.
+
 See [validation commands](../scripts/validate/README.md) for explicit criteria,
 safe bounded Boolean analyses, trajectory metrics, seed planning and time-scaling
 proposals. Initialize VALIDATION_CRITERIA.yaml only when starting a model. The

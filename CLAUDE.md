@@ -30,6 +30,12 @@ clarify objectives, delegate bounded tasks, validate returned handoffs, reconcil
 conflicts, obtain researcher decisions and control every stage transition. Specialists
 cannot delegate, alter shared state or advance stages. Specialists return their report as their final message (the SubagentStop recorder writes the immutable report.md); data-analyst may also author scripts, outputs and proposals inside its own guarded session directory; model files are written by permitted MCP tools.
 
+Claude Code's SubagentStop hook is unreliable for background subagents. After every
+specialist completion notification, before any registry or state write, run
+`python3 scripts/capture/recover.py --specialist <name> --agent-id <agentId> [--session <id>]`
+and proceed only once it prints `RECOVERED ...`; on `RECOVER FAILED` relay the reason
+verbatim and never repair files. data-analyst uses `receive.py` below, which includes recovery.
+
 Data retrieval and analysis are delegated to `data-analyst`. The orchestrator never
 runs `vendor/scientific-agent-skills` scripts or `.venv-data`. data-analyst invocations
 never run concurrently with other specialists or state writes.

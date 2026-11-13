@@ -161,6 +161,18 @@ and unresolved scientific status. These technical records are not added to the
 scientific capture index or session registry and cannot authorize advancement.
 They retain the same sanitized transcript, report and measured usage fields.
 
+Claude Code 2.1.311 does not reliably fire `SubagentStop` for background subagents, so
+the orchestrator runs `python3 scripts/capture/recover.py --specialist <name> --agent-id
+<agentId> [--session <id>]` after every specialist completion. It locates the agent
+transcript under `~/.claude/projects/<slug>/*/subagents/agent-<id>.jsonl` (override with
+`--transcript-root`), binds the session, and, unless the invocation is already captured and
+indexed, runs the recorder above on a synthetic `SubagentStop` payload and checks that
+`runs/<specialist>/<session>/report.md` exists. With `--session`, a transcript bound to a
+different or no session is refused before anything is recorded. The last output line is
+`RECOVERED <specialist> <session-or-unbound> <recorded|already-recorded|unbound>`;
+failures print `RECOVER FAILED: <reason>` and exit 1. `scripts/data/receive.py` uses it for
+data-analyst.
+
 Identical stop-event retries verify every artifact byte and reuse the existing
 record, recovering a missing index entry when applicable. Changed transcripts or
 artifacts fail without overwriting the original. On a recording error the first

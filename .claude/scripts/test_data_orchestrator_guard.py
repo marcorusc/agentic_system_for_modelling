@@ -277,6 +277,15 @@ class OrchestratorGuardTests(unittest.TestCase):
             with self.subTest(command=command):
                 self.assert_allowed(command)
 
+    def test_orchestrator_recover_allowed(self) -> None:
+        for command in (
+            "python3 scripts/capture/recover.py --specialist network-curator --agent-id a1B2_c-3",
+            "python3 scripts/capture/recover.py --specialist ode-modeler --agent-id a1 --session s-1",
+            "python3 -m scripts.capture.recover --specialist data-analyst --agent-id a1",
+        ):
+            with self.subTest(command=command):
+                self.assert_allowed(command)
+
     def test_other_agents_denied(self) -> None:
         for agent in ("network-curator", "Data-Analyst", "data-analyst ", ["data-analyst"], None):
             with self.subTest(agent=agent):
