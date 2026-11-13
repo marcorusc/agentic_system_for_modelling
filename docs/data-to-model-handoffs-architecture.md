@@ -60,7 +60,7 @@ dispatch checks; lineage; review checklists; the `scenario_contrast` validator.
 | `scripts/data/seeds.py` | `check` for `seeds.json`: symbols, sources, citations. |
 | `scripts/gate.py` (`check_data_input`) | Parses and verifies the `DATA_INPUT` line for network-curator and boolean-dynamics-modeler. |
 | `.claude/scripts/stage_gate_guard.py` | Dispatch hook: runs `check_task` then `check_data_input`; deny with stderr and exit 2. |
-| `scripts/state.py` | Accepts `data_mapping` as a governance stage for `stage_approval` and `stage_review`, and `data_seeds`. |
+| `scripts/state.py` | Accepts `data_mapping` as a governance stage for `stage_approval` and `stage_review`; `data_seeds` likewise. |
 | `scripts/validate/scenario_contrast.py`, `evaluate.py` | Contrast validator and its registration. |
 | Agent and skill instructions | `network-curator`, `boolean-dynamics-modeler`, `neko-workflow`, `maboss-workflow`, `validate-stage`, `scientific-reviewer`, `reproducibility-auditor`, and the `CLAUDE.md` rules. |
 | `tests/integration/data_smoke.py` | Offline path from synthetic proposals to an evaluated `scenario_contrast`. |
@@ -116,9 +116,12 @@ The step-by-step procedure is in [data workflow](data-workflow.md). In outline:
 - **`scenario_contrast`:** drop is P(control) minus P(perturbed). It passes when
   test drop minus reference drop is strictly greater than the margin. The statistic is
   `final` or `tail_mean`; `combine` is `all` or `any`. There is no implicit tolerance.
-- **Lineage:** a NeKo session built from seeds has `Derived from` = the data session and
-  cites proposal ids and short hashes. A MaBoSS row cites the mapping path and short
-  hash. Mapped states, perturbations and readouts get the `data-derived` tag.
+- **Lineage:** a NeKo session built from a data session has `Derived from` = that session and
+  cites proposal ids and short hashes; one built from `seeds.json` has `Derived from` = the
+  `data_seeds` decision id (Artifacts cite the path and short hash). A MaBoSS row cites the
+  mapping path and short hash; from a standalone network its `Derived from` = the standalone
+  decision id. Mapped states, perturbations and readouts get the `data-derived` tag, citing a
+  proposal (session, id, sha256) or a source (path, short sha256, locator).
 
 ## 6. Guardrails and threat model
 

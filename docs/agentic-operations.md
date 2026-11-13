@@ -203,7 +203,7 @@ mapping approval is looked up by its exact `approval` id. Any other occurrence o
 `DATA_INPUT` (any case or separator) in the prompt, a `runs/data-analyst` path or a data
 session id without the line, is refused, and any hook error denies the dispatch. Never
 put data values in a brief. `state.py record` accepts `data_mapping` as a governance
-stage for `stage_approval` and `stage_review`, and `data_seeds` for `stage_approval`.
+stage for `stage_approval` and `stage_review`, and `data_seeds` likewise.
 
 Mapping commands (details in docs/data-workflow.md):
 

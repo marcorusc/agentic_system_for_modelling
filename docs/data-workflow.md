@@ -307,9 +307,12 @@ error denies the dispatch.
 pair. The orchestrator writes `runs.json`, runs `mapping.py criteria ... --merge-into
 VALIDATION_CRITERIA.yaml` (or declares the emitted entries with `state.py
 validation-declare`), then `scripts/validate/evaluate.py`. Registry rows carry the lineage
-(a NeKo session `Derived from` the data session with proposal ids and short hashes; a
+(a NeKo session `Derived from` the data session with proposal ids and short hashes, or from
+`seeds.json` the `data_seeds` decision id with the path and short hash in Artifacts; a standalone
+MaBoSS session `Derived from` the standalone decision id; a
 MaBoSS row with the mapping path and short hash), and mapped states, perturbations and
-readouts get the `data-derived` tag.
+readouts get the `data-derived` tag, citing (data session, proposal id, sha256) or
+(source path, short sha256, locator).
 
 ## Provenance checks
 

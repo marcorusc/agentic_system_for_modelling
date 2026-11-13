@@ -632,8 +632,19 @@ def run(tmp: Path) -> None:
     result = gate.check_data_input(root, "boolean_dynamics_modeler",
                                    f"{sa_gate}\n{sa_line}\nSimulate exactly the mapping's scenarios.")
     assert result["approval_id"] == "dec-map-sa" and result["standalone_decision_id"] == "sa-1", result
+    record_state({"id": "sa-2", "kind": "standalone_approval", "stage": "boolean-dynamics",
+                  "outputs": ["Proliferation", "Survival"], "artifact": {"path": sa_rel, "sha256": sha_of(sa_rel)},
+                  "approved_by": "researcher", "authorization": "researcher: a second authorization"})
+    other_gate = "STAGE_GATE " + json.dumps({"standalone_decision_id": "sa-2", "outputs": ["Proliferation", "Survival"]})
+    try:
+        gate.check_data_input(root, "boolean_dynamics_modeler",
+                              f"{other_gate}\n{sa_line}\nSimulate exactly the mapping's scenarios.")
+    except ValueError as exc:
+        assert "sa-2" in str(exc) and "redraft with mapping.py draft --from" in str(exc), exc
+    else:
+        raise AssertionError("a STAGE_GATE naming a different standalone decision was accepted")
     step("standalone BNET + sources-only mapping: check passes, data_mapping approved (session_id = decision id), "
-         "boolean-dynamics-modeler DATA_INPUT accepted")
+         "boolean-dynamics-modeler DATA_INPUT accepted, a STAGE_GATE naming another standalone decision refused")
 
     # 10. re-export: stale detection and draft --from
     gate_json = json.dumps({"upstream_session_id": NEKO, "outputs": ["Proliferation", "Survival"]})
@@ -645,8 +656,13 @@ def run(tmp: Path) -> None:
     redraft = sh("scripts/data/mapping.py", "draft", "--from", mapping_rel, "--purpose", "luad-v2",
                  "--network", f"{NEKO}:{new_bnet}")
     assert "Survival" in redraft.stdout and "rediscuss" in redraft.stdout, redraft.stdout
+    new_mapping = "runs/orchestrator/luad-v2/mapping.json"
+    plain = sh("scripts/data/mapping.py", "check", new_mapping, check=False)
+    assert plain.returncode == 0 and not plain.stderr, plain.stdout + plain.stderr
+    stale = sh("scripts/data/mapping.py", "check", new_mapping, "--stage-gate", gate_json, check=False)
+    assert stale.returncode == 1 and "redraft with mapping.py draft --from" in stale.stderr, stale.stdout + stale.stderr
     step("mapping.py check --stage-gate passes on the approved BNET; draft --from a re-exported BNET notes "
-         "the changed node Survival")
+         "the changed node Survival, the redrafted mapping passes check but is refused against the old STAGE_GATE")
     print("DATA SMOKE PASSED")
 
 

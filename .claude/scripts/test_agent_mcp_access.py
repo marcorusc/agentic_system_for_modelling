@@ -193,7 +193,7 @@ class DataHandoffInstructionTests(unittest.TestCase):
             ".claude/agents/scientific-reviewer.md": ("Data-stage and mapping checklist", "unmapped", "locator"),
             ".claude/agents/reproducibility-auditor.md": ("Data-stage and mapping checklist", "data-derived", "locator", "seeds"),
             ".claude/skills/validate-stage/SKILL.md": ("data_mapping", "mapping.py check", "data_seeds", "--stage-gate"),
-            "CLAUDE.md": ("DATA_INPUT", "data_mapping", "never paste data values", "seeds.json", "sha256 and locator", "--standalone-network", "draft --from"),
+            "CLAUDE.md": ("DATA_INPUT", "data_mapping", "never paste data values", "seeds.json", "sha256 + locator", "--standalone-network", "draft --from"),
             ".claude/skills/neko-workflow/SKILL.md": ("seeds.json", "hgnc_symbol"),
             ".claude/skills/maboss-workflow/SKILL.md": ("standalone approval",),
         }
