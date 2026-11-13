@@ -163,7 +163,10 @@ invent licence terms; use `"unverified"` when you did not read them.
 
 ## 5. Figures
 
-- **Location and format:** figures go in `outputs/figures/`, as PNG (300 dpi) plus SVG. Each is listed in `outputs/index.json` with `units: "none"`, an `identifiers` value, and a one-sentence caption in `description`. The final report references every figure by path.
+- **Location and format:** figures go in `outputs/figures/`, as PNG (300 dpi) plus SVG. Each file is listed in `outputs/index.json` with `units: "none"` and an `identifiers` value, plus the figure metadata below. `manifest.py verify` rejects a figure (an indexed `.png`/`.svg`/`.pdf` under `outputs/figures/`) that lacks it, and `receive.py` rejects a report that does not name every figure.
+- **Figure metadata (required):** `title` (non-empty); `caption` (at least 80 characters: axes, colours and markers, n per group, test, thresholds, how to read it; never a one-liner); `abbreviations` (object abbreviation -> expansion, `{}` only if the figure uses none); `sources` (non-empty list; each item equals the `uri` of a `sources.jsonl` entry); `script` (session-relative path of the existing file under `scripts/` that made it). Keep `description` (set it to the title). A PNG/SVG pair may share identical metadata.
+- **Readable figures:** axis labels spell out the quantity and unit; every abbreviation shown in a figure is defined in its `abbreviations` or avoided (for example write "log2 fold change", not "LFC", unless defined).
+- **In the report:** Figures section (one entry per figure: path, title, full description, key observation, data source), an Abbreviations glossary, and inline citations in Methods and Results such as "differential expression (Fig. 4, `fig04_volcano_luad.png`)". See section 7.
 - **Style:** use `vendor/scientific-agent-skills/scientific-visualization/assets/publication.mplstyle` and its colour-blind-safe palettes. Run `palette_audit.py` on custom palettes.
 - **The vendored skill's run instructions do not apply here.** Its `uv run --isolated ...`
   commands, running from the skill directory, and `Path.cwd()` as the skill root (in
@@ -200,7 +203,7 @@ invent licence terms; use `"unverified"` when you did not read them.
   plt.close(fig)
   ```
 
-  Then list each file in `outputs/index.json` (see section 7).
+  Then list each file in `outputs/index.json` with the figure metadata (see section 7).
 - **Palette audit** (bundled palette, or repeat `--color` with a quoted hex per colour):
 
   `.venv-data/bin/python -E -s vendor/scientific-agent-skills/scientific-visualization/scripts/palette_audit.py --palette okabe_ito_on_white --role graphical --output runs/data-analyst/<id>/outputs/figures/palette_audit.json`
@@ -248,6 +251,19 @@ identifiers type or `"none"`):
   "identifiers": "HGNC symbol"}]
 ```
 
+A figure entry (path under `outputs/figures/`, suffix `.png`, `.svg` or `.pdf`) also needs
+`title`, `caption` (>= 80 characters), `abbreviations`, `sources` and `script`:
+
+```json
+{"path": "outputs/figures/fig04_volcano_luad.png", "description": "Volcano plot, LUAD tumour vs normal",
+ "units": "none", "identifiers": "HGNC symbol",
+ "title": "Volcano plot, LUAD tumour vs normal",
+ "caption": "Volcano plot of differential expression, tumour (n = 40) vs normal (n = 40). X axis: log2 fold change; y axis: -log10 adjusted p-value; red points pass FDR < 0.05 and |LFC| > 1. Top genes are labelled.",
+ "abbreviations": {"LUAD": "lung adenocarcinoma", "LFC": "log2 fold change", "FDR": "false discovery rate"},
+ "sources": ["https://example.org/api?release=v1"],
+ "script": "scripts/02_figures.py"}
+```
+
 `proposals/index.json`:
 
 ```json
@@ -261,17 +277,33 @@ of `seed_genes`, `initial_states`, `mutations`, `validation_targets`, `parameter
 `time_course`. Use exactly one value each. Proposal ids are `P1`, `P2`, ... (`^P\d+$`;
 `P2b` is rejected), and each proposal file is named after its id (`P3_<what>.csv`).
 
-Report headings (final message, saved by the recorder as `report.md`):
+Report headings (final message, saved by the recorder as `report.md`). `receive.py` requires
+`Figures` and `Abbreviations` headings (any level, exact text) and every indexed figure's file name
+(a PNG/SVG pair counts once if the stem appears); with no figures, Figures says "none" but
+Abbreviations is still required. The `Handoff:` line is last.
 
 ```markdown
 # <title>
-## 1. Question and scope
-## 2. Sources (release, date, terms)
-## 3. Methods (scripts, parameters, seeds, vendored guides used)
-## 4. Results
-## 5. Limitations
-## 6. Proposals and decisions required from the researcher
+## Question and scope
+## Sources
+## Methods
+## Results
+## Figures
+## Abbreviations
+## Limitations
+## Proposals and decisions
+Handoff: runs/data-analyst/<id>/handoff.json sha256=<64hex>
 ```
+
+- **Sources:** per source, the name, endpoint/URL, release/version, retrieval date, terms
+  (as in the ledger) and which outputs and figures derive from it.
+- **Methods** (scripts, parameters, seeds, vendored guides used) and **Results** cite figures
+  inline, e.g. "differential expression (Fig. 4, `fig04_volcano_luad.png`)".
+- **Figures:** one entry per figure: path, title, full description (what is shown, encodings,
+  n, statistics, thresholds), the key observation, and its data source.
+- **Abbreviations:** a glossary of every abbreviation used in figures and text (the union of
+  the figures' `abbreviations` and any used in the prose).
+- **Proposals and decisions:** what the researcher must approve (proposals and decision ids).
 
 ## 8. Citation reminder
 

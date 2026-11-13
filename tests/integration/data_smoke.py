@@ -125,12 +125,25 @@ for _s in range(1, 5):
 UNITS["Gene_set_size"] = "genes"
 
 
-CAPTIONS = {
-    "volcano.png": "Volcano plot of DESeq2 results (treated vs control), 300 dpi",
-    "volcano.svg": "Volcano plot of DESeq2 results (treated vs control), vector",
-    "gsea_dotplot.png": "GSEA dotplot of significant gene sets by NES, 300 dpi",
-    "gsea_dotplot.svg": "GSEA dotplot of significant gene sets by NES, vector",
+ABBREVIATIONS = {"LFC": "log2 fold change", "FDR": "false discovery rate",
+                 "NES": "normalised enrichment score", "GSEA": "gene set enrichment analysis"}
+FIGURE_META = {
+    "volcano": {
+        "title": "Volcano plot of treated vs control differential expression",
+        "caption": ("Volcano plot of DESeq2 results, treated vs control (n = 4 samples per group). X axis: LFC "
+                    "(log2 fold change); y axis: -log10 adjusted p-value. Red points pass FDR < 0.05 and "
+                    "|LFC| > 1; grey points do not. Read it as: the further from the centre and the higher up, "
+                    "the stronger and more significant the change."),
+    },
+    "gsea_dotplot": {
+        "title": "GSEA dot plot of significant gene sets",
+        "caption": ("GSEA (gene set enrichment analysis) dot plot of the significant synthetic gene sets, one dot "
+                    "per set, ordered by NES (normalised enrichment score) on the x axis. Dot colour is "
+                    "-log10 of the FDR q-value (clipped at 1e-4); positive NES means enrichment among genes "
+                    "up in treated samples, negative NES among genes down."),
+    },
 }
+LEDGER_URI = "synthetic:sets.gmt"
 
 
 def step(msg: str) -> None:
@@ -144,8 +157,12 @@ def build_outputs_index(session: Path, manifest) -> None:
         rel = path.relative_to(session).as_posix()
         if rel == "outputs/index.json":
             continue
-        entry = {"path": rel, "description": CAPTIONS.get(path.name, f"smoke output {path.name}"),
+        entry = {"path": rel, "description": f"smoke output {path.name}",
                  "identifiers": "synthetic gene IDs GENE0001-GENE0600", "units": "none"}
+        if rel.startswith("outputs/figures/") and path.suffix in (".png", ".svg", ".pdf"):
+            meta = FIGURE_META[path.stem]
+            entry.update(meta, description=meta["title"], abbreviations=ABBREVIATIONS,
+                         sources=[LEDGER_URI], script="scripts/02_figures.py")
         if path.suffix.lower() in (".csv", ".tsv"):
             delim = "," if path.suffix.lower() == ".csv" else "\t"
             units = {}
@@ -320,8 +337,19 @@ def run(tmp: Path) -> None:
     step("handoff.py build wrote handoff.json")
 
     # 5. recorder (real) with a synthetic transcript ending in SubagentHandback
-    report_text = ("# Smoke report\n\nSynthetic analysis.\n\n"
-                   f"Handoff: {hrel} sha256={hdigest}")
+    report_text = (
+        "# Smoke report\n\n## Question and scope\n\nSynthetic analysis.\n\n"
+        f"## Sources\n\n- sets.gmt ({LEDGER_URI}), release synthetic; feeds both figures.\n\n"
+        "## Methods\n\nDESeq2 then GSEA (Fig. 1, `volcano.png`; Fig. 2, `gsea_dotplot.png`).\n\n"
+        "## Results\n\nPlanted sets recovered.\n\n"
+        "## Figures\n\n"
+        "- `outputs/figures/volcano.png` (and .svg): " + FIGURE_META["volcano"]["title"] + ". "
+        + FIGURE_META["volcano"]["caption"] + "\n"
+        "- `outputs/figures/gsea_dotplot.png` (and .svg): " + FIGURE_META["gsea_dotplot"]["title"] + ". "
+        + FIGURE_META["gsea_dotplot"]["caption"] + "\n\n"
+        "## Abbreviations\n\n" + "".join(f"- {k}: {v}\n" for k, v in ABBREVIATIONS.items())
+        + "\n## Limitations\n\nSynthetic data.\n\n## Proposals and decisions\n\nP1, D1.\n\n"
+        f"Handoff: {hrel} sha256={hdigest}")
     events = [
         {"type": "assistant", "message": {"role": "assistant", "content": [
             {"type": "tool_use", "id": "t1", "name": "Bash", "input": {"command": command}}]}},

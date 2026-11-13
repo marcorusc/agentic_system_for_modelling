@@ -34,7 +34,7 @@ runs the vendored PyDESeq2 and GSEA scripts on a synthetic 4-vs-4 dataset and pr
 - `deseq_dataset.h5ad` exists and `SET_UP`/`SET_DOWN` come out significant with the right NES sign;
 - a session script renders `outputs/figures/volcano` and `gsea_dotplot` (PNG and SVG) with the
   vendored `publication.mplstyle`; each PNG carries a 300 dpi `pHYs` chunk (11811 px/m), each SVG
-  is non-empty, and all are indexed in `outputs/index.json` with a caption and `units: "none"`;
+  is non-empty, and all are indexed in `outputs/index.json` with full figure metadata and `units: "none"`; the synthetic report has the Figures and Abbreviations sections;
 - `manifest.py verify` passes;
 - `handoff.py build --status needs_approval` writes `handoff.json` and prints
   `Handoff written: ... sha256=<hex>`;
@@ -114,6 +114,17 @@ using the vendored `scientific-visualization` style. The vendored skill's `uv ru
 skill-directory instructions do not apply under the data guard; the `data-workflow`
 skill gives the runnable form (saved session script run with `.venv-data/bin/python -E -s`,
 `Agg` backend, vendored style and palettes by repository path, `palette_audit.py`).
+
+### Figures and report
+
+Every figure (an indexed `.png`/`.svg`/`.pdf` under `outputs/figures/`) needs `title`, a
+`caption` of at least 80 characters, an `abbreviations` object, `sources` (each a `uri` from
+`sources.jsonl`) and `script` (an existing file under `scripts/`); `manifest.py verify`
+enforces this and the fields are hashed into the handoff through `manifest.json`. The final
+report has the headings Question and scope, Sources, Methods, Results, Figures,
+Abbreviations, Limitations, Proposals and decisions, then the `Handoff:` line. `receive.py`
+fails with `RECEIVE FAILED: report is missing ...` if the Figures or Abbreviations heading or
+the file name of any indexed figure is absent.
 
 ### Source notes
 

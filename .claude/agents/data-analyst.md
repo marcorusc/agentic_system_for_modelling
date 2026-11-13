@@ -94,7 +94,15 @@ cannot run), there is no handoff: your final message states `blocked`, the reaso
 remediation (for example `python3 scripts/setup.py --with-data`) and has no `Handoff:`
 line. The orchestrator then skips `receive.py` and relays the reason.
 
-Your final message is the human-readable report (headings in `data-workflow`; it
-references every figure by path and contains no inline JSON). Its last line is exactly
+Your final message is the human-readable report, with these headings in order: Question
+and scope; Sources; Methods; Results; Figures; Abbreviations; Limitations; Proposals and
+decisions (templates in `data-workflow` section 7). Sources describe every data source (name,
+endpoint/URL, release, retrieval date, terms, derived outputs and figures). Figures has one
+entry per figure (path, title, full description, key observation, source). Abbreviations
+defines every abbreviation used in figures and text. Methods and Results cite figures inline
+(for example "Fig. 4, `fig04_volcano_luad.png`"). Every figure needs `title`, `caption`
+(>= 80 characters), `abbreviations`, `sources` and `script` in `outputs/index.json`, or
+`manifest.py verify` fails; `receive.py` rejects a report missing the Figures or
+Abbreviations heading or any figure file name. The report contains no inline JSON. Its last line is exactly
 `Handoff: runs/data-analyst/<id>/handoff.json sha256=<64hex>`, copied from the
 `Handoff written:` line of `handoff.py`.
