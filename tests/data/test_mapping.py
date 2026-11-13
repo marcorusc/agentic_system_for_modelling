@@ -258,6 +258,12 @@ class CheckTests(MappingFixture):
         errors = self.errors_after(self.rel, self.data, lambda d: d["criteria"][0]["from"].update(proposal="P1", row="S2"))
         self.assertError(errors, "validation_targets")
 
+    def test_boolean_structure_rejected(self):
+        structure = {"criterion_id": "V2", "from": {"proposal": "P2", "row": "V2"}, "method": "boolean_structure",
+                     "options": {"analysis": "fixed_points", "max_states": 16, "expected_count": 1}}
+        errors = self.errors_after(self.rel, self.data, lambda d: (d["criteria"].append(structure), d["unmapped"].pop()))
+        self.assertError(errors, "boolean_structure is not allowed in a data mapping")
+
     def test_readout_not_declared_rejected(self):
         errors = self.errors_after(self.rel, self.data, lambda d: d["criteria"][0]["options"].update(readouts=["MAPK1"]))
         self.assertError(errors, "MAPK1")
@@ -360,6 +366,20 @@ class CriteriaTests(MappingFixture):
         with self.assertRaisesRegex(ValueError, "V1"):
             mapping.merge_into(self.root, "VALIDATION_CRITERIA.yaml", entries)
         self.assertEqual((self.root / "VALIDATION_CRITERIA.yaml").read_bytes(), before)
+
+    def test_merge_preserves_mode(self):
+        target = self.root / "VALIDATION_CRITERIA.yaml"
+        target.chmod(0o644)
+        entries = mapping.criteria(self.root, self.rel, self.runs_rel)["criteria"]
+        mapping.merge_into(self.root, "VALIDATION_CRITERIA.yaml", entries)
+        self.assertEqual(target.stat().st_mode & 0o777, 0o644)
+
+    def test_criteria_duplicate_trajectory_refused(self):
+        runs = self.load(self.runs_rel)
+        runs["runs"][3]["trajectory"] = runs["runs"][2]["trajectory"]
+        self.save(self.runs_rel, runs)
+        with self.assertRaisesRegex(ValueError, "same trajectory"):
+            mapping.criteria(self.root, self.rel, self.runs_rel)
 
     def test_cli_exit_codes(self):
         def run(*argv):

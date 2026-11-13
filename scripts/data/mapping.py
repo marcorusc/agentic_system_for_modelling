@@ -6,6 +6,10 @@ researcher and orchestrator agree on: which approved `perturbations` and
 `validation_targets` rows become model contexts, perturbations, readouts and
 criteria, and why the remaining rows are left unmapped.
 
+Criterion methods in a mapping are scenario_contrast, ordered_peaks and
+canonical_cycles. boolean_structure is refused: it validates network structure,
+not data-driven responses, and is declared directly in VALIDATION_CRITERIA.yaml.
+
 CLI:
   mapping.py draft --purpose P --data SESSION:PROPOSAL:APPROVAL ... --network NEKO_SESSION:BNET
   mapping.py check MAPPING                       (exit 1, one problem per line on stderr)
@@ -16,8 +20,10 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import os
+import stat
 import sys
 import tempfile
 from pathlib import Path, PurePosixPath
@@ -34,14 +40,14 @@ from scripts.validate.scenario_contrast import contrast  # noqa: E402
 from scripts.validate.validate_cycles import classify_cycles, ordered_peaks  # noqa: E402
 
 KEYS = ("schema_version", "inputs", "contexts", "perturbations", "readouts", "criteria", "unmapped")
-KEY_COLUMN = {"seed_genes": "hgnc_symbol", "perturbations": "scenario_id", "validation_targets": "target_id"}
 # Which mapping section may consume rows of which proposal kind.
 SECTION_KIND = {"perturbations": "perturbations", "criteria": "validation_targets"}
 MAPPABLE = tuple(SECTION_KIND.values())
-METHODS = ("ordered_peaks", "canonical_cycles", "boolean_structure", "scenario_contrast")
-# Method-specific mapping keys besides criterion_id, from, method, options (and optional note).
+# evaluate.py methods allowed in a mapping, with their keys besides criterion_id, from,
+# method, options (and optional note). boolean_structure is deliberately absent.
 METHOD_KEYS = {"scenario_contrast": {"test", "reference"}, "ordered_peaks": {"scenarios"},
-               "canonical_cycles": {"scenarios"}, "boolean_structure": set()}
+               "canonical_cycles": {"scenarios"}}
+METHODS = tuple(METHOD_KEYS)
 PHENOTYPES = KIND_SCHEMAS["validation_targets"]["enums"]["phenotype"]
 ORCHESTRATOR = ("runs", "orchestrator")
 NETWORK = ("runs", "network-curator")
@@ -98,7 +104,7 @@ def _bnet(root: Path, neko_session, rel) -> Path:
 def _table_rows(root: Path, rel: str, kind: str) -> list[str]:
     """Row keys of a proposal table, in file order."""
     _, rows = read_proposal_table(state.artifact(root, rel))
-    key = KEY_COLUMN[kind]
+    key = KIND_SCHEMAS[kind]["unique"]  # only mappable kinds reach here; both have a unique key
     return [(row.get(key) or "").strip() for row in rows]
 
 
@@ -402,6 +408,10 @@ class _Checker:
             else:
                 seen.add(cid)
             method = item.get("method")
+            if method == "boolean_structure":
+                self.error(f"{label}: boolean_structure is not allowed in a data mapping (it checks network "
+                           "structure, not data-driven responses); declare it directly in VALIDATION_CRITERIA.yaml")
+                continue
             if method not in METHODS:
                 self.error(f"{label}: method {method!r} is not supported by evaluate.py ({', '.join(METHODS)})")
                 continue
@@ -474,11 +484,6 @@ class _Checker:
         self.synthetic(label, "canonical_cycles",
                        lambda traj, s: classify_cycles(list(range(len(s))), traj, options), names, 3)
 
-    def criterion_boolean_structure(self, label: str, item: dict) -> None:
-        # analyze() is the evaluation itself (bounded state enumeration over the BNET),
-        # not a separable option checker; options are checked at evaluate time.
-        return
-
     def unmapped_section(self, items) -> None:
         if not isinstance(items, list):
             self.error("unmapped must be a list")
@@ -503,14 +508,39 @@ class _Checker:
                            f"({'; '.join(labels)}); map it once or list it once in unmapped")
 
 
+def _load_mapping(root: Path, mapping_rel: str) -> tuple[dict, str]:
+    """Read the mapping once: its parsed object and the sha256 of exactly those bytes."""
+    raw = _mapping_path(root, mapping_rel).read_bytes()
+    data = json.loads(raw.decode("utf-8"), object_pairs_hook=_unique_keys, parse_constant=_no_constant)
+    if not isinstance(data, dict):
+        raise ValueError("mapping must be a JSON object")
+    return data, hashlib.sha256(raw).hexdigest()
+
+
+def _unique_keys(pairs):
+    out = {}
+    for key, value in pairs:
+        if key in out:
+            raise ValueError(f"duplicate key: {key}")
+        out[key] = value
+    return out
+
+
+def _no_constant(name):
+    raise ValueError(f"non-finite value: {name}")
+
+
 def check(root: Path, mapping_rel: str) -> list[str]:
     """Every problem with the mapping, one message each; [] when it is valid."""
     root = Path(root)
     try:
-        path = _mapping_path(root, mapping_rel)
-        data = load_json_yaml(path)
+        data, _ = _load_mapping(root, mapping_rel)
     except (ValueError, OSError, UnicodeDecodeError) as exc:
         return [f"{mapping_rel}: {exc}"]
+    return _check_data(root, data)
+
+
+def _check_data(root: Path, data: dict) -> list[str]:
     checker = _Checker(root)
     if set(data) != set(KEYS):
         checker.error(f"mapping keys must be exactly {', '.join(KEYS)}")
@@ -536,7 +566,7 @@ def _runs(root: Path, runs_rel: str, data: dict) -> dict:
     if set(runs) != {"runs"} or not isinstance(runs["runs"], list):
         raise ValueError('runs file must be {"runs": [{"context", "perturbation", "trajectory"}, ...]}')
     contexts, perturbations = set(data["contexts"]), {p["id"] for p in data["perturbations"]}
-    found, errors = {}, []
+    found, used, errors = {}, {}, []
     for n, run in enumerate(runs["runs"]):
         if not isinstance(run, dict) or set(run) != {"context", "perturbation", "trajectory"}:
             errors.append(f"runs[{n}] must have exactly context, perturbation, trajectory")
@@ -559,6 +589,11 @@ def _runs(root: Path, runs_rel: str, data: dict) -> dict:
         except ValueError as exc:
             errors.append(f"runs[{n}]: {exc}")
             continue
+        if trajectory in used:
+            errors.append(f"runs[{n}]: scenarios {used[trajectory]} and {key} use the same trajectory {trajectory}; "
+                          "each scenario needs its own run")
+            continue
+        used[trajectory] = key
         found[key] = trajectory
     if errors:
         raise ValueError("; ".join(errors))
@@ -568,11 +603,10 @@ def _runs(root: Path, runs_rel: str, data: dict) -> dict:
 def criteria(root: Path, mapping_rel: str, runs_rel: str) -> dict:
     """VALIDATION_CRITERIA entries and validation-declare inputs for the mapping's criteria."""
     root = Path(root)
-    errors = check(root, mapping_rel)
+    data, digest = _load_mapping(root, mapping_rel)  # check and build from the same bytes
+    errors = _check_data(root, data)
     if errors:
         raise ValueError(f"{mapping_rel} fails check: " + "; ".join(errors))
-    data = load_json_yaml(state.artifact(root, mapping_rel))
-    digest = state.digest(state.artifact(root, mapping_rel))
     runs = _runs(root, runs_rel, data)
     missing, entries, declarations = [], [], []
 
@@ -589,8 +623,6 @@ def criteria(root: Path, mapping_rel: str, runs_rel: str) -> dict:
             # Fixed role order: control = the context without the perturbation.
             inputs = [run(test["context"], None), run(test["context"], test["perturbation"]),
                       run(ref["context"], None), run(ref["context"], ref["perturbation"])]
-        elif method == "boolean_structure":
-            inputs = [data["inputs"]["network"]["bnet"]]
         else:
             inputs = [run(s["context"], s["perturbation"]) for s in item["scenarios"]]
         entries.append({"criterion_id": item["criterion_id"], "method": method, "inputs": inputs,
@@ -610,6 +642,7 @@ def _atomic_write(path: Path, text: str) -> None:
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as handle:
             handle.write(text)
+        os.chmod(tmp, stat.S_IMODE(path.stat().st_mode))  # mkstemp creates 0600; keep the file's mode
         os.replace(tmp, path)
     except BaseException:
         Path(tmp).unlink(missing_ok=True)
