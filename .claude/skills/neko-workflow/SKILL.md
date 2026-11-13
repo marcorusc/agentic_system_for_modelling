@@ -169,6 +169,13 @@ only if it fails. Costs assume seed/group sizes of a few dozen genes.
   every referenced file inline). A missing file or manifest is a blocker to
   report, not a reason to switch to a text or bundle route.
 
+## Data seeds
+
+When the invocation starts with a `DATA_INPUT` line, read seeds only from the approved
+proposal files it names (`hgnc_symbol` column, all tiers unless restricted). Never edit
+those files. List seeds the database does not contain in the report; do not drop or
+substitute them silently.
+
 ## Troubleshooting
 
 - **Network exploded to hundreds of edges** → check `list_network_history()`

@@ -54,6 +54,20 @@ After researcher approval, record it with `state.py record` (`stage_approval`, s
 `id`); see docs/data-workflow.md. Data briefs list every upstream artifact the analyst
 may read, with its path and sha256.
 
+Approved proposals reach the models only through typed handoffs; never paste data values
+into a brief. NeKo: line 1 of the network-curator brief is
+`DATA_INPUT {"data_session": "...", "proposals": {"P1": "<sha256>"}}` (approved
+`seed_genes`). MaBoSS: draft `runs/orchestrator/<p>/mapping.json` with
+`scripts/data/mapping.py draft`, discuss every row with the researcher, pass
+`mapping.py check`, record a `data_mapping` `stage_approval` (its `outputs` equal the
+mapping's perturbation and criterion ids), then line 2 of the boolean-dynamics-modeler
+brief, after `STAGE_GATE`, is
+`DATA_INPUT {"mapping": "runs/orchestrator/<p>/mapping.json", "sha256": "...", "approval": "<record id>"}`.
+Mention `DATA_INPUT` or a `runs/data-analyst` path nowhere else in these briefs; the
+dispatch hook refuses it. Registry: a NeKo session built from seeds has `Derived from`
+= the data session and cites proposal ids and short hashes; a MaBoSS row cites the
+mapping path and short hash. Tag mapped states, perturbations and readouts `data-derived`.
+
 The orchestrator must have no modelling MCP tools; stop if any are visible. Run the
 setup isolation guard. Four specialist-inline *-agent transports expose only NeKo to
 network-curator, MaBoSS to boolean-dynamics-modeler, PhysiCell to

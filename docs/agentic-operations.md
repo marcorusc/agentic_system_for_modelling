@@ -174,6 +174,37 @@ footer fields to string allowlists, for example `{"verdict":["supported"]}`.
 satisfied/unsatisfied plus supporting PMIDs. It never mutates topology, exports a
 handoff, or authorizes an operation outside the recorded scope.
 
+## Data inputs (`DATA_INPUT`)
+
+The dispatch hook accepts data for network-curator and boolean-dynamics-modeler only
+through a `DATA_INPUT` line, checked by `scripts/gate.py check_data_input`:
+- network-curator, line 1: `DATA_INPUT {"data_session": "...", "proposals": {"P1": "<sha256>"}}`
+  (approved `seed_genes` proposals, hashes equal to manifest and file);
+- boolean-dynamics-modeler, line 2 after `STAGE_GATE`:
+  `DATA_INPUT {"mapping": "runs/orchestrator/<p>/mapping.json", "sha256": "...", "approval": "<record id>"}`.
+  The approval is a `stage_approval` for stage `data_mapping` on that mapping and hash,
+  whose `outputs` equal the mapping's perturbation and criterion ids; `mapping.py check`
+  must pass and the mapping's NeKo session must equal the `STAGE_GATE` upstream.
+
+When several records match, the latest `recorded_at` wins. Any other occurrence of
+`DATA_INPUT` (any case or separator) in the prompt, a `runs/data-analyst` path or a data
+session id without the line, is refused, and any hook error denies the dispatch. Never
+put data values in a brief. `state.py record` accepts `data_mapping` as a governance
+stage for `stage_approval` and `stage_review`.
+
+Mapping commands (details in docs/data-workflow.md):
+
+```
+python3 scripts/data/mapping.py draft --purpose P --data SESSION:PROPOSAL:APPROVAL ... --network NEKO_SESSION:BNET
+python3 scripts/data/mapping.py check runs/orchestrator/P/mapping.json
+python3 scripts/data/mapping.py criteria runs/orchestrator/P/mapping.json --runs runs/orchestrator/P/runs.json [--merge-into VALIDATION_CRITERIA.yaml]
+```
+
+Procedure: draft, discuss with the researcher, fill, `check`, researcher approval
+(`data_mapping`), dispatch, then `criteria` from the reported trajectories and
+`scripts/validate/evaluate.py`. `scenario_contrast` is documented in
+`scripts/validate/README.md`.
+
 ## Evidence and provenance
 
 Edge reports end in exactly one fenced `yaml` block using JSON syntax. Ordinary

@@ -20,7 +20,7 @@ It is **cross-cutting, not a pipeline stage**: it can be invoked at any point, a
 products feed the specification, topology and dynamics stages.
 
 **Not covered here:**
-- the typed data-to-NeKo/MaBoSS handoffs (sub-project 2, separate design);
+- BioMASS and PhysiCell data inputs;
 - Codex parity;
 - OS-level sandboxing.
 
@@ -109,6 +109,19 @@ runs `recover.py` after each completion notification, before registry or state w
   - the new session is registered as derived from the old one and needs fresh approvals;
   - earlier literature reports are cited, never copied.
 
+## 5a. Data-to-model handoffs
+
+Sub-project 2 is implemented. Approved proposals reach the models in two typed paths:
+
+| Layer | Proposal kind | Path |
+|---|---|---|
+| NeKo | `seed_genes` | `DATA_INPUT` on line 1 of the network-curator brief names the proposals and hashes. |
+| MaBoSS | `perturbations`, `validation_targets` | The orchestrator drafts `runs/orchestrator/<p>/mapping.json` with `mapping.py`, the researcher decides it, `mapping.py check` passes, and a `data_mapping` approval is recorded. `DATA_INPUT` on line 2 of the boolean-dynamics-modeler brief names the mapping. |
+
+The dispatch hook checks both lines against the durable records. Criteria generated from
+the mapping and the modeler's trajectories are evaluated by `evaluate.py`, including
+`scenario_contrast`. See [data workflow](data-workflow.md) for the procedure.
+
 ## 6. Guardrails and threat model
 
 - **Data guard:**
@@ -150,8 +163,8 @@ runs `recover.py` after each completion notification, before registry or state w
 
 ## 8. Roadmap
 
-1. **Sub-project 2:** typed data-to-model handoffs for NeKo (seed proposals via
-   `DATA_INPUT`) and MaBoSS (a researcher-approved mapping to model nodes, checked
-   against the exported network; `scenario_contrast` criteria).
+1. **Sub-project 2 (implemented):** typed data-to-model handoffs for NeKo (seed proposals
+   via `DATA_INPUT`) and MaBoSS (a researcher-approved mapping to model nodes, checked
+   against the exported network; `scenario_contrast` criteria). See section 5a.
 2. **Later:** BioMASS and PhysiCell data inputs; Codex parity (pending, low priority); a
    possible data MCP server or OS-level sandbox.

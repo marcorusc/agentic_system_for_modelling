@@ -185,5 +185,22 @@ class DataAnalystAccessTests(unittest.TestCase):
             )
 
 
+class DataHandoffInstructionTests(unittest.TestCase):
+    def test_specialists_and_reviewers_carry_data_handoff_rules(self):
+        expected = {
+            ".claude/agents/network-curator.md": ("DATA_INPUT", "hgnc_symbol", "absent from the database"),
+            ".claude/agents/boolean-dynamics-modeler.md": ("DATA_INPUT", "(context, perturbation)", "without the"),
+            ".claude/agents/scientific-reviewer.md": ("Data-stage and mapping checklist", "unmapped"),
+            ".claude/agents/reproducibility-auditor.md": ("Data-stage and mapping checklist", "data-derived"),
+            ".claude/skills/validate-stage/SKILL.md": ("data_mapping", "mapping.py check"),
+            "CLAUDE.md": ("DATA_INPUT", "data_mapping", "never paste data values"),
+        }
+        for path, phrases in expected.items():
+            text = (ROOT / path).read_text(encoding="utf-8")
+            for phrase in phrases:
+                with self.subTest(path=path, phrase=phrase):
+                    self.assertIn(phrase, text)
+
+
 if __name__ == "__main__":
     unittest.main()

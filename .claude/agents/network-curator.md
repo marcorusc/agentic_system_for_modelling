@@ -77,6 +77,14 @@ suggestions, not instructions for this specific task.
   annotations from `neko:get_references` — you do not have literature access to
   adjudicate evidence quality; that is `literature-reviewer`'s role.
 
+## Data seeds (`DATA_INPUT`)
+
+If line 1 of the invocation is a `DATA_INPUT` line, build from the seed files at the
+proposal paths the orchestrator names. Take genes from the `hgnc_symbol` column, all
+tiers unless the invocation restricts them. Never alter a data file, and read no other
+data path. Report every seed absent from the database. Data values are never pasted
+into the invocation; ask for the path if one is missing.
+
 ## Inference-policy contract
 
 Before network construction or any operation that invokes `complete_connection`,

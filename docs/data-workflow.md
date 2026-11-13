@@ -147,6 +147,68 @@ the file name of any indexed figure is absent.
   single-gene queries.
 - Setup re-renders the `ode-modeler` agent only with `--with-biomass`.
 
+## Data to model handoffs
+
+Approved proposals reach NeKo and MaBoSS through `DATA_INPUT` lines that the dispatch hook
+(`.claude/scripts/stage_gate_guard.py`, calling `scripts/gate.py check_data_input`) checks
+again from the durable records. Never paste data values into a brief.
+
+**NeKo seeds.** After the `data` approval (its `outputs` list the proposal ids), line 1 of
+the network-curator brief is:
+
+```
+DATA_INPUT {"data_session": "data-...", "proposals": {"P1": "<sha256>"}}
+```
+
+Each proposal must be a `seed_genes` proposal with target layer `neko`, be in the
+`outputs` of a `stage_approval` for stage `data` and that session, and match both the
+manifest and the file on disk; the handoff must still validate. When several approval
+records match, the latest `recorded_at` wins (ties: the later record in `DECISIONS.md`).
+
+**MaBoSS mapping.** `perturbations` and `validation_targets` are mapped to model terms in
+`runs/orchestrator/<purpose>/mapping.json`, drafted by the orchestrator and decided by the
+researcher (`scripts/data/mapping.py`):
+
+| Command | Purpose |
+|---|---|
+| `draft --purpose P --data SESSION:PROPOSAL:APPROVAL ... --network NEKO_SESSION:BNET` | Skeleton with inputs, hashes and approvals filled in; one `unmapped` entry per proposal row with reason `TODO`. |
+| `check MAPPING` | Exit 1 with one problem per line: bad paths or hashes, unapproved proposals, missing BNET nodes, rows neither mapped nor `unmapped` with a real reason, invalid criteria. |
+| `criteria MAPPING --runs RUNS [--out FILE] [--merge-into VALIDATION_CRITERIA.yaml]` | Criteria entries from `runs.json` (scenario to saved trajectory CSV); refuses a scenario with no run. |
+
+Rules enforced by `check`:
+- the BNET is under `runs/network-curator/<session>/exports/`, `runs.json` under
+  `runs/orchestrator/`, and trajectories under `runs/boolean-dynamics-modeler/`;
+- criterion methods are `scenario_contrast`, `ordered_peaks` and `canonical_cycles`;
+  `boolean_structure` is declared directly in `VALIDATION_CRITERIA.yaml`;
+- `scenario_contrast` needs different test and reference contexts, and one trajectory
+  cannot serve two scenarios.
+
+The researcher approves the checked mapping: a `stage_approval` with stage `data_mapping`,
+the `mapping.json` path and sha256 as `artifact`, and `outputs` equal to the set of the
+mapping's perturbation ids and criterion ids. Line 2 of the boolean-dynamics-modeler
+brief, right after the `STAGE_GATE` line, is:
+
+```
+DATA_INPUT {"mapping": "runs/orchestrator/<p>/mapping.json", "sha256": "...", "approval": "<record id>"}
+```
+
+The hook requires the matching approval, a passing `mapping.py check` at dispatch time,
+and `inputs.network.neko_session` equal to the `STAGE_GATE` `upstream_session_id`.
+
+**Brief strictness.** For both specialists, any case-insensitive occurrence of
+`DATA[_-]?INPUT` other than the single canonical line is refused: never mention it in
+prose, backticks or quotes. A brief that mentions `runs/data-analyst` in any form, or a
+data session id, without the `DATA_INPUT` line is refused. The hook fails closed: any
+error denies the dispatch.
+
+**After the run.** The modeler reports one trajectory path per `(context, perturbation)`
+pair. The orchestrator writes `runs.json`, runs `mapping.py criteria ... --merge-into
+VALIDATION_CRITERIA.yaml` (or declares the emitted entries with `state.py
+validation-declare`), then `scripts/validate/evaluate.py`. Registry rows carry the lineage
+(a NeKo session `Derived from` the data session with proposal ids and short hashes; a
+MaBoSS row with the mapping path and short hash), and mapped states, perturbations and
+readouts get the `data-derived` tag.
+
 ## Provenance checks
 
 - `sources.jsonl` paths are project-root-relative (`data-cache/sha256/<hex>`,
