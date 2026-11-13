@@ -173,6 +173,29 @@ different or no session is refused before anything is recorded. The last output 
 failures print `RECOVER FAILED: <reason>` and exit 1. `scripts/data/receive.py` uses it for
 data-analyst.
 
+For a bound invocation, whether just recorded or `already-recorded`, recover.py then saves
+the run's server exports (`scripts/capture/exports.py`), because each specialist's MCP
+server and its sessions end with the run and some exports are overwritten in place
+(NeKo always writes `<session>/Network.sif`). It scans that invocation's transcript for
+successful results of the specialist's own export tools (NeKo `export_network` and its
+`curation_file`; MaBoSS `export_maboss_bnd_cfg`, `export_maboss_handoff`; PhysiCell
+`export_xml_configuration`, `export_cell_rules_csv`, `export_configuration_bundle`),
+taking paths from the structured result fields and falling back to NeKo's
+`SIF|History|BNET exported: <path>` text only when no structured field is present.
+Only regular files inside `<artifact root>/<Server>/<session>/` with no symlinks are copied
+(artifact root: `$MCP_BIOMODELLING_ARTIFACT_ROOT`, else `$XDG_CACHE_HOME` or `~/.cache`
+plus `/mcp-biomodelling/artifacts`, as the servers resolve it); anything else is refused
+and reported. Files go to `runs/<specialist>/<session>/exports/<agentId>/<file name>` with
+`exports.json` listing `{tool, format, source_path, dest_path, sha256, bytes}` per file,
+`{..., missing: true}` for a source that no longer exists (a warning, not a failure) and
+`{..., rejected: true, reason}` for refusals. A run with no export results creates no
+`exports/` directory. An identical rerun is a no-op (copies already saved stay valid after
+their sources vanish); differing existing content fails closed and is never overwritten.
+recover.py prints one `export:` line per copied file (`export WARNING:` / `export REFUSED:`
+for the others) before its last `RECOVERED` line. ode-modeler uses
+`record_ode_artifacts.py`; data-analyst has no MCP exports. These copies are not handoff
+captures: approved handoffs still go through the recorders above.
+
 Identical stop-event retries verify every artifact byte and reuse the existing
 record, recovering a missing index entry when applicable. Changed transcripts or
 artifacts fail without overwriting the original. On a recording error the first

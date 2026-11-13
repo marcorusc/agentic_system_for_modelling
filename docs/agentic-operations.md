@@ -226,8 +226,12 @@ after every specialist completion the orchestrator runs `python3 scripts/capture
 --specialist <name> --agent-id <agentId> [--session <id>]` (before any registry or state
 write) and proceeds only on its `RECOVERED <specialist> <session-or-unbound> <status>`
 line. It records the missing invocation through the normal recorder, which also writes
-`report.md`, and is a no-op (`already-recorded`) when the hook did fire. data-analyst
-uses `receive.py`, which calls it.
+`report.md`, and is a no-op (`already-recorded`) when the hook did fire. In both cases it
+then saves the run's server exports (NeKo SIF/history, MaBoSS BND/CFG, PhysiCell XML and
+bundles) to `runs/<specialist>/<session>/exports/<agentId>/` with an `exports.json` hash
+manifest, since each MCP server and its sessions end with the run; rerunning it captures
+exports for older runs (details in the capture README). data-analyst uses `receive.py`,
+which calls it.
 
 See [validation commands](../scripts/validate/README.md) for explicit criteria,
 safe bounded Boolean analyses, trajectory metrics, seed planning and time-scaling

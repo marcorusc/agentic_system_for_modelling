@@ -35,7 +35,8 @@ modelling-specialist completion notification (network-curator, boolean-dynamics-
 multicellular-configurator, ode-modeler), before any registry or state write, run
 `python3 scripts/capture/recover.py --specialist <name> --agent-id <agentId> [--session <id>]`
 and proceed only once it prints `RECOVERED ...`; on `RECOVER FAILED` relay the reason
-verbatim and never repair files. data-analyst uses `receive.py` below, which includes recovery.
+verbatim and never repair files. It also saves the run's server exports under
+`runs/<specialist>/<session>/exports/<agentId>/` (MCP sessions end with the run). data-analyst uses `receive.py` below, which includes recovery.
 
 Data retrieval and analysis are delegated to `data-analyst`. The orchestrator never
 runs `vendor/scientific-agent-skills` scripts or `.venv-data`. data-analyst invocations
@@ -125,6 +126,12 @@ result. Every final rule and every manual edge needs a provenance tag in DECISIO
 CURRENT_STATE contains the append-only lineage table: Specialist, full Session ID,
 Stage, Status, Derived from, Handoff, Artifacts. Mark superseded rows and append new
 sessions; never replace history. Resolve active IDs from this table before dispatch.
+NeKo briefs say "no BNET/handoff export", never a bare "no export": network-curator
+always ends with SIF+history exports. A NeKo session unknown to the server is
+restored only on explicit authorization, from its captured SIF, as a new session
+registered with `Derived from` = the old session; it needs fresh stage approvals
+(approvals bind to session/state). The old session's literature reports remain
+evidence for identical edges, cited from `evidence/reports/<old session>/`, never copied.
 Handoff is pending during review, approved only after researcher sign-off, exported
 only after a verified conclusive artifact exists. Downstream sessions require the
 exact upstream exported session: NeKo -> MaBoSS -> PhysiCell. These approvals do not
