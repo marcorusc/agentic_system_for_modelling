@@ -45,6 +45,19 @@ runs the vendored PyDESeq2 and GSEA scripts on a synthetic 4-vs-4 dataset and pr
   `receive.py --transcript-root` recovers the capture, prints `RECEIVED <id> OK`, and `report.md`
   equals `final_report.md`;
 - a later edit to `DECISIONS.md` is detected.
+- the data-to-model chain, with synthetic `seed_genes`, `perturbations` and `validation_targets`
+  proposals in the same session: a `data` approval recorded through `state.py record`; the
+  network-curator `DATA_INPUT` line is accepted by `gate.check_data_input` and a wrong proposal
+  hash is refused;
+- `mapping.py draft` on a synthetic BNET under `runs/network-curator/<s>/exports/`; the skeleton
+  fails `check` on its `TODO` reasons, the completed mapping passes, and a `data_mapping`
+  approval is recorded;
+- the boolean-dynamics-modeler `DATA_INPUT` line (after a `STAGE_GATE` line naming the NeKo
+  session) is accepted and a wrong mapping hash is refused (only the data part of the gate is
+  called; `STAGE_GATE` governance records are outside the smoke);
+- synthetic trajectories and `runs.json` go through `mapping.py criteria --merge-into
+  VALIDATION_CRITERIA.yaml`, and `scripts/validate/evaluate.py` passes the `scenario_contrast`
+  criterion.
 
 It ends with `DATA SMOKE PASSED`.
 

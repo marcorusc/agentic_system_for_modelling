@@ -145,6 +145,17 @@ FIGURE_META = {
 }
 LEDGER_URI = "synthetic:sets.gmt"
 
+NEKO = "neko-smoke-1"
+BNET_REL = f"runs/network-curator/{NEKO}/exports/inv1/model.bnet"
+BNET_TEXT = "targets, factors\nEGFR, EGFR\nMAPK1, EGFR\nProliferation, MAPK1\nSurvival, MAPK1\n"
+PERTURBATIONS = ("scenario_id,context,entity,entity_type,targets,effect,evidence\n"
+                 "S1,LUAD,erlotinib,compound,EGFR,inhibit,GDSC\n"
+                 "S2,LUAD,trametinib,compound,MAP2K1;MAP2K2,inhibit,GDSC\n")
+TARGETS = ("target_id,statement,test_context,reference_context,perturbation,phenotype,expected,"
+           "evidence_strength,evidence\n"
+           "V1,EGFR-mutant drop larger,LUAD_EGFR,LUAD_wt,S1,viability,greater_drop,moderate,GDSC\n"
+           "V2,MEK drop,LUAD_EGFR,LUAD_wt,S2,viability,greater_drop,weak,GDSC\n")
+
 
 def step(msg: str) -> None:
     print(f"[ok] {msg}", flush=True)
@@ -227,6 +238,7 @@ def run(tmp: Path) -> None:
     decisions = root / "DECISIONS.md"
     if not decisions.exists():
         decisions.write_text("# Decisions\n", encoding="utf-8")
+    original_decisions = decisions.read_text(encoding="utf-8")
 
     env = {**os.environ, "CLAUDE_PROJECT_DIR": str(root)}
     py = str(root / ".venv-data" / "bin" / "python")
@@ -311,7 +323,15 @@ def run(tmp: Path) -> None:
     (session / "proposals" / "index.json").write_text(json.dumps([
         {"id": "P1", "target_layer": "neko", "kind": "seed_genes",
          "path": "proposals/P1_seed_genes.csv", "method": "top 10 genes by DESeq2 Wald stat",
+         "thresholds": {}},
+        {"id": "P2", "target_layer": "maboss", "kind": "perturbations",
+         "path": "proposals/P2_perturbations.csv", "method": "synthetic drug-target table",
+         "thresholds": {}},
+        {"id": "P3", "target_layer": "maboss", "kind": "validation_targets",
+         "path": "proposals/P3_validation_targets.csv", "method": "synthetic expected responses",
          "thresholds": {}}]), encoding="utf-8")
+    (session / "proposals" / "P2_perturbations.csv").write_text(PERTURBATIONS, encoding="utf-8")
+    (session / "proposals" / "P3_validation_targets.csv").write_text(TARGETS, encoding="utf-8")
     build_outputs_index(session, manifest)
     sh("scripts/data/manifest.py", "build", "--session", sid, "--skills", "pydeseq2", "pathway-enrichment")
     verify = sh("scripts/data/manifest.py", "verify", "--session", sid, check=False)
@@ -334,7 +354,7 @@ def run(tmp: Path) -> None:
     assert hdigest == sha256_file(session / "handoff.json")
     handoff = json.loads((session / "handoff.json").read_text(encoding="utf-8"))
     assert handoff["status"] == "needs_approval"
-    assert [d["id"] for d in handoff["decisions_required"]] == ["P1", "D1"], handoff["decisions_required"]
+    assert [d["id"] for d in handoff["decisions_required"]] == ["P1", "P2", "P3", "D1"], handoff["decisions_required"]
     step("handoff.py build wrote handoff.json")
 
     # 5. recorder (real) with a synthetic transcript ending in SubagentHandback
@@ -409,6 +429,110 @@ def run(tmp: Path) -> None:
     verdict = snapshot.verify_session(root, sid, digest)
     assert not verdict["passed"] and "DECISIONS.md" in verdict["changed"], verdict
     step("tampering with DECISIONS.md detected by snapshot.verify_session")
+
+    # 7. data -> NeKo -> MaBoSS handoffs (the orchestrator procedure of docs/data-workflow.md)
+    from scripts import gate
+    decisions.write_text(original_decisions, encoding="utf-8")  # undo the deliberate tamper
+
+    def write_json(path: Path, data) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+
+    def sha_of(rel: str) -> str:
+        return sha256_file(root / rel)
+
+    def record_state(record: dict) -> None:
+        file = tmp / f"{record['id']}.json"
+        write_json(file, record)
+        sh("scripts/state.py", "record", "--input", str(file))
+
+    base = f"runs/data-analyst/{sid}"
+    record_state({"id": "dec-data-1", "kind": "stage_approval", "stage": "data", "session_id": sid,
+                  "outputs": ["P1", "P2", "P3"],
+                  "artifact": {"path": f"{base}/handoff.json", "sha256": sha_of(f"{base}/handoff.json")},
+                  "approved_by": "researcher", "authorization": "researcher: data approved"})
+    seeds = f"{base}/proposals/P1_seed_genes.csv"
+    neko_line = "DATA_INPUT " + json.dumps({"data_session": sid, "proposals": {"P1": sha_of(seeds)}})
+    neko_task = f"{neko_line}\nBuild the network from the seed file {seeds} (hgnc_symbol column)."
+    result = gate.check_data_input(root, "network_curator", neko_task)
+    assert result["data_session"] == sid and result["approval_id"] == "dec-data-1", result
+    bad_neko = neko_task.replace(sha_of(seeds), "0" * 64)
+    try:
+        gate.check_data_input(root, "network_curator", bad_neko)
+    except ValueError as exc:
+        assert "sha256" in str(exc), exc
+    else:
+        raise AssertionError("NeKo brief with a wrong proposal hash was accepted")
+    step("data approval recorded; network-curator DATA_INPUT accepted, wrong proposal hash refused")
+
+    bnet = root / BNET_REL
+    bnet.parent.mkdir(parents=True)
+    bnet.write_text(BNET_TEXT, encoding="utf-8")
+    mapping_rel = "runs/orchestrator/luad/mapping.json"
+    sh("scripts/data/mapping.py", "draft", "--purpose", "luad", "--data",
+       f"{sid}:P2:dec-data-1", f"{sid}:P3:dec-data-1", "--network", f"{NEKO}:{BNET_REL}")
+    skeleton = sh("scripts/data/mapping.py", "check", mapping_rel, check=False)
+    assert skeleton.returncode == 1 and "TODO" in skeleton.stderr, skeleton.stderr
+    data = json.loads((root / mapping_rel).read_text(encoding="utf-8"))
+    data["contexts"] = {"LUAD_EGFR": [{"node": "EGFR", "state": 1}], "LUAD_wt": []}
+    data["perturbations"] = [{"id": "S1", "from": {"proposal": "P2", "row": "S1"},
+                              "model": [{"node": "EGFR", "state": 0}], "note": "erlotinib -> EGFR off"}]
+    data["readouts"] = [{"phenotype": "viability", "nodes": ["Proliferation", "Survival"]}]
+    data["criteria"] = [{"criterion_id": "V1", "from": {"proposal": "P3", "row": "V1"},
+                         "method": "scenario_contrast",
+                         "test": {"context": "LUAD_EGFR", "perturbation": "S1"},
+                         "reference": {"context": "LUAD_wt", "perturbation": "S1"},
+                         "options": {"readouts": ["Proliferation"], "margin": 0.05, "combine": "all",
+                                     "statistic": "tail_mean", "tail_points": 2}}]
+    data["unmapped"] = [{"from": {"proposal": "P2", "row": "S2"}, "reason": "MEK is not a model node"},
+                        {"from": {"proposal": "P3", "row": "V2"}, "reason": "depends on unmapped S2"}]
+    write_json(root / mapping_rel, data)
+    checked = sh("scripts/data/mapping.py", "check", mapping_rel, check=False)
+    assert checked.returncode == 0 and not checked.stderr, checked.stdout + checked.stderr
+    record_state({"id": "dec-map-1", "kind": "stage_approval", "stage": "data_mapping", "session_id": NEKO,
+                  "outputs": ["S1", "V1"],
+                  "artifact": {"path": mapping_rel, "sha256": sha_of(mapping_rel)},
+                  "approved_by": "researcher", "authorization": "researcher: mapping ok"})
+    step("mapping.py draft, completed mapping passes check, data_mapping approval recorded")
+
+    stage_gate = "STAGE_GATE " + json.dumps({"upstream_session_id": NEKO, "outputs": ["Proliferation", "Survival"]})
+    maboss_line = "DATA_INPUT " + json.dumps({"mapping": mapping_rel, "sha256": sha_of(mapping_rel),
+                                              "approval": "dec-map-1"})
+    maboss_task = f"{stage_gate}\n{maboss_line}\nSimulate exactly the mapping's scenarios."
+    result = gate.check_data_input(root, "boolean_dynamics_modeler", maboss_task)
+    assert result, result
+    bad_maboss = maboss_task.replace(sha_of(mapping_rel), "0" * 64)
+    try:
+        gate.check_data_input(root, "boolean_dynamics_modeler", bad_maboss)
+    except ValueError as exc:
+        assert "sha256" in str(exc), exc
+    else:
+        raise AssertionError("MaBoSS brief with a wrong mapping hash was accepted")
+    step("boolean-dynamics-modeler DATA_INPUT accepted, wrong mapping hash refused")
+
+    traj = "runs/boolean-dynamics-modeler/smoke-1"
+    levels = {"test_control": 0.8, "test_perturbed": 0.2, "reference_control": 0.8, "reference_perturbed": 0.7}
+    scenarios = {"test_control": ("LUAD_EGFR", None), "test_perturbed": ("LUAD_EGFR", "S1"),
+                 "reference_control": ("LUAD_wt", None), "reference_perturbed": ("LUAD_wt", "S1")}
+    runs = []
+    for role, (context, perturbation) in scenarios.items():
+        rel = f"{traj}/{role}.csv"
+        (root / rel).parent.mkdir(parents=True, exist_ok=True)
+        (root / rel).write_text("Time,Proliferation,Survival\n" + "".join(
+            f"{t},{levels[role]},0.5\n" for t in (0, 1, 2, 3)), encoding="utf-8")
+        runs.append({"context": context, "perturbation": perturbation, "trajectory": rel})
+    write_json(root / "runs/orchestrator/luad/runs.json", {"runs": runs})
+    sh("scripts/data/mapping.py", "criteria", mapping_rel, "--runs", "runs/orchestrator/luad/runs.json",
+       "--merge-into", "VALIDATION_CRITERIA.yaml")
+    merged = json.loads((root / "VALIDATION_CRITERIA.yaml").read_text(encoding="utf-8"))
+    assert [c["criterion_id"] for c in merged["criteria"]] == ["V1"], merged
+    assert merged["criteria"][0]["inputs"] == [r["trajectory"] for r in runs], merged
+    step("mapping.py criteria merged scenario_contrast V1 into VALIDATION_CRITERIA.yaml")
+
+    evaluation = json.loads(sh("scripts/validate/evaluate.py", "--criteria", "VALIDATION_CRITERIA.yaml").stdout)
+    outcome = {r["criterion_id"]: r["status"] for r in evaluation["results"]}
+    assert outcome == {"V1": "passed"}, evaluation
+    step("evaluate.py: scenario_contrast V1 passed (EGFR-off drop larger in the test context)")
     print("DATA SMOKE PASSED")
 
 
