@@ -116,8 +116,9 @@ The step-by-step procedure is in [data workflow](data-workflow.md). In outline:
   `STAGE_GATE` uses `standalone_decision_id` and the approval's `session_id` is that id. On
   both routes every mapping readout node must be among the `STAGE_GATE` `outputs`.
 - **Seeds and mapping files** are named only on the `DATA_INPUT` line: the hook resolves every
-  `runs/orchestrator/...` path in the brief and refuses a file whose content is a seeds or
-  mapping file (whatever its name) unless it is the `DATA_INPUT` artifact.
+  `runs/orchestrator/...` path in the brief (a directory or glob: each file directly in it) and
+  refuses a file whose content is a seeds or mapping file (whatever its name; a `seeds` list of
+  numbers, such as RNG seeds, is not) unless it is the `DATA_INPUT` artifact.
 - **`scenario_contrast`:** drop is P(control) minus P(perturbed). It passes when
   test drop minus reference drop is strictly greater than the margin. The statistic is
   `final` or `tail_mean`; `combine` is `all` or `any`. There is no implicit tolerance.
@@ -168,8 +169,10 @@ The step-by-step procedure is in [data workflow](data-workflow.md). In outline:
 - **Same-context, different-drug contrasts** are not supported by `scenario_contrast`
   mappings.
 - **A re-export** of the NeKo BNET invalidates the mapping, which must be redrafted.
-- **Path mentions** are recognised only as `runs/orchestrator/...` paths; a seeds or mapping file
-  pointed at by a bare directory or another spelling is not detected.
+- **Path mentions** are recognised only as `runs/orchestrator...` paths. A mentioned directory
+  (or glob) is scanned for its direct files only, not recursively: `runs/orchestrator/` alone does
+  not reach `<purpose>/` files. Unnatural encodings (`%2F`, `&#47;`, hard-wrapped paths, `cd`
+  plus a relative path) are not detected.
 
 ## 8. Roadmap
 

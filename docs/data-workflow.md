@@ -306,8 +306,9 @@ fresh `data_mapping` approval.
 prose, backticks or quotes. A brief that mentions `runs/data-analyst` in any form, or a
 data session id, without the `DATA_INPUT` line is refused. Seeds and mapping files may be named
 only on the `DATA_INPUT` line: the hook reads every `runs/orchestrator/...` path the brief
-mentions (any separator or case) and refuses one whose content is a seeds or mapping file,
-whatever its name, unless it is the `DATA_INPUT` artifact itself (which may be repeated in prose).
+mentions (any separator or case; for a directory or glob, each file directly in it, not
+recursively) and refuses one whose content is a seeds or mapping file, whatever its name,
+unless it is the `DATA_INPUT` artifact itself (which may be repeated in prose).
 Other orchestrator files (`runs.json`, summaries, `CHANGES.md`) may be cited. The hook fails
 closed: any error denies the dispatch.
 

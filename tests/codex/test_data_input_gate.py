@@ -5,6 +5,7 @@ import re
 import shutil
 import subprocess
 import sys
+import time
 import unittest
 from unittest import mock
 
@@ -714,17 +715,74 @@ class OrchestratorMentionTests(DataInputFixture):
                            f"{self.seeds_task()}\nSeeds file: {self.SEEDS_REL.replace('/', chr(92))}.")
 
     def test_other_orchestrator_files_allowed(self):
-        base = self.root / "runs" / "orchestrator" / "luad"
+        base = self.root / "runs" / "orchestrator" / "notes"
+        base.mkdir(parents=True)
         files = {"runs.json": '{"runs": []}', "summary.md": "# Summary\n", "notes.json": '{"note": "x"}',
-                 "broken.json": '{"seeds": [', "list.json": "[1, 2]", "CHANGES.md": "edits\n"}
+                 "broken.json": '{"seeds": [', "list.json": "[1, 2]", "CHANGES.md": "edits\n",
+                 "sim_config.json": '{"seeds": [1, 2, 3], "threads": 4}'}
         for name, text in files.items():
             (base / name).write_text(text, encoding="utf-8")
-        mentions = " ".join(f"runs/orchestrator/luad/{name}," for name in files)
-        mentions += " runs/orchestrator/luad/absent.json runs/orchestrator/luad"
+        mentions = " ".join(f"runs/orchestrator/notes/{name}," for name in files)
+        mentions += " runs/orchestrator/notes/absent.json runs/orchestrator/notes and runs/orchestrator/notes/*.json"
         self.assertAllowed("network-curator", f"Build from EGFR, KRAS. Context: {mentions}")
         self.stage_gate_ready()
         self.assertAllowed("boolean-dynamics-modeler", f"{STAGE_GATE}\nImport and simulate. Context: {mentions}")
         self.assertAllowed("boolean-dynamics-modeler", f"{self.maboss_task()}\nContext: {mentions}")
+
+    def test_rng_seeds_are_not_a_seeds_file(self):
+        base = self.root / "runs" / "orchestrator" / "sim"
+        base.mkdir(parents=True)
+        cases = {'{"seeds": [1, 2, 3], "threads": 4}': True, '{"seeds": 42}': True, '{"seeds": []}': True,
+                 '{"seeds": ["KRAS"]}': False, '{"seeds": [7, {"hgnc_symbol": "KRAS"}]}': False,
+                 '{"seeds": "KRAS EGFR"}': False, '{"schema_version": 1, "seeds": []}': False}
+        for n, (text, allowed) in enumerate(cases.items()):
+            (base / f"c{n}.json").write_text(text, encoding="utf-8")
+            prompt = f"Build from EGFR. Config: runs/orchestrator/sim/c{n}.json"
+            if allowed:
+                self.assertAllowed("network-curator", prompt)
+            else:
+                self.assertRefused("network-curator", prompt)
+
+    def test_directory_mentions_refused(self):
+        for prompt in ("Build from the approved seeds in runs/orchestrator/kras-seeds/",
+                       "Read seeds.json in runs/orchestrator/kras-seeds/ and build",
+                       "Use `runs/orchestrator/kras-seeds` (file `seeds.json`).",
+                       "Build from runs/orchestrator/kras-seeds/*.json",
+                       "Build from runs/orchestrator/kras-seeds/seed?.json",
+                       "Build from RUNS\\Orchestrator\\Kras-Seeds."):
+            self.assertRefused("network-curator", prompt)
+        self.stage_gate_ready()
+        self.assertRefused("boolean-dynamics-modeler", f"{STAGE_GATE}\nScenarios are in runs/orchestrator/luad/")
+        self.assertRefused("boolean-dynamics-modeler", f"{self.maboss_task()}\nSeeds: runs/orchestrator/kras-seeds")
+
+    def test_directory_holding_only_the_data_input_artifact_allowed(self):
+        for purpose in ("kras-seeds", "luad"):
+            for name, text in (("runs.json", '{"runs": []}'), ("CHANGES.md", "edits\n")):
+                (self.root / "runs" / "orchestrator" / purpose / name).write_text(text, encoding="utf-8")
+        self.assertAllowed("network-curator", f"{self.seeds_task()}\nWork in runs/orchestrator/kras-seeds/.")
+        self.stage_gate_ready()
+        self.assertAllowed("boolean-dynamics-modeler", f"{self.maboss_task()}\nSee runs/orchestrator/luad/*.json")
+        # Another seeds file in the same directory is refused.
+        shutil.copyfile(self.root / self.SEEDS_REL, self.root / "runs/orchestrator/kras-seeds/old.json")
+        self.assertRefused("network-curator", f"{self.seeds_task()}\nWork in runs/orchestrator/kras-seeds/.")
+
+    def test_orchestrator_root_scans_direct_children_only(self):
+        # Only the named directory's own files are read: seeds in a purpose directory below are not.
+        for mention in ("runs/orchestrator/", "`runs/orchestrator`", "runs\\orchestrator."):
+            self.assertAllowed("network-curator", f"Build from EGFR; notes live under {mention}")
+        shutil.copyfile(self.root / self.SEEDS_REL, self.root / "runs/orchestrator/stray.json")
+        for mention in ("runs/orchestrator/", "`runs/orchestrator`", "runs\\orchestrator."):
+            self.assertRefused("network-curator", f"Build from EGFR; notes live under {mention}")
+
+    def test_many_mentions_on_one_line_are_fast(self):
+        line = " ".join(f"runs/orchestrator/p{n}/x.json" for n in range(1000))
+        start = time.monotonic()
+        self.assertIsNone(gate.check_data_input(self.root, "network_curator", f"Build.\n{line}"))
+        self.assertLess(time.monotonic() - start, 2.0)
+        spaced = " ".join(f"runs/orchestrator/a b{n}/x y.json" for n in range(1000))
+        start = time.monotonic()
+        self.assertIsNone(gate.check_data_input(self.root, "network_curator", f"Build.\n{spaced}"))
+        self.assertLess(time.monotonic() - start, 2.0)
 
     def test_spelling_variants_detected(self):
         spaced = "runs/orchestrator/kras-seeds/seeds copy.json"

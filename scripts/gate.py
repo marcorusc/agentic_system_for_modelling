@@ -494,31 +494,22 @@ def _check_maboss_data_input(root, value, first_line):
 
 # Seeds and mapping files reach NeKo and MaBoSS only as the DATA_INPUT artifact. Every
 # runs/orchestrator path the brief mentions (any separator or case, after the detection
-# normalisation) is resolved in the repository; a regular file whose content is a seeds or
-# mapping file, whatever its name, must be exactly the artifact the DATA_INPUT line names.
-ORCHESTRATOR_START = re.compile(r"runs[\\/]+orchestrator(?=[\\/])", re.I)
-PATH_TOKEN = re.compile(r"[^\s`'\"<>|*?]+")
+# normalisation) is resolved in the repository: a regular file, or each regular file directly
+# inside a mentioned directory under runs/orchestrator (a glob names its directory; never
+# recursive), whose content is a seeds or mapping file, whatever its name, must be exactly
+# the artifact the DATA_INPUT line names.
+ORCHESTRATOR_START = re.compile(r"runs[\\/]+orchestrator(?![\w-])", re.I)
+PATH_TOKEN = re.compile(r"[^\s`'\"<>|]+")
+GLOB = re.compile(r"[*?\[]")
 JSON_END = re.compile(r"\.json", re.I)
-LINE_BREAK = re.compile(r"[\n\r\x0b\x0c\x1c-\x1e\x85\u2028\u2029]")
+LINE_BREAK = re.compile(r"[\n\r\x0b\x0c\x1c-\x1e\x85  ]")
 TRAILING = ".,;:!?)]}>'\"`"
+SPACED_CANDIDATES = 5  # line prefixes ending in .json tried per mention (names with spaces)
 MENTION_RULE = "seeds and mapping files may be named only on the DATA_INPUT line; see CLAUDE.md"
 
 
-def _orchestrator_mentions(text):
-    """Candidate paths starting at each `runs/orchestrator/`: the unbroken token (trailing
-    punctuation stripped) and, to allow spaces in names, every prefix of the line ending in .json."""
-    found = set()
-    for start in ORCHESTRATOR_START.finditer(text):
-        at = start.start()
-        found.add(PATH_TOKEN.match(text, at).group().rstrip(TRAILING))
-        brk = LINE_BREAK.search(text, at)
-        line = text[at:brk.start() if brk else len(text)]
-        found.update(line[:end.end()] for end in JSON_END.finditer(line))
-    return found
-
-
-def _mentioned_files(root, mention):
-    """Regular files inside the repository that a mentioned path names; a component that does not
+def _resolve_mention(root, mention):
+    """Existing paths inside the repository that a mentioned path names; a component that does not
     exist as spelled matches its case-insensitive spellings."""
     rel = posixpath.normpath(mention.replace("\\", "/"))
     if rel == ".." or rel.startswith("../") or rel.startswith("/"):
@@ -536,16 +527,89 @@ def _mentioned_files(root, mention):
             except OSError:  # not a directory, or unreadable: names nothing readable
                 continue
         current = following[:16]
-    files = []
+        if not current:
+            return []
+    found = []
     for path in current:
         try:
             resolved = path.resolve()
             resolved.relative_to(root)
         except (OSError, ValueError):
             continue
+        if resolved.exists():
+            found.append(resolved)
+    return found
+
+
+def _orchestrator_mentions(root, text):
+    """(mention, existing paths) for each `runs/orchestrator` mention in the text.
+
+    The mention is the unbroken token (trailing punctuation stripped; a glob cut back to its
+    directory). Unless the token names a file, at most SPACED_CANDIDATES line prefixes ending
+    in .json are tried too, stopping at the first that names something (names with spaces).
+    """
+    cache = {}
+
+    def resolve(mention):
+        if mention not in cache:
+            cache[mention] = _resolve_mention(root, mention)
+        return cache[mention]
+
+    for start in ORCHESTRATOR_START.finditer(text):
+        at = start.start()
+        token = PATH_TOKEN.match(text, at).group()
+        glob = GLOB.search(token)
+        if glob:
+            token = token[:glob.start()]
+            token = token[:max(token.rfind("/"), token.rfind("\\")) + 1]
+        token = token.rstrip(TRAILING)
+        paths = resolve(token)
+        yield token, paths
+        if any(path.is_file() for path in paths):
+            continue
+        brk = LINE_BREAK.search(text, at)
+        for n, end in enumerate(JSON_END.finditer(text, at, brk.start() if brk else len(text))):
+            if n == SPACED_CANDIDATES:
+                break
+            candidate = text[at:end.end()]
+            if candidate != token and resolve(candidate):
+                yield candidate, resolve(candidate)
+                break
+
+
+def _candidate_files(root, path):
+    """The file itself, or the regular files directly inside a directory under runs/orchestrator."""
+    if path.is_file():
+        return [path]
+    if not path.is_dir() or [p.casefold() for p in path.relative_to(root).parts[:2]] != ["runs", "orchestrator"]:
+        return []
+    files = []
+    try:
+        with os.scandir(path) as entries:
+            children = [Path(e.path) for e in entries]
+    except OSError:  # unreadable directory: names nothing readable
+        return []
+    for child in sorted(children):
+        try:
+            resolved = child.resolve()
+            resolved.relative_to(root)
+        except (OSError, ValueError):
+            continue
         if resolved.is_file():
             files.append(resolved)
     return files
+
+
+def _is_seeds(data):
+    """A seeds.json shape: schema_version with seeds, or seeds that are gene names (strings or
+    objects with hgnc_symbol). A list of numbers (e.g. RNG seeds) is not."""
+    if "seeds" not in data:
+        return False
+    seeds = data["seeds"]
+    if "schema_version" in data or isinstance(seeds, str):
+        return True
+    return isinstance(seeds, list) and any(
+        isinstance(x, str) or (isinstance(x, dict) and "hgnc_symbol" in x) for x in seeds)
 
 
 def _model_input_kind(path):
@@ -560,7 +624,7 @@ def _model_input_kind(path):
         return None
     if not isinstance(data, dict):
         return None
-    if "seeds" in data:
+    if _is_seeds(data):
         return "seeds"
     if len(set(data) & (set(mapping.KEYS) - {"schema_version"})) >= 2:
         return "mapping"
@@ -574,11 +638,14 @@ def _check_orchestrator_mentions(root, text, allowed_rel):
     if allowed_rel:
         info = os.stat(root / allowed_rel)
         allowed = (info.st_dev, info.st_ino)
-    for mention in sorted(_orchestrator_mentions(text)):
-        for path in _mentioned_files(root, mention):
+    checked = set()
+    for mention, paths in _orchestrator_mentions(root, text):
+        for path in (f for p in paths for f in _candidate_files(root, p)):
             info = path.stat()
-            if (info.st_dev, info.st_ino) == allowed:
+            key = (info.st_dev, info.st_ino)
+            if key == allowed or key in checked:
                 continue
+            checked.add(key)
             kind = _model_input_kind(path)
             if kind:
                 where = "is not the artifact of its DATA_INPUT line" if allowed_rel else "has no DATA_INPUT line"
