@@ -153,8 +153,8 @@ does not prove exclusive simulated readout states. Their provenance tag is
 When line 2 of the invocation is a `DATA_INPUT` line, the mapping it names is the
 approved scenario list: contexts and perturbations are fixed node states (MaBoSS
 mutations). Run each context, each perturbation on its context, and the context alone as
-control. On a node fixed by both the context and the perturbation, the perturbation overrides the context. Never edit the mapping. Mapping readout nodes must be among the MaBoSS
-output nodes approved for the run. Return one saved trajectory artifact path per
+control. On a node fixed by both the context and the perturbation, the perturbation overrides the context. Never edit the mapping. Mapping readout nodes are among the MaBoSS
+output nodes approved for the run (the `STAGE_GATE` `outputs`; the dispatch hook enforces it). Return one saved trajectory artifact path per
 `(context, perturbation)` pair; the orchestrator turns them into `runs.json`. The mapping's
 network may come from a standalone approval (a researcher BNET, `STAGE_GATE` with
 `standalone_decision_id`) instead of a NeKo session; nothing else changes.

@@ -26,7 +26,8 @@ CLI:
                                                   mapped node absent from the new BNET or whose rule changed)
   mapping.py check MAPPING [--stage-gate JSON]   (exit 1, one problem per line on stderr; with the
                                                   STAGE_GATE JSON of the MaBoSS brief, also the gate's
-                                                  network binding, which reports a stale mapping)
+                                                  network binding, which reports a stale mapping, and
+                                                  readout nodes outside the STAGE_GATE outputs)
   mapping.py criteria MAPPING --runs RUNS --approval RECORD_ID [--out FILE] [--merge-into VALIDATION_CRITERIA.yaml]
 """
 
@@ -719,12 +720,25 @@ def overlaps(data: dict) -> list[tuple[str, str, str]]:
     return found
 
 
+def readout_nodes(data) -> list[str]:
+    """Nodes declared under readouts, in file order without repeats; criteria read only these nodes."""
+    found: list[str] = []
+    items = data.get("readouts") if isinstance(data, dict) else None
+    for item in items if isinstance(items, list) else ():
+        nodes = item.get("nodes") if isinstance(item, dict) else None
+        for node in nodes if isinstance(nodes, list) else ():
+            if isinstance(node, str) and node not in found:
+                found.append(node)
+    return found
+
+
 def check(root: Path, mapping_rel: str, stage_gate=None) -> list[str]:
     """Every problem with the mapping, one message each; [] when it is valid.
 
     With `stage_gate` (the STAGE_GATE JSON object, with or without its `STAGE_GATE `
     prefix, that line 1 of the MaBoSS brief will carry), the dispatch gate's network
-    binding is checked too, so a mapping made stale by a re-export is reported.
+    binding is checked too, so a mapping made stale by a re-export is reported, and so is
+    every readout node that is not among the STAGE_GATE `outputs`.
     """
     root = Path(root)
     try:
@@ -747,14 +761,22 @@ def _stage_gate_line(stage_gate) -> str:
 
 
 def network_binding_errors(root: Path, data: dict, stage_gate) -> list[str]:
-    """The dispatch gate's binding of inputs.network to a STAGE_GATE, as error lines ([] when bound)."""
+    """The dispatch gate's checks of a mapping against a STAGE_GATE, as error lines ([] when they pass).
+
+    The binding of inputs.network to the STAGE_GATE anchor, then the readout nodes against
+    the STAGE_GATE outputs.
+    """
     from scripts import gate
     inputs = data.get("inputs") if isinstance(data, dict) else None
     try:
-        gate.check_mapping_network(Path(root), inputs.get("network") if isinstance(inputs, dict) else None,
-                                   _stage_gate_line(stage_gate))
+        line = _stage_gate_line(stage_gate)
+        gate.check_mapping_network(Path(root), inputs.get("network") if isinstance(inputs, dict) else None, line)
     except (ValueError, OSError, KeyError, TypeError) as exc:
         return [f"STAGE_GATE binding: {exc}"]
+    try:
+        gate.check_mapping_outputs(data, line)
+    except (ValueError, TypeError) as exc:
+        return [f"STAGE_GATE outputs: {exc}"]
     return []
 
 

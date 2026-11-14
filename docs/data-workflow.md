@@ -256,7 +256,9 @@ Rules enforced by `check`:
   `boolean-handoffs/<capture>/`;
 - where the context and a perturbation fix the same node, the perturbation overrides the
   context; `check` prints each overlap as a `note:` line and does not fail;
-- readout nodes must be among the MaBoSS output nodes approved for the run;
+- with `--stage-gate`, every readout node (so every node a criterion reads) must be among the
+  `STAGE_GATE` `outputs`, the MaBoSS output nodes approved for the run; the error names the
+  missing nodes and the dispatch hook refuses the same mapping;
 - criterion methods are `scenario_contrast`, `ordered_peaks` and `canonical_cycles`;
   `boolean_structure` is declared directly in `VALIDATION_CRITERIA.yaml`;
 - `scenario_contrast` needs different test and reference contexts.
@@ -277,7 +279,8 @@ DATA_INPUT {"mapping": "runs/orchestrator/<p>/mapping.json", "sha256": "...", "a
 The hook requires the matching approval, a passing `mapping.py check` at dispatch time,
 `inputs.network.neko_session` equal to the `STAGE_GATE` `upstream_session_id`, and
 `inputs.network.sha256` equal to the BNET sha256 of the NeKo handoff that `STAGE_GATE`
-approved. A `data_mapping` approval's `session_id` is the mapping's NeKo session and must
+approved, and every mapping readout node among the `STAGE_GATE` `outputs` (both network
+routes). A `data_mapping` approval's `session_id` is the mapping's NeKo session and must
 equal that `upstream_session_id`.
 
 **Your BNET (standalone network).** With a `standalone_approval` for your `.bnet` (stage
@@ -300,8 +303,12 @@ fresh `data_mapping` approval.
 **Brief strictness.** For both specialists, any case-insensitive occurrence of
 `DATA[_-]?INPUT` other than the single canonical line is refused: never mention it in
 prose, backticks or quotes. A brief that mentions `runs/data-analyst` in any form, or a
-data session id, without the `DATA_INPUT` line is refused. The hook fails closed: any
-error denies the dispatch.
+data session id, without the `DATA_INPUT` line is refused. Seeds and mapping files may be named
+only on the `DATA_INPUT` line: the hook reads every `runs/orchestrator/...` path the brief
+mentions (any separator or case) and refuses one whose content is a seeds or mapping file,
+whatever its name, unless it is the `DATA_INPUT` artifact itself (which may be repeated in prose).
+Other orchestrator files (`runs.json`, summaries, `CHANGES.md`) may be cited. The hook fails
+closed: any error denies the dispatch.
 
 **After the run.** The modeler reports one trajectory path per `(context, perturbation)`
 pair. The orchestrator writes `runs.json`, runs `mapping.py criteria ... --merge-into

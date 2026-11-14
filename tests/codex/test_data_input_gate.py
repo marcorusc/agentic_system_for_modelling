@@ -20,6 +20,8 @@ STAGE_GATE = "STAGE_GATE " + json.dumps({"upstream_session_id": NEKO, "outputs":
 
 
 class DataInputFixture(MappingFixture):
+    SEEDS_REL = "runs/orchestrator/kras-seeds/seeds.json"
+
     def setUp(self):
         super().setUp()
         self.seeds = f"{self.base}/proposals/P3_seed_genes.csv"
@@ -27,6 +29,28 @@ class DataInputFixture(MappingFixture):
         self.approve_mapping("dec-map-1", self.mapping_rel)
         for name in ("CURRENT_STATE.md", "VALIDATION_PLAN.md"):
             shutil.copyfile(state.ROOT / "templates" / name, self.root / name)
+
+    def write_seeds(self, rel, symbols, cite=True):
+        data = {"schema_version": 1,
+                "sources": [{"id": "smith2024", "path": SOURCE, "sha256": sha(self.root / SOURCE)}],
+                "seeds": [{"hgnc_symbol": s, "from": [{"source": "smith2024", "locator": "Table 1"}] if cite else []}
+                          for s in symbols]}
+        (self.root / rel).parent.mkdir(parents=True, exist_ok=True)
+        self.save(rel, data)
+
+    def approve_seeds(self, record_id, rel, outputs, stage="data_seeds", session_id="kras-seeds"):
+        state.update(self.root, "record", {
+            "id": record_id, "kind": "stage_approval", "stage": stage, "session_id": session_id,
+            "outputs": outputs, "artifact": {"path": rel, "sha256": sha(self.root / rel)},
+            "approved_by": "researcher", "authorization": "researcher: seeds ok"})
+
+    def seeds_line(self, rel=None, digest=None, approval="dec-seeds-1", **extra):
+        rel = rel or self.SEEDS_REL
+        return "DATA_INPUT " + json.dumps({"seeds": rel, "sha256": digest or sha(self.root / rel),
+                                           "approval": approval, **extra})
+
+    def seeds_task(self, **kw):
+        return f"{self.seeds_line(**kw)}\nBuild the network from the seeds file named above; the source is {SOURCE}."
 
     def approve_mapping(self, record_id, rel, outputs=("S1", "V1")):
         state.update(self.root, "record", {
@@ -448,35 +472,11 @@ class StandaloneNetworkGateTests(DataInputFixture):
 class SeedsGateTests(DataInputFixture):
     """C. NeKo DATA_INPUT naming an approved seeds.json built from researcher sources."""
 
-    SEEDS_REL = "runs/orchestrator/kras-seeds/seeds.json"
-
     def setUp(self):
         super().setUp()
         self.add_source()
         self.write_seeds(self.SEEDS_REL, ["KRAS", "EGFR"])
         self.approve_seeds("dec-seeds-1", self.SEEDS_REL, ["EGFR", "KRAS"])
-
-    def write_seeds(self, rel, symbols, cite=True):
-        data = {"schema_version": 1,
-                "sources": [{"id": "smith2024", "path": SOURCE, "sha256": sha(self.root / SOURCE)}],
-                "seeds": [{"hgnc_symbol": s, "from": [{"source": "smith2024", "locator": "Table 1"}] if cite else []}
-                          for s in symbols]}
-        (self.root / rel).parent.mkdir(parents=True, exist_ok=True)
-        self.save(rel, data)
-
-    def approve_seeds(self, record_id, rel, outputs, stage="data_seeds", session_id="kras-seeds"):
-        state.update(self.root, "record", {
-            "id": record_id, "kind": "stage_approval", "stage": stage, "session_id": session_id,
-            "outputs": outputs, "artifact": {"path": rel, "sha256": sha(self.root / rel)},
-            "approved_by": "researcher", "authorization": "researcher: seeds ok"})
-
-    def seeds_line(self, rel=None, digest=None, approval="dec-seeds-1", **extra):
-        rel = rel or self.SEEDS_REL
-        return "DATA_INPUT " + json.dumps({"seeds": rel, "sha256": digest or sha(self.root / rel),
-                                           "approval": approval, **extra})
-
-    def seeds_task(self, **kw):
-        return f"{self.seeds_line(**kw)}\nBuild the network from the seeds file named above; the source is {SOURCE}."
 
     def test_seeds_form_accepted_through_hook(self):
         result = gate.check_data_input(self.root, "network_curator", self.seeds_task())
@@ -610,6 +610,144 @@ class StaleMappingTests(DataInputFixture):
         task = self.maboss_task(rel=new_rel, approval="dec-map-r2")
         self.assertEqual(gate.check_data_input(self.root, "boolean_dynamics_modeler", task)["approval_id"], "dec-map-r2")
         self.assertEqual(self.hook("boolean-dynamics-modeler", task).returncode, 0)
+
+
+class ReadoutOutputsTests(DataInputFixture):
+    """A mapping may read only nodes the STAGE_GATE approved as MaBoSS outputs."""
+
+    def widen(self, rel, data, record_id, approve):
+        data = json.loads(json.dumps(data))
+        data["readouts"][0]["nodes"].append("MAPK1")  # a BNET node, not an approved output
+        self.save(rel, data)
+        self.assertEqual(mapping.check(self.root, rel), [])  # valid on its own
+        approve(record_id, rel)
+
+    def test_neko_route_readout_outside_outputs_refused(self):
+        self.stage_gate_ready()
+        self.widen(self.mapping_rel, self.mapping_data, "dec-map-wide", self.approve_mapping)
+        task = self.maboss_task(approval="dec-map-wide")
+        with self.assertRaisesRegex(ValueError, r"MAPK1.*STAGE_GATE outputs") as caught:
+            gate.check_data_input(self.root, "boolean_dynamics_modeler", task)
+        self.assertNotIn("Proliferation,", str(caught.exception).split("STAGE_GATE outputs")[0])
+        result = self.hook("boolean-dynamics-modeler", task)
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("MAPK1", result.stderr)
+        errors = mapping.check(self.root, self.mapping_rel, stage_gate=STAGE_GATE)
+        self.assertEqual(len(errors), 1, errors)
+        self.assertIn(str(caught.exception), errors[0])
+        code, _, err = run_cli("check", self.mapping_rel, "--stage-gate", STAGE_GATE[len("STAGE_GATE "):])
+        self.assertEqual(code, 1)
+        self.assertIn("MAPK1", err)
+
+    def test_standalone_route_readout_outside_outputs_refused(self):
+        self.add_standalone()
+        rel, data = self.complete_sources("sa", network={"standalone_decision_id": "sa-1", "bnet": STANDALONE_BNET})
+
+        def approve(record_id, path):
+            state.update(self.root, "record", {
+                "id": record_id, "kind": "stage_approval", "stage": "data_mapping", "session_id": "sa-1",
+                "outputs": ["S1", "V1"], "artifact": {"path": path, "sha256": sha(self.root / path)},
+                "approved_by": "researcher", "authorization": "researcher: mapping ok"})
+        self.widen(rel, data, "dec-map-sa-wide", approve)
+        task = self.maboss_task(gate_line=SA_GATE, rel=rel, approval="dec-map-sa-wide")
+        with self.assertRaisesRegex(ValueError, r"MAPK1.*STAGE_GATE outputs"):
+            gate.check_data_input(self.root, "boolean_dynamics_modeler", task)
+        self.assertEqual(self.hook("boolean-dynamics-modeler", task).returncode, 2)
+        self.assertError(mapping.check(self.root, rel, stage_gate=SA_GATE), "MAPK1", "STAGE_GATE outputs")
+
+
+MENTION = "seeds and mapping files may be named only on the DATA_INPUT line"
+
+
+class OrchestratorMentionTests(DataInputFixture):
+    """Seeds and mapping files under runs/orchestrator reach a specialist only through DATA_INPUT."""
+
+    def setUp(self):
+        super().setUp()
+        self.add_source()
+        self.write_seeds(self.SEEDS_REL, ["KRAS", "EGFR"])
+        self.approve_seeds("dec-seeds-1", self.SEEDS_REL, ["EGFR", "KRAS"])
+
+    def assertRefused(self, role, prompt, fragment=MENTION):
+        result = self.hook(role, prompt)
+        self.assertEqual(result.returncode, 2, (prompt, result.stderr))
+        self.assertIn(fragment, result.stderr, prompt)
+
+    def assertAllowed(self, role, prompt):
+        result = self.hook(role, prompt)
+        self.assertEqual(result.returncode, 0, (prompt, result.stderr))
+
+    def test_seeds_without_data_input_refused(self):
+        self.assertRefused("network-curator", f"Build the network from {self.SEEDS_REL}.")
+        self.assertRefused("network-curator", f"Build.\nSeeds: `{self.SEEDS_REL}`")
+
+    def test_seeds_under_an_unusual_name_refused(self):
+        odd = "runs/orchestrator/notes/genes_for_curator.JSON"
+        (self.root / odd).parent.mkdir(parents=True)
+        shutil.copyfile(self.root / self.SEEDS_REL, self.root / odd)
+        self.assertRefused("network-curator", f"Build the network from {odd}")
+        # Alongside a valid seeds DATA_INPUT the second file is still refused.
+        self.assertAllowed("network-curator", self.seeds_task())
+        self.assertRefused("network-curator", f"{self.seeds_task()}\nAlso use {odd}.")
+        # And alongside the data-session form.
+        self.assertRefused("network-curator", f"{self.neko_task()}\nAlso use {odd}.")
+
+    def test_mapping_with_only_stage_gate_refused(self):
+        self.stage_gate_ready()
+        self.assertAllowed("boolean-dynamics-modeler", f"{STAGE_GATE}\nImport and simulate.")
+        self.assertRefused("boolean-dynamics-modeler",
+                           f"{STAGE_GATE}\nSimulate the scenarios listed in {self.mapping_rel}.")
+
+    def test_second_mapping_or_seeds_alongside_data_input_refused(self):
+        self.stage_gate_ready()
+        other, _ = self.complete("other")
+        self.assertRefused("boolean-dynamics-modeler", f"{self.maboss_task()}\nCompare with {other}.")
+        self.assertRefused("boolean-dynamics-modeler", f"{self.maboss_task()}\nSeeds were {self.SEEDS_REL}.")
+        self.assertRefused("network-curator", f"{self.seeds_task()}\nMapping: {self.mapping_rel}.")
+
+    def test_data_input_artifact_mentioned_again_allowed(self):
+        self.stage_gate_ready()
+        self.assertAllowed("boolean-dynamics-modeler",
+                           f"{self.maboss_task()}\nThe mapping (`{self.mapping_rel}`) is fixed.")
+        self.assertAllowed("network-curator", f"{self.seeds_task()}\nSeeds file: \"{self.SEEDS_REL}\".")
+        self.assertAllowed("network-curator",
+                           f"{self.seeds_task()}\nSeeds file: {self.SEEDS_REL.replace('/', chr(92))}.")
+
+    def test_other_orchestrator_files_allowed(self):
+        base = self.root / "runs" / "orchestrator" / "luad"
+        files = {"runs.json": '{"runs": []}', "summary.md": "# Summary\n", "notes.json": '{"note": "x"}',
+                 "broken.json": '{"seeds": [', "list.json": "[1, 2]", "CHANGES.md": "edits\n"}
+        for name, text in files.items():
+            (base / name).write_text(text, encoding="utf-8")
+        mentions = " ".join(f"runs/orchestrator/luad/{name}," for name in files)
+        mentions += " runs/orchestrator/luad/absent.json runs/orchestrator/luad"
+        self.assertAllowed("network-curator", f"Build from EGFR, KRAS. Context: {mentions}")
+        self.stage_gate_ready()
+        self.assertAllowed("boolean-dynamics-modeler", f"{STAGE_GATE}\nImport and simulate. Context: {mentions}")
+        self.assertAllowed("boolean-dynamics-modeler", f"{self.maboss_task()}\nContext: {mentions}")
+
+    def test_spelling_variants_detected(self):
+        spaced = "runs/orchestrator/kras-seeds/seeds copy.json"
+        shutil.copyfile(self.root / self.SEEDS_REL, self.root / spaced)
+        for variant in (self.SEEDS_REL.replace("/", "\\"), "RUNS/Orchestrator/KRAS-SEEDS/Seeds.JSON",
+                        "runs\\\\orchestrator//kras-seeds/seeds.json", "runs／orchestrator／kras-seeds／seeds.json",
+                        "runs/orches​trator/kras-seeds/seeds.json", f"./{self.SEEDS_REL}",
+                        f"{self.root}/{self.SEEDS_REL}", f"runs/orchestrator/luad/../kras-seeds/seeds.json",
+                        f"<{self.SEEDS_REL}>", f"({self.SEEDS_REL});", f"'{self.SEEDS_REL}'", spaced):
+            self.assertRefused("network-curator", f"Build the network from {variant}")
+
+    def test_gate_message_and_unreadable_files(self):
+        with self.assertRaisesRegex(ValueError, f"{self.SEEDS_REL}.*{MENTION}"):
+            gate.check_data_input(self.root, "network_curator", f"Build from {self.SEEDS_REL}")
+        # An unexpected failure while inspecting a mentioned file fails closed through the hook.
+        with mock.patch.object(gate, "_model_input_kind", side_effect=RuntimeError("boom")):
+            with self.assertRaises(RuntimeError):
+                gate.check_data_input(self.root, "network_curator", f"Build from {self.SEEDS_REL}")
+        deep = self.root / "runs" / "orchestrator" / "luad" / "deep.json"
+        deep.write_text("[" * 100000, encoding="utf-8")
+        result = self.hook("network-curator", "Build from runs/orchestrator/luad/deep.json")
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn("blocked", result.stderr)
 
 
 if __name__ == "__main__":

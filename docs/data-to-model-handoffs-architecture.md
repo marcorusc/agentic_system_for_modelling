@@ -96,7 +96,8 @@ The step-by-step procedure is in [data workflow](data-workflow.md). In outline:
 - **`mapping.py check`** fails on: a hash mismatch, a node missing from the BNET, a
   proposal not approved or not in the session index, a row neither mapped nor listed in
   `unmapped` with a real reason, unsupported methods or invalid options, and undeclared
-  readouts. It exits non-zero and lists every problem.
+  readouts. With `--stage-gate` it also reports a stale network and readout nodes outside the
+  `STAGE_GATE` `outputs`. It exits non-zero and lists every problem.
 - **Sources:** `{id, path, sha256}` (regular file under `inputs/`, no symlinks); a ref is
   `{source, locator}` (free text without `|` or control or line-break characters); every
   declared source is cited.
@@ -112,7 +113,11 @@ The step-by-step procedure is in [data workflow](data-workflow.md). In outline:
   `data_mapping` `stage_approval` for that mapping and hash. Its `session_id` is the NeKo
   session and must equal the `STAGE_GATE` upstream. With a standalone network
   (`inputs.network.standalone_decision_id`, a `.bnet`, record stage `boolean-dynamics`) the
-  `STAGE_GATE` uses `standalone_decision_id` and the approval's `session_id` is that id.
+  `STAGE_GATE` uses `standalone_decision_id` and the approval's `session_id` is that id. On
+  both routes every mapping readout node must be among the `STAGE_GATE` `outputs`.
+- **Seeds and mapping files** are named only on the `DATA_INPUT` line: the hook resolves every
+  `runs/orchestrator/...` path in the brief and refuses a file whose content is a seeds or
+  mapping file (whatever its name) unless it is the `DATA_INPUT` artifact.
 - **`scenario_contrast`:** drop is P(control) minus P(perturbed). It passes when
   test drop minus reference drop is strictly greater than the margin. The statistic is
   `final` or `tail_mean`; `combine` is `all` or `any`. There is no implicit tolerance.
@@ -128,7 +133,8 @@ The step-by-step procedure is in [data workflow](data-workflow.md). In outline:
 - **Dispatch hook:** denies on any exception, any extra `DATA_INPUT` mention, a data
   path or session id without `DATA_INPUT`, a data session outside the one named, a
   proposal that is unapproved or of the wrong kind or layer, a hash mismatch, a mapping
-  that fails `check`, and a mapping whose network differs from `STAGE_GATE`.
+  that fails `check`, a mapping whose network differs from `STAGE_GATE` or whose readout nodes
+  are not all `STAGE_GATE` outputs, and a seeds or mapping file mentioned outside `DATA_INPUT`.
 - **Approvals bind content:** the `data` approval binds the handoff hash; the
   `data_mapping` approval binds the mapping hash and the id set.
 - **Instructions:** specialists read data only from the named artifacts and never alter
@@ -162,7 +168,8 @@ The step-by-step procedure is in [data workflow](data-workflow.md). In outline:
 - **Same-context, different-drug contrasts** are not supported by `scenario_contrast`
   mappings.
 - **A re-export** of the NeKo BNET invalidates the mapping, which must be redrafted.
-- **Mapping readout nodes** must be among the MaBoSS outputs approved for the run.
+- **Path mentions** are recognised only as `runs/orchestrator/...` paths; a seeds or mapping file
+  pointed at by a bare directory or another spelling is not detected.
 
 ## 8. Roadmap
 

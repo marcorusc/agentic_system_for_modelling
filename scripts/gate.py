@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import posixpath
 import re
 from pathlib import Path
 import sys
@@ -410,6 +412,25 @@ def check_mapping_network(root, network, first_line):
     return key, anchor
 
 
+def check_mapping_outputs(data, first_line):
+    """Every readout node of the mapping (so every node a criterion reads) must be a STAGE_GATE output.
+
+    The STAGE_GATE `outputs` are the output nodes the researcher approved for this MaBoSS
+    stage (NeKo upstream or standalone); a data mapping cannot add to them.
+    """
+    from scripts.data import mapping
+    if not first_line.startswith("STAGE_GATE "):
+        raise ValueError("a MaBoSS DATA_INPUT needs a line-1 STAGE_GATE naming its approved outputs")
+    outputs = _strict_object(first_line[len("STAGE_GATE "):], "STAGE_GATE").get("outputs")
+    if not isinstance(outputs, list) or any(not isinstance(x, str) for x in outputs):
+        raise ValueError("STAGE_GATE outputs must be a list of node names")
+    missing = [node for node in mapping.readout_nodes(data) if node not in outputs]
+    if missing:
+        raise ValueError(f"mapping readout node(s) {', '.join(missing)} are not among the STAGE_GATE outputs "
+                         f"({', '.join(outputs)}) approved for this MaBoSS stage; a mapping may read only approved "
+                         "output nodes: change its readouts and re-approve it, or have those outputs approved")
+
+
 def _check_neko_seeds_input(root, value):
     """The seeds form: an approved runs/orchestrator/<p>/seeds.json built from researcher sources."""
     rel, digest, approval_id = value["seeds"], value["sha256"], value["approval"]
@@ -456,6 +477,7 @@ def _check_maboss_data_input(root, value, first_line):
     # The mapping's network must be the BNET the STAGE_GATE approved: the NeKo handoff's, or the
     # standalone approval's artifact.
     check_mapping_network(root, data["inputs"]["network"], first_line)
+    check_mapping_outputs(data, first_line)
     if record.get("session_id") != anchor:
         raise ValueError(f"mapping approval {approval_id} has session_id {record.get('session_id')!r}; a data_mapping "
                          f"approval's session_id is the mapping's network anchor (the NeKo session, or the "
@@ -468,6 +490,100 @@ def _check_maboss_data_input(root, value, first_line):
     sessions = {item["session"] for item in data["inputs"]["data"]}
     anchor_key = "neko_session" if key == "upstream_session_id" else "standalone_decision_id"
     return {"mapping": rel, "sha256": digest, "approval_id": approval_id, anchor_key: anchor}, sessions
+
+
+# Seeds and mapping files reach NeKo and MaBoSS only as the DATA_INPUT artifact. Every
+# runs/orchestrator path the brief mentions (any separator or case, after the detection
+# normalisation) is resolved in the repository; a regular file whose content is a seeds or
+# mapping file, whatever its name, must be exactly the artifact the DATA_INPUT line names.
+ORCHESTRATOR_START = re.compile(r"runs[\\/]+orchestrator(?=[\\/])", re.I)
+PATH_TOKEN = re.compile(r"[^\s`'\"<>|*?]+")
+JSON_END = re.compile(r"\.json", re.I)
+LINE_BREAK = re.compile(r"[\n\r\x0b\x0c\x1c-\x1e\x85\u2028\u2029]")
+TRAILING = ".,;:!?)]}>'\"`"
+MENTION_RULE = "seeds and mapping files may be named only on the DATA_INPUT line; see CLAUDE.md"
+
+
+def _orchestrator_mentions(text):
+    """Candidate paths starting at each `runs/orchestrator/`: the unbroken token (trailing
+    punctuation stripped) and, to allow spaces in names, every prefix of the line ending in .json."""
+    found = set()
+    for start in ORCHESTRATOR_START.finditer(text):
+        at = start.start()
+        found.add(PATH_TOKEN.match(text, at).group().rstrip(TRAILING))
+        brk = LINE_BREAK.search(text, at)
+        line = text[at:brk.start() if brk else len(text)]
+        found.update(line[:end.end()] for end in JSON_END.finditer(line))
+    return found
+
+
+def _mentioned_files(root, mention):
+    """Regular files inside the repository that a mentioned path names; a component that does not
+    exist as spelled matches its case-insensitive spellings."""
+    rel = posixpath.normpath(mention.replace("\\", "/"))
+    if rel == ".." or rel.startswith("../") or rel.startswith("/"):
+        return []
+    current = [root]
+    for part in rel.split("/"):
+        following = []
+        for directory in current:
+            if os.path.lexists(directory / part):
+                following.append(directory / part)
+                continue
+            try:
+                with os.scandir(directory) as entries:
+                    following += [directory / e.name for e in entries if e.name.casefold() == part.casefold()]
+            except OSError:  # not a directory, or unreadable: names nothing readable
+                continue
+        current = following[:16]
+    files = []
+    for path in current:
+        try:
+            resolved = path.resolve()
+            resolved.relative_to(root)
+        except (OSError, ValueError):
+            continue
+        if resolved.is_file():
+            files.append(resolved)
+    return files
+
+
+def _model_input_kind(path):
+    """"seeds" or "mapping" when the file's content has that schema's shape, else None.
+
+    Unreadable or non-JSON files are neither; any other failure propagates (fail closed).
+    """
+    from scripts.data import mapping
+    try:
+        data = json.loads(path.read_bytes())
+    except (OSError, ValueError):  # includes UnicodeDecodeError and JSONDecodeError
+        return None
+    if not isinstance(data, dict):
+        return None
+    if "seeds" in data:
+        return "seeds"
+    if len(set(data) & (set(mapping.KEYS) - {"schema_version"})) >= 2:
+        return "mapping"
+    return None
+
+
+def _check_orchestrator_mentions(root, text, allowed_rel):
+    """Refuse a seeds or mapping file mentioned in the brief unless it is the DATA_INPUT artifact."""
+    root = Path(root).resolve()
+    allowed = None
+    if allowed_rel:
+        info = os.stat(root / allowed_rel)
+        allowed = (info.st_dev, info.st_ino)
+    for mention in sorted(_orchestrator_mentions(text)):
+        for path in _mentioned_files(root, mention):
+            info = path.stat()
+            if (info.st_dev, info.st_ino) == allowed:
+                continue
+            kind = _model_input_kind(path)
+            if kind:
+                where = "is not the artifact of its DATA_INPUT line" if allowed_rel else "has no DATA_INPUT line"
+                raise ValueError(f"brief mentions {kind} file {path.relative_to(root).as_posix()} (as {mention!r}) "
+                                 f"but {where}; {MENTION_RULE}")
 
 
 def check_data_input(root, specialist, task):
@@ -496,6 +612,7 @@ def check_data_input(root, specialist, task):
     if not mentions:
         if DATA_PATH.search(text) or DATA_SESSION_ID.search(text):
             raise ValueError(DATA_REFUSAL)
+        _check_orchestrator_mentions(root, text, None)
         return None
     # Any spelling of DATA_INPUT anywhere must be exactly the one canonical line.
     if mentions != 1 or len(lines) <= expected or not lines[expected].startswith("DATA_INPUT "):
@@ -509,6 +626,7 @@ def check_data_input(root, specialist, task):
     other = sorted(_data_sessions_named(text) - sessions)
     if other:
         raise ValueError(f"brief names data-analyst session(s) {', '.join(other)} outside its DATA_INPUT")
+    _check_orchestrator_mentions(root, text, result.get("seeds") or result.get("mapping"))
     return result
 
 
