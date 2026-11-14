@@ -35,7 +35,7 @@ class DataProductTests(unittest.TestCase):
         self.file.write_bytes(b"a\tb\n1\t2\n")
         self.sha = sha(self.file)
         for pid in ("P1", "P2"):
-            (folder / f"proposals/{pid}_seed_genes.csv").write_text(f"gene\n{pid}\n")
+            (folder / f"proposals/{pid}_seed_genes.csv").write_text(f"hgnc_symbol,tier,evidence\n{pid},core,e\n")
         (folder / "proposals/index.json").write_text(json.dumps([
             {"id": pid, "kind": "seed_genes", "target_layer": "neko", "path": f"proposals/{pid}_seed_genes.csv"}
             for pid in ("P1", "P2")]))

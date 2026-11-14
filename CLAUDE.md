@@ -54,6 +54,31 @@ After researcher approval, record it with `state.py record` (`stage_approval`, s
 `id`); see docs/data-workflow.md. Data briefs list every upstream artifact the analyst
 may read, with its path and sha256.
 
+Approved proposals reach the models only through typed handoffs; never paste data values
+into a brief. NeKo: line 1 of the network-curator brief is
+`DATA_INPUT {"data_session": "...", "proposals": {"P1": "<sha256>"}}` (approved
+`seed_genes`). MaBoSS: draft `runs/orchestrator/<p>/mapping.json` with
+`scripts/data/mapping.py draft`, discuss every row with the researcher, pass
+`mapping.py check`, record a `data_mapping` `stage_approval` (its `outputs` equal the
+mapping's perturbation and criterion ids), then line 2 of the boolean-dynamics-modeler
+brief, after `STAGE_GATE`, is
+`DATA_INPUT {"mapping": "runs/orchestrator/<p>/mapping.json", "sha256": "...", "approval": "<record id>"}`.
+Mention `DATA_INPUT` or a `runs/data-analyst` path nowhere else in these briefs; the
+dispatch hook refuses it (a bare data session id without `DATA_INPUT` too, and any data
+session other than the one `DATA_INPUT` names). Seeds and mapping files may be named only on the
+`DATA_INPUT` line (the hook refuses any other, recognised by content). Registry: a NeKo session built from seeds has `Derived from`
+= the data session (proposal ids and short hashes) or, for `seeds.json`, the `data_seeds` decision id
+(Artifacts cites the path and short hash); a MaBoSS row cites the mapping path and short hash, and
+from a standalone network has `Derived from` = the standalone decision id. Tag mapped states,
+perturbations and readouts `data-derived`.
+Seeds from the researcher's own sources: write `runs/orchestrator/<p>/seeds.json`, check it with
+`scripts/data/seeds.py check`, record a `data_seeds` `stage_approval` (`session_id` = `<p>`, `outputs` =
+the symbols); line 1 is then `DATA_INPUT {"seeds": "...seeds.json", "sha256": "...", "approval": "<record id>"}`.
+Sources may be any format in `inputs/`, cited by path + sha256 + locator; the orchestrator translates
+them (raw omics and microscopy go to data-analyst) and the researcher's approval makes them usable.
+A researcher BNET with a `standalone_approval` can be the mapping network (`--standalone-network`).
+After a re-export, redraft with `mapping.py draft --from` (see docs/data-workflow.md) and re-approve.
+
 The orchestrator must have no modelling MCP tools; stop if any are visible. Run the
 setup isolation guard. Four specialist-inline *-agent transports expose only NeKo to
 network-curator, MaBoSS to boolean-dynamics-modeler, PhysiCell to
@@ -111,8 +136,8 @@ result. Every final rule and every manual edge needs a provenance tag in DECISIO
 - `manual-literature`: explicitly authorized manual edge with its own candidate
   report, supporting PMIDs, sign/direction assessment and approval. Apply it with
   NeKo `edit_interactions` between existing nodes, never by hand-editing SIF.
-- `data-derived`: an approved data-analyst proposal, citing data session ID, proposal id
-  and SHA256; an association, never a mechanism claim.
+- `data-derived`: an approved data-analyst proposal (data session ID, proposal id, SHA256)
+  or a researcher source (path, short SHA256, locator); an association, never a mechanism claim.
 - `fitted-for-dynamics`: chosen against a named validation target; no independent
   literature claim for the fitted Boolean function.
 - `readout`: researcher-named summary node added via MaBoSS `edit_maboss_readouts`

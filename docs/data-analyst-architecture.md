@@ -20,9 +20,12 @@ It is **cross-cutting, not a pipeline stage**: it can be invoked at any point, a
 products feed the specification, topology and dynamics stages.
 
 **Not covered here:**
-- the typed data-to-NeKo/MaBoSS handoffs (sub-project 2, separate design);
+- BioMASS and PhysiCell data inputs;
 - Codex parity;
 - OS-level sandboxing.
+
+Getting approved proposals into NeKo and MaBoSS (sub-project 2) is described in the
+[data-to-model handoffs architecture](data-to-model-handoffs-architecture.md).
 
 ## 2. Key decisions and rationale
 
@@ -109,6 +112,14 @@ runs `recover.py` after each completion notification, before registry or state w
   - the new session is registered as derived from the old one and needs fresh approvals;
   - earlier literature reports are cited, never copied.
 
+## 5a. Data-to-model handoffs
+
+Sub-project 2 is implemented. Approved proposals reach NeKo (`seed_genes`) and MaBoSS
+(`perturbations`, `validation_targets`) through typed `DATA_INPUT` handoffs checked by
+the dispatch hook. See the
+[data-to-model handoffs architecture](data-to-model-handoffs-architecture.md) and the
+[data workflow](data-workflow.md).
+
 ## 6. Guardrails and threat model
 
 - **Data guard:**
@@ -150,8 +161,7 @@ runs `recover.py` after each completion notification, before registry or state w
 
 ## 8. Roadmap
 
-1. **Sub-project 2:** typed data-to-model handoffs for NeKo (seed proposals via
-   `DATA_INPUT`) and MaBoSS (a researcher-approved mapping to model nodes, checked
-   against the exported network; `scenario_contrast` criteria).
+1. **Sub-project 2 (implemented):** typed data-to-model handoffs for NeKo and MaBoSS; see
+   [data-to-model-handoffs-architecture.md](data-to-model-handoffs-architecture.md).
 2. **Later:** BioMASS and PhysiCell data inputs; Codex parity (pending, low priority); a
    possible data MCP server or OS-level sandbox.

@@ -273,9 +273,49 @@ A figure entry (path under `outputs/figures/`, suffix `.png`, `.svg` or `.pdf`) 
 ```
 
 `target_layer` is one of `spec`, `neko`, `maboss`, `biomass`, `physicell`; `kind` is one
-of `seed_genes`, `initial_states`, `mutations`, `validation_targets`, `parameters`,
+of `seed_genes`, `initial_states`, `perturbations`, `validation_targets`, `parameters`,
 `time_course`. Use exactly one value each. Proposal ids are `P1`, `P2`, ... (`^P\d+$`;
 `P2b` is rejected), and each proposal file is named after its id (`P3_<what>.csv`).
+
+### Proposal schemas
+
+`seed_genes`, `perturbations` and `validation_targets` proposals must be CSV/TSV tables.
+`manifest.py verify` requires every column below, non-empty on every row. Extra columns
+(your statistics) are allowed. Column names must be unique, the table needs at least one
+data row, and enum values are exact, lowercase, as listed (no case folding). `mutations` is no longer a kind; use `perturbations`.
+
+`seed_genes` (`target_layer` `neko`):
+
+| Column | Values |
+|---|---|
+| `hgnc_symbol` | one HGNC symbol per row, as in `seeds.json`: matches `[A-Za-z0-9][A-Za-z0-9._@/-]*` after trimming, no `|` or control/line-break character, unique ignoring case |
+| `tier` | `core` or `data` |
+| `evidence` | why the gene is proposed |
+
+`perturbations` (`target_layer` `maboss`):
+
+| Column | Values |
+|---|---|
+| `scenario_id` | unique id |
+| `context` | cell line or condition |
+| `entity` | gene or compound name |
+| `entity_type` | `gene` or `compound` |
+| `targets` | HGNC symbols, `;`-separated |
+| `effect` | `inhibit`, `activate`, `loss` or `gain` |
+| `evidence` | source or statistic |
+
+`validation_targets` (`target_layer` `maboss`):
+
+| Column | Values |
+|---|---|
+| `target_id` | unique id |
+| `statement` | the expected result in words |
+| `test_context`, `reference_context` | the two contexts compared |
+| `perturbation` | a `scenario_id` or an entity |
+| `phenotype` | `proliferation`, `survival`, `migration`, `viability` or `other` |
+| `expected` | `greater_drop`, `smaller_drop`, `decrease`, `increase` or `no_change` |
+| `evidence_strength` | `strong`, `moderate`, `weak` or `exploratory` |
+| `evidence` | source or statistic |
 
 Report headings (final message, saved by the recorder as `report.md`). Write the headings
 exactly `## Figures` and `## Abbreviations` (a leading section number such as `## 5. Figures`

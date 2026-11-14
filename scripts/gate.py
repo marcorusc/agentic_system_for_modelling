@@ -4,13 +4,18 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import posixpath
 import re
 from pathlib import Path
 import sys
+import unicodedata
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts.state import ROOT, REGISTRY, checked_artifact, identifier, records, table, validate_record
 from scripts.curation_contract import check_binding, check_parent_scope, check_readout_isolation
+from scripts.data import approvals
+from scripts.data.manifest import KIND_SCHEMAS
 
 UPSTREAM = {"boolean-dynamics": ("network-curator", "topology"), "multicellular": ("boolean-dynamics-modeler", "boolean-dynamics"), "biomass_ode": ("network-curator", "topology")}
 # Backend 2.5.0: NeKo->MaBoSS 2.1 and NeKo->BioMASS 2.0 carry curation_file;
@@ -246,6 +251,450 @@ def check_task(root, specialist, task):
     if set(value) != {"upstream_session_id", "outputs"}:
         raise ValueError("STAGE_GATE requires upstream_session_id and outputs")
     return check(root, stage, value["upstream_session_id"], value["outputs"])
+
+
+# Detection runs on a normalised copy of the prompt (see _detection_text); any spelling
+# of DATA_INPUT, data-analyst path or data session ID counts.
+DATA_PATH = re.compile(r"runs[\\/]+data-analyst", re.I)
+DATA_SESSION_PATH = re.compile(r"runs[\\/]+data-analyst[\\/]+([A-Za-z0-9][A-Za-z0-9._-]*)", re.I)
+DATA_SESSION_ID = re.compile(r"data-\d{8}T\d{6}Z-[0-9a-f]{8}", re.I)
+DATA_INPUT_MENTION = re.compile(r"DATA[_-]?INPUT", re.I)
+DATA_REFUSAL = "brief references data-analyst artifacts without a DATA_INPUT line; see CLAUDE.md"
+# Specialist -> (0-based line index of its DATA_INPUT line, human label).
+DATA_INPUT_LINE = {"network_curator": (0, "network-curator DATA_INPUT must be line 1 of the prompt"),
+                   "boolean_dynamics_modeler": (1, "boolean-dynamics-modeler DATA_INPUT must be line 2, after STAGE_GATE")}
+SHA256 = re.compile(r"[0-9a-f]{64}")
+
+
+def _strict_object(text, label):
+    def unique(pairs):
+        keys = [k for k, _ in pairs]
+        if len(keys) != len(set(keys)):
+            raise ValueError(f"{label} has duplicate keys")
+        return dict(pairs)
+    try:
+        value = json.loads(text, object_pairs_hook=unique)
+    except RecursionError:
+        raise ValueError(f"{label} JSON is nested too deeply") from None
+    if not isinstance(value, dict):
+        raise ValueError(f"{label} must be a JSON object")
+    return value
+
+
+def _detection_text(task):
+    """The prompt NFKC-normalised and without format characters (BOM, zero-width), for detection only."""
+    return "".join(ch for ch in unicodedata.normalize("NFKC", task) if unicodedata.category(ch) != "Cf")
+
+
+def _data_sessions_named(text):
+    """Data-analyst sessions named by `runs/data-analyst/<session>` paths or by data session IDs."""
+    return ({m.rstrip(".") for m in DATA_SESSION_PATH.findall(text)} | set(DATA_SESSION_ID.findall(text)))
+
+
+def _data_approvals(root, session):
+    """Every `stage_approval` (stage data) of this data session, in DECISIONS.md order.
+
+    Approvals are cumulative: a proposal is approved when any valid record that
+    binds the current handoff.json lists it in `outputs`. There is no revocation
+    record; a proposal is withdrawn by re-running the analysis in a new session.
+    """
+    recs = records((root / "DECISIONS.md").read_text(encoding="utf-8"))
+    found = [r for r in recs if r.get("kind") == "stage_approval"
+             and r.get("stage") == "data" and r.get("session_id") == session]
+    if not found:
+        raise ValueError(f"no researcher stage_approval of stage data names data session {session}")
+    return found
+
+
+def _approval_for(root, session, proposal_id):
+    """The first valid data approval of the session that lists the proposal, else the refusal."""
+    failures = []
+    for candidate in _data_approvals(root, session):
+        try:
+            record = approvals.require_data_approval(root, candidate["id"], session)
+            validate_record(root, record)
+            approvals.require_proposal_in_outputs(record, proposal_id)
+        except ValueError as exc:
+            failures.append(str(exc))
+            continue
+        return record
+    raise ValueError(f"proposal {proposal_id} is not in the approved outputs of any valid data approval of "
+                     f"session {session} for its current handoff: " + "; ".join(failures))
+
+
+NEKO_PROPOSALS_FORM = {"data_session", "proposals"}
+NEKO_SEEDS_FORM = {"seeds", "sha256", "approval"}
+
+
+def _check_neko_data_input(root, value):
+    if set(value) == NEKO_SEEDS_FORM:
+        return _check_neko_seeds_input(root, value)
+    if set(value) != NEKO_PROPOSALS_FORM:
+        raise ValueError("network-curator DATA_INPUT requires exactly data_session and proposals, "
+                         "or exactly seeds, sha256 and approval")
+    session = identifier(value["data_session"])
+    proposals = value["proposals"]
+    if not isinstance(proposals, dict) or not proposals:
+        raise ValueError("DATA_INPUT proposals must be a nonempty object of proposal id -> sha256")
+    _data_approvals(root, session)  # an unknown session is refused before any proposal is looked at
+    resolved, used = {}, []
+    for proposal_id, digest in proposals.items():
+        if not isinstance(digest, str) or not SHA256.fullmatch(digest):
+            raise ValueError(f"DATA_INPUT proposal {proposal_id} needs a lowercase hex sha256")
+        record = _approval_for(root, session, proposal_id)
+        used.append(record["id"])
+        entry = approvals.require_proposal_approved(root, record, session, proposal_id)
+        if entry.get("kind") != "seed_genes":
+            raise ValueError(f"proposal {proposal_id} has kind {entry.get('kind')!r}; network-curator "
+                             "DATA_INPUT takes only seed_genes")
+        layer = KIND_SCHEMAS["seed_genes"]["layer"]
+        if entry.get("target_layer") != layer:
+            raise ValueError(f"proposal {proposal_id} must target {layer}, not {entry.get('target_layer')!r}")
+        if entry["sha256"] != digest:
+            raise ValueError(f"proposal {proposal_id} sha256 {digest[:12]} differs from the approved file "
+                             f"{entry['path']} ({entry['sha256'][:12]})")
+        resolved[proposal_id] = {"path": entry["path"], "sha256": entry["sha256"]}
+    from scripts.data import mapping
+    mapping.validate_data_handoff(root, session)
+    return {"data_session": session, "approval_id": used[0], "approval_ids": list(dict.fromkeys(used)),
+            "proposals": resolved}, {session}
+
+
+# STAGE_GATE key -> the inputs.network key naming the same anchor, and how messages call it.
+NETWORK_ANCHORS = {"upstream_session_id": ("neko_session", "NeKo session"),
+                   "standalone_decision_id": ("standalone_decision_id", "standalone approval")}
+REDRAFT_HINT = "redraft with mapping.py draft --from"
+
+
+def _gate_anchor(first_line):
+    """(STAGE_GATE key, value) of a MaBoSS brief's line 1: its upstream_session_id or standalone_decision_id."""
+    gate_value = _strict_object(first_line[len("STAGE_GATE "):], "STAGE_GATE") if first_line.startswith("STAGE_GATE ") else {}
+    for key in NETWORK_ANCHORS:
+        if isinstance(gate_value.get(key), str):
+            return key, gate_value[key]
+    raise ValueError("a MaBoSS DATA_INPUT needs a line-1 STAGE_GATE naming upstream_session_id or standalone_decision_id")
+
+
+def check_mapping_network(root, network, first_line):
+    """Bind a mapping's inputs.network to the line-1 STAGE_GATE of the MaBoSS brief.
+
+    NeKo upstream: network.neko_session equals upstream_session_id and network.sha256 is the
+    BNET of the NeKo handoff that STAGE_GATE approves. Standalone: network.standalone_decision_id
+    equals the STAGE_GATE's and network.sha256 is that standalone_approval's artifact sha256.
+    check_task re-resolves the STAGE_GATE (not weakened by this). Returns (key, anchor).
+    """
+    key, anchor = _gate_anchor(first_line)
+    if not isinstance(network, dict):
+        raise ValueError("mapping inputs.network is missing")
+    field, label = NETWORK_ANCHORS[key]
+    if field not in network:
+        other = next((k for k, (f, _) in NETWORK_ANCHORS.items() if f in network), None)
+        if other is None:
+            raise ValueError("mapping inputs.network names neither neko_session nor standalone_decision_id")
+        other_field, other_label = NETWORK_ANCHORS[other]
+        raise ValueError(f"mapping network is {other_label} {network[other_field]}, so its STAGE_GATE must name "
+                         f"{other} {network[other_field]}, not {key} {anchor}")
+    if network[field] != anchor:
+        hint = REDRAFT_HINT if key == "upstream_session_id" else \
+            f"check the STAGE_GATE record, or, if the network was re-authorized, {REDRAFT_HINT}"
+        raise ValueError(f"mapping network is {label} {network[field]}, but STAGE_GATE names {anchor}; {hint}")
+    gate_result = check_task(root, "boolean_dynamics_modeler", first_line)
+    if key == "upstream_session_id":
+        manifest = json.loads(checked_artifact(root, gate_result["artifact"]).read_text())
+        approved = (manifest.get("bnet_file") or {}).get("sha256")
+        what = "the BNET of the approved NeKo handoff"
+    else:
+        approved = gate_result["artifact"]["sha256"]
+        what = f"the BNET of standalone approval {anchor}"
+    if network.get("sha256") != approved:
+        raise ValueError(f"mapping network {network.get('bnet')} (sha256 {str(network.get('sha256'))[:12]}) is not "
+                         f"{what} (sha256 {str(approved)[:12]}); {REDRAFT_HINT}")
+    return key, anchor
+
+
+def check_mapping_outputs(data, first_line):
+    """Every readout node of the mapping (so every node a criterion reads) must be a STAGE_GATE output.
+
+    The STAGE_GATE `outputs` are the output nodes the researcher approved for this MaBoSS
+    stage (NeKo upstream or standalone); a data mapping cannot add to them.
+    """
+    from scripts.data import mapping
+    if not first_line.startswith("STAGE_GATE "):
+        raise ValueError("a MaBoSS DATA_INPUT needs a line-1 STAGE_GATE naming its approved outputs")
+    outputs = _strict_object(first_line[len("STAGE_GATE "):], "STAGE_GATE").get("outputs")
+    if not isinstance(outputs, list) or any(not isinstance(x, str) for x in outputs):
+        raise ValueError("STAGE_GATE outputs must be a list of node names")
+    missing = [node for node in mapping.readout_nodes(data) if node not in outputs]
+    if missing:
+        raise ValueError(f"mapping readout node(s) {', '.join(missing)} are not among the STAGE_GATE outputs "
+                         f"({', '.join(outputs)}) approved for this MaBoSS stage; a mapping may read only approved "
+                         "output nodes: change its readouts and re-approve it, or have those outputs approved")
+
+
+def _check_neko_seeds_input(root, value):
+    """The seeds form: an approved runs/orchestrator/<p>/seeds.json built from researcher sources."""
+    rel, digest, approval_id = value["seeds"], value["sha256"], value["approval"]
+    if not all(isinstance(v, str) and v for v in (rel, digest, approval_id)):
+        raise ValueError("DATA_INPUT seeds, sha256 and approval must be nonempty strings")
+    if not SHA256.fullmatch(digest):
+        raise ValueError("DATA_INPUT seeds needs a lowercase hex sha256")
+    from scripts.data import seeds
+    purpose = seeds.purpose(rel)
+    record = approvals.require_seeds_approval(root, approval_id, rel, digest)
+    validate_record(root, record)
+    if record.get("session_id") != purpose:
+        raise ValueError(f"seeds approval {approval_id} has session_id {record.get('session_id')!r}; a data_seeds "
+                         f"approval's session_id is the purpose directory {purpose}")
+    # Check exactly the approved bytes: one read gives both the parsed file and its hash.
+    data, actual, errors = seeds.load_and_check(root, rel)
+    if actual != digest:
+        raise ValueError(f"{rel} changed since approval {approval_id} (sha256 mismatch)")
+    if errors:
+        raise ValueError(f"seeds check failed for {rel}: " + "; ".join(errors))
+    symbols = seeds.symbols(data)
+    if set(record["outputs"]) != set(symbols) or len(record["outputs"]) != len(symbols):
+        raise ValueError(f"seeds approval {approval_id} outputs {sorted(record['outputs'])} must equal the "
+                         f"seed symbols {sorted(symbols)}")
+    return {"seeds": rel, "sha256": digest, "approval_id": approval_id, "symbols": symbols}, set()
+
+
+def _check_maboss_data_input(root, value, first_line):
+    if set(value) != {"mapping", "sha256", "approval"}:
+        raise ValueError("boolean-dynamics-modeler DATA_INPUT requires exactly mapping, sha256 and approval")
+    rel, digest, approval_id = value["mapping"], value["sha256"], value["approval"]
+    if not all(isinstance(v, str) and v for v in (rel, digest, approval_id)):
+        raise ValueError("DATA_INPUT mapping, sha256 and approval must be nonempty strings")
+    key, anchor = _gate_anchor(first_line)
+    record = approvals.require_mapping_approval(root, approval_id, rel, digest)
+    validate_record(root, record)
+    from scripts.data import mapping
+    # Check exactly the approved bytes: one read gives both the parsed mapping and its hash.
+    data, actual, errors = mapping.load_and_check(root, rel)
+    if actual != digest:
+        raise ValueError(f"{rel} changed since approval {approval_id} (sha256 mismatch)")
+    if errors:
+        raise ValueError(f"mapping check failed for {rel}: " + "; ".join(errors))
+    # The mapping's network must be the BNET the STAGE_GATE approved: the NeKo handoff's, or the
+    # standalone approval's artifact.
+    check_mapping_network(root, data["inputs"]["network"], first_line)
+    check_mapping_outputs(data, first_line)
+    if record.get("session_id") != anchor:
+        raise ValueError(f"mapping approval {approval_id} has session_id {record.get('session_id')!r}; a data_mapping "
+                         f"approval's session_id is the mapping's network anchor (the NeKo session, or the "
+                         f"standalone_decision_id), which STAGE_GATE names as {anchor}")
+    ids = ({item.get("id") for item in data["perturbations"]}
+           | {item.get("criterion_id") for item in data["criteria"]})
+    if set(record["outputs"]) != ids:
+        raise ValueError(f"mapping approval {approval_id} outputs {sorted(record['outputs'])} must equal the "
+                         f"mapping's perturbation and criterion ids {sorted(ids, key=str)}")
+    sessions = {item["session"] for item in data["inputs"]["data"]}
+    anchor_key = "neko_session" if key == "upstream_session_id" else "standalone_decision_id"
+    return {"mapping": rel, "sha256": digest, "approval_id": approval_id, anchor_key: anchor}, sessions
+
+
+# Seeds and mapping files reach NeKo and MaBoSS only as the DATA_INPUT artifact. Every
+# runs/orchestrator path the brief mentions (any separator or case, after the detection
+# normalisation) is resolved in the repository: a regular file, or each regular file directly
+# inside a mentioned directory under runs/orchestrator (a glob names its directory; never
+# recursive), whose content is a seeds or mapping file, whatever its name, must be exactly
+# the artifact the DATA_INPUT line names.
+ORCHESTRATOR_START = re.compile(r"runs[\\/]+orchestrator(?![\w-])", re.I)
+PATH_TOKEN = re.compile(r"[^\s`'\"<>|]+")
+GLOB = re.compile(r"[*?\[]")
+JSON_END = re.compile(r"\.json", re.I)
+LINE_BREAK = re.compile(r"[\n\r\x0b\x0c\x1c-\x1e\x85  ]")
+TRAILING = ".,;:!?)]}>'\"`"
+SPACED_CANDIDATES = 5  # line prefixes ending in .json tried per mention (names with spaces)
+MENTION_RULE = "seeds and mapping files may be named only on the DATA_INPUT line; see CLAUDE.md"
+
+
+def _resolve_mention(root, mention):
+    """Existing paths inside the repository that a mentioned path names; a component that does not
+    exist as spelled matches its case-insensitive spellings."""
+    rel = posixpath.normpath(mention.replace("\\", "/"))
+    if rel == ".." or rel.startswith("../") or rel.startswith("/"):
+        return []
+    current = [root]
+    for part in rel.split("/"):
+        following = []
+        for directory in current:
+            if os.path.lexists(directory / part):
+                following.append(directory / part)
+                continue
+            try:
+                with os.scandir(directory) as entries:
+                    following += [directory / e.name for e in entries if e.name.casefold() == part.casefold()]
+            except OSError:  # not a directory, or unreadable: names nothing readable
+                continue
+        current = following[:16]
+        if not current:
+            return []
+    found = []
+    for path in current:
+        try:
+            resolved = path.resolve()
+            resolved.relative_to(root)
+        except (OSError, ValueError):
+            continue
+        if resolved.exists():
+            found.append(resolved)
+    return found
+
+
+def _orchestrator_mentions(root, text):
+    """(mention, existing paths) for each `runs/orchestrator` mention in the text.
+
+    The mention is the unbroken token (trailing punctuation stripped; a glob cut back to its
+    directory). Unless the token names a file, at most SPACED_CANDIDATES line prefixes ending
+    in .json are tried too, stopping at the first that names something (names with spaces).
+    """
+    cache = {}
+
+    def resolve(mention):
+        if mention not in cache:
+            cache[mention] = _resolve_mention(root, mention)
+        return cache[mention]
+
+    for start in ORCHESTRATOR_START.finditer(text):
+        at = start.start()
+        token = PATH_TOKEN.match(text, at).group()
+        glob = GLOB.search(token)
+        if glob:
+            token = token[:glob.start()]
+            token = token[:max(token.rfind("/"), token.rfind("\\")) + 1]
+        token = token.rstrip(TRAILING)
+        paths = resolve(token)
+        yield token, paths
+        if any(path.is_file() for path in paths):
+            continue
+        brk = LINE_BREAK.search(text, at)
+        for n, end in enumerate(JSON_END.finditer(text, at, brk.start() if brk else len(text))):
+            if n == SPACED_CANDIDATES:
+                break
+            candidate = text[at:end.end()]
+            if candidate != token and resolve(candidate):
+                yield candidate, resolve(candidate)
+                break
+
+
+def _candidate_files(root, path):
+    """The file itself, or the regular files directly inside a directory under runs/orchestrator."""
+    if path.is_file():
+        return [path]
+    if not path.is_dir() or [p.casefold() for p in path.relative_to(root).parts[:2]] != ["runs", "orchestrator"]:
+        return []
+    files = []
+    try:
+        with os.scandir(path) as entries:
+            children = [Path(e.path) for e in entries]
+    except OSError:  # unreadable directory: names nothing readable
+        return []
+    for child in sorted(children):
+        try:
+            resolved = child.resolve()
+            resolved.relative_to(root)
+        except (OSError, ValueError):
+            continue
+        if resolved.is_file():
+            files.append(resolved)
+    return files
+
+
+def _is_seeds(data):
+    """A seeds.json shape: schema_version with seeds, or seeds that are gene names (strings or
+    objects with hgnc_symbol). A list of numbers (e.g. RNG seeds) is not."""
+    if "seeds" not in data:
+        return False
+    seeds = data["seeds"]
+    if "schema_version" in data or isinstance(seeds, str):
+        return True
+    return isinstance(seeds, list) and any(
+        isinstance(x, str) or (isinstance(x, dict) and "hgnc_symbol" in x) for x in seeds)
+
+
+def _model_input_kind(path):
+    """"seeds" or "mapping" when the file's content has that schema's shape, else None.
+
+    Unreadable or non-JSON files are neither; any other failure propagates (fail closed).
+    """
+    from scripts.data import mapping
+    try:
+        data = json.loads(path.read_bytes())
+    except (OSError, ValueError):  # includes UnicodeDecodeError and JSONDecodeError
+        return None
+    if not isinstance(data, dict):
+        return None
+    if _is_seeds(data):
+        return "seeds"
+    if len(set(data) & (set(mapping.KEYS) - {"schema_version"})) >= 2:
+        return "mapping"
+    return None
+
+
+def _check_orchestrator_mentions(root, text, allowed_rel):
+    """Refuse a seeds or mapping file mentioned in the brief unless it is the DATA_INPUT artifact."""
+    root = Path(root).resolve()
+    allowed = None
+    if allowed_rel:
+        info = os.stat(root / allowed_rel)
+        allowed = (info.st_dev, info.st_ino)
+    checked = set()
+    for mention, paths in _orchestrator_mentions(root, text):
+        for path in (f for p in paths for f in _candidate_files(root, p)):
+            info = path.stat()
+            key = (info.st_dev, info.st_ino)
+            if key == allowed or key in checked:
+                continue
+            checked.add(key)
+            kind = _model_input_kind(path)
+            if kind:
+                where = "is not the artifact of its DATA_INPUT line" if allowed_rel else "has no DATA_INPUT line"
+                raise ValueError(f"brief mentions {kind} file {path.relative_to(root).as_posix()} (as {mention!r}) "
+                                 f"but {where}; {MENTION_RULE}")
+
+
+def check_data_input(root, specialist, task):
+    """Check the DATA_INPUT line by which network-curator and boolean-dynamics-modeler take data.
+
+    Data reach these specialists only as approved, hash-checked artifacts named on a
+    literal DATA_INPUT line (line 1 for network-curator, line 2 after STAGE_GATE for
+    boolean-dynamics-modeler); data are never pasted or pointed at in prose. Returns
+    None when the prompt has neither a DATA_INPUT line nor a data-analyst path.
+
+    network-curator: {"data_session", "proposals"} (approved seed_genes proposals) or
+    {"seeds", "sha256", "approval"} (an approved data_seeds seeds.json from user sources).
+    boolean-dynamics-modeler: {"mapping", "sha256", "approval"}, bound to the STAGE_GATE
+    upstream_session_id (NeKo export) or standalone_decision_id (researcher BNET).
+    """
+    if specialist not in DATA_INPUT_LINE:
+        return None
+    if task is None:
+        task = ""
+    if not isinstance(task, str):
+        raise ValueError("dispatch prompt must be a string")
+    lines = task.splitlines()  # the same line split as check_task
+    expected, placement = DATA_INPUT_LINE[specialist]
+    text = _detection_text(task)
+    mentions = len(DATA_INPUT_MENTION.findall(text))
+    if not mentions:
+        if DATA_PATH.search(text) or DATA_SESSION_ID.search(text):
+            raise ValueError(DATA_REFUSAL)
+        _check_orchestrator_mentions(root, text, None)
+        return None
+    # Any spelling of DATA_INPUT anywhere must be exactly the one canonical line.
+    if mentions != 1 or len(lines) <= expected or not lines[expected].startswith("DATA_INPUT "):
+        raise ValueError(f"{placement}: exactly one line starting 'DATA_INPUT ' and no other "
+                         "mention of DATA_INPUT in any spelling")
+    value = _strict_object(lines[expected][len("DATA_INPUT "):], "DATA_INPUT")
+    if specialist == "network_curator":
+        result, sessions = _check_neko_data_input(root, value)
+    else:
+        result, sessions = _check_maboss_data_input(root, value, lines[0])
+    other = sorted(_data_sessions_named(text) - sessions)
+    if other:
+        raise ValueError(f"brief names data-analyst session(s) {', '.join(other)} outside its DATA_INPUT")
+    _check_orchestrator_mentions(root, text, result.get("seeds") or result.get("mapping"))
+    return result
 
 
 def resolve_condition(root, decision_id):

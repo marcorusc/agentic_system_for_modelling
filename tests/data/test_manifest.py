@@ -51,7 +51,8 @@ class ManifestTests(unittest.TestCase):
               "units": {"log2FoldChange": "log2 ratio", "padj": "dimensionless"},
               "identifiers": "HGNC symbol"}],
         )
-        (self.dir / "proposals" / "P1_seed_genes.csv").write_text("gene\nA\n", encoding="utf-8")
+        (self.dir / "proposals" / "P1_seed_genes.csv").write_text(
+            "hgnc_symbol,tier,evidence,padj\nA,core,DE padj 0.01,0.01\n", encoding="utf-8")
         self.write_json(
             "proposals/index.json",
             [{"id": "P1", "target_layer": "neko", "kind": "seed_genes",
@@ -251,6 +252,127 @@ class ManifestTests(unittest.TestCase):
         self.write_json("proposals/index.json", idx)
         self.build()
         self.assertTrue(any("kind" in e for e in self.errors()))
+
+    SEED = "hgnc_symbol,tier,evidence\nA,core,literature\n"
+    PERT = ("scenario_id,context,entity,entity_type,targets,effect,evidence\n"
+            "S1,ctx,drugX,compound,A;B,inhibit,paper\n")
+    VAL = ("target_id,statement,test_context,reference_context,perturbation,phenotype,expected,"
+           "evidence_strength,evidence\n"
+           "V1,drug lowers growth,ctxA,ctxB,S1,proliferation,greater_drop,strong,paper\n")
+
+    def set_proposal(self, kind, layer, text):
+        (self.dir / "proposals" / "P1_seed_genes.csv").write_text(text, encoding="utf-8")
+        self.write_json("proposals/index.json", [{
+            "id": "P1", "target_layer": layer, "kind": kind,
+            "path": "proposals/P1_seed_genes.csv", "method": "m", "thresholds": {}}])
+        self.build()
+        return self.errors()
+
+    def test_seed_genes_schema_ok(self):
+        self.assertEqual(self.set_proposal("seed_genes", "neko", self.SEED), [])
+
+    def test_validation_targets_schema_ok(self):
+        self.assertEqual(self.set_proposal("validation_targets", "maboss", self.VAL), [])
+        self.assertEqual(self.set_proposal("perturbations", "maboss", self.PERT), [])
+
+    def test_missing_required_column_rejected(self):
+        errs = self.set_proposal("seed_genes", "neko", "hgnc_symbol,tier\nA,core\n")
+        self.assertTrue(any("evidence" in e for e in errs), errs)
+
+    def test_empty_required_value_rejected(self):
+        errs = self.set_proposal("seed_genes", "neko", "hgnc_symbol,tier,evidence\nA,core,\n")
+        self.assertTrue(any("evidence" in e for e in errs), errs)
+        errs = self.set_proposal("perturbations", "maboss", self.PERT.replace("A;B", "A;"))
+        self.assertTrue(any("targets" in e for e in errs), errs)
+
+    def test_bad_enum_rejected(self):
+        errs = self.set_proposal("seed_genes", "neko", self.SEED.replace("core", "other"))
+        self.assertTrue(any("tier" in e for e in errs), errs)
+
+    def test_duplicate_scenario_id_rejected(self):
+        row = self.PERT.split("\n")[1] + "\n"
+        errs = self.set_proposal("perturbations", "maboss", self.PERT + row)
+        self.assertTrue(any("scenario_id" in e for e in errs), errs)
+
+    def test_wrong_layer_rejected(self):
+        errs = self.set_proposal("seed_genes", "maboss", self.SEED)
+        self.assertTrue(any("target_layer" in e for e in errs), errs)
+
+    def test_mutations_kind_rejected(self):
+        errs = self.set_proposal("mutations", "maboss", self.PERT)
+        self.assertTrue(any("kind" in e for e in errs), errs)
+
+    def test_extra_columns_allowed(self):
+        text = "hgnc_symbol,tier,evidence,stat\nA,core,lit,3.2\n"
+        self.assertEqual(self.set_proposal("seed_genes", "neko", text), [])
+
+    def test_seed_symbols_follow_the_seeds_json_rule(self):
+        # Same rule as seeds.json: one symbol per cell, no '|' or control/line-break characters.
+        for bad in ("KRAS EGFR", '"KRAS,EGFR"', "-KRAS", "K|RAS", "\u00c4KT1", '"KRAS\u2028"', "KRAS\x0b"):
+            errs = self.set_proposal("seed_genes", "neko", f"hgnc_symbol,tier,evidence\nEGFR,core,lit\n{bad},core,lit\n")
+            self.assertTrue(any("line 3" in e and "hgnc_symbol" in e for e in errs), (bad, errs))
+        for good in ("HLA-A", "C1orf112", "NKX2.1", "RNU6@", "TRA/TRB", " KRAS "):
+            text = f"hgnc_symbol,tier,evidence\nEGFR,core,lit\n{good},core,lit\n"
+            self.assertEqual(self.set_proposal("seed_genes", "neko", text), [], good)
+
+    def test_seed_symbols_unique_ignoring_case(self):
+        errs = self.set_proposal("seed_genes", "neko", "hgnc_symbol,tier,evidence\nKRAS,core,a\nkras ,data,b\n")
+        self.assertTrue(any("line 3" in e and "duplicate" in e and "kras" in e for e in errs), errs)
+
+    def test_bom_csv_accepted(self):
+        self.assertEqual(self.set_proposal("seed_genes", "neko", "\ufeff" + self.SEED), [])
+
+    def test_duplicate_header_rejected(self):
+        errs = self.set_proposal("seed_genes", "neko",
+                                 "hgnc_symbol,tier,evidence,tier\nA,core,e,data\n")
+        self.assertTrue(any("duplicate" in e and "tier" in e for e in errs), errs)
+
+    def test_unique_compared_after_strip(self):
+        text = self.PERT + self.PERT.split("\n")[1].replace("S1,", "S1 ,", 1) + "\n"
+        errs = self.set_proposal("perturbations", "maboss", text)
+        self.assertTrue(any("duplicate scenario_id" in e for e in errs), errs)
+
+    def test_duplicate_target_id_rejected(self):
+        errs = self.set_proposal("validation_targets", "maboss", self.VAL + self.VAL.split("\n")[1] + "\n")
+        self.assertTrue(any("duplicate target_id" in e for e in errs), errs)
+
+    def test_header_only_rejected(self):
+        errs = self.set_proposal("seed_genes", "neko", "hgnc_symbol,tier,evidence\n")
+        self.assertTrue(any("at least one" in e for e in errs), errs)
+
+    def test_tsv_accepted(self):
+        (self.dir / "proposals" / "P1_seed_genes.csv").unlink()
+        (self.dir / "proposals" / "P1_seed_genes.tsv").write_text(
+            self.SEED.replace(",", "\t"), encoding="utf-8")
+        self.write_json("proposals/index.json", [{
+            "id": "P1", "target_layer": "neko", "kind": "seed_genes",
+            "path": "proposals/P1_seed_genes.tsv", "method": "m", "thresholds": {}}])
+        self.build()
+        self.assertEqual(self.errors(), [])
+
+    def test_non_csv_path_rejected(self):
+        (self.dir / "proposals" / "P1_seed_genes.csv").unlink()
+        (self.dir / "proposals" / "P1_seed_genes.txt").write_text(self.SEED, encoding="utf-8")
+        self.write_json("proposals/index.json", [{
+            "id": "P1", "target_layer": "neko", "kind": "seed_genes",
+            "path": "proposals/P1_seed_genes.txt", "method": "m", "thresholds": {}}])
+        self.build()
+        self.assertTrue(any("csv" in e.lower() for e in self.errors()))
+
+    def test_targets_empty_items_rejected(self):
+        for bad in ("EGFR;;ERBB2", ";EGFR"):
+            errs = self.set_proposal("perturbations", "maboss", self.PERT.replace("A;B", bad))
+            self.assertTrue(any("targets" in e for e in errs), (bad, errs))
+
+    def test_whitespace_only_required_rejected(self):
+        errs = self.set_proposal("seed_genes", "neko", "hgnc_symbol,tier,evidence\nA,core,   \n")
+        self.assertTrue(any("evidence" in e for e in errs), errs)
+
+    def test_enum_rejected_other_kinds(self):
+        errs = self.set_proposal("perturbations", "maboss", self.PERT.replace("inhibit", "Inhibit"))
+        self.assertTrue(any("effect" in e for e in errs), errs)
+        errs = self.set_proposal("validation_targets", "maboss", self.VAL.replace("strong", "huge"))
+        self.assertTrue(any("evidence_strength" in e for e in errs), errs)
 
     def test_bad_and_duplicate_proposal_ids_rejected(self):
         idx = json.loads((self.dir / "proposals/index.json").read_text())

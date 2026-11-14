@@ -169,6 +169,17 @@ only if it fails. Costs assume seed/group sizes of a few dozen genes.
   every referenced file inline). A missing file or manifest is a blocker to
   report, not a reason to switch to a text or bundle route.
 
+## Data seeds
+
+When the invocation starts with a `DATA_INPUT` line, find each proposal file through
+`runs/data-analyst/<data_session>/manifest.json` (the `proposals` entry with that `id`:
+`path` relative to the session directory, and `sha256`, which must equal the line's hash;
+otherwise return `blocked`). Read seeds only from those files (`hgnc_symbol` column, all
+tiers unless restricted). When line 1 is the seeds form (`{"seeds": "runs/orchestrator/<p>/seeds.json", ...}`),
+read the genes from that `seeds.json` (`hgnc_symbol` entries; the researcher approved it as the
+translation of their own sources) and do not open the cited sources. Never edit either. List seeds the database does not contain in the report; do not drop or
+substitute them silently.
+
 ## Troubleshooting
 
 - **Network exploded to hundreds of edges** → check `list_network_history()`

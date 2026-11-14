@@ -21,11 +21,41 @@ if __package__ in (None, ""):
 
 from scripts.data.common import project_root, reject_symlinks, session_dir, sha256_file  # noqa: E402
 from scripts.data.environment import lock_sha256  # noqa: E402
+from scripts.data.seeds import symbol_problem  # noqa: E402
 from scripts.data.ledger import validate_entry  # noqa: E402
 from scripts.data.vendor_lock import VENDORED_SKILLS  # noqa: E402
 
 LAYERS = ("spec", "neko", "maboss", "biomass", "physicell")
-KINDS = ("seed_genes", "initial_states", "mutations", "validation_targets", "parameters", "time_course")
+KINDS = ("seed_genes", "initial_states", "perturbations", "validation_targets", "parameters", "time_course")
+KIND_SCHEMAS = {
+    "seed_genes": {
+        "layer": "neko",
+        "required": ("hgnc_symbol", "tier", "evidence"),
+        "enums": {"tier": ("core", "data")},
+        "unique": None,
+        "list_columns": (),
+        # Same rule as seeds.json (seeds.symbol_problem); unique ignoring case.
+        "symbol": "hgnc_symbol",
+    },
+    "perturbations": {
+        "layer": "maboss",
+        "required": ("scenario_id", "context", "entity", "entity_type", "targets", "effect", "evidence"),
+        "enums": {"entity_type": ("gene", "compound"),
+                  "effect": ("inhibit", "activate", "loss", "gain")},
+        "unique": "scenario_id",
+        "list_columns": ("targets",),
+    },
+    "validation_targets": {
+        "layer": "maboss",
+        "required": ("target_id", "statement", "test_context", "reference_context", "perturbation",
+                     "phenotype", "expected", "evidence_strength", "evidence"),
+        "enums": {"phenotype": ("proliferation", "survival", "migration", "viability", "other"),
+                  "expected": ("greater_drop", "smaller_drop", "decrease", "increase", "no_change"),
+                  "evidence_strength": ("strong", "moderate", "weak", "exploratory")},
+        "unique": "target_id",
+        "list_columns": (),
+    },
+}
 PROPOSAL_ID_RE = re.compile(r"\AP\d+\Z")
 TABULAR = {".csv": ",", ".tsv": "\t"}
 FIGURE_SUFFIXES = (".png", ".svg", ".pdf")
@@ -238,6 +268,79 @@ def _check_figure(session: Path, entry: dict, uris: set[str] | None, errors: lis
         errors.append(f"figure {rel}: script must be the session-relative path of an existing file under scripts/")
 
 
+def read_proposal_table(path: Path) -> tuple[list[str], list[dict]]:
+    """Read a .csv/.tsv proposal table (BOM tolerated): its header and its rows as dicts.
+
+    Raises OSError, UnicodeDecodeError or csv.Error on unreadable tables and
+    ValueError on an unsupported suffix.
+    """
+    delimiter = TABULAR.get(Path(path).suffix.lower())
+    if delimiter is None:
+        raise ValueError(f"proposal table must be .csv or .tsv: {path}")
+    with Path(path).open(newline="", encoding="utf-8-sig") as handle:
+        reader = csv.DictReader(handle, delimiter=delimiter)
+        columns = list(reader.fieldnames or [])
+        rows = list(reader)
+    return columns, rows
+
+
+def _check_proposal_table(session: Path, pid, entry: dict, schema: dict, errors: list[str]) -> None:
+    rel = entry.get("path")
+    delimiter = TABULAR.get(Path(rel).suffix.lower()) if isinstance(rel, str) else None
+    label = f"proposal {pid} ({entry.get('kind')})"
+    if delimiter is None:
+        errors.append(f"{label}: must be a .csv or .tsv table")
+        return
+    path = session / rel
+    if not path.is_file() or path.is_symlink():
+        return  # reported by the listing check
+    try:
+        columns, rows = read_proposal_table(path)
+    except (OSError, UnicodeDecodeError, csv.Error) as exc:
+        errors.append(f"{label}: cannot read table: {exc}")
+        return
+    stripped = [c.strip() for c in columns]
+    dupes = sorted({c for c in stripped if stripped.count(c) > 1})
+    if dupes:
+        errors.append(f"{label}: duplicate column names {dupes}")
+        return
+    missing = [c for c in schema["required"] if c not in columns]
+    if missing:
+        errors.append(f"{label}: missing required columns {missing}")
+        return
+    if not rows:
+        errors.append(f"{label}: table needs at least one data row")
+    seen: set[str] = set()
+    symbols: set[str] = set()
+    for n, row in enumerate(rows, start=2):
+        for col in schema["required"]:
+            if not _nonempty(row.get(col)):
+                errors.append(f"{label} line {n}: required column {col!r} is empty")
+        for col, allowed in schema["enums"].items():
+            value = (row.get(col) or "").strip()
+            if value and value not in allowed:
+                errors.append(f"{label} line {n}: {col} {value!r} must be one of {allowed}")
+        for col in schema["list_columns"]:
+            cell = row.get(col) or ""
+            if cell.strip() and not all(item.strip() for item in cell.split(";")):
+                errors.append(f"{label} line {n}: {col} must be ';'-separated non-empty items")
+        key = schema["unique"]
+        if key and _nonempty(row.get(key)):
+            value = row[key].strip()
+            if value in seen:
+                errors.append(f"{label} line {n}: duplicate {key} {value!r}")
+            seen.add(value)
+        col = schema.get("symbol")
+        if col and _nonempty(row.get(col)):
+            problem = symbol_problem(row[col])
+            if problem:
+                errors.append(f"{label} line {n}: {problem}")
+            elif row[col].strip().casefold() in symbols:
+                errors.append(f"{label} line {n}: duplicate {col} {row[col].strip()!r} (unique ignoring case)")
+            else:
+                symbols.add(row[col].strip().casefold())
+
+
 def verify(root: Path, session_id: str) -> list[str]:
     session = session_dir(root, session_id)
     errors: list[str] = []
@@ -326,6 +429,12 @@ def verify(root: Path, session_id: str) -> list[str]:
                 errors.append(f"proposal {pid}: target_layer must be one of {LAYERS}")
             if entry.get("kind") not in KINDS:
                 errors.append(f"proposal {pid}: kind must be one of {KINDS}")
+            schema = KIND_SCHEMAS.get(entry.get("kind"))
+            if schema is not None:
+                if entry.get("target_layer") != schema["layer"]:
+                    errors.append(f"proposal {pid}: target_layer must be {schema['layer']!r} "
+                                  f"for kind {entry.get('kind')!r}")
+                _check_proposal_table(session, pid, entry, schema, errors)
             if entry.get("status") != "proposed":
                 errors.append(f"proposal {pid}: status must be 'proposed'")
     return errors

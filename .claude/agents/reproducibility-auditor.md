@@ -68,3 +68,21 @@ links and base rates, initial-cell provenance, and exported parameter readback a
 patches. Distinguish unsupported tool features and missing measurements from passes.
 Inspect captured invocation records and validator output; report unverified execution
 explicitly. Configuration validation never proves a PhysiCell simulation ran.
+
+## Data-stage and mapping checklist
+
+When the stage uses data proposals or a `mapping.json`, check that these agree:
+- each cited source file under `inputs/` exists with the sha256 in the mapping or
+  `seeds.json`, and its locator supports the row (label a hash you read as unverified);
+- each `seeds.json` seed traces to a cited source, and the `data_seeds` approval `outputs`
+  equal its symbols;
+- proposal sha256 values in the mapping, the manifest, the approval records and every
+  `DATA_INPUT` line, and the mapping sha256 in its `data_mapping` approval;
+- the approval `outputs` (proposal ids; for the mapping, its perturbation and criterion
+  ids);
+- the `CURRENT_STATE.md` registry lineage (`Derived from` the data session for NeKo,
+  mapping path and short hash in the MaBoSS row) and the `data-derived` tags in
+  `DECISIONS.md`;
+- the criteria inputs against `runs.json` and the saved trajectory artifacts.
+
+Label a hash you read, rather than recomputed, as unverified.

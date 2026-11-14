@@ -43,6 +43,16 @@ Supported methods and required options:
 | `ordered_peaks` | `nodes`: ordered distinct node names; `comparators`: `<` or `<=` for each adjacent pair; `metric`: `first_peak` with explicit positive `drop`, or `fraction_max` with `fraction` in `(0,1]` |
 | `canonical_cycles` | `activation_order`: three distinct nodes; `onset_node`; `reset_node`; `threshold` in `(0,1]`; `sample_count`: 1; `minimum_canonical`: positive integer; `minimum_fraction` in `[0,1]` |
 | `boolean_structure` | `analysis`: `fixed_points`, `reachable_attractors` or `readout_exclusivity`, or `reachable_readout_exclusivity`; explicit `max_states` in `[1,1000000]`; additional options below |
+| `scenario_contrast` | `readouts`: distinct node names; `margin`: explicit number ≥ 0; `combine`: `all` or `any`; `statistic`: `final`, or `tail_mean` with positive integer `tail_points` |
+
+`scenario_contrast` takes exactly four inputs, evaluated jointly in this order:
+test control, test perturbed, reference control, reference perturbed. For each
+readout, drop = statistic(control) − statistic(perturbed), and the readout passes
+when test drop − reference drop is **strictly greater** than `margin`. `combine`
+decides whether all or any readouts must pass. The inputs may come from different
+models (e.g. a LUAD vs BRCA contrast). This applies no statistical test: stochastic
+estimation error is covered only by the researcher-approved margin, and it says
+nothing about which mechanism produces the drop.
 
 `first_peak` is the first local maximum followed by a drop **strictly greater**
 than `drop` before any larger value. A plateau's last point is considered its

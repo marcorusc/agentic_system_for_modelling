@@ -66,7 +66,7 @@ class DataHandoffTests(unittest.TestCase):
             "changed": [] if passed else ["DECISIONS.md"], "identity_intact": True}), encoding="utf-8")
 
     def add_proposal(self):
-        (self.dir / "proposals" / "P1_seed_genes.csv").write_text("gene\nA\n", encoding="utf-8")
+        (self.dir / "proposals" / "P1_seed_genes.csv").write_text("hgnc_symbol,tier,evidence\nA,core,e\n", encoding="utf-8")
         (self.dir / "proposals" / "index.json").write_text(json.dumps([
             {"id": "P1", "target_layer": "neko", "kind": "seed_genes",
              "path": "proposals/P1_seed_genes.csv", "method": "m", "thresholds": {}}]), encoding="utf-8")

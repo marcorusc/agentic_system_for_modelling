@@ -20,6 +20,17 @@ The main orchestrator must:
 Return one status: `approved`, `approved_with_limitations`, `revision_required`, or `blocked`.
 
 
+## Data stages and mappings
+
+For a data stage or a `data_mapping`, add `scripts/data/mapping.py check <mapping>` and
+the manifest verification to the evidence given to both reviewers. Give the reviewers
+the mapping, the proposals it uses and the approval records. The scientific reviewer
+and the reproducibility auditor apply the data checklists in their definitions. A
+mapping approval is a `stage_approval` for stage `data_mapping`. Run `mapping.py check
+<mapping> --stage-gate '<STAGE_GATE JSON>'` before approval, so a stale network fails now. NeKo
+seeds from researcher sources need `seeds.py check <seeds.json>` and a `stage_approval` for
+stage `data_seeds` (`session_id` = the purpose directory name, `outputs` = the seed symbols).
+
 ## ODE state
 
 Apply `docs/ode-contract.md` to `ode_modeler` / `biomass_ode`. Verify source kind,

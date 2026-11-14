@@ -174,6 +174,55 @@ footer fields to string allowlists, for example `{"verdict":["supported"]}`.
 satisfied/unsatisfied plus supporting PMIDs. It never mutates topology, exports a
 handoff, or authorizes an operation outside the recorded scope.
 
+## Data inputs (`DATA_INPUT`)
+
+The dispatch hook accepts data for network-curator and boolean-dynamics-modeler only
+through a `DATA_INPUT` line, checked by `scripts/gate.py check_data_input`:
+- network-curator, line 1: `DATA_INPUT {"data_session": "...", "proposals": {"P1": "<sha256>"}}`
+  (approved `seed_genes` proposals, hashes equal to manifest and file);
+- boolean-dynamics-modeler, line 2 after `STAGE_GATE`:
+  `DATA_INPUT {"mapping": "runs/orchestrator/<p>/mapping.json", "sha256": "...", "approval": "<record id>"}`.
+  The approval is a `stage_approval` for stage `data_mapping` on that mapping and hash,
+  whose `outputs` equal the mapping's perturbation and criterion ids; `mapping.py check`
+  must pass, the mapping's NeKo session must equal the `STAGE_GATE` upstream (the approval's
+  `session_id` is that NeKo session) and its BNET sha256 must equal the approved NeKo
+  handoff's BNET.
+
+- network-curator, line 1, seeds form: `DATA_INPUT {"seeds": "runs/orchestrator/<p>/seeds.json", "sha256": "...", "approval": "<record id>"}`
+  (exactly one of the two forms). The approval is a `stage_approval` for stage `data_seeds` on
+  that file and hash, with `session_id` = `<p>` and `outputs` = the seed symbols;
+  `seeds.py check` must pass. The curator takes genes from `hgnc_symbol`.
+- boolean-dynamics-modeler with a researcher BNET: `STAGE_GATE {"standalone_decision_id": "...", "outputs": [...]}`
+  then the same mapping `DATA_INPUT`; the mapping network must carry that
+  `standalone_decision_id`, and the approval's `session_id` equals it.
+
+NeKo data approvals are cumulative: a proposal is approved if any valid `data` approval of the
+session, binding the current handoff sha256, lists it. There is no revocation record; to
+withdraw a proposal, re-run the data analysis in a new session (new handoff). The
+mapping approval is looked up by its exact `approval` id. Any other occurrence of
+`DATA_INPUT` (any case or separator) in the prompt, a `runs/data-analyst` path or a data
+session id without the line, is refused, and any hook error denies the dispatch. Never
+put data values in a brief. `state.py record` accepts `data_mapping` as a governance
+stage for `stage_approval` and `stage_review`, and `data_seeds` likewise.
+
+Mapping commands (details in docs/data-workflow.md):
+
+```
+python3 scripts/data/mapping.py draft --purpose P --data SESSION:PROPOSAL:APPROVAL ... --network NEKO_SESSION:BNET
+python3 scripts/data/mapping.py draft --purpose P --source ID:inputs/FILE ... --standalone-network DECISION_ID:BNET   # sources only, researcher BNET
+python3 scripts/data/mapping.py draft --from OLD_MAPPING --purpose P2 --network NEKO_SESSION:NEW_BNET                  # redraft after a re-export
+python3 scripts/data/mapping.py check runs/orchestrator/P/mapping.json [--stage-gate '{"upstream_session_id": "...", "outputs": [...]}']
+python3 scripts/data/seeds.py check runs/orchestrator/P/seeds.json
+python3 scripts/data/mapping.py criteria runs/orchestrator/P/mapping.json --runs runs/orchestrator/P/runs.json --approval <data_mapping record id> [--merge-into VALIDATION_CRITERIA.yaml]
+```
+
+Procedure: draft, discuss with the researcher, fill, `check`, researcher approval
+(`data_mapping`), dispatch, then `criteria` from the reported trajectories and
+`scripts/validate/evaluate.py` (`criteria` refuses a mapping without its approval). Where the
+context and perturbation fix the same node, the perturbation overrides the context.
+`scenario_contrast` is documented in
+`scripts/validate/README.md`.
+
 ## Evidence and provenance
 
 Edge reports end in exactly one fenced `yaml` block using JSON syntax. Ordinary

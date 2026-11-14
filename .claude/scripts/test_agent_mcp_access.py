@@ -185,5 +185,24 @@ class DataAnalystAccessTests(unittest.TestCase):
             )
 
 
+class DataHandoffInstructionTests(unittest.TestCase):
+    def test_specialists_and_reviewers_carry_data_handoff_rules(self):
+        expected = {
+            ".claude/agents/network-curator.md": ("DATA_INPUT", "hgnc_symbol", "manifest.json", "absent from the database", "seeds.json"),
+            ".claude/agents/boolean-dynamics-modeler.md": ("DATA_INPUT", "(context, perturbation)", "the context without the", "standalone approval"),
+            ".claude/agents/scientific-reviewer.md": ("Data-stage and mapping checklist", "unmapped", "locator"),
+            ".claude/agents/reproducibility-auditor.md": ("Data-stage and mapping checklist", "data-derived", "locator", "seeds"),
+            ".claude/skills/validate-stage/SKILL.md": ("data_mapping", "mapping.py check", "data_seeds", "--stage-gate"),
+            "CLAUDE.md": ("DATA_INPUT", "data_mapping", "never paste data values", "seeds.json", "sha256 + locator", "--standalone-network", "draft --from"),
+            ".claude/skills/neko-workflow/SKILL.md": ("seeds.json", "hgnc_symbol"),
+            ".claude/skills/maboss-workflow/SKILL.md": ("standalone approval",),
+        }
+        for path, phrases in expected.items():
+            text = (ROOT / path).read_text(encoding="utf-8")
+            for phrase in phrases:
+                with self.subTest(path=path, phrase=phrase):
+                    self.assertIn(phrase, text)
+
+
 if __name__ == "__main__":
     unittest.main()

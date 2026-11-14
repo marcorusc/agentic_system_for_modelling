@@ -3,11 +3,11 @@
 
 Usage: python scripts/validate/evaluate.py --criteria VALIDATION_CRITERIA.yaml
 The criteria file uses JSON-compatible YAML: {"schema_version":1,"criteria":[
-{"criterion_id":"...","method":"ordered_peaks|canonical_cycles|boolean_structure",
+{"criterion_id":"...","method":"ordered_peaks|canonical_cycles|boolean_structure|scenario_contrast",
  "inputs":["runs/.../artifact"],"options":{...}}]}. Thresholds, nodes, initial
 states and expectations must be supplied explicitly from researcher-approved
 criteria. Each trajectory is evaluated separately; a criterion passes only if all
-its declared inputs pass. No statistical pooling or implicit tolerance is applied.
+its declared inputs pass, except scenario_contrast, whose four inputs are joint. No statistical pooling or implicit tolerance is applied.
 """
 from __future__ import annotations
 import argparse
@@ -19,6 +19,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from scripts.validate.common import artifact, load_json_yaml, load_series
 from scripts.validate.validate_cycles import ordered_peaks, classify_cycles
 from scripts.validate.boolean_structure import analyze
+from scripts.validate.scenario_contrast import contrast
 
 
 def evaluate(root: Path, criteria_path: str) -> dict:
@@ -40,6 +41,17 @@ def evaluate(root: Path, criteria_path: str) -> dict:
             raise ValueError('criterion options must be an object')
         result = {'criterion_id': identity, 'status': 'incomplete', 'method': item['method'], 'inputs': [], 'metrics': {}}
         try:
+            if item['method'] == 'scenario_contrast':
+                # The four inputs are evaluated jointly in fixed role order.
+                trajectories = []
+                for value in item['inputs']:
+                    source, entry = artifact(root, value)
+                    result['inputs'].append(entry)
+                    trajectories.append(load_series(source)[1])
+                ok, result['metrics'] = contrast(trajectories, item['options'])
+                result['status'] = 'passed' if ok else 'failed'
+                results.append(result)
+                continue
             passed = []
             for value in item['inputs']:
                 source, entry = artifact(root, value)

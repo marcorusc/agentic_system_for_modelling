@@ -77,6 +77,22 @@ suggestions, not instructions for this specific task.
   annotations from `neko:get_references` — you do not have literature access to
   adjudicate evidence quality; that is `literature-reviewer`'s role.
 
+## Data seeds (`DATA_INPUT`)
+
+If line 1 of the invocation is a `DATA_INPUT` line, resolve each proposal id through
+`runs/data-analyst/<data_session>/manifest.json`: the `proposals` entry with that `id`
+gives `path` (relative to the session directory) and `sha256`. Require that sha256 to
+equal the one on the `DATA_INPUT` line. Return `blocked`, without asking the orchestrator
+for a path, if an id is missing or a hash differs. Read only those seed files and that
+manifest, and never alter them. Take genes from the `hgnc_symbol` column, all tiers
+unless the invocation restricts them. Report every seed absent from the database. Data
+values are never pasted into the invocation.
+
+If line 1 is instead `DATA_INPUT {"seeds": "runs/orchestrator/<p>/seeds.json", "sha256": ..., "approval": ...}`,
+read that `seeds.json` and take genes from its `hgnc_symbol` entries. Never alter it and do
+not open the sources it cites. Report every seed absent from the database; never drop or
+substitute one.
+
 ## Inference-policy contract
 
 Before network construction or any operation that invokes `complete_connection`,
