@@ -86,7 +86,7 @@ The step-by-step procedure is in [data workflow](data-workflow.md). In outline:
 
   | Kind | Layer | Required columns (non-empty) |
   |---|---|---|
-  | `seed_genes` | `neko` | `hgnc_symbol`, `tier` (`core`/`data`), `evidence` |
+  | `seed_genes` | `neko` | `hgnc_symbol` (one symbol, the `seeds.json` rule below), `tier` (`core`/`data`), `evidence` |
   | `perturbations` | `maboss` | `scenario_id` (unique), `context`, `entity`, `entity_type`, `targets`, `effect`, `evidence` |
   | `validation_targets` | `maboss` | `target_id` (unique), `statement`, `test_context`, `reference_context`, `perturbation`, `phenotype`, `expected`, `evidence_strength`, `evidence` |
 

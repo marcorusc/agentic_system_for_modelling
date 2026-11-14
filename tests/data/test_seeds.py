@@ -147,6 +147,22 @@ class SeedsCheckTests(SeedsFixture):
         self.assertEqual(code, 1)
         self.assertGreaterEqual(len(err.strip().splitlines()), 2, err)
 
+    def test_sources_hash_by_streaming(self):
+        # Sources may be multi-GB: hashed in chunks (common.sha256_file), never read whole (state.digest).
+        from scripts.data import sources as user_sources
+        rel = "inputs/raw/big.bin"
+        blob = os.urandom(1536 * 1024)
+        (self.root / rel).parent.mkdir(parents=True)
+        (self.root / rel).write_bytes(blob)
+        expected = hashlib.sha256(blob).hexdigest()
+        with mock.patch.object(state, "digest", side_effect=AssertionError("whole-file read")):
+            self.assertEqual(user_sources.entry(self.root, "big", rel)["sha256"], expected)
+            for digest, errors in ((expected, []), ("0" * 64, ["s[0]: inputs/raw/big.bin does not match its sha256"])):
+                found = []
+                user_sources.Sources(self.root, found.append).declare(
+                    [{"id": "big", "path": rel, "sha256": digest}], "s")
+                self.assertEqual(found, errors)
+
     def test_state_cell_refuses_control_and_line_break_characters(self):
         for char in ("|", "\n", "\r", "\u2028", "\u2029", "\x0c", "\x0b", "\x85", "\x1c", "\x00", "\t"):
             with self.assertRaises(ValueError, msg=repr(char)):

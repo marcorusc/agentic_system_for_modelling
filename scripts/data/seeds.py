@@ -67,6 +67,19 @@ def load(root: Path, rel: str) -> tuple[dict, str]:
     return data, hashlib.sha256(raw).hexdigest()
 
 
+def symbol_problem(symbol) -> str | None:
+    """Why `symbol` is not one gene symbol, or None.
+
+    The rule for seeds.json seeds and seed_genes proposal rows alike: after stripping
+    whitespace it matches SYMBOL, and the raw value holds no '|' or control, line- or
+    paragraph-separator character (str.strip() would drop line separators such as U+2028).
+    """
+    if not isinstance(symbol, str) or not SYMBOL.fullmatch(symbol.strip()) \
+            or state.unsafe_cell_char(symbol) is not None:
+        return f"hgnc_symbol must be one gene symbol matching {SYMBOL.pattern}, not {symbol!r}"
+    return None
+
+
 def symbols(data: dict) -> list[str]:
     """Seed symbols (stripped) in file order; call only on a checked file."""
     return [item["hgnc_symbol"].strip() for item in data["seeds"]]
@@ -93,11 +106,9 @@ def check_data(root: Path, data: dict) -> list[str]:
             errors.append(f"seeds[{n}] must have exactly hgnc_symbol and from")
             continue
         symbol = item["hgnc_symbol"]
-        # Raw value too: str.strip() would drop line separators such as U+2028.
-        if not isinstance(symbol, str) or not SYMBOL.fullmatch(symbol.strip()) \
-                or state.unsafe_cell_char(symbol) is not None:
-            errors.append(f"seeds[{n}]: hgnc_symbol must be one gene symbol matching {SYMBOL.pattern}, "
-                          f"not {symbol!r}")
+        problem = symbol_problem(symbol)
+        if problem:
+            errors.append(f"seeds[{n}]: {problem}")
             label = f"seeds[{n}]"
         else:
             symbol = symbol.strip()

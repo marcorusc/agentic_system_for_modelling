@@ -21,7 +21,7 @@ from pathlib import Path, PurePosixPath
 from typing import Callable
 
 from scripts import state
-from scripts.data.common import reject_symlinks
+from scripts.data.common import reject_symlinks, sha256_file
 
 INPUTS = "inputs"
 SHA256 = re.compile(r"[0-9a-f]{64}")
@@ -61,7 +61,7 @@ def entry(root: Path, source_id: str, rel: str) -> dict:
     """A declaration {id, path, sha256} for a draft; the sha256 is computed now."""
     if not isinstance(source_id, str) or not state.ID.fullmatch(source_id):
         raise ValueError(f"source id {source_id!r} must be a safe identifier")
-    return {"id": source_id, "path": rel, "sha256": state.digest(source_file(root, rel))}
+    return {"id": source_id, "path": rel, "sha256": sha256_file(source_file(root, rel))}
 
 
 def check_locator(locator) -> str | None:
@@ -113,7 +113,7 @@ class Sources:
                 continue
             if not isinstance(item["sha256"], str) or not SHA256.fullmatch(item["sha256"]):
                 self.error(f"{here}: sha256 must be a lowercase hex sha256")
-            elif state.digest(path) != item["sha256"]:
+            elif sha256_file(path) != item["sha256"]:
                 self.error(f"{here}: {item['path']} does not match its sha256")
 
     def ref(self, label: str, ref) -> None:

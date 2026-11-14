@@ -21,6 +21,7 @@ if __package__ in (None, ""):
 
 from scripts.data.common import project_root, reject_symlinks, session_dir, sha256_file  # noqa: E402
 from scripts.data.environment import lock_sha256  # noqa: E402
+from scripts.data.seeds import symbol_problem  # noqa: E402
 from scripts.data.ledger import validate_entry  # noqa: E402
 from scripts.data.vendor_lock import VENDORED_SKILLS  # noqa: E402
 
@@ -33,6 +34,8 @@ KIND_SCHEMAS = {
         "enums": {"tier": ("core", "data")},
         "unique": None,
         "list_columns": (),
+        # Same rule as seeds.json (seeds.symbol_problem); unique ignoring case.
+        "symbol": "hgnc_symbol",
     },
     "perturbations": {
         "layer": "maboss",
@@ -308,6 +311,7 @@ def _check_proposal_table(session: Path, pid, entry: dict, schema: dict, errors:
     if not rows:
         errors.append(f"{label}: table needs at least one data row")
     seen: set[str] = set()
+    symbols: set[str] = set()
     for n, row in enumerate(rows, start=2):
         for col in schema["required"]:
             if not _nonempty(row.get(col)):
@@ -326,6 +330,15 @@ def _check_proposal_table(session: Path, pid, entry: dict, schema: dict, errors:
             if value in seen:
                 errors.append(f"{label} line {n}: duplicate {key} {value!r}")
             seen.add(value)
+        col = schema.get("symbol")
+        if col and _nonempty(row.get(col)):
+            problem = symbol_problem(row[col])
+            if problem:
+                errors.append(f"{label} line {n}: {problem}")
+            elif row[col].strip().casefold() in symbols:
+                errors.append(f"{label} line {n}: duplicate {col} {row[col].strip()!r} (unique ignoring case)")
+            else:
+                symbols.add(row[col].strip().casefold())
 
 
 def verify(root: Path, session_id: str) -> list[str]:

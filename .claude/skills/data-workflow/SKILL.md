@@ -288,7 +288,7 @@ data row, and enum values are exact, lowercase, as listed (no case folding). `mu
 
 | Column | Values |
 |---|---|
-| `hgnc_symbol` | HGNC symbol |
+| `hgnc_symbol` | one HGNC symbol per row, as in `seeds.json`: matches `[A-Za-z0-9][A-Za-z0-9._@/-]*` after trimming, no `|` or control/line-break character, unique ignoring case |
 | `tier` | `core` or `data` |
 | `evidence` | why the gene is proposed |
 

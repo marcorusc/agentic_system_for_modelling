@@ -306,6 +306,19 @@ class ManifestTests(unittest.TestCase):
         text = "hgnc_symbol,tier,evidence,stat\nA,core,lit,3.2\n"
         self.assertEqual(self.set_proposal("seed_genes", "neko", text), [])
 
+    def test_seed_symbols_follow_the_seeds_json_rule(self):
+        # Same rule as seeds.json: one symbol per cell, no '|' or control/line-break characters.
+        for bad in ("KRAS EGFR", '"KRAS,EGFR"', "-KRAS", "K|RAS", "\u00c4KT1", '"KRAS\u2028"', "KRAS\x0b"):
+            errs = self.set_proposal("seed_genes", "neko", f"hgnc_symbol,tier,evidence\nEGFR,core,lit\n{bad},core,lit\n")
+            self.assertTrue(any("line 3" in e and "hgnc_symbol" in e for e in errs), (bad, errs))
+        for good in ("HLA-A", "C1orf112", "NKX2.1", "RNU6@", "TRA/TRB", " KRAS "):
+            text = f"hgnc_symbol,tier,evidence\nEGFR,core,lit\n{good},core,lit\n"
+            self.assertEqual(self.set_proposal("seed_genes", "neko", text), [], good)
+
+    def test_seed_symbols_unique_ignoring_case(self):
+        errs = self.set_proposal("seed_genes", "neko", "hgnc_symbol,tier,evidence\nKRAS,core,a\nkras ,data,b\n")
+        self.assertTrue(any("line 3" in e and "duplicate" in e and "kras" in e for e in errs), errs)
+
     def test_bom_csv_accepted(self):
         self.assertEqual(self.set_proposal("seed_genes", "neko", "\ufeff" + self.SEED), [])
 

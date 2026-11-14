@@ -203,7 +203,8 @@ is then cited. Briefs never contain data values.
 
 Every seed cites at least one declared source, and every source is cited. `python3
 scripts/data/seeds.py check SEEDS` prints one problem per line. Symbols must match
-`[A-Za-z0-9][A-Za-z0-9._@/-]*` and are unique ignoring case. The approval is a `stage_approval`
+`[A-Za-z0-9][A-Za-z0-9._@/-]*` and are unique ignoring case (the same rule as `hgnc_symbol` in a
+`seed_genes` proposal). The approval is a `stage_approval`
 for stage `data_seeds`: `artifact` is the `seeds.json` path and sha256, `session_id` is the
 purpose directory name `<p>`, `outputs` is the set of seed symbols. Line 1 of the
 network-curator brief is then

@@ -49,7 +49,7 @@ if __package__ in (None, ""):
 from scripts import state  # noqa: E402
 from scripts.data import approvals  # noqa: E402
 from scripts.data import sources as user_sources  # noqa: E402
-from scripts.data.common import RUNS_ROOT, project_root, reject_symlinks, strict_json  # noqa: E402
+from scripts.data.common import RUNS_ROOT, project_root, reject_symlinks, sha256_file, strict_json  # noqa: E402
 from scripts.data.manifest import KIND_SCHEMAS, read_proposal_table  # noqa: E402
 from scripts.validate.common import load_json_yaml  # noqa: E402
 from scripts.validate.scenario_contrast import contrast  # noqa: E402
@@ -169,7 +169,7 @@ def _network_entry(root: Path, network) -> tuple[dict, Path]:
         raise ValueError("network must be (NEKO_SESSION, BNET) or {standalone_decision_id, bnet}")
     path = _network_file(root, network)
     bnet_nodes(path)
-    return {**network, "sha256": state.digest(path)}, path
+    return {**network, "sha256": sha256_file(path)}, path
 
 
 def _table_rows(root: Path, rel: str, kind: str) -> list[str]:
@@ -295,7 +295,7 @@ def _old_rules(root: Path, network) -> dict[str, str] | None:
     """Rules of the old mapping's BNET if it is still on disk with its recorded sha256, else None."""
     try:
         path = state.artifact(root, network["bnet"])
-        if state.digest(path) != network["sha256"]:
+        if sha256_file(path) != network["sha256"]:
             return None
         return bnet_rules(path)
     except (ValueError, OSError, KeyError, TypeError, UnicodeDecodeError):
@@ -384,7 +384,7 @@ class _Checker:
             self.proposals[pid] = {"kind": None, "rows": None}
             try:
                 path = state.artifact(self.root, item["path"])
-                if state.digest(path) != item["sha256"]:
+                if sha256_file(path) != item["sha256"]:
                     self.error(f"{label}: {item['path']} does not match its sha256")
                     continue
             except ValueError as exc:
@@ -424,7 +424,7 @@ class _Checker:
         except (ValueError, OSError) as exc:
             self.error(f"inputs.network: {exc}")
             return
-        if state.digest(path) != network["sha256"]:
+        if sha256_file(path) != network["sha256"]:
             self.error(f"inputs.network: {network['bnet']} does not match its sha256")
             return
         try:
@@ -986,7 +986,7 @@ def main(argv: list[str] | None = None) -> int:
                 data = [tuple(_split(v, 3, "SESSION:PROPOSAL:APPROVAL")) for v in args.data]
                 sources = [tuple(_split(v, 2, "ID:PATH")) for v in args.source]
                 path = draft(root, args.purpose, data, network, sources)
-            print(f"mapping drafted: {path.relative_to(root).as_posix()} sha256={state.digest(path)}")
+            print(f"mapping drafted: {path.relative_to(root).as_posix()} sha256={sha256_file(path)}")
             return 0
         if args.command == "check":
             errors = check(root, args.mapping, args.stage_gate)
